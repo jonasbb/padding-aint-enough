@@ -51,15 +51,17 @@ Many of the software products and open resolvers are taken from the overview doc
 
 ## DNS Public Resolvers
 
-Tested with Knot Resolver, which itself does not pad. This might affect hte results.
+This test was performed with the Knot Resolver (2.3.0) and kdig.
+kdig was used for the padded requests, as it supports both sending padding and TLS.
+Knot Resolver was used as a TLS forwarder, but it does not pad outgoing requests.
 
-| Name                             | Response Padding | [Padding Variants](#padding-schemes) |
-| :------------------------------- | :--------------: | ------------------------------------ |
-| Cloudflare                       | ☑️               | blk(468)                             |
-| getdnsapi.net                    | ❎                | n/a                                  |
-| Surfnet (dnsovertls.sinodun.com) | ❎                | n/a                                  |
-| Quad9 (secure)                   | ❎                | n/a                                  |
-| Quad9 (insecure)                 | ❎                | n/a                                  |
+| Name                             | IP                            | Response Padding (Padded Request) | Response Padding (Unpadded Request) | [Padding Variants](#padding-schemes) |
+| :------------------------------- | ----------------------------: | :-------------------------------: | :---------------------------------: | ------------------------------------ |
+| Cloudflare                       | `1.1.1.1` / `1.0.0.1`         | ☑️                                | ☑️                                  | blk(468)                             |
+| getdnsapi.net                    | `185.49.141.37`               | ❎                                 | ❎                                   | n/a                                  |
+| Surfnet (dnsovertls.sinodun.com) | `145.100.185.15`              | ☑️                                | ❎                                   | blk(468)                             |
+| Quad9 (secure)                   | `9.9.9.9` / `149.112.112.112` | ❎                                 | ❎                                   | n/a                                  |
+| Quad9 (insecure)                 | `9.9.9.10` / `149.112.112.10` | ❎                                 | ❎                                   | n/a                                  |
 
 [DNS Privacy Clients]: https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Clients
 [DNS Privacy Servers]: https://dnsprivacy.org/wiki/display/DP/DNS+Privacy+Test+Servers
