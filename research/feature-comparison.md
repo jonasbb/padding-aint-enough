@@ -14,6 +14,10 @@
 
 Many of the software products and open resolvers are taken from the overview documents of the DNS Privacy project.
 
+There is a WIP IETF draft of the DNS Privacy group to specify padding policies at [draft-ietf-dprive-padding-policy][].
+
+[draft-ietf-dprive-padding-policy]: https://tools.ietf.org/html/draft-ietf-dprive-padding-policy-04
+
 ## DNS Clients
 
 | Name                  | TLS   | TLS Libary                   | Authentication     | Request Padding                                    | [Padding Variants](#padding-schemes) | Notes |
