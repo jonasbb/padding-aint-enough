@@ -16,17 +16,20 @@ Many of the software products and open resolvers are taken from the overview doc
 
 ## DNS Clients
 
-| Name                  | TLS   | TLS Libary                | Authentication     | Request Padding                                    | [Padding Variants](#padding-schemes) | Notes |
-| :-------------------- | :---: | ------------------------- | ------------------ | -------------------------------------------------- | ------------------------------------ | ----- |
-| Android P+            |       |                           |                    |                                                    |                                      |       |
-| Bind (9.12)           | ❎     | n/a                       |                    | ☑️ [`padding` Option][Bind request padding]        | blk(x) with x <= 512                 |       |
-| Knot Resolver (2.3.0) | ☑️    | GnuTLS                    | Certificate or Pin | ❎ [#303][Knot Res #303]                            | n/a                                  | 1, 2  |
-| Stubby (0.2.2)        | ☑️    | [OpenSSL][Stubby OpenSSL] | Certificate or Pin | ☑️ [`tls_query_padding_blocksize`][Stubby padding] | blk(x)                               | 3     |
-| Unbound (1.7.0)       | ☑️    | OpenSSL                   | Certificate        | ❎                                                  | n/a                                  |       |
+| Name                  | TLS   | TLS Libary                   | Authentication     | Request Padding                                    | [Padding Variants](#padding-schemes) | Notes |
+| :-------------------- | :---: | ---------------------------- | ------------------ | -------------------------------------------------- | ------------------------------------ | ----- |
+| Android P+            | ☑️    | [BoringSSL](Android DNS SSL) |                    | ☑️ [Commit][Bionic request padding]                | blk(128)                             |       |
+| Bind (9.12)           | ❎     | n/a                          |                    | ☑️ [`padding` Option][Bind request padding]        | blk(x) with x <= 512                 |       |
+| Knot Resolver (2.3.0) | ☑️    | GnuTLS                       | Certificate or Pin | ❎ [#303][Knot Res #303]                            | n/a                                  | 1, 2  |
+| Stubby (0.2.2)        | ☑️    | [OpenSSL][Stubby OpenSSL]    | Certificate or Pin | ☑️ [`tls_query_padding_blocksize`][Stubby padding] | blk(x)                               | 3     |
+| Unbound (1.7.0)       | ☑️    | OpenSSL                      | Certificate        | ❎                                                  | n/a                                  |       |
 
 1. TLS Forwarding does not allow fallback to UDP or TCP
 2. Allows for insecure mode
 3. Optional strict mode
+
+[#]: # (Base for all the DNS over TLS forwarding in Android)
+[#]: https://android.googlesource.com/platform/system/netd/+/master/server/dns/
 
 ## DNS Servers
 
@@ -36,6 +39,8 @@ Many of the software products and open resolvers are taken from the overview doc
 | Knot Resolver (2.3.0) | ☑️    | GnuTLS      | ️️☑️ [#247][Knot Res #247]                            | [blk(468)][Knot Res Resp Padding]    |
 | Unbound (1.7.0)       | ☑️    | OpenSSL     | ❎                                                     | n/a                                  |
 
+[Android DNS SSL]: https://android.googlesource.com/platform/system/netd/+/9d2a53f8b6eb637891a5767ecb1e3e609930c56e/server/dns/DnsTlsSocket.h#22
+[Bionic request padding]: https://github.com/aosp-mirror/platform_bionic/commit/27dd91514797a657d79efe3b902a1ff97bcc5546
 [Bind response padding]: https://ftp.isc.org/isc/bind9/cur/9.12/doc/arm/Bv9ARM.ch05.html#options
 [Bind request padding]: https://ftp.isc.org/isc/bind9/cur/9.12/doc/arm/Bv9ARM.ch05.html#server_statement_definition_and_usage
 [Knot Res #247]: https://gitlab.labs.nic.cz/knot/knot-resolver/merge_requests/247
