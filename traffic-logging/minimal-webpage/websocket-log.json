@@ -1,0 +1,861 @@
+// send by client
+{
+    "method": "Network.enable",
+    "id": 1
+}
+
+{
+    "id": 1,
+    "result": {}
+}
+
+{
+    "method": "Network.requestWillBeSent",
+    "params": {
+        "requestId": "D1842D348C730E333BB01578C645891D",
+        "loaderId": "D1842D348C730E333BB01578C645891D",
+        "documentURL": "http://localhost:8000/test.html",
+        "request": {
+            "url": "http://localhost:8000/test.html",
+            "method": "GET",
+            "headers": {
+                "Upgrade-Insecure-Requests": "1",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"
+            },
+            "mixedContentType": "none",
+            "initialPriority": "VeryHigh",
+            "referrerPolicy": "no-referrer-when-downgrade"
+        },
+        "timestamp": 30640.000325,
+        "wallTime": 1525277096.33317,
+        "initiator": {
+            "type": "other"
+        },
+        "type": "Document",
+        "frameId": "5CB43190EB31752260ED0C2B600B0796"
+    }
+}
+
+{
+    "method": "Network.responseReceived",
+    "params": {
+        "requestId": "D1842D348C730E333BB01578C645891D",
+        "loaderId": "D1842D348C730E333BB01578C645891D",
+        "timestamp": 30640.010251,
+        "type": "Document",
+        "response": {
+            "url": "http://localhost:8000/test.html",
+            "status": 200,
+            "statusText": "OK",
+            "headers": {
+                "Date": "Wed, 02 May 2018 16:04:56 GMT",
+                "Last-Modified": "Wed, 02 May 2018 15:02:44 GMT",
+                "Server": "SimpleHTTP/0.6 Python/2.7.14",
+                "Content-Length": "401",
+                "Content-type": "text/html"
+            },
+            "headersText": "HTTP/1.0 200 OK\r\nServer: SimpleHTTP/0.6 Python/2.7.14\r\nDate: Wed, 02 May 2018 16:04:56 GMT\r\nContent-type: text/html\r\nContent-Length: 401\r\nLast-Modified: Wed, 02 May 2018 15:02:44 GMT\r\n\r\n",
+            "mimeType": "text/html",
+            "requestHeaders": {
+                "Accept-Encoding": "gzip, deflate, br",
+                "Host": "localhost:8000",
+                "Accept-Language": "en-GB,en;q=0.9,en-US;q=0.8,de;q=0.7",
+                "Upgrade-Insecure-Requests": "1",
+                "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+                "Cache-Control": "max-age=0",
+                "Connection": "keep-alive",
+                "If-Modified-Since": "Wed, 02 May 2018 15:02:44 GMT"
+            },
+            "requestHeadersText": "GET /test.html HTTP/1.1\r\nHost: localhost:8000\r\nConnection: keep-alive\r\nCache-Control: max-age=0\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-GB,en;q=0.9,en-US;q=0.8,de;q=0.7\r\nIf-Modified-Since: Wed, 02 May 2018 15:02:44 GMT\r\n",
+            "connectionReused": true,
+            "connectionId": 1978,
+            "remoteIPAddress": "127.0.0.1",
+            "remotePort": 8000,
+            "fromDiskCache": false,
+            "fromServiceWorker": false,
+            "encodedDataLength": 186,
+            "timing": {
+                "requestTime": 30639.995866,
+                "proxyStart": -1,
+                "proxyEnd": -1,
+                "dnsStart": -1,
+                "dnsEnd": -1,
+                "connectStart": -1,
+                "connectEnd": -1,
+                "sslStart": -1,
+                "sslEnd": -1,
+                "workerStart": -1,
+                "workerReady": -1,
+                "sendStart": 1.20699999752105,
+                "sendEnd": 1.23899999744026,
+                "pushStart": 0,
+                "pushEnd": 0,
+                "receiveHeadersEnd": 1.66999999783002
+            },
+            "protocol": "http/1.0",
+            "securityState": "neutral"
+        },
+        "frameId": "5CB43190EB31752260ED0C2B600B0796"
+    }
+}
+
+{
+    "method": "Network.dataReceived",
+    "params": {
+        "requestId": "D1842D348C730E333BB01578C645891D",
+        "timestamp": 30640.010843,
+        "dataLength": 401,
+        "encodedDataLength": 0
+    }
+}
+
+{
+    "method": "Network.loadingFinished",
+    "params": {
+        "requestId": "D1842D348C730E333BB01578C645891D",
+        "timestamp": 30640.010097,
+        "encodedDataLength": 587,
+        "blockedCrossSiteDocument": false
+    }
+}
+
+{
+    "method": "Network.requestWillBeSent",
+    "params": {
+        "requestId": "13825.11",
+        "loaderId": "D1842D348C730E333BB01578C645891D",
+        "documentURL": "http://localhost:8000/test.html",
+        "request": {
+            "url": "https://www.google.org/assets/static/images/logo_googledotorg-171e7482e5523603fc0eed236dd772d8.svg",
+            "method": "GET",
+            "headers": {},
+            "mixedContentType": "none",
+            "initialPriority": "VeryLow",
+            "referrerPolicy": "no-referrer-when-downgrade"
+        },
+        "timestamp": 30640.016145,
+        "wallTime": 1525277096.34899,
+        "initiator": {
+            "type": "script",
+            "stack": {
+                "callFrames": [
+                    {
+                        "functionName": "",
+                        "scriptId": "28",
+                        "url": "http://localhost:8000/test.html",
+                        "lineNumber": 11,
+                        "columnNumber": 18
+                    }
+                ]
+            }
+        },
+        "type": "Image",
+        "frameId": "5CB43190EB31752260ED0C2B600B0796"
+    }
+}
+
+{
+    "method": "Network.requestServedFromCache",
+    "params": {
+        "requestId": "13825.11"
+    }
+}
+
+{
+    "method": "Network.responseReceived",
+    "params": {
+        "requestId": "13825.11",
+        "loaderId": "D1842D348C730E333BB01578C645891D",
+        "timestamp": 30640.016191,
+        "type": "Image",
+        "response": {
+            "url": "https://www.google.org/assets/static/images/logo_googledotorg-171e7482e5523603fc0eed236dd772d8.svg",
+            "status": 200,
+            "statusText": "",
+            "headers": {
+                "date": "Wed, 02 May 2018 15:43:47 GMT",
+                "content-encoding": "gzip",
+                "x-content-type-options": "nosniff",
+                "last-modified": "Thu, 20 Apr 2017 17:00:00 GMT",
+                "server": "sffe",
+                "vary": "Accept-Encoding",
+                "content-type": "image/svg+xml",
+                "status": "200",
+                "cache-control": "private, max-age=31536000",
+                "accept-ranges": "bytes",
+                "alt-svc": "hq=\":443\"; ma=2592000; quic=51303433; quic=51303432; quic=51303431; quic=51303339; quic=51303335,quic=\":443\"; ma=2592000; v=\"43,42,41,39,35\"",
+                "content-length": "1056",
+                "x-xss-protection": "1; mode=block",
+                "expires": "Wed, 02 May 2018 15:43:47 GMT"
+            },
+            "mimeType": "image/svg+xml",
+            "connectionReused": false,
+            "connectionId": 0,
+            "remoteIPAddress": "216.239.32.27",
+            "remotePort": 443,
+            "fromDiskCache": true,
+            "fromServiceWorker": false,
+            "encodedDataLength": 0,
+            "timing": {
+                "requestTime": 30579.783924,
+                "proxyStart": -1,
+                "proxyEnd": -1,
+                "dnsStart": -1,
+                "dnsEnd": -1,
+                "connectStart": -1,
+                "connectEnd": -1,
+                "sslStart": -1,
+                "sslEnd": -1,
+                "workerStart": -1,
+                "workerReady": -1,
+                "sendStart": 10.7009999992442,
+                "sendEnd": 10.7009999992442,
+                "pushStart": 0,
+                "pushEnd": 0,
+                "receiveHeadersEnd": 12.3490000005404
+            },
+            "protocol": "http/2+quic/39",
+            "securityState": "secure",
+            "securityDetails": {
+                "protocol": "QUIC",
+                "keyExchange": "",
+                "keyExchangeGroup": "X25519",
+                "cipher": "AES_128_GCM",
+                "certificateId": 0,
+                "subjectName": "misc.google.com",
+                "sanList": [
+                    "misc.google.com",
+                    "*.actions.google.com",
+                    "*.adgoogle.net",
+                    "*.admeld.com",
+                    "*.advertiserscommunity.com",
+                    "*.adwords-community.com",
+                    "*.adwordsexpress.com",
+                    "*.angulardart.org",
+                    "*.anvato.com",
+                    "*.api.ai",
+                    "*.apigee.com",
+                    "*.appbridge.ca",
+                    "*.appbridge.io",
+                    "*.appbridge.it",
+                    "*.apture.com",
+                    "*.area120.com",
+                    "*.baseline.google.com",
+                    "*.baselinestudy.com",
+                    "*.baselinestudy.org",
+                    "*.beatthatquote.com",
+                    "*.blink.org",
+                    "*.brotli.org",
+                    "*.bumpshare.com",
+                    "*.bumptop.ca",
+                    "*.bumptop.com",
+                    "*.bumptop.net",
+                    "*.bumptop.org",
+                    "*.bumptunes.com",
+                    "*.campuslondon.com",
+                    "*.certificate-transparency.org",
+                    "*.chrome.com",
+                    "*.chromecast.com",
+                    "*.chromium.org",
+                    "*.cloudburstresearch.com",
+                    "*.cloudfunctions.net",
+                    "*.cloudrobotics.com",
+                    "*.conscrypt.com",
+                    "*.conscrypt.org",
+                    "*.coova.com",
+                    "*.coova.net",
+                    "*.coova.org",
+                    "*.crr.com",
+                    "*.cs4hs.com",
+                    "*.debug.com",
+                    "*.debugproject.com",
+                    "*.design.google",
+                    "*.developer.google.com",
+                    "*.developers.google.com",
+                    "*.devsitetest.how",
+                    "*.dialogflow.com",
+                    "*.environment.google",
+                    "*.episodic.com",
+                    "*.feedburner.com",
+                    "*.fflick.com",
+                    "*.financeleadsonline.com",
+                    "*.firebase.google.com",
+                    "*.flutterapp.com",
+                    "*.g-tun.com",
+                    "*.gbc.beatthatquote.com",
+                    "*.gerritcodereview.com",
+                    "*.getbumptop.com",
+                    "*.gipscorp.com",
+                    "*.globaledu.org",
+                    "*.gonglchuangl.net",
+                    "*.google.berlin",
+                    "*.google.org",
+                    "*.google.ventures",
+                    "*.googleapps.com",
+                    "*.googlecompare.co.uk",
+                    "*.googledanmark.com",
+                    "*.googlefinland.com",
+                    "*.googlemaps.com",
+                    "*.googlephotos.com",
+                    "*.googleplay.com",
+                    "*.googleplus.com",
+                    "*.googlesverige.com",
+                    "*.googletraveladservices.com",
+                    "*.googleventures.com",
+                    "*.gsrc.io",
+                    "*.gsuite.com",
+                    "*.hdrplusdata.org",
+                    "*.hindiweb.com",
+                    "*.howtogetmo.co.uk",
+                    "*.html5rocks.com",
+                    "*.hwgo.com",
+                    "*.impermium.com",
+                    "*.j2objc.org",
+                    "*.keytransparency.com",
+                    "*.keytransparency.foo",
+                    "*.keytransparency.org",
+                    "*.mdialog.com",
+                    "*.mfg-inspector.com",
+                    "*.mobileview.page",
+                    "*.moodstocks.com",
+                    "*.near.by",
+                    "*.oauthz.com",
+                    "*.on.here",
+                    "*.on2.com",
+                    "*.oneworldmanystories.com",
+                    "*.orbitera.com",
+                    "*.pagespeedmobilizer.com",
+                    "*.pageview.mobi",
+                    "*.partylikeits1986.org",
+                    "*.paxlicense.org",
+                    "*.personfinder.google.org",
+                    "*.pittpatt.com",
+                    "*.polymerproject.org",
+                    "*.postini.com",
+                    "*.projectara.com",
+                    "*.projectbaseline.com",
+                    "*.questvisual.com",
+                    "*.quickoffice.com",
+                    "*.quiksee.com",
+                    "*.quoteproxy.beatthatquote.com",
+                    "*.recaptcha.net",
+                    "*.revolv.com",
+                    "*.ridepenguin.com",
+                    "*.s.svc-1.google.com",
+                    "*.saynow.com",
+                    "*.schemer.com",
+                    "*.screenwisetrends.com",
+                    "*.screenwisetrendspanel.com",
+                    "*.snapseed.com",
+                    "*.solveforx.com",
+                    "*.spider.io",
+                    "*.staging.widevine.com",
+                    "*.storage-nightly-test.googleusercontent.com",
+                    "*.storage-staging-test.googleusercontent.com",
+                    "*.storage-test-test.googleusercontent.com",
+                    "*.support.google.com",
+                    "*.tensorflow.org",
+                    "*.thecleversense.com",
+                    "*.thinkquarterly.co.uk",
+                    "*.thinkquarterly.com",
+                    "*.txcloud.net",
+                    "*.txvia.com",
+                    "*.uat.widevine.com",
+                    "*.useplannr.com",
+                    "*.v8project.org",
+                    "*.verily.com",
+                    "*.verilylifesciences.com",
+                    "*.verilystudyhub.com",
+                    "*.wallet.com",
+                    "*.waymo.com",
+                    "*.waze.com",
+                    "*.webappfieldguide.com",
+                    "*.whatbrowser.org",
+                    "*.widevine.com",
+                    "*.womenwill.com",
+                    "*.womenwill.com.br",
+                    "*.womenwill.id",
+                    "*.womenwill.in",
+                    "*.womenwill.mx",
+                    "*.x.company",
+                    "*.x.team",
+                    "*.xn--9trs65b.com",
+                    "*.youtubemobilesupport.com",
+                    "*.zagat.com",
+                    "adgoogle.net",
+                    "admeld.com",
+                    "advertisercommunity.com",
+                    "advertiserscommunity.com",
+                    "adwords-community.com",
+                    "adwordsexpress.com",
+                    "angulardart.org",
+                    "anvato.com",
+                    "api.ai",
+                    "apigee.com",
+                    "appbridge.ca",
+                    "appbridge.io",
+                    "appbridge.it",
+                    "apture.com",
+                    "area120.com",
+                    "baselinestudy.com",
+                    "baselinestudy.org",
+                    "beatthatquote.com",
+                    "blink.org",
+                    "brotli.org",
+                    "bumpshare.com",
+                    "bumptop.ca",
+                    "bumptop.com",
+                    "bumptop.net",
+                    "bumptop.org",
+                    "bumptunes.com",
+                    "campuslondon.com",
+                    "certificate-transparency.org",
+                    "chrome.com",
+                    "chromecast.com",
+                    "chromium.org",
+                    "classroom.google.com",
+                    "clickserve.dartsearch.net",
+                    "clickserve.eu.dartsearch.net",
+                    "clickserve.uk.dartsearch.net",
+                    "clickserve.us2.dartsearch.net",
+                    "clickserver.googleads.com",
+                    "cloudburstresearch.com",
+                    "cloudfunctions.net",
+                    "cloudrobotics.com",
+                    "conscrypt.com",
+                    "conscrypt.org",
+                    "cookiechoices.org",
+                    "coova.com",
+                    "coova.net",
+                    "coova.org",
+                    "crr.com",
+                    "cs4hs.com",
+                    "debug.com",
+                    "debugproject.com",
+                    "design.google",
+                    "developer.dev.nestlabs.com",
+                    "developer.ft.nest.com",
+                    "developer.integration.nestlabs.com",
+                    "developer.nest.com",
+                    "developer.qa.nestlabs.com",
+                    "developer.stable.nestlabs.com",
+                    "developers.dev.nestlabs.com",
+                    "developers.ft.nest.com",
+                    "developers.integration.nestlabs.com",
+                    "developers.nest.com",
+                    "developers.qa.nestlabs.com",
+                    "developers.stable.nestlabs.com",
+                    "devsitetest.how",
+                    "dialogflow.com",
+                    "environment.google",
+                    "episodic.com",
+                    "feedburner.com",
+                    "fflick.com",
+                    "financeleadsonline.com",
+                    "flutterapp.com",
+                    "g-tun.com",
+                    "gbc.beatthatquote.com",
+                    "gerritcodereview.com",
+                    "getbumptop.com",
+                    "gipscorp.com",
+                    "globaledu.org",
+                    "gonglchuangl.net",
+                    "google.berlin",
+                    "google.org",
+                    "google.ventures",
+                    "googleapps.com",
+                    "googlecompare.co.uk",
+                    "googledanmark.com",
+                    "googlefinland.com",
+                    "googlemaps.com",
+                    "googlephotos.com",
+                    "googleplay.com",
+                    "googleplus.com",
+                    "googlesverige.com",
+                    "googletraveladservices.com",
+                    "googleventures.com",
+                    "gsrc.io",
+                    "gsuite.com",
+                    "hdrplusdata.org",
+                    "hindiweb.com",
+                    "howtogetmo.co.uk",
+                    "html5rocks.com",
+                    "hwgo.com",
+                    "images.zagat.com",
+                    "impermium.com",
+                    "j2objc.org",
+                    "keytransparency.com",
+                    "keytransparency.foo",
+                    "keytransparency.org",
+                    "mdialog.com",
+                    "mfg-inspector.com",
+                    "mobileview.page",
+                    "moodstocks.com",
+                    "n339.asp-cc.com",
+                    "near.by",
+                    "oauthz.com",
+                    "on.here",
+                    "on2.com",
+                    "oneworldmanystories.com",
+                    "orbitera.com",
+                    "pagespeedmobilizer.com",
+                    "pageview.mobi",
+                    "partylikeits1986.org",
+                    "paxlicense.org",
+                    "ping.feedburner.google.com",
+                    "pittpatt.com",
+                    "polymerproject.org",
+                    "postini.com",
+                    "projectara.com",
+                    "projectbaseline.com",
+                    "questvisual.com",
+                    "quiksee.com",
+                    "quoteproxy.beatthatquote.com",
+                    "recaptcha.net",
+                    "revolv.com",
+                    "ridepenguin.com",
+                    "rootmusic.bandpage.com",
+                    "s.svc-1.google.com",
+                    "saynow.com",
+                    "schemer.com",
+                    "screenwisetrends.com",
+                    "screenwisetrendspanel.com",
+                    "snapseed.com",
+                    "solveforx.com",
+                    "spider.io",
+                    "tensorflow.org",
+                    "thecleversense.com",
+                    "thinkquarterly.co.uk",
+                    "thinkquarterly.com",
+                    "txcloud.net",
+                    "txvia.com",
+                    "useplannr.com",
+                    "v8project.org",
+                    "verily.com",
+                    "verilylifesciences.com",
+                    "verilystudyhub.com",
+                    "wallet.com",
+                    "waymo.com",
+                    "waze.com",
+                    "webappfieldguide.com",
+                    "weltweitwachsen.de",
+                    "whatbrowser.org",
+                    "womenwill.com",
+                    "womenwill.com.br",
+                    "womenwill.id",
+                    "womenwill.in",
+                    "womenwill.mx",
+                    "www.advertisercommunity.com",
+                    "www.bandpage.com",
+                    "www.classroom.google.com",
+                    "www.cookiechoices.org",
+                    "www.weltweitwachsen.de",
+                    "www.zukunftswerkstatt.de",
+                    "x.company",
+                    "x.team",
+                    "xn--9trs65b.com",
+                    "youtubemobilesupport.com",
+                    "zagat.com",
+                    "zukunftswerkstatt.de"
+                ],
+                "issuer": "Google Internet Authority G3",
+                "validFrom": 1523388494,
+                "validTo": 1530642780,
+                "signedCertificateTimestampList": [
+                    {
+                        "status": "Verified",
+                        "origin": "TLS extension",
+                        "logDescription": "Google 'Rocketeer' log",
+                        "logId": "EE4BBDB775CE60BAE142691FABE19E66A30F7E5FB072D88300C47B897AA8FDCB",
+                        "timestamp": 1523391276582,
+                        "hashAlgorithm": "SHA-256",
+                        "signatureAlgorithm": "ECDSA",
+                        "signatureData": "3046022100D3956038244B0D5560BED80FA45D16B986AC119EAC31FFBF4DCD19F80CBAFC15022100DCE8B613305B38B3B99F7AFB3B072CC36FD5C6CF9399B628341A0DD4115FC915"
+                    },
+                    {
+                        "status": "Verified",
+                        "origin": "TLS extension",
+                        "logDescription": "Comodo 'Mammoth' CT log",
+                        "logId": "6F5376AC31F03119D89900A45115FF77151C11D902C10029068DB2089A37D913",
+                        "timestamp": 1523391276659,
+                        "hashAlgorithm": "SHA-256",
+                        "signatureAlgorithm": "ECDSA",
+                        "signatureData": "3045022100DF6F75BD8B826680B457AC470865310915D6D38188D7B8A75FD6AD3A32D9EE4902205B5C9A040948E9C9083A984F6240C2C33D0DC9B62C0199725CE2811A5462F021"
+                    }
+                ]
+            }
+        },
+        "frameId": "5CB43190EB31752260ED0C2B600B0796"
+    }
+}
+
+{
+    "method": "Network.dataReceived",
+    "params": {
+        "requestId": "13825.11",
+        "timestamp": 30640.016194,
+        "dataLength": 2496,
+        "encodedDataLength": 0
+    }
+}
+
+{
+    "method": "Network.loadingFinished",
+    "params": {
+        "requestId": "13825.11",
+        "timestamp": 30640.016195,
+        "encodedDataLength": 0,
+        "blockedCrossSiteDocument": false
+    }
+}
+
+{
+    "method": "Network.requestWillBeSent",
+    "params": {
+        "requestId": "13825.12",
+        "loaderId": "D1842D348C730E333BB01578C645891D",
+        "documentURL": "http://localhost:8000/test.html",
+        "request": {
+            "url": "http://localhost:8000/test.js",
+            "method": "GET",
+            "headers": {
+                "Referer": "http://localhost:8000/test.html",
+                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36"
+            },
+            "mixedContentType": "none",
+            "initialPriority": "Low",
+            "referrerPolicy": "no-referrer-when-downgrade"
+        },
+        "timestamp": 30640.016399,
+        "wallTime": 1525277096.34925,
+        "initiator": {
+            "type": "script",
+            "stack": {
+                "callFrames": [
+                    {
+                        "functionName": "",
+                        "scriptId": "28",
+                        "url": "http://localhost:8000/test.html",
+                        "lineNumber": 15,
+                        "columnNumber": 18
+                    }
+                ]
+            }
+        },
+        "type": "Script",
+        "frameId": "5CB43190EB31752260ED0C2B600B0796"
+    }
+}
+
+{
+    "method": "Network.responseReceived",
+    "params": {
+        "requestId": "13825.12",
+        "loaderId": "D1842D348C730E333BB01578C645891D",
+        "timestamp": 30640.026973,
+        "type": "Script",
+        "response": {
+            "url": "http://localhost:8000/test.js",
+            "status": 200,
+            "statusText": "OK",
+            "headers": {
+                "Date": "Wed, 02 May 2018 16:03:56 GMT",
+                "Last-Modified": "Wed, 02 May 2018 14:46:45 GMT",
+                "Server": "SimpleHTTP/0.6 Python/2.7.14",
+                "Content-Length": "151",
+                "Content-type": "application/javascript"
+            },
+            "headersText": "HTTP/1.0 200 OK\r\nServer: SimpleHTTP/0.6 Python/2.7.14\r\nDate: Wed, 02 May 2018 16:03:56 GMT\r\nContent-type: application/javascript\r\nContent-Length: 151\r\nLast-Modified: Wed, 02 May 2018 14:46:45 GMT\r\n\r\n",
+            "mimeType": "application/javascript",
+            "connectionReused": false,
+            "connectionId": 0,
+            "remoteIPAddress": "127.0.0.1",
+            "remotePort": 8000,
+            "fromDiskCache": true,
+            "fromServiceWorker": false,
+            "encodedDataLength": 0,
+            "timing": {
+                "requestTime": 30640.016965,
+                "proxyStart": -1,
+                "proxyEnd": -1,
+                "dnsStart": -1,
+                "dnsEnd": -1,
+                "connectStart": -1,
+                "connectEnd": -1,
+                "sslStart": -1,
+                "sslEnd": -1,
+                "workerStart": -1,
+                "workerReady": -1,
+                "sendStart": 1.82100000165519,
+                "sendEnd": 1.82100000165519,
+                "pushStart": 0,
+                "pushEnd": 0,
+                "receiveHeadersEnd": 2.5019999993674
+            },
+            "protocol": "http/1.0",
+            "securityState": "neutral"
+        },
+        "frameId": "5CB43190EB31752260ED0C2B600B0796"
+    }
+}
+
+{
+    "method": "Network.dataReceived",
+    "params": {
+        "requestId": "13825.12",
+        "timestamp": 30640.027034,
+        "dataLength": 151,
+        "encodedDataLength": 0
+    }
+}
+
+{
+    "method": "Network.loadingFinished",
+    "params": {
+        "requestId": "13825.12",
+        "timestamp": 30640.026444,
+        "encodedDataLength": 0,
+        "blockedCrossSiteDocument": false
+    }
+}
+
+{
+    "method": "Network.requestWillBeSent",
+    "params": {
+        "requestId": "13825.13",
+        "loaderId": "D1842D348C730E333BB01578C645891D",
+        "documentURL": "http://localhost:8000/test.html",
+        "request": {
+            "url": "https://getfedora.org/static/images/fedora-logotext.png",
+            "method": "GET",
+            "headers": {},
+            "mixedContentType": "none",
+            "initialPriority": "VeryLow",
+            "referrerPolicy": "no-referrer-when-downgrade"
+        },
+        "timestamp": 30640.029916,
+        "wallTime": 1525277096.36276,
+        "initiator": {
+            "type": "script",
+            "stack": {
+                "callFrames": [
+                    {
+                        "functionName": "",
+                        "scriptId": "29",
+                        "url": "http://localhost:8000/test.js",
+                        "lineNumber": 1,
+                        "columnNumber": 14
+                    }
+                ]
+            }
+        },
+        "type": "Image",
+        "frameId": "5CB43190EB31752260ED0C2B600B0796"
+    }
+}
+
+{
+    "method": "Network.requestServedFromCache",
+    "params": {
+        "requestId": "13825.13"
+    }
+}
+
+{
+    "method": "Network.responseReceived",
+    "params": {
+        "requestId": "13825.13",
+        "loaderId": "D1842D348C730E333BB01578C645891D",
+        "timestamp": 30640.029978,
+        "type": "Image",
+        "response": {
+            "url": "https://getfedora.org/static/images/fedora-logotext.png",
+            "status": 200,
+            "statusText": "",
+            "headers": {
+                "date": "Wed, 02 May 2018 15:43:48 GMT",
+                "x-content-type-options": "nosniff",
+                "apptime": "D=292",
+                "status": "200",
+                "content-length": "12249",
+                "x-xss-protection": "1; mode=block",
+                "referrer-policy": "same-origin",
+                "appserver": "proxy04.fedoraproject.org",
+                "last-modified": "Wed, 02 May 2018 15:03:22 GMT",
+                "server": "Apache/2.4.33 (Fedora)",
+                "etag": "\"2fd9-56b3a634fc280\"",
+                "x-frame-options": "SAMEORIGIN",
+                "content-type": "image/png",
+                "cache-control": "max-age=1800",
+                "accept-ranges": "bytes",
+                "expires": "Wed, 02 May 2018 16:13:48 GMT"
+            },
+            "mimeType": "image/png",
+            "connectionReused": false,
+            "connectionId": 0,
+            "remoteIPAddress": "152.19.134.142",
+            "remotePort": 443,
+            "fromDiskCache": true,
+            "fromServiceWorker": false,
+            "encodedDataLength": 0,
+            "timing": {
+                "requestTime": 30580.558131,
+                "proxyStart": -1,
+                "proxyEnd": -1,
+                "dnsStart": -1,
+                "dnsEnd": -1,
+                "connectStart": -1,
+                "connectEnd": -1,
+                "sslStart": -1,
+                "sslEnd": -1,
+                "workerStart": -1,
+                "workerReady": -1,
+                "sendStart": 1.06400000004214,
+                "sendEnd": 1.06400000004214,
+                "pushStart": 0,
+                "pushEnd": 0,
+                "receiveHeadersEnd": 1.28499999846099
+            },
+            "protocol": "h2",
+            "securityState": "secure",
+            "securityDetails": {
+                "protocol": "TLS 1.2",
+                "keyExchange": "ECDHE_RSA",
+                "keyExchangeGroup": "X25519",
+                "cipher": "AES_128_GCM",
+                "certificateId": 0,
+                "subjectName": "getfedora.org",
+                "sanList": [
+                    "getfedora.org",
+                    "stg.getfedora.org"
+                ],
+                "issuer": "DigiCert SHA2 High Assurance Server CA",
+                "validFrom": 1506988800,
+                "validTo": 1609416000,
+                "signedCertificateTimestampList": []
+            }
+        },
+        "frameId": "5CB43190EB31752260ED0C2B600B0796"
+    }
+}
+
+{
+    "method": "Network.dataReceived",
+    "params": {
+        "requestId": "13825.13",
+        "timestamp": 30640.029982,
+        "dataLength": 12249,
+        "encodedDataLength": 0
+    }
+}
+
+{
+    "method": "Network.loadingFinished",
+    "params": {
+        "requestId": "13825.13",
+        "timestamp": 30640.029984,
+        "encodedDataLength": 0,
+        "blockedCrossSiteDocument": false
+    }
+}
