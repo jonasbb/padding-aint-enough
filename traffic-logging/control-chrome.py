@@ -40,7 +40,7 @@ def handle_url(url: str) -> None:
                 stderr=subprocess.DEVNULL,
         ) as chrome:
             # give chrome some time to fully start
-            time.sleep(1)
+            time.sleep(2)
 
             wsurl = get_wsurl_for_url(special_url)
             ws = create_ws_connection(wsurl)
@@ -91,6 +91,7 @@ def handle_url(url: str) -> None:
 
             signal.signal(signal.SIGALRM, close_browser_timeout)
 
+            # TODO set an overall time limit, not just the timer
             msglist: t.List[str] = list()
             try:
                 for msg in ws:
