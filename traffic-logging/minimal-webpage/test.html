@@ -2,12 +2,12 @@
 <html>
 
 <head>
-
+    <link rel="dns-prefetch" href="//code.jquery.com">
 </head>
 
 <body>
+    <div id="empty"></div>
 
-</body>
 <script>
     document.body.insertAdjacentHTML("beforeend", "<img src=\"https://www.google.org/assets/static/images/logo_googledotorg-171e7482e5523603fc0eed236dd772d8.svg\">");
 
@@ -16,5 +16,9 @@
     document.body.appendChild(js);
 </script>
  <!--<script src="./test.js"></script>-->
-
+<script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+<script>
+    $("#empty").html("<img src=\"https://pythonhaven.files.wordpress.com/2009/12/example2_graph.png?w=232&h=300\"></img>");
+</script>
+</body>
 </html>
