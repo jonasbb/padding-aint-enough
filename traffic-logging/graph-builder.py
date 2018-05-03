@@ -3,7 +3,7 @@ import argparse
 import json
 import typing as t
 from urllib.parse import urlparse
-
+import networkx as nx
 import pydot
 
 # first argument is graph name
@@ -13,6 +13,120 @@ GRAPH: pydot.Dot = pydot.Dot(
     simplify=True,
     suppress_disconnected=False)
 NODECACHE: t.Dict[str, pydot.Node] = dict()
+
+
+class Resource(object):
+    def __init__(self, name: str, **kwargs: t.Dict[t.Any, t.Any]) -> None:
+        self.name = name
+        self.dnsname = Resource._sanitize_name(name)
+        self._depends_on: t.Set[Resource] = set()
+
+    def __repr__(self) -> str:
+        return self.name
+
+    @staticmethod
+    def _sanitize_name(name: str) -> str:
+        if name.startswith("data:"):
+            return "data"
+        elif name == "other":
+            return "other"
+
+        return urlparse(name).hostname
+
+    def add_dependency(self, on: "Resource") -> None:
+        if self == on:
+            return
+
+        self._depends_on.add(on)
+
+    def get_dependencies(self) -> t.FrozenSet["Resource"]:
+        return frozenset(self._depends_on)
+
+
+class ResourceDependenciesFactory(object):
+    def __init__(self, **kwargs: t.Dict[t.Any, t.Any]) -> None:
+        self._resource_cache: t.Dict[str, Resource] = dict()
+
+    def _get_resource(self, name: str) -> Resource:
+        try:
+            return self._resource_cache[name]
+        except KeyError:
+            resource = Resource(name)
+            self._resource_cache[name] = resource
+            return resource
+
+    def create_dependency(self, from_res: str, to_res: str) -> None:
+        from_ = self._get_resource(from_res)
+        to_ = self._get_resource(to_res)
+        from_.add_dependency(to_)
+
+    def as_graph(self) -> None:
+        graph = nx.DiGraph()
+        graph.add_nodes_from(self._resource_cache.values())
+        for resource in self._resource_cache.values():
+            for other in resource.get_dependencies():
+                graph.add_edge(resource, other)
+
+        for res in self._resource_cache.values():
+            if "thumbs" in res.dnsname:
+                print(res.name)
+                for deps in res.get_dependencies():
+                    print("  " + deps.name)
+        print(len(graph.nodes()), len(graph.edges()))
+
+        def simplify_graph(graph):
+            # try to simplify the graph
+            for node in graph.nodes():
+                succ = graph.successors(node)
+                # merge two nodes if they both have the same DNS name and one depends on the other
+                # since the dependency has the same DNS name, the DNS lookup will already have occured
+                # it is therefore not helpful to keep the node
+                if len(succ) == 1 and node.dnsname == succ[0].dnsname:
+                    for pred in graph.predecessors(node):
+                        graph.add_edge(pred, succ[0])
+                    graph.remove_node(node)
+
+            print("-------------------------------\nfirst simplify")
+            print(len(graph.nodes()), len(graph.edges()))
+
+            # TODO generalize to subset relationship between the dependencies
+            # based on the transitive closure of the dependencies
+            nodes = graph.nodes()
+            for i in range(len(nodes)-1):
+                node = nodes[i]
+                # search for two unrelated nodes with same DNS name and same dependencies
+                # same DNS name and same dependencies (by DNS name) are actually the same node
+                for other in nodes[i+1:]:
+                    if node.dnsname != other.dnsname:
+                        continue
+                    deps1 = set(x.dnsname for x in node.get_dependencies())
+                    deps2 = set(x.dnsname for x in other.get_dependencies())
+                    if deps1 != deps2:
+                        continue
+
+                    for pred in graph.predecessors(node):
+                        graph.add_edge(pred, other)
+                    graph.remove_node(node)
+                    break
+
+            print("-------------------------------\nsecond simplify")
+            print(len(graph.nodes()), len(graph.edges()))
+
+        size =(len(graph.nodes()), len(graph.edges()))
+        newsize = (0, 0)
+        while size != newsize:
+            size = (len(graph.nodes()), len(graph.edges()))
+            simplify_graph(graph)
+            newsize = (len(graph.nodes()), len(graph.edges()))
+
+        for node in graph.nodes():
+            graph.node[node]['label'] = node.dnsname
+            graph.node[node]['fullname'] = node.name
+        nx.write_graphml(
+            graph, "graph.graphml", encoding="utf-8", prettyprint=True)
+
+
+FACTORY: ResourceDependenciesFactory = ResourceDependenciesFactory()
 
 
 def node_sanitize_name(name: str) -> str:
@@ -61,7 +175,8 @@ def get_node(hostname: str) -> pydot.Node:
 
 
 def resource_depends_on(resource: str, dependency: str) -> None:
-    global GRAPH  # pylint: disable=W0603
+    global GRAPH, FACTORY  # pylint: disable=W0603
+    FACTORY.create_dependency(resource, dependency)
     node = get_node(resource)
     dependency = get_node(dependency)
     # don't add self loops
@@ -104,7 +219,7 @@ def add_dependencies_from_stack(resource: str,
 
 
 def main() -> None:
-    global GRAPH  # pylint: disable=W0603
+    global GRAPH, FACTORY  # pylint: disable=W0603
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-f", "--file", type=open, required=True, help="Log file to parse")
@@ -113,6 +228,7 @@ def main() -> None:
     init_special_nodes()
     parse_file(args.file)
     GRAPH.write("graph.png", format="png")
+    FACTORY.as_graph()
 
 
 if __name__ == '__main__':
