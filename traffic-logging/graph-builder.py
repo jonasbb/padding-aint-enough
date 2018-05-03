@@ -84,16 +84,23 @@ def parse_file(log: t.IO[str]) -> None:
 
 def add_dependencies_from_initiator(resource: str,
                                     initiator: t.Dict[str, t.Any]) -> None:
-    print(initiator)
     if initiator["type"] == "other":
         resource_depends_on(resource, "other")
     elif initiator["type"] == "parser":
         resource_depends_on(resource, initiator["url"])
     elif initiator["type"] == "script":
-        for frame in initiator["stack"]["callFrames"]:
-            resource_depends_on(resource, frame["url"])
+        add_dependencies_from_stack(resource, initiator["stack"])
     else:
         raise Exception(f"Unknown initiator type '{initiator['type']}'")
+
+
+def add_dependencies_from_stack(resource: str,
+                                stack: t.Dict[str, t.Any]) -> None:
+    for frame in stack["callFrames"]:
+        resource_depends_on(resource, frame["url"])
+
+    if "parent" in stack:
+        add_dependencies_from_stack(resource, stack["parent"])
 
 
 def main() -> None:
