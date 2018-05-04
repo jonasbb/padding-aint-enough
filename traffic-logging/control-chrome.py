@@ -15,6 +15,7 @@ from websocket import WebSocketTimeoutException
 
 # Wait this many seconds after every browser event before a browser close can occur
 WAIT_SECONDS = 5
+WEBPAGE_TOTAL_TIME = 60.
 CHROME_DEBUG_PORT = 9229
 
 
@@ -70,6 +71,24 @@ def handle_url(url: str) -> None:
                         "cacheDisabled": True,
                     }
                 }))
+            ws.send(
+                json.dumps({
+                    "id": 32,
+                    "method": "Target.setAutoAttach",
+                    "params": {
+                        "autoAttach": True,
+                        "waitForDebuggerOnStart": True,
+                    }
+                }))
+            ws.send(
+                json.dumps({
+                    "id": 34,
+                    "method": "Target.setDiscoverTargets",
+                    "params": {
+                        "discover": True,
+                    }
+                }))
+            time.sleep(1)
             # Go to target url
             ws.send(
                 json.dumps({
@@ -77,6 +96,7 @@ def handle_url(url: str) -> None:
                     "method": "Page.navigate",
                     "params": {
                         "url": url,
+                        "transitionType": "typed",
                     },
                 }))
 
@@ -92,19 +112,24 @@ def handle_url(url: str) -> None:
             signal.signal(signal.SIGALRM, close_browser_timeout)
 
             # TODO set an overall time limit, not just the timer
-            msglist: t.List[str] = list()
+            start = time.monotonic()
+            msglist: t.List[t.Any] = list()
             try:
                 for msg in ws:
-                    # print(msg)
+                    if time.monotonic() - start > WEBPAGE_TOTAL_TIME:
+                        print("Total wall time reached")
+                        break
                     signal.alarm(WAIT_SECONDS)
                     if "id" in msg:
                         continue
-                    msglist.append(msg + "\n")
+                    data = json.loads(msg)
+                    if data["method"].startswith("Debugger.") or data["method"].startswith("Target."):
+                        continue
+                    msglist.append(data)
             except WebSocketTimeoutException:
                 pass
             finally:
-                with open("website-log.json", "w") as f:
-                    f.writelines(msglist)
+                json.dump(msglist, open("website-log.json", "w"))
 
             # give some time for a clean exit
             time.sleep(3)

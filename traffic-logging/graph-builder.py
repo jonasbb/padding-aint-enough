@@ -31,7 +31,10 @@ class Resource(object):
         elif name == "other":
             return "other"
 
-        return urlparse(name).hostname
+        tmp = urlparse(name).hostname
+        if not tmp:
+            print("-> " + name)
+        return tmp
 
     def add_dependency(self, on: "Resource") -> None:
         if self == on:
@@ -67,11 +70,6 @@ class ResourceDependenciesFactory(object):
             for other in resource.get_dependencies():
                 graph.add_edge(resource, other)
 
-        for res in self._resource_cache.values():
-            if "thumbs" in res.dnsname:
-                print(res.name)
-                for deps in res.get_dependencies():
-                    print("  " + deps.name)
         print(len(graph.nodes()), len(graph.edges()))
 
         def simplify_graph(graph):
@@ -99,9 +97,7 @@ class ResourceDependenciesFactory(object):
                 for other in nodes[i+1:]:
                     if node.dnsname != other.dnsname:
                         continue
-                    deps1 = set(x.dnsname for x in node.get_dependencies())
-                    deps2 = set(x.dnsname for x in other.get_dependencies())
-                    if deps1 != deps2:
+                    if node.get_dependencies() != other.get_dependencies():
                         continue
 
                     for pred in graph.predecessors(node):
@@ -187,7 +183,7 @@ def resource_depends_on(resource: str, dependency: str) -> None:
 
 
 def parse_file(log: t.IO[str]) -> None:
-    data = map(json.loads, log.readlines())
+    data = json.load(log)
 
     for elem in data:
         if elem["method"] != "Network.requestWillBeSent":
@@ -200,6 +196,7 @@ def parse_file(log: t.IO[str]) -> None:
 def add_dependencies_from_initiator(resource: str,
                                     initiator: t.Dict[str, t.Any]) -> None:
     if initiator["type"] == "other":
+        # redirects are type other and have a "redirectResponse"
         resource_depends_on(resource, "other")
     elif initiator["type"] == "parser":
         resource_depends_on(resource, initiator["url"])
