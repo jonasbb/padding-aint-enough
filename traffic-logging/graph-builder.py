@@ -4,15 +4,6 @@ import json
 import typing as t
 from urllib.parse import urlparse
 import networkx as nx
-import pydot
-
-# first argument is graph name
-GRAPH: pydot.Dot = pydot.Dot(
-    "dependencies",
-    graph_type="digraph",
-    simplify=True,
-    suppress_disconnected=False)
-NODECACHE: t.Dict[str, pydot.Node] = dict()
 
 
 class Resource(object):
@@ -136,50 +127,12 @@ def node_sanitize_name(name: str) -> str:
     return f"\"{name}\""
 
 
-# set_style and set_color cause problems with pylint
-# pylint: disable=E1101
-def init_special_nodes() -> None:
-    global GRAPH, NODECACHE  # pylint: disable=W0603
-
-    # "other" node for all requests with initiator other
-    name = node_sanitize_name("other")
-    data_node = pydot.Node(name)
-    data_node.set_style("filled")
-    data_node.set_color("red")
-    NODECACHE[name] = data_node
-    GRAPH.add_node(data_node)
-
-    # "data" node for data URIs
-    name = node_sanitize_name("data:")
-    data_node = pydot.Node(name)
-    data_node.set_style("filled")
-    data_node.set_color("green")
-    NODECACHE[name] = data_node
-    GRAPH.add_node(data_node)
-
-
-def get_node(hostname: str) -> pydot.Node:
-    global GRAPH, NODECACHE  # pylint: disable=W0603
-    hostname = node_sanitize_name(hostname)
-    try:
-        return NODECACHE[hostname]
-    except KeyError:
-        node = pydot.Node(hostname)
-        GRAPH.add_node(node)
-        NODECACHE[hostname] = node
-        return node
-
-
 def resource_depends_on(resource: str, dependency: str) -> None:
-    global GRAPH, FACTORY  # pylint: disable=W0603
-    FACTORY.create_dependency(resource, dependency)
-    node = get_node(resource)
-    dependency = get_node(dependency)
-    # don't add self loops
-    if node == dependency:
+    global FACTORY  # pylint: disable=W0603
+    assert resource and len(resource) > 0
+    if dependency == "":
         return
-    edge = pydot.Edge(dependency, node)
-    GRAPH.add_edge(edge)
+    FACTORY.create_dependency(resource, dependency)
 
 
 def parse_file(log: t.IO[str]) -> None:
@@ -222,9 +175,7 @@ def main() -> None:
         "-f", "--file", type=open, required=True, help="Log file to parse")
     args = parser.parse_args()
 
-    init_special_nodes()
     parse_file(args.file)
-    GRAPH.write("graph.png", format="png")
     FACTORY.as_graph()
 
 
