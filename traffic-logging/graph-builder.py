@@ -7,13 +7,15 @@ import networkx as nx
 
 
 class Resource(object):
-    def __init__(self, name: str, **kwargs: t.Dict[t.Any, t.Any]) -> None:
+    def __init__(self, name: str, index: int,
+                 **kwargs: t.Dict[t.Any, t.Any]) -> None:
         self.name = name
         self.dnsname = Resource._sanitize_name(name)
+        self.index = index
         self._depends_on: t.Set[Resource] = set()
 
     def __repr__(self) -> str:
-        return self.name
+        return f"{self.name} ({self.index})"
 
     @staticmethod
     def _sanitize_name(name: str) -> str:
@@ -40,12 +42,14 @@ class Resource(object):
 class ResourceDependenciesFactory(object):
     def __init__(self, **kwargs: t.Dict[t.Any, t.Any]) -> None:
         self._resource_cache: t.Dict[str, Resource] = dict()
+        self._idx = 0
 
     def _get_resource(self, name: str) -> Resource:
         try:
             return self._resource_cache[name]
         except KeyError:
-            resource = Resource(name)
+            self._idx += 1
+            resource = Resource(name, self._idx)
             self._resource_cache[name] = resource
             return resource
 
@@ -60,35 +64,40 @@ class ResourceDependenciesFactory(object):
         for resource in self._resource_cache.values():
             for other in resource.get_dependencies():
                 graph.add_edge(resource, other)
+        graph = nx.transitive_closure(graph)
 
         print(len(graph.nodes()), len(graph.edges()))
 
-        def simplify_graph(graph):
-            # try to simplify the graph
-            for node in graph.nodes():
-                succ = graph.successors(node)
-                # merge two nodes if they both have the same DNS name and one depends on the other
-                # since the dependency has the same DNS name, the DNS lookup will already have occured
-                # it is therefore not helpful to keep the node
-                if len(succ) == 1 and node.dnsname == succ[0].dnsname:
-                    for pred in graph.predecessors(node):
-                        graph.add_edge(pred, succ[0])
-                    graph.remove_node(node)
-
+        def simplify_graph(graph: nx.DiGraph) -> None:
             print("-------------------------------\nfirst simplify")
+            # Remove all nodes which depend on a node with identical DNS name
+            # the second one would never cause a new DNS lookup
+            for node in graph.nodes():
+                if node.name == "https://www.redditstatic.com/droparrowgray.gif":
+                    print(node, len(graph.successors(node)))
+                for succ in graph.successors_iter(node):
+                    if node.dnsname == succ.dnsname:
+                        # No need to copy the edges as we already have computed the transitive closure
+                        graph.remove_node(node)
+                        break
             print(len(graph.nodes()), len(graph.edges()))
 
+            print("-------------------------------\nsecond simplify")
             # TODO generalize to subset relationship between the dependencies
             # based on the transitive closure of the dependencies
             nodes = graph.nodes()
-            for i in range(len(nodes)-1):
+            for i in range(len(nodes) - 1):
                 node = nodes[i]
                 # search for two unrelated nodes with same DNS name and same dependencies
                 # same DNS name and same dependencies (by DNS name) are actually the same node
-                for other in nodes[i+1:]:
+                for other in nodes[i + 1:]:
                     if node.dnsname != other.dnsname:
                         continue
-                    if node.get_dependencies() != other.get_dependencies():
+
+                    # There are different possibilities here
+                    #
+                    # Equal dependencies is the easy case.
+                    if graph.successors(node) != graph.successors(other):
                         continue
 
                     for pred in graph.predecessors(node):
@@ -96,19 +105,27 @@ class ResourceDependenciesFactory(object):
                     graph.remove_node(node)
                     break
 
-            print("-------------------------------\nsecond simplify")
             print(len(graph.nodes()), len(graph.edges()))
 
-        size =(len(graph.nodes()), len(graph.edges()))
+        size = (len(graph.nodes()), len(graph.edges()))
         newsize = (0, 0)
         while size != newsize:
             size = (len(graph.nodes()), len(graph.edges()))
             simplify_graph(graph)
             newsize = (len(graph.nodes()), len(graph.edges()))
 
+        print("Names with multiple nodes:")
+        import collections
+        c = collections.Counter(node.dnsname for node in graph.nodes_iter())
+        for name, count in c.most_common():
+            if count > 1:
+                print("  ", name, count)
+
         for node in graph.nodes():
             graph.node[node]['label'] = node.dnsname
             graph.node[node]['fullname'] = node.name
+            graph.node[node]['index'] = str(node.index)
+            graph.node[node]['deps'] = repr(node.get_dependencies())
         nx.write_graphml(
             graph, "graph.graphml", encoding="utf-8", prettyprint=True)
 
@@ -148,8 +165,9 @@ def parse_file(log: t.IO[str]) -> None:
 
 def add_dependencies_from_initiator(resource: str,
                                     initiator: t.Dict[str, t.Any]) -> None:
+    # TODO maybe carry some identifier as the request ID around
     if initiator["type"] == "other":
-        # redirects are type other and have a "redirectResponse"
+        # TODO redirects are type other and have a "redirectResponse"
         resource_depends_on(resource, "other")
     elif initiator["type"] == "parser":
         resource_depends_on(resource, initiator["url"])
