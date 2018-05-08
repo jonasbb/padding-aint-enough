@@ -174,10 +174,10 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
                     }
                     _ => {
                         bail!("RedirectorResponse should only occur with the Initiator type other.")
+                    }
                 }
             }
         }
-    }
     }
 
     graph.transitive_closure();
@@ -188,6 +188,14 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
 }
 
 fn simplify_graph(graph: &mut Graph<RequestInfo, ()>) {
+    // The number of requests between all nodes must be constant, otherwise we are not merging nodes correctly
+    let request_count: usize = graph
+        .raw_nodes()
+        .iter()
+        .map(|n| n.weight.requests.len())
+        .sum();
+    trace!("Number of requests in graph (start): {}", request_count);
+
     debug!(
         "Graph size (before simplify): {} / {}",
         graph.node_count(),
@@ -212,6 +220,14 @@ fn simplify_graph(graph: &mut Graph<RequestInfo, ()>) {
             graph.edge_count()
         );
     }
+
+    let request_count_end: usize = graph
+        .raw_nodes()
+        .iter()
+        .map(|n| n.weight.requests.len())
+        .sum();
+    trace!("Number of requests in graph (end): {}", request_count_end);
+    assert_eq!(request_count, request_count_end);
 }
 
 fn remove_self_loops(graph: &mut Graph<RequestInfo, ()>) {
