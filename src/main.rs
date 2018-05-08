@@ -161,10 +161,10 @@ struct IndividualRequest {
 
 pub mod chrome {
     // TODO missing support for redirects
-    #[cfg_attr(feature = "cargo-clippy", allow(enum_variant_names))]
     #[serde(tag = "method", content = "params")]
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
     pub enum ChromeDebuggerMessage {
+        // Everything Network
         #[serde(rename = "Network.requestWillBeSent", rename_all = "camelCase")]
         NetworkRequestWillBeSent {
             request_id: String,
@@ -179,6 +179,18 @@ pub mod chrome {
         NetworkResourceChangedPriority { request_id: String },
         #[serde(rename = "Network.loadingFailed", rename_all = "camelCase")]
         NetworkLoadingFailed { request_id: String },
+        #[serde(rename = "Network.dataReceived", rename_all = "camelCase")]
+        NetworkDataReceived { request_id: String },
+        #[serde(rename = "Network.loadingFinished", rename_all = "camelCase")]
+        NetworkLoadingFinished { request_id: String },
+
+        // Everything Target
+        #[serde(rename = "Target.targetCreated", rename_all = "camelCase")]
+        TargetTargetCreated {},
+        #[serde(rename = "Target.targetInfoChanged", rename_all = "camelCase")]
+        TargetTargetInfoChanged {},
+        #[serde(rename = "Target.targetDestroyed", rename_all = "camelCase")]
+        TargetTargetDestroyed {},
     }
 
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -197,8 +209,8 @@ pub mod chrome {
     #[serde(rename_all = "camelCase")]
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
     pub struct Script {
-        call_frames: Vec<CallFrame>,
-        parent: Option<Box<Script>>,
+        pub call_frames: Vec<CallFrame>,
+        pub parent: Option<Box<Script>>,
     }
 
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
