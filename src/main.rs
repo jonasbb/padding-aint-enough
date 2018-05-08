@@ -167,6 +167,7 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         }
     }
 
+    graph.transitive_closure();
     export_as_graphml(&graph)?;
 
     Ok(())
@@ -275,6 +276,33 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for IndividualRequest {
                 })
             },
             _ => bail!("IndividualRequest can only be created from ChromeDebuggerMessage::NetworkRequestWillBeSent")
+        }
+    }
+}
+
+trait GraphExt {
+    fn transitive_closure(&mut self);
+}
+
+impl<N, E, Ty, Ix> GraphExt for Graph<N, E, Ty, Ix>
+where
+    E: Default,
+    Ty: ::petgraph::EdgeType,
+    Ix: ::petgraph::csr::IndexType,
+{
+    fn transitive_closure(&mut self) {
+        // based on https://github.com/bluss/petgraph/pull/151
+        use petgraph::visit::{Dfs, IntoNodeIdentifiers};
+
+        let mut dfs = Dfs::empty(&*self);
+
+        for node in self.node_identifiers() {
+            dfs.reset(&*self);
+            dfs.move_to(node);
+            self.update_edge(node, node, E::default());
+            while let Some(visited) = dfs.next(&*self) {
+                self.update_edge(node, visited, E::default());
+            }
         }
     }
 }
