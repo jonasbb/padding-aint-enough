@@ -2,8 +2,8 @@
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.re/",
             "request": {
                 "url": "http://syssec.re/",
@@ -11,26 +11,26 @@
                 "headers": {
                     "Upgrade-Insecure-Requests": "1",
                     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
-                    "X-DevTools-Emulate-Network-Conditions-Client-Id": "2581C3BC89F2A0C9707983EED06B8D71"
+                    "X-DevTools-Emulate-Network-Conditions-Client-Id": "47C089D6F2C111246134BE314FA7D480"
                 },
                 "mixedContentType": "none",
                 "initialPriority": "VeryHigh",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.151758,
-            "wallTime": 1525770307.114607,
+            "timestamp": 373047.220112,
+            "wallTime": 1525795594.18296,
             "initiator": {
                 "type": "other"
             },
             "type": "Document",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
@@ -38,14 +38,14 @@
                 "headers": {
                     "Upgrade-Insecure-Requests": "1",
                     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
-                    "X-DevTools-Emulate-Network-Conditions-Client-Id": "2581C3BC89F2A0C9707983EED06B8D71"
+                    "X-DevTools-Emulate-Network-Conditions-Client-Id": "47C089D6F2C111246134BE314FA7D480"
                 },
                 "mixedContentType": "none",
                 "initialPriority": "VeryHigh",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.17247,
-            "wallTime": 1525770307.135319,
+            "timestamp": 373047.243126,
+            "wallTime": 1525795594.205975,
             "initiator": {
                 "type": "other"
             },
@@ -55,13 +55,13 @@
                 "statusText": "Moved Permanently",
                 "headers": {
                     "Server": "nginx",
-                    "Date": "Tue, 08 May 2018 09:05:07 GMT",
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
                     "Content-Type": "text/html",
                     "Content-Length": "178",
                     "Connection": "keep-alive",
                     "Location": "http://syssec.mmci.uni-saarland.de/teaching"
                 },
-                "headersText": "HTTP/1.1 301 Moved Permanently\r\nServer: nginx\r\nDate: Tue, 08 May 2018 09:05:07 GMT\r\nContent-Type: text/html\r\nContent-Length: 178\r\nConnection: keep-alive\r\nLocation: http://syssec.mmci.uni-saarland.de/teaching\r\n\r\n",
+                "headersText": "HTTP/1.1 301 Moved Permanently\r\nServer: nginx\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nContent-Type: text/html\r\nContent-Length: 178\r\nConnection: keep-alive\r\nLocation: http://syssec.mmci.uni-saarland.de/teaching\r\n\r\n",
                 "mimeType": "text/html",
                 "requestHeaders": {
                     "Host": "syssec.re",
@@ -83,43 +83,43 @@
                 "fromServiceWorker": false,
                 "encodedDataLength": 211,
                 "timing": {
-                    "requestTime": 347760.152059,
+                    "requestTime": 373047.220771,
                     "proxyStart": -1,
                     "proxyEnd": -1,
-                    "dnsStart": 0.261,
-                    "dnsEnd": 0.793,
-                    "connectStart": 0.793,
-                    "connectEnd": 10.239,
+                    "dnsStart": 0.353,
+                    "dnsEnd": 2.518,
+                    "connectStart": 2.518,
+                    "connectEnd": 12.021,
                     "sslStart": -1,
                     "sslEnd": -1,
                     "workerStart": -1,
                     "workerReady": -1,
-                    "sendStart": 10.288,
-                    "sendEnd": 10.312,
+                    "sendStart": 12.127,
+                    "sendEnd": 12.151,
                     "pushStart": 0,
                     "pushEnd": 0,
-                    "receiveHeadersEnd": 19.816
+                    "receiveHeadersEnd": 21.706
                 },
                 "protocol": "http/1.1",
                 "securityState": "neutral"
             },
             "type": "Document",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.responseReceived",
         "params": {
-            "requestId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.191459,
+            "requestId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.262788,
             "type": "Document",
             "response": {
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "status": 200,
                 "statusText": "OK",
                 "headers": {
-                    "Date": "Tue, 08 May 2018 09:05:07 GMT",
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
                     "Server": "Apache/2.4.25 (Debian)",
                     "Vary": "Accept-Encoding",
                     "Content-Encoding": "gzip",
@@ -128,7 +128,7 @@
                     "Connection": "Keep-Alive",
                     "Content-Type": "text/html; charset=UTF-8"
                 },
-                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 09:05:07 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\nContent-Length: 10962\r\nKeep-Alive: timeout=5, max=100\r\nConnection: Keep-Alive\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n",
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\nContent-Length: 10962\r\nKeep-Alive: timeout=5, max=100\r\nConnection: Keep-Alive\r\nContent-Type: text/html; charset=UTF-8\r\n\r\n",
                 "mimeType": "text/html",
                 "requestHeaders": {
                     "Host": "syssec.mmci.uni-saarland.de",
@@ -143,14 +143,14 @@
                 },
                 "requestHeadersText": "GET /teaching HTTP/1.1\r\nHost: syssec.mmci.uni-saarland.de\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8\r\nAccept-Encoding: gzip, deflate\r\nAccept-Language: en-US,en;q=0.9\r\n",
                 "connectionReused": true,
-                "connectionId": 212,
+                "connectionId": 211,
                 "remoteIPAddress": "139.19.86.150",
                 "remotePort": 80,
                 "fromDiskCache": false,
                 "fromServiceWorker": false,
                 "encodedDataLength": 254,
                 "timing": {
-                    "requestTime": 347760.172619,
+                    "requestTime": 373047.243276,
                     "proxyStart": -1,
                     "proxyEnd": -1,
                     "dnsStart": -1,
@@ -161,23 +161,23 @@
                     "sslEnd": -1,
                     "workerStart": -1,
                     "workerReady": -1,
-                    "sendStart": 1.147,
-                    "sendEnd": 1.173,
+                    "sendStart": 1.085,
+                    "sendEnd": 1.108,
                     "pushStart": 0,
                     "pushEnd": 0,
-                    "receiveHeadersEnd": 16.289
+                    "receiveHeadersEnd": 16.637
                 },
                 "protocol": "http/1.1",
                 "securityState": "neutral"
             },
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.217483,
+            "requestId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.28821,
             "dataLength": 56467,
             "encodedDataLength": 3842
         }
@@ -185,8 +185,8 @@
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.223349,
+            "requestId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.293723,
             "dataLength": 0,
             "encodedDataLength": 7120
         }
@@ -194,8 +194,8 @@
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.213382,
+            "requestId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.284005,
             "encodedDataLength": 11216,
             "blockedCrossSiteDocument": false
         }
@@ -203,8 +203,8 @@
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.2",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.2",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "http://syssec.mmci.uni-saarland.de/fontsgoogle.css",
@@ -217,22 +217,22 @@
                 "initialPriority": "VeryHigh",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.224897,
-            "wallTime": 1525770307.18775,
+            "timestamp": 373047.295415,
+            "wallTime": 1525795594.25826,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 9
             },
             "type": "Stylesheet",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.3",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.3",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "http://syssec.mmci.uni-saarland.de/default.css",
@@ -245,22 +245,22 @@
                 "initialPriority": "VeryHigh",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.22498,
-            "wallTime": 1525770307.18783,
+            "timestamp": 373047.295501,
+            "wallTime": 1525795594.25835,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 10
             },
             "type": "Stylesheet",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.4",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.4",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "http://syssec.mmci.uni-saarland.de/fonts.css",
@@ -273,22 +273,22 @@
                 "initialPriority": "VeryHigh",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.225062,
-            "wallTime": 1525770307.18791,
+            "timestamp": 373047.295573,
+            "wallTime": 1525795594.25842,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 11
             },
             "type": "Stylesheet",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.5",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.5",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "http://syssec.mmci.uni-saarland.de/images/UdS_Logo.jpg",
@@ -301,22 +301,22 @@
                 "initialPriority": "Low",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.225145,
-            "wallTime": 1525770307.18799,
+            "timestamp": 373047.295655,
+            "wallTime": 1525795594.2585,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 32
             },
             "type": "Image",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.6",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.6",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "http://syssec.mmci.uni-saarland.de/images/CISPA_logo.png",
@@ -329,22 +329,22 @@
                 "initialPriority": "Low",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.225217,
-            "wallTime": 1525770307.18807,
+            "timestamp": 373047.295727,
+            "wallTime": 1525795594.25858,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 34
             },
             "type": "Image",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.7",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.7",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "http://syssec.mmci.uni-saarland.de/files/lolipop32.png",
@@ -357,22 +357,22 @@
                 "initialPriority": "Low",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.225281,
-            "wallTime": 1525770307.18813,
+            "timestamp": 373047.295784,
+            "wallTime": 1525795594.25863,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 445
             },
             "type": "Image",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.8",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.8",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "http://syssec.mmci.uni-saarland.de/files/pwned32.png",
@@ -385,22 +385,22 @@
                 "initialPriority": "Low",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.22536,
-            "wallTime": 1525770307.18821,
+            "timestamp": 373047.295855,
+            "wallTime": 1525795594.2587,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 736
             },
             "type": "Image",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.9",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.9",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "https://www.christian-rossow.de/stats_mmci_count",
@@ -413,30 +413,30 @@
                 "initialPriority": "Low",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.225425,
-            "wallTime": 1525770307.18827,
+            "timestamp": 373047.295917,
+            "wallTime": 1525795594.25877,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 799
             },
             "type": "Image",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.responseReceived",
         "params": {
-            "requestId": "29276.2",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.235047,
+            "requestId": "29991.2",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.305636,
             "type": "Stylesheet",
             "response": {
                 "url": "http://syssec.mmci.uni-saarland.de/fontsgoogle.css",
                 "status": 200,
                 "statusText": "OK",
                 "headers": {
-                    "Date": "Tue, 08 May 2018 09:05:07 GMT",
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
                     "Content-Encoding": "gzip",
                     "Last-Modified": "Thu, 26 Jun 2014 08:07:09 GMT",
                     "Server": "Apache/2.4.25 (Debian)",
@@ -448,7 +448,7 @@
                     "Keep-Alive": "timeout=5, max=99",
                     "Content-Length": "435"
                 },
-                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 09:05:07 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Thu, 26 Jun 2014 08:07:09 GMT\r\nETag: \"712-4fcb8adefd3e0-gzip\"\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\nContent-Length: 435\r\nKeep-Alive: timeout=5, max=99\r\nConnection: Keep-Alive\r\nContent-Type: text/css\r\n\r\n",
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Thu, 26 Jun 2014 08:07:09 GMT\r\nETag: \"712-4fcb8adefd3e0-gzip\"\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\nContent-Length: 435\r\nKeep-Alive: timeout=5, max=99\r\nConnection: Keep-Alive\r\nContent-Type: text/css\r\n\r\n",
                 "mimeType": "text/css",
                 "requestHeaders": {
                     "Pragma": "no-cache",
@@ -463,14 +463,14 @@
                 },
                 "requestHeadersText": "GET /fontsgoogle.css HTTP/1.1\r\nHost: syssec.mmci.uni-saarland.de\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: text/css,*/*;q=0.1\r\nReferer: http://syssec.mmci.uni-saarland.de/teaching\r\nAccept-Encoding: gzip, deflate\r\nAccept-Language: en-US,en;q=0.9\r\n",
                 "connectionReused": true,
-                "connectionId": 212,
+                "connectionId": 211,
                 "remoteIPAddress": "139.19.86.150",
                 "remotePort": 80,
                 "fromDiskCache": false,
                 "fromServiceWorker": false,
                 "encodedDataLength": 335,
                 "timing": {
-                    "requestTime": 347760.22522,
+                    "requestTime": 373047.296864,
                     "proxyStart": -1,
                     "proxyEnd": -1,
                     "dnsStart": -1,
@@ -481,23 +481,23 @@
                     "sslEnd": -1,
                     "workerStart": -1,
                     "workerReady": -1,
-                    "sendStart": 3.994,
-                    "sendEnd": 4.033,
+                    "sendStart": 3.76,
+                    "sendEnd": 3.796,
                     "pushStart": 0,
                     "pushEnd": 0,
-                    "receiveHeadersEnd": 9.514
+                    "receiveHeadersEnd": 8.308
                 },
                 "protocol": "http/1.1",
                 "securityState": "neutral"
             },
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.2",
-            "timestamp": 347760.235855,
+            "requestId": "29991.2",
+            "timestamp": 373047.307099,
             "dataLength": 1810,
             "encodedDataLength": 435
         }
@@ -505,8 +505,8 @@
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.2",
-            "timestamp": 347760.23511,
+            "requestId": "29991.2",
+            "timestamp": 373047.30562,
             "encodedDataLength": 770,
             "blockedCrossSiteDocument": false
         }
@@ -514,16 +514,16 @@
     {
         "method": "Network.responseReceived",
         "params": {
-            "requestId": "29276.3",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.236158,
+            "requestId": "29991.3",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.308333,
             "type": "Stylesheet",
             "response": {
                 "url": "http://syssec.mmci.uni-saarland.de/default.css",
                 "status": 200,
                 "statusText": "OK",
                 "headers": {
-                    "Date": "Tue, 08 May 2018 09:05:07 GMT",
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
                     "Content-Encoding": "gzip",
                     "Last-Modified": "Sat, 24 Jan 2015 16:53:03 GMT",
                     "Server": "Apache/2.4.25 (Debian)",
@@ -535,7 +535,7 @@
                     "Keep-Alive": "timeout=5, max=100",
                     "Content-Length": "1592"
                 },
-                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 09:05:07 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Sat, 24 Jan 2015 16:53:03 GMT\r\nETag: \"268b-50d68bd11ccac-gzip\"\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\nContent-Length: 1592\r\nKeep-Alive: timeout=5, max=100\r\nConnection: Keep-Alive\r\nContent-Type: text/css\r\n\r\n",
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Sat, 24 Jan 2015 16:53:03 GMT\r\nETag: \"268b-50d68bd11ccac-gzip\"\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\nContent-Length: 1592\r\nKeep-Alive: timeout=5, max=100\r\nConnection: Keep-Alive\r\nContent-Type: text/css\r\n\r\n",
                 "mimeType": "text/css",
                 "requestHeaders": {
                     "Pragma": "no-cache",
@@ -550,14 +550,14 @@
                 },
                 "requestHeadersText": "GET /default.css HTTP/1.1\r\nHost: syssec.mmci.uni-saarland.de\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: text/css,*/*;q=0.1\r\nReferer: http://syssec.mmci.uni-saarland.de/teaching\r\nAccept-Encoding: gzip, deflate\r\nAccept-Language: en-US,en;q=0.9\r\n",
                 "connectionReused": true,
-                "connectionId": 211,
+                "connectionId": 212,
                 "remoteIPAddress": "139.19.86.150",
                 "remotePort": 80,
                 "fromDiskCache": false,
                 "fromServiceWorker": false,
                 "encodedDataLength": 338,
                 "timing": {
-                    "requestTime": 347760.226223,
+                    "requestTime": 373047.297049,
                     "proxyStart": -1,
                     "proxyEnd": -1,
                     "dnsStart": -1,
@@ -568,23 +568,23 @@
                     "sslEnd": -1,
                     "workerStart": -1,
                     "workerReady": -1,
-                    "sendStart": 3.046,
-                    "sendEnd": 3.058,
+                    "sendStart": 3.653,
+                    "sendEnd": 3.667,
                     "pushStart": 0,
                     "pushEnd": 0,
-                    "receiveHeadersEnd": 9.728
+                    "receiveHeadersEnd": 10.939
                 },
                 "protocol": "http/1.1",
                 "securityState": "neutral"
             },
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.3",
-            "timestamp": 347760.236355,
+            "requestId": "29991.3",
+            "timestamp": 373047.308574,
             "dataLength": 9867,
             "encodedDataLength": 1592
         }
@@ -592,8 +592,8 @@
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.3",
-            "timestamp": 347760.236234,
+            "requestId": "29991.3",
+            "timestamp": 373047.308438,
             "encodedDataLength": 1930,
             "blockedCrossSiteDocument": false
         }
@@ -601,16 +601,16 @@
     {
         "method": "Network.responseReceived",
         "params": {
-            "requestId": "29276.4",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.237807,
+            "requestId": "29991.4",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.309336,
             "type": "Stylesheet",
             "response": {
                 "url": "http://syssec.mmci.uni-saarland.de/fonts.css",
                 "status": 200,
                 "statusText": "OK",
                 "headers": {
-                    "Date": "Tue, 08 May 2018 09:05:07 GMT",
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
                     "Content-Encoding": "gzip",
                     "Last-Modified": "Mon, 03 Nov 2014 16:29:44 GMT",
                     "Server": "Apache/2.4.25 (Debian)",
@@ -622,7 +622,7 @@
                     "Keep-Alive": "timeout=5, max=100",
                     "Content-Length": "3303"
                 },
-                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 09:05:07 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Mon, 03 Nov 2014 16:29:44 GMT\r\nETag: \"4fe2-506f6dab64743-gzip\"\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\nContent-Length: 3303\r\nKeep-Alive: timeout=5, max=100\r\nConnection: Keep-Alive\r\nContent-Type: text/css\r\n\r\n",
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Mon, 03 Nov 2014 16:29:44 GMT\r\nETag: \"4fe2-506f6dab64743-gzip\"\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\nContent-Length: 3303\r\nKeep-Alive: timeout=5, max=100\r\nConnection: Keep-Alive\r\nContent-Type: text/css\r\n\r\n",
                 "mimeType": "text/css",
                 "requestHeaders": {
                     "Pragma": "no-cache",
@@ -644,34 +644,34 @@
                 "fromServiceWorker": false,
                 "encodedDataLength": 338,
                 "timing": {
-                    "requestTime": 347760.227548,
+                    "requestTime": 373047.29718,
                     "proxyStart": -1,
                     "proxyEnd": -1,
-                    "dnsStart": 1.575,
-                    "dnsEnd": 1.927,
-                    "connectStart": 1.927,
-                    "connectEnd": 2.949,
+                    "dnsStart": 3.929,
+                    "dnsEnd": 4.293,
+                    "connectStart": 4.293,
+                    "connectEnd": 5.094,
                     "sslStart": -1,
                     "sslEnd": -1,
                     "workerStart": -1,
                     "workerReady": -1,
-                    "sendStart": 3.43,
-                    "sendEnd": 3.473,
+                    "sendStart": 5.187,
+                    "sendEnd": 5.21,
                     "pushStart": 0,
                     "pushEnd": 0,
-                    "receiveHeadersEnd": 9.41
+                    "receiveHeadersEnd": 11.926
                 },
                 "protocol": "http/1.1",
                 "securityState": "neutral"
             },
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.4",
-            "timestamp": 347760.237946,
+            "requestId": "29991.4",
+            "timestamp": 373047.309551,
             "dataLength": 20450,
             "encodedDataLength": 3303
         }
@@ -679,8 +679,8 @@
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.4",
-            "timestamp": 347760.23772,
+            "requestId": "29991.4",
+            "timestamp": 373047.309438,
             "encodedDataLength": 3641,
             "blockedCrossSiteDocument": false
         }
@@ -688,8 +688,8 @@
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.24",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.24",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "http://syssec.mmci.uni-saarland.de/fonts/fontawesome-webfont.woff?v=3.0.1",
@@ -703,22 +703,22 @@
                 "initialPriority": "VeryHigh",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.241519,
-            "wallTime": 1525770307.20437,
+            "timestamp": 373047.313137,
+            "wallTime": 1525795594.27599,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 0
             },
             "type": "Font",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.23",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.23",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "https://themes.googleusercontent.com/static/fonts/sourcesanspro/v7/toadOcfmlt9b38dHJxOBGBPPOa1q11iOmmM9mDHHHX4.ttf",
@@ -732,22 +732,22 @@
                 "initialPriority": "VeryHigh",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.255024,
-            "wallTime": 1525770307.21787,
+            "timestamp": 373047.327249,
+            "wallTime": 1525795594.2901,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 0
             },
             "type": "Font",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.22",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.22",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "https://themes.googleusercontent.com/static/fonts/sourcesanspro/v7/toadOcfmlt9b38dHJxOBGLsbIrGiHa6JIepkyt5c0A0.ttf",
@@ -761,22 +761,22 @@
                 "initialPriority": "VeryHigh",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.269225,
-            "wallTime": 1525770307.23207,
+            "timestamp": 373047.340822,
+            "wallTime": 1525795594.30367,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 0
             },
             "type": "Font",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.19",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.19",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "https://themes.googleusercontent.com/static/fonts/sourcesanspro/v7/toadOcfmlt9b38dHJxOBGMw1o1eFRj7wYC6JbISqOjY.ttf",
@@ -790,22 +790,22 @@
                 "initialPriority": "VeryHigh",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.283087,
-            "wallTime": 1525770307.24594,
+            "timestamp": 373047.357013,
+            "wallTime": 1525795594.31986,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 0
             },
             "type": "Font",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.20",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.20",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "https://themes.googleusercontent.com/static/fonts/sourcesanspro/v7/ODelI1aHBYDBqgeIAH2zlNzbP97U9sKh0jjxbPbfOKg.ttf",
@@ -819,30 +819,46 @@
                 "initialPriority": "VeryHigh",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.297159,
-            "wallTime": 1525770307.26001,
+            "timestamp": 373047.371452,
+            "wallTime": 1525795594.3343,
             "initiator": {
                 "type": "parser",
                 "url": "http://syssec.mmci.uni-saarland.de/teaching",
                 "lineNumber": 0
             },
             "type": "Font",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
+        }
+    },
+    {
+        "method": "Network.resourceChangedPriority",
+        "params": {
+            "requestId": "29991.5",
+            "newPriority": "High",
+            "timestamp": 373047.591886
+        }
+    },
+    {
+        "method": "Network.resourceChangedPriority",
+        "params": {
+            "requestId": "29991.6",
+            "newPriority": "High",
+            "timestamp": 373047.591904
         }
     },
     {
         "method": "Network.responseReceived",
         "params": {
-            "requestId": "29276.5",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.298717,
+            "requestId": "29991.5",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.594899,
             "type": "Image",
             "response": {
                 "url": "http://syssec.mmci.uni-saarland.de/images/UdS_Logo.jpg",
                 "status": 200,
                 "statusText": "OK",
                 "headers": {
-                    "Date": "Tue, 08 May 2018 09:05:07 GMT",
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
                     "Last-Modified": "Wed, 22 Feb 2017 19:27:45 GMT",
                     "Server": "Apache/2.4.25 (Debian)",
                     "ETag": "\"6634-549237db12e40\"",
@@ -852,7 +868,7 @@
                     "Keep-Alive": "timeout=5, max=99",
                     "Content-Length": "26164"
                 },
-                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 09:05:07 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Wed, 22 Feb 2017 19:27:45 GMT\r\nETag: \"6634-549237db12e40\"\r\nAccept-Ranges: bytes\r\nContent-Length: 26164\r\nKeep-Alive: timeout=5, max=99\r\nConnection: Keep-Alive\r\nContent-Type: image/jpeg\r\n\r\n",
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Wed, 22 Feb 2017 19:27:45 GMT\r\nETag: \"6634-549237db12e40\"\r\nAccept-Ranges: bytes\r\nContent-Length: 26164\r\nKeep-Alive: timeout=5, max=99\r\nConnection: Keep-Alive\r\nContent-Type: image/jpeg\r\n\r\n",
                 "mimeType": "image/jpeg",
                 "requestHeaders": {
                     "Pragma": "no-cache",
@@ -874,7 +890,7 @@
                 "fromServiceWorker": false,
                 "encodedDataLength": 288,
                 "timing": {
-                    "requestTime": 347760.236447,
+                    "requestTime": 373047.308568,
                     "proxyStart": -1,
                     "proxyEnd": -1,
                     "dnsStart": -1,
@@ -885,41 +901,41 @@
                     "sslEnd": -1,
                     "workerStart": -1,
                     "workerReady": -1,
-                    "sendStart": 1.402,
-                    "sendEnd": 1.431,
+                    "sendStart": 1.174,
+                    "sendEnd": 1.201,
                     "pushStart": 0,
                     "pushEnd": 0,
-                    "receiveHeadersEnd": 5.481
+                    "receiveHeadersEnd": 5.236
                 },
                 "protocol": "http/1.1",
                 "securityState": "neutral"
             },
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.5",
-            "timestamp": 347760.298768,
+            "requestId": "29991.5",
+            "timestamp": 373047.594941,
             "dataLength": 26164,
-            "encodedDataLength": 3808
+            "encodedDataLength": 2448
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.5",
-            "timestamp": 347760.298971,
+            "requestId": "29991.5",
+            "timestamp": 373047.595122,
             "dataLength": 0,
-            "encodedDataLength": 22356
+            "encodedDataLength": 23716
         }
     },
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.5",
-            "timestamp": 347760.298608,
+            "requestId": "29991.5",
+            "timestamp": 373047.594816,
             "encodedDataLength": 26452,
             "blockedCrossSiteDocument": false
         }
@@ -927,16 +943,16 @@
     {
         "method": "Network.responseReceived",
         "params": {
-            "requestId": "29276.6",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.299205,
+            "requestId": "29991.6",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.595319,
             "type": "Image",
             "response": {
                 "url": "http://syssec.mmci.uni-saarland.de/images/CISPA_logo.png",
                 "status": 200,
                 "statusText": "OK",
                 "headers": {
-                    "Date": "Tue, 08 May 2018 09:05:07 GMT",
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
                     "Last-Modified": "Thu, 30 Oct 2014 05:53:36 GMT",
                     "Server": "Apache/2.4.25 (Debian)",
                     "ETag": "\"1c89-5069d80515800\"",
@@ -946,7 +962,7 @@
                     "Keep-Alive": "timeout=5, max=99",
                     "Content-Length": "7305"
                 },
-                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 09:05:07 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Thu, 30 Oct 2014 05:53:36 GMT\r\nETag: \"1c89-5069d80515800\"\r\nAccept-Ranges: bytes\r\nContent-Length: 7305\r\nKeep-Alive: timeout=5, max=99\r\nConnection: Keep-Alive\r\nContent-Type: image/png\r\n\r\n",
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Thu, 30 Oct 2014 05:53:36 GMT\r\nETag: \"1c89-5069d80515800\"\r\nAccept-Ranges: bytes\r\nContent-Length: 7305\r\nKeep-Alive: timeout=5, max=99\r\nConnection: Keep-Alive\r\nContent-Type: image/png\r\n\r\n",
                 "mimeType": "image/png",
                 "requestHeaders": {
                     "Pragma": "no-cache",
@@ -961,14 +977,14 @@
                 },
                 "requestHeadersText": "GET /images/CISPA_logo.png HTTP/1.1\r\nHost: syssec.mmci.uni-saarland.de\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: image/webp,image/apng,image/*,*/*;q=0.8\r\nReferer: http://syssec.mmci.uni-saarland.de/teaching\r\nAccept-Encoding: gzip, deflate\r\nAccept-Language: en-US,en;q=0.9\r\n",
                 "connectionReused": true,
-                "connectionId": 211,
+                "connectionId": 212,
                 "remoteIPAddress": "139.19.86.150",
                 "remotePort": 80,
                 "fromDiskCache": false,
                 "fromServiceWorker": false,
                 "encodedDataLength": 286,
                 "timing": {
-                    "requestTime": 347760.238997,
+                    "requestTime": 373047.310571,
                     "proxyStart": -1,
                     "proxyEnd": -1,
                     "dnsStart": -1,
@@ -979,23 +995,23 @@
                     "sslEnd": -1,
                     "workerStart": -1,
                     "workerReady": -1,
-                    "sendStart": 4.001,
-                    "sendEnd": 4.028,
+                    "sendStart": 2.397,
+                    "sendEnd": 2.463,
                     "pushStart": 0,
                     "pushEnd": 0,
-                    "receiveHeadersEnd": 7.903
+                    "receiveHeadersEnd": 6.8
                 },
                 "protocol": "http/1.1",
                 "securityState": "neutral"
             },
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.6",
-            "timestamp": 347760.299237,
+            "requestId": "29991.6",
+            "timestamp": 373047.595345,
             "dataLength": 7305,
             "encodedDataLength": 3810
         }
@@ -1003,8 +1019,8 @@
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.6",
-            "timestamp": 347760.299332,
+            "requestId": "29991.6",
+            "timestamp": 373047.595441,
             "dataLength": 0,
             "encodedDataLength": 3495
         }
@@ -1012,8 +1028,8 @@
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.6",
-            "timestamp": 347760.299148,
+            "requestId": "29991.6",
+            "timestamp": 373047.595271,
             "encodedDataLength": 7591,
             "blockedCrossSiteDocument": false
         }
@@ -1021,16 +1037,16 @@
     {
         "method": "Network.responseReceived",
         "params": {
-            "requestId": "29276.7",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.521304,
+            "requestId": "29991.7",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.595666,
             "type": "Image",
             "response": {
                 "url": "http://syssec.mmci.uni-saarland.de/files/lolipop32.png",
                 "status": 200,
                 "statusText": "OK",
                 "headers": {
-                    "Date": "Tue, 08 May 2018 09:05:07 GMT",
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
                     "Last-Modified": "Mon, 29 Jun 2015 20:04:16 GMT",
                     "Server": "Apache/2.4.25 (Debian)",
                     "ETag": "\"50ce-519ad9822b000\"",
@@ -1040,7 +1056,7 @@
                     "Keep-Alive": "timeout=5, max=98",
                     "Content-Length": "20686"
                 },
-                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 09:05:07 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Mon, 29 Jun 2015 20:04:16 GMT\r\nETag: \"50ce-519ad9822b000\"\r\nAccept-Ranges: bytes\r\nContent-Length: 20686\r\nKeep-Alive: timeout=5, max=98\r\nConnection: Keep-Alive\r\nContent-Type: image/png\r\n\r\n",
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Mon, 29 Jun 2015 20:04:16 GMT\r\nETag: \"50ce-519ad9822b000\"\r\nAccept-Ranges: bytes\r\nContent-Length: 20686\r\nKeep-Alive: timeout=5, max=98\r\nConnection: Keep-Alive\r\nContent-Type: image/png\r\n\r\n",
                 "mimeType": "image/png",
                 "requestHeaders": {
                     "Pragma": "no-cache",
@@ -1055,14 +1071,14 @@
                 },
                 "requestHeadersText": "GET /files/lolipop32.png HTTP/1.1\r\nHost: syssec.mmci.uni-saarland.de\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: image/webp,image/apng,image/*,*/*;q=0.8\r\nReferer: http://syssec.mmci.uni-saarland.de/teaching\r\nAccept-Encoding: gzip, deflate\r\nAccept-Language: en-US,en;q=0.9\r\n",
                 "connectionReused": true,
-                "connectionId": 212,
+                "connectionId": 211,
                 "remoteIPAddress": "139.19.86.150",
                 "remotePort": 80,
                 "fromDiskCache": false,
                 "fromServiceWorker": false,
                 "encodedDataLength": 287,
                 "timing": {
-                    "requestTime": 347760.239176,
+                    "requestTime": 373047.310708,
                     "proxyStart": -1,
                     "proxyEnd": -1,
                     "dnsStart": -1,
@@ -1073,23 +1089,23 @@
                     "sslEnd": -1,
                     "workerStart": -1,
                     "workerReady": -1,
-                    "sendStart": 4.045,
-                    "sendEnd": 4.061,
+                    "sendStart": 2.48,
+                    "sendEnd": 2.502,
                     "pushStart": 0,
                     "pushEnd": 0,
-                    "receiveHeadersEnd": 10.463
+                    "receiveHeadersEnd": 9.952
                 },
                 "protocol": "http/1.1",
                 "securityState": "neutral"
             },
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.7",
-            "timestamp": 347760.521352,
+            "requestId": "29991.7",
+            "timestamp": 373047.595695,
             "dataLength": 20686,
             "encodedDataLength": 3809
         }
@@ -1097,8 +1113,8 @@
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.7",
-            "timestamp": 347760.521481,
+            "requestId": "29991.7",
+            "timestamp": 373047.595775,
             "dataLength": 0,
             "encodedDataLength": 16877
         }
@@ -1106,8 +1122,8 @@
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.7",
-            "timestamp": 347760.521216,
+            "requestId": "29991.7",
+            "timestamp": 373047.595598,
             "encodedDataLength": 20973,
             "blockedCrossSiteDocument": false
         }
@@ -1115,111 +1131,16 @@
     {
         "method": "Network.responseReceived",
         "params": {
-            "requestId": "29276.24",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.521655,
-            "type": "Font",
-            "response": {
-                "url": "http://syssec.mmci.uni-saarland.de/fonts/fontawesome-webfont.woff?v=3.0.1",
-                "status": 200,
-                "statusText": "OK",
-                "headers": {
-                    "Date": "Tue, 08 May 2018 09:05:07 GMT",
-                    "Last-Modified": "Tue, 29 Apr 2014 18:41:16 GMT",
-                    "Server": "Apache/2.4.25 (Debian)",
-                    "ETag": "\"72c4-4f832c6e82b00\"",
-                    "Content-Type": "application/font-woff",
-                    "Connection": "Keep-Alive",
-                    "Accept-Ranges": "bytes",
-                    "Keep-Alive": "timeout=5, max=100",
-                    "Content-Length": "29380"
-                },
-                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 09:05:07 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Tue, 29 Apr 2014 18:41:16 GMT\r\nETag: \"72c4-4f832c6e82b00\"\r\nAccept-Ranges: bytes\r\nContent-Length: 29380\r\nKeep-Alive: timeout=5, max=100\r\nConnection: Keep-Alive\r\nContent-Type: application/font-woff\r\n\r\n",
-                "mimeType": "application/font-woff",
-                "requestHeaders": {
-                    "Pragma": "no-cache",
-                    "Origin": "http://syssec.mmci.uni-saarland.de",
-                    "Accept-Encoding": "gzip, deflate",
-                    "Host": "syssec.mmci.uni-saarland.de",
-                    "Accept-Language": "en-US,en;q=0.9",
-                    "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
-                    "Accept": "*/*",
-                    "Referer": "http://syssec.mmci.uni-saarland.de/fonts.css",
-                    "Connection": "keep-alive",
-                    "Cache-Control": "no-cache"
-                },
-                "requestHeadersText": "GET /fonts/fontawesome-webfont.woff?v=3.0.1 HTTP/1.1\r\nHost: syssec.mmci.uni-saarland.de\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nOrigin: http://syssec.mmci.uni-saarland.de\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: */*\r\nReferer: http://syssec.mmci.uni-saarland.de/fonts.css\r\nAccept-Encoding: gzip, deflate\r\nAccept-Language: en-US,en;q=0.9\r\n",
-                "connectionReused": false,
-                "connectionId": 268,
-                "remoteIPAddress": "139.19.86.150",
-                "remotePort": 80,
-                "fromDiskCache": false,
-                "fromServiceWorker": false,
-                "encodedDataLength": 300,
-                "timing": {
-                    "requestTime": 347760.242502,
-                    "proxyStart": -1,
-                    "proxyEnd": -1,
-                    "dnsStart": 0.299,
-                    "dnsEnd": 0.877,
-                    "connectStart": 0.877,
-                    "connectEnd": 1.378,
-                    "sslStart": -1,
-                    "sslEnd": -1,
-                    "workerStart": -1,
-                    "workerReady": -1,
-                    "sendStart": 1.399,
-                    "sendEnd": 1.417,
-                    "pushStart": 0,
-                    "pushEnd": 0,
-                    "receiveHeadersEnd": 8.45
-                },
-                "protocol": "http/1.1",
-                "securityState": "neutral"
-            },
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
-        }
-    },
-    {
-        "method": "Network.dataReceived",
-        "params": {
-            "requestId": "29276.24",
-            "timestamp": 347760.521677,
-            "dataLength": 29380,
-            "encodedDataLength": 3796
-        }
-    },
-    {
-        "method": "Network.dataReceived",
-        "params": {
-            "requestId": "29276.24",
-            "timestamp": 347760.521748,
-            "dataLength": 0,
-            "encodedDataLength": 25584
-        }
-    },
-    {
-        "method": "Network.loadingFinished",
-        "params": {
-            "requestId": "29276.24",
-            "timestamp": 347760.521613,
-            "encodedDataLength": 29680,
-            "blockedCrossSiteDocument": false
-        }
-    },
-    {
-        "method": "Network.responseReceived",
-        "params": {
-            "requestId": "29276.8",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.5227,
+            "requestId": "29991.8",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.595973,
             "type": "Image",
             "response": {
                 "url": "http://syssec.mmci.uni-saarland.de/files/pwned32.png",
                 "status": 200,
                 "statusText": "OK",
                 "headers": {
-                    "Date": "Tue, 08 May 2018 09:05:07 GMT",
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
                     "Last-Modified": "Mon, 16 Jun 2014 13:36:28 GMT",
                     "Server": "Apache/2.4.25 (Debian)",
                     "ETag": "\"2cbe-4fbf41d3d6f00\"",
@@ -1229,7 +1150,7 @@
                     "Keep-Alive": "timeout=5, max=98",
                     "Content-Length": "11454"
                 },
-                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 09:05:07 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Mon, 16 Jun 2014 13:36:28 GMT\r\nETag: \"2cbe-4fbf41d3d6f00\"\r\nAccept-Ranges: bytes\r\nContent-Length: 11454\r\nKeep-Alive: timeout=5, max=98\r\nConnection: Keep-Alive\r\nContent-Type: image/png\r\n\r\n",
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Mon, 16 Jun 2014 13:36:28 GMT\r\nETag: \"2cbe-4fbf41d3d6f00\"\r\nAccept-Ranges: bytes\r\nContent-Length: 11454\r\nKeep-Alive: timeout=5, max=98\r\nConnection: Keep-Alive\r\nContent-Type: image/png\r\n\r\n",
                 "mimeType": "image/png",
                 "requestHeaders": {
                     "Pragma": "no-cache",
@@ -1251,7 +1172,7 @@
                 "fromServiceWorker": false,
                 "encodedDataLength": 287,
                 "timing": {
-                    "requestTime": 347760.239247,
+                    "requestTime": 373047.310774,
                     "proxyStart": -1,
                     "proxyEnd": -1,
                     "dnsStart": -1,
@@ -1262,77 +1183,463 @@
                     "sslEnd": -1,
                     "workerStart": -1,
                     "workerReady": -1,
-                    "sendStart": 4.181,
-                    "sendEnd": 4.195,
+                    "sendStart": 3.924,
+                    "sendEnd": 3.944,
                     "pushStart": 0,
                     "pushEnd": 0,
-                    "receiveHeadersEnd": 13.561
+                    "receiveHeadersEnd": 10.736
                 },
                 "protocol": "http/1.1",
                 "securityState": "neutral"
             },
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.8",
-            "timestamp": 347760.522727,
+            "requestId": "29991.8",
+            "timestamp": 373047.595997,
             "dataLength": 11454,
-            "encodedDataLength": 1081
+            "encodedDataLength": 3809
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.8",
-            "timestamp": 347760.522981,
+            "requestId": "29991.8",
+            "timestamp": 373047.596082,
             "dataLength": 0,
-            "encodedDataLength": 10373
+            "encodedDataLength": 7645
         }
     },
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.8",
-            "timestamp": 347760.522555,
+            "requestId": "29991.8",
+            "timestamp": 373047.595922,
             "encodedDataLength": 11741,
             "blockedCrossSiteDocument": false
         }
     },
     {
-        "method": "Network.dataReceived",
+        "method": "Network.responseReceived",
         "params": {
-            "requestId": "29276.23",
-            "timestamp": 347760.523268,
-            "dataLength": 61884,
-            "encodedDataLength": 18057
+            "requestId": "29991.24",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.596373,
+            "type": "Font",
+            "response": {
+                "url": "http://syssec.mmci.uni-saarland.de/fonts/fontawesome-webfont.woff?v=3.0.1",
+                "status": 200,
+                "statusText": "OK",
+                "headers": {
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
+                    "Last-Modified": "Tue, 29 Apr 2014 18:41:16 GMT",
+                    "Server": "Apache/2.4.25 (Debian)",
+                    "ETag": "\"72c4-4f832c6e82b00\"",
+                    "Content-Type": "application/font-woff",
+                    "Connection": "Keep-Alive",
+                    "Accept-Ranges": "bytes",
+                    "Keep-Alive": "timeout=5, max=100",
+                    "Content-Length": "29380"
+                },
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nLast-Modified: Tue, 29 Apr 2014 18:41:16 GMT\r\nETag: \"72c4-4f832c6e82b00\"\r\nAccept-Ranges: bytes\r\nContent-Length: 29380\r\nKeep-Alive: timeout=5, max=100\r\nConnection: Keep-Alive\r\nContent-Type: application/font-woff\r\n\r\n",
+                "mimeType": "application/font-woff",
+                "requestHeaders": {
+                    "Pragma": "no-cache",
+                    "Origin": "http://syssec.mmci.uni-saarland.de",
+                    "Accept-Encoding": "gzip, deflate",
+                    "Host": "syssec.mmci.uni-saarland.de",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "Accept": "*/*",
+                    "Referer": "http://syssec.mmci.uni-saarland.de/fonts.css",
+                    "Connection": "keep-alive",
+                    "Cache-Control": "no-cache"
+                },
+                "requestHeadersText": "GET /fonts/fontawesome-webfont.woff?v=3.0.1 HTTP/1.1\r\nHost: syssec.mmci.uni-saarland.de\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nOrigin: http://syssec.mmci.uni-saarland.de\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: */*\r\nReferer: http://syssec.mmci.uni-saarland.de/fonts.css\r\nAccept-Encoding: gzip, deflate\r\nAccept-Language: en-US,en;q=0.9\r\n",
+                "connectionReused": true,
+                "connectionId": 266,
+                "remoteIPAddress": "139.19.86.150",
+                "remotePort": 80,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 300,
+                "timing": {
+                    "requestTime": 373047.313509,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": -1,
+                    "dnsEnd": -1,
+                    "connectStart": -1,
+                    "connectEnd": -1,
+                    "sslStart": -1,
+                    "sslEnd": -1,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 1.263,
+                    "sendEnd": 1.277,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 9.292
+                },
+                "protocol": "http/1.1",
+                "securityState": "neutral"
+            },
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.23",
-            "timestamp": 347760.523351,
+            "requestId": "29991.24",
+            "timestamp": 373047.596399,
+            "dataLength": 29380,
+            "encodedDataLength": 1068
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "29991.24",
+            "timestamp": 373047.596468,
             "dataLength": 0,
-            "encodedDataLength": 10949
+            "encodedDataLength": 28312
         }
     },
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.23",
-            "timestamp": 347760.523113,
-            "encodedDataLength": 29351,
+            "requestId": "29991.24",
+            "timestamp": 373047.596226,
+            "encodedDataLength": 29680,
             "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "29991.23",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.597451,
+            "type": "Font",
+            "response": {
+                "url": "https://themes.googleusercontent.com/static/fonts/sourcesanspro/v7/toadOcfmlt9b38dHJxOBGBPPOa1q11iOmmM9mDHHHX4.ttf",
+                "status": 200,
+                "statusText": "",
+                "headers": {
+                    "date": "Mon, 30 Apr 2018 12:12:02 GMT",
+                    "content-encoding": "gzip",
+                    "x-content-type-options": "nosniff",
+                    "age": "705272",
+                    "status": "200",
+                    "alt-svc": "hq=\":443\"; ma=2592000; quic=51303433; quic=51303432; quic=51303431; quic=51303339; quic=51303335,quic=\":443\"; ma=2592000; v=\"43,42,41,39,35\"",
+                    "content-length": "28988",
+                    "x-xss-protection": "1; mode=block",
+                    "last-modified": "Thu, 21 Apr 2016 03:17:22 GMT",
+                    "server": "sffe",
+                    "vary": "Accept-Encoding",
+                    "content-type": "font/ttf",
+                    "access-control-allow-origin": "*",
+                    "cache-control": "public, max-age=31536000",
+                    "accept-ranges": "bytes",
+                    "timing-allow-origin": "*",
+                    "expires": "Tue, 30 Apr 2019 12:12:02 GMT"
+                },
+                "mimeType": "font/ttf",
+                "requestHeaders": {
+                    ":path": "/static/fonts/sourcesanspro/v7/toadOcfmlt9b38dHJxOBGBPPOa1q11iOmmM9mDHHHX4.ttf",
+                    "pragma": "no-cache",
+                    "origin": "http://syssec.mmci.uni-saarland.de",
+                    "accept-encoding": "gzip, deflate, br",
+                    "accept-language": "en-US,en;q=0.9",
+                    "user-agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "accept": "*/*",
+                    "cache-control": "no-cache",
+                    ":authority": "themes.googleusercontent.com",
+                    "referer": "http://syssec.mmci.uni-saarland.de/fontsgoogle.css",
+                    ":scheme": "https",
+                    ":method": "GET"
+                },
+                "connectionReused": true,
+                "connectionId": 128,
+                "remoteIPAddress": "216.58.205.225",
+                "remotePort": 443,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 203,
+                "timing": {
+                    "requestTime": 373047.327601,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": -1,
+                    "dnsEnd": -1,
+                    "connectStart": -1,
+                    "connectEnd": -1,
+                    "sslStart": -1,
+                    "sslEnd": -1,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 1.43,
+                    "sendEnd": 1.517,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 8.731
+                },
+                "protocol": "h2",
+                "securityState": "secure",
+                "securityDetails": {
+                    "protocol": "TLS 1.2",
+                    "keyExchange": "ECDHE_ECDSA",
+                    "keyExchangeGroup": "X25519",
+                    "cipher": "AES_128_GCM",
+                    "certificateId": 0,
+                    "subjectName": "*.googleusercontent.com",
+                    "sanList": [
+                        "*.googleusercontent.com",
+                        "*.apps.googleusercontent.com",
+                        "*.appspot.com.storage.googleapis.com",
+                        "*.blogspot.com",
+                        "*.bp.blogspot.com",
+                        "*.commondatastorage.googleapis.com",
+                        "*.content-storage-download.googleapis.com",
+                        "*.content-storage-upload.googleapis.com",
+                        "*.content-storage.googleapis.com",
+                        "*.doubleclickusercontent.com",
+                        "*.ggpht.com",
+                        "*.googledrive.com",
+                        "*.googlesyndication.com",
+                        "*.googleweblight.com",
+                        "*.local.amp4mail.googleusercontent.com",
+                        "*.playground-internal.amp4mail.googleusercontent.com",
+                        "*.playground.amp4mail.googleusercontent.com",
+                        "*.prod.amp4mail.googleusercontent.com",
+                        "*.safenup.googleusercontent.com",
+                        "*.sandbox.googleusercontent.com",
+                        "*.storage-download.googleapis.com",
+                        "*.storage-upload.googleapis.com",
+                        "*.storage.googleapis.com",
+                        "*.storage.select.googleapis.com",
+                        "*.translate.goog",
+                        "blogspot.com",
+                        "bp.blogspot.com",
+                        "commondatastorage.googleapis.com",
+                        "doubleclickusercontent.com",
+                        "ggpht.com",
+                        "googledrive.com",
+                        "googleusercontent.com",
+                        "googleweblight.com",
+                        "manifest.lh3.googleusercontent.com",
+                        "static.panoramio.com.storage.googleapis.com",
+                        "storage.googleapis.com",
+                        "storage.select.googleapis.com",
+                        "translate.goog",
+                        "unfiltered.news"
+                    ],
+                    "issuer": "Google Internet Authority G3",
+                    "validFrom": 1523972619,
+                    "validTo": 1531226340,
+                    "signedCertificateTimestampList": [
+                        {
+                            "status": "Verified",
+                            "origin": "TLS extension",
+                            "logDescription": "Google 'Pilot' log",
+                            "logId": "A4B90990B418581487BB13A2CC67700A3C359804F91BDFB8E377CD0EC80DDC10",
+                            "timestamp": 1523975034718,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3045022100C4852FB9AD464660AD29D844ECE82C3BA6241173BA17E6EDD314ADA9CAD9AB0D02203CE18BF535131084DD7A30C3F2B61143C168F5EF2A7839A4CEA75CFBDF3D6DFE"
+                        },
+                        {
+                            "status": "Verified",
+                            "origin": "TLS extension",
+                            "logDescription": "Comodo 'Sabre' CT log",
+                            "logId": "5581D4C2169036014AEA0B9B573C53F0C0E43878702508172FA3AA1D0713D30C",
+                            "timestamp": 1523975034466,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3046022100EB5F623666E179F490D71C645CDA1F0A8422400DB2A5C24D798F782CFD9CC6B90221009C652B30EDF8CB82DA6541802804FE63C8BC3E3F49824A098B5551BABB2C17A7"
+                        }
+                    ]
+                }
+            },
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.22",
-            "timestamp": 347760.524024,
+            "requestId": "29991.23",
+            "timestamp": 373047.597479,
+            "dataLength": 61884,
+            "encodedDataLength": 29006
+        }
+    },
+    {
+        "method": "Network.loadingFinished",
+        "params": {
+            "requestId": "29991.23",
+            "timestamp": 373047.597289,
+            "encodedDataLength": 29209,
+            "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "29991.22",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.598479,
+            "type": "Font",
+            "response": {
+                "url": "https://themes.googleusercontent.com/static/fonts/sourcesanspro/v7/toadOcfmlt9b38dHJxOBGLsbIrGiHa6JIepkyt5c0A0.ttf",
+                "status": 200,
+                "statusText": "",
+                "headers": {
+                    "date": "Sun, 04 Feb 2018 04:02:23 GMT",
+                    "content-encoding": "gzip",
+                    "x-content-type-options": "nosniff",
+                    "age": "8078651",
+                    "status": "200",
+                    "alt-svc": "hq=\":443\"; ma=2592000; quic=51303433; quic=51303432; quic=51303431; quic=51303339; quic=51303335,quic=\":443\"; ma=2592000; v=\"43,42,41,39,35\"",
+                    "content-length": "29637",
+                    "x-xss-protection": "1; mode=block",
+                    "last-modified": "Thu, 21 Apr 2016 03:17:22 GMT",
+                    "server": "sffe",
+                    "vary": "Accept-Encoding",
+                    "content-type": "font/ttf",
+                    "access-control-allow-origin": "*",
+                    "cache-control": "public, max-age=31536000",
+                    "accept-ranges": "bytes",
+                    "timing-allow-origin": "*",
+                    "expires": "Mon, 04 Feb 2019 04:02:23 GMT"
+                },
+                "mimeType": "font/ttf",
+                "requestHeaders": {
+                    ":path": "/static/fonts/sourcesanspro/v7/toadOcfmlt9b38dHJxOBGLsbIrGiHa6JIepkyt5c0A0.ttf",
+                    "pragma": "no-cache",
+                    "origin": "http://syssec.mmci.uni-saarland.de",
+                    "accept-encoding": "gzip, deflate, br",
+                    "accept-language": "en-US,en;q=0.9",
+                    "user-agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "accept": "*/*",
+                    "cache-control": "no-cache",
+                    ":authority": "themes.googleusercontent.com",
+                    "referer": "http://syssec.mmci.uni-saarland.de/fontsgoogle.css",
+                    ":scheme": "https",
+                    ":method": "GET"
+                },
+                "connectionReused": true,
+                "connectionId": 128,
+                "remoteIPAddress": "216.58.205.225",
+                "remotePort": 443,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 89,
+                "timing": {
+                    "requestTime": 373047.341215,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": -1,
+                    "dnsEnd": -1,
+                    "connectStart": -1,
+                    "connectEnd": -1,
+                    "sslStart": -1,
+                    "sslEnd": -1,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 0.971,
+                    "sendEnd": 1.049,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 8.562
+                },
+                "protocol": "h2",
+                "securityState": "secure",
+                "securityDetails": {
+                    "protocol": "TLS 1.2",
+                    "keyExchange": "ECDHE_ECDSA",
+                    "keyExchangeGroup": "X25519",
+                    "cipher": "AES_128_GCM",
+                    "certificateId": 0,
+                    "subjectName": "*.googleusercontent.com",
+                    "sanList": [
+                        "*.googleusercontent.com",
+                        "*.apps.googleusercontent.com",
+                        "*.appspot.com.storage.googleapis.com",
+                        "*.blogspot.com",
+                        "*.bp.blogspot.com",
+                        "*.commondatastorage.googleapis.com",
+                        "*.content-storage-download.googleapis.com",
+                        "*.content-storage-upload.googleapis.com",
+                        "*.content-storage.googleapis.com",
+                        "*.doubleclickusercontent.com",
+                        "*.ggpht.com",
+                        "*.googledrive.com",
+                        "*.googlesyndication.com",
+                        "*.googleweblight.com",
+                        "*.local.amp4mail.googleusercontent.com",
+                        "*.playground-internal.amp4mail.googleusercontent.com",
+                        "*.playground.amp4mail.googleusercontent.com",
+                        "*.prod.amp4mail.googleusercontent.com",
+                        "*.safenup.googleusercontent.com",
+                        "*.sandbox.googleusercontent.com",
+                        "*.storage-download.googleapis.com",
+                        "*.storage-upload.googleapis.com",
+                        "*.storage.googleapis.com",
+                        "*.storage.select.googleapis.com",
+                        "*.translate.goog",
+                        "blogspot.com",
+                        "bp.blogspot.com",
+                        "commondatastorage.googleapis.com",
+                        "doubleclickusercontent.com",
+                        "ggpht.com",
+                        "googledrive.com",
+                        "googleusercontent.com",
+                        "googleweblight.com",
+                        "manifest.lh3.googleusercontent.com",
+                        "static.panoramio.com.storage.googleapis.com",
+                        "storage.googleapis.com",
+                        "storage.select.googleapis.com",
+                        "translate.goog",
+                        "unfiltered.news"
+                    ],
+                    "issuer": "Google Internet Authority G3",
+                    "validFrom": 1523972619,
+                    "validTo": 1531226340,
+                    "signedCertificateTimestampList": [
+                        {
+                            "status": "Verified",
+                            "origin": "TLS extension",
+                            "logDescription": "Google 'Pilot' log",
+                            "logId": "A4B90990B418581487BB13A2CC67700A3C359804F91BDFB8E377CD0EC80DDC10",
+                            "timestamp": 1523975034718,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3045022100C4852FB9AD464660AD29D844ECE82C3BA6241173BA17E6EDD314ADA9CAD9AB0D02203CE18BF535131084DD7A30C3F2B61143C168F5EF2A7839A4CEA75CFBDF3D6DFE"
+                        },
+                        {
+                            "status": "Verified",
+                            "origin": "TLS extension",
+                            "logDescription": "Comodo 'Sabre' CT log",
+                            "logId": "5581D4C2169036014AEA0B9B573C53F0C0E43878702508172FA3AA1D0713D30C",
+                            "timestamp": 1523975034466,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3046022100EB5F623666E179F490D71C645CDA1F0A8422400DB2A5C24D798F782CFD9CC6B90221009C652B30EDF8CB82DA6541802804FE63C8BC3E3F49824A098B5551BABB2C17A7"
+                        }
+                    ]
+                }
+            },
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "29991.22",
+            "timestamp": 373047.598516,
             "dataLength": 62284,
             "encodedDataLength": 29655
         }
@@ -1340,17 +1647,167 @@
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.22",
-            "timestamp": 347760.523897,
-            "encodedDataLength": 29743,
+            "requestId": "29991.22",
+            "timestamp": 373047.598321,
+            "encodedDataLength": 29744,
             "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "29991.19",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.599671,
+            "type": "Font",
+            "response": {
+                "url": "https://themes.googleusercontent.com/static/fonts/sourcesanspro/v7/toadOcfmlt9b38dHJxOBGMw1o1eFRj7wYC6JbISqOjY.ttf",
+                "status": 200,
+                "statusText": "",
+                "headers": {
+                    "date": "Sun, 29 Apr 2018 06:44:11 GMT",
+                    "content-encoding": "gzip",
+                    "x-content-type-options": "nosniff",
+                    "age": "811343",
+                    "status": "200",
+                    "alt-svc": "hq=\":443\"; ma=2592000; quic=51303433; quic=51303432; quic=51303431; quic=51303339; quic=51303335,quic=\":443\"; ma=2592000; v=\"43,42,41,39,35\"",
+                    "content-length": "29418",
+                    "x-xss-protection": "1; mode=block",
+                    "last-modified": "Thu, 21 Apr 2016 03:17:22 GMT",
+                    "server": "sffe",
+                    "vary": "Accept-Encoding",
+                    "content-type": "font/ttf",
+                    "access-control-allow-origin": "*",
+                    "cache-control": "public, max-age=31536000",
+                    "accept-ranges": "bytes",
+                    "timing-allow-origin": "*",
+                    "expires": "Mon, 29 Apr 2019 06:44:11 GMT"
+                },
+                "mimeType": "font/ttf",
+                "requestHeaders": {
+                    ":path": "/static/fonts/sourcesanspro/v7/toadOcfmlt9b38dHJxOBGMw1o1eFRj7wYC6JbISqOjY.ttf",
+                    "pragma": "no-cache",
+                    "origin": "http://syssec.mmci.uni-saarland.de",
+                    "accept-encoding": "gzip, deflate, br",
+                    "accept-language": "en-US,en;q=0.9",
+                    "user-agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "accept": "*/*",
+                    "cache-control": "no-cache",
+                    ":authority": "themes.googleusercontent.com",
+                    "referer": "http://syssec.mmci.uni-saarland.de/fontsgoogle.css",
+                    ":scheme": "https",
+                    ":method": "GET"
+                },
+                "connectionReused": true,
+                "connectionId": 128,
+                "remoteIPAddress": "216.58.205.225",
+                "remotePort": 443,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 90,
+                "timing": {
+                    "requestTime": 373047.357446,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": -1,
+                    "dnsEnd": -1,
+                    "connectStart": -1,
+                    "connectEnd": -1,
+                    "sslStart": -1,
+                    "sslEnd": -1,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 1.014,
+                    "sendEnd": 1.096,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 7.982
+                },
+                "protocol": "h2",
+                "securityState": "secure",
+                "securityDetails": {
+                    "protocol": "TLS 1.2",
+                    "keyExchange": "ECDHE_ECDSA",
+                    "keyExchangeGroup": "X25519",
+                    "cipher": "AES_128_GCM",
+                    "certificateId": 0,
+                    "subjectName": "*.googleusercontent.com",
+                    "sanList": [
+                        "*.googleusercontent.com",
+                        "*.apps.googleusercontent.com",
+                        "*.appspot.com.storage.googleapis.com",
+                        "*.blogspot.com",
+                        "*.bp.blogspot.com",
+                        "*.commondatastorage.googleapis.com",
+                        "*.content-storage-download.googleapis.com",
+                        "*.content-storage-upload.googleapis.com",
+                        "*.content-storage.googleapis.com",
+                        "*.doubleclickusercontent.com",
+                        "*.ggpht.com",
+                        "*.googledrive.com",
+                        "*.googlesyndication.com",
+                        "*.googleweblight.com",
+                        "*.local.amp4mail.googleusercontent.com",
+                        "*.playground-internal.amp4mail.googleusercontent.com",
+                        "*.playground.amp4mail.googleusercontent.com",
+                        "*.prod.amp4mail.googleusercontent.com",
+                        "*.safenup.googleusercontent.com",
+                        "*.sandbox.googleusercontent.com",
+                        "*.storage-download.googleapis.com",
+                        "*.storage-upload.googleapis.com",
+                        "*.storage.googleapis.com",
+                        "*.storage.select.googleapis.com",
+                        "*.translate.goog",
+                        "blogspot.com",
+                        "bp.blogspot.com",
+                        "commondatastorage.googleapis.com",
+                        "doubleclickusercontent.com",
+                        "ggpht.com",
+                        "googledrive.com",
+                        "googleusercontent.com",
+                        "googleweblight.com",
+                        "manifest.lh3.googleusercontent.com",
+                        "static.panoramio.com.storage.googleapis.com",
+                        "storage.googleapis.com",
+                        "storage.select.googleapis.com",
+                        "translate.goog",
+                        "unfiltered.news"
+                    ],
+                    "issuer": "Google Internet Authority G3",
+                    "validFrom": 1523972619,
+                    "validTo": 1531226340,
+                    "signedCertificateTimestampList": [
+                        {
+                            "status": "Verified",
+                            "origin": "TLS extension",
+                            "logDescription": "Google 'Pilot' log",
+                            "logId": "A4B90990B418581487BB13A2CC67700A3C359804F91BDFB8E377CD0EC80DDC10",
+                            "timestamp": 1523975034718,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3045022100C4852FB9AD464660AD29D844ECE82C3BA6241173BA17E6EDD314ADA9CAD9AB0D02203CE18BF535131084DD7A30C3F2B61143C168F5EF2A7839A4CEA75CFBDF3D6DFE"
+                        },
+                        {
+                            "status": "Verified",
+                            "origin": "TLS extension",
+                            "logDescription": "Comodo 'Sabre' CT log",
+                            "logId": "5581D4C2169036014AEA0B9B573C53F0C0E43878702508172FA3AA1D0713D30C",
+                            "timestamp": 1523975034466,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3046022100EB5F623666E179F490D71C645CDA1F0A8422400DB2A5C24D798F782CFD9CC6B90221009C652B30EDF8CB82DA6541802804FE63C8BC3E3F49824A098B5551BABB2C17A7"
+                        }
+                    ]
+                }
+            },
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.19",
-            "timestamp": 347760.524716,
+            "requestId": "29991.19",
+            "timestamp": 373047.599701,
             "dataLength": 61508,
             "encodedDataLength": 29436
         }
@@ -1358,17 +1815,167 @@
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.19",
-            "timestamp": 347760.524582,
-            "encodedDataLength": 29523,
+            "requestId": "29991.19",
+            "timestamp": 373047.599499,
+            "encodedDataLength": 29526,
             "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "29991.20",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.600516,
+            "type": "Font",
+            "response": {
+                "url": "https://themes.googleusercontent.com/static/fonts/sourcesanspro/v7/ODelI1aHBYDBqgeIAH2zlNzbP97U9sKh0jjxbPbfOKg.ttf",
+                "status": 200,
+                "statusText": "",
+                "headers": {
+                    "date": "Tue, 13 Feb 2018 17:14:09 GMT",
+                    "content-encoding": "gzip",
+                    "x-content-type-options": "nosniff",
+                    "age": "7253545",
+                    "status": "200",
+                    "alt-svc": "hq=\":443\"; ma=2592000; quic=51303433; quic=51303432; quic=51303431; quic=51303339; quic=51303335,quic=\":443\"; ma=2592000; v=\"43,42,41,39,35\"",
+                    "content-length": "30321",
+                    "x-xss-protection": "1; mode=block",
+                    "last-modified": "Thu, 21 Apr 2016 03:17:22 GMT",
+                    "server": "sffe",
+                    "vary": "Accept-Encoding",
+                    "content-type": "font/ttf",
+                    "access-control-allow-origin": "*",
+                    "cache-control": "public, max-age=31536000",
+                    "accept-ranges": "bytes",
+                    "timing-allow-origin": "*",
+                    "expires": "Wed, 13 Feb 2019 17:14:09 GMT"
+                },
+                "mimeType": "font/ttf",
+                "requestHeaders": {
+                    ":path": "/static/fonts/sourcesanspro/v7/ODelI1aHBYDBqgeIAH2zlNzbP97U9sKh0jjxbPbfOKg.ttf",
+                    "pragma": "no-cache",
+                    "origin": "http://syssec.mmci.uni-saarland.de",
+                    "accept-encoding": "gzip, deflate, br",
+                    "accept-language": "en-US,en;q=0.9",
+                    "user-agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "accept": "*/*",
+                    "cache-control": "no-cache",
+                    ":authority": "themes.googleusercontent.com",
+                    "referer": "http://syssec.mmci.uni-saarland.de/fontsgoogle.css",
+                    ":scheme": "https",
+                    ":method": "GET"
+                },
+                "connectionReused": true,
+                "connectionId": 128,
+                "remoteIPAddress": "216.58.205.225",
+                "remotePort": 443,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 91,
+                "timing": {
+                    "requestTime": 373047.371815,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": -1,
+                    "dnsEnd": -1,
+                    "connectStart": -1,
+                    "connectEnd": -1,
+                    "sslStart": -1,
+                    "sslEnd": -1,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 2.018,
+                    "sendEnd": 2.078,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 9.331
+                },
+                "protocol": "h2",
+                "securityState": "secure",
+                "securityDetails": {
+                    "protocol": "TLS 1.2",
+                    "keyExchange": "ECDHE_ECDSA",
+                    "keyExchangeGroup": "X25519",
+                    "cipher": "AES_128_GCM",
+                    "certificateId": 0,
+                    "subjectName": "*.googleusercontent.com",
+                    "sanList": [
+                        "*.googleusercontent.com",
+                        "*.apps.googleusercontent.com",
+                        "*.appspot.com.storage.googleapis.com",
+                        "*.blogspot.com",
+                        "*.bp.blogspot.com",
+                        "*.commondatastorage.googleapis.com",
+                        "*.content-storage-download.googleapis.com",
+                        "*.content-storage-upload.googleapis.com",
+                        "*.content-storage.googleapis.com",
+                        "*.doubleclickusercontent.com",
+                        "*.ggpht.com",
+                        "*.googledrive.com",
+                        "*.googlesyndication.com",
+                        "*.googleweblight.com",
+                        "*.local.amp4mail.googleusercontent.com",
+                        "*.playground-internal.amp4mail.googleusercontent.com",
+                        "*.playground.amp4mail.googleusercontent.com",
+                        "*.prod.amp4mail.googleusercontent.com",
+                        "*.safenup.googleusercontent.com",
+                        "*.sandbox.googleusercontent.com",
+                        "*.storage-download.googleapis.com",
+                        "*.storage-upload.googleapis.com",
+                        "*.storage.googleapis.com",
+                        "*.storage.select.googleapis.com",
+                        "*.translate.goog",
+                        "blogspot.com",
+                        "bp.blogspot.com",
+                        "commondatastorage.googleapis.com",
+                        "doubleclickusercontent.com",
+                        "ggpht.com",
+                        "googledrive.com",
+                        "googleusercontent.com",
+                        "googleweblight.com",
+                        "manifest.lh3.googleusercontent.com",
+                        "static.panoramio.com.storage.googleapis.com",
+                        "storage.googleapis.com",
+                        "storage.select.googleapis.com",
+                        "translate.goog",
+                        "unfiltered.news"
+                    ],
+                    "issuer": "Google Internet Authority G3",
+                    "validFrom": 1523972619,
+                    "validTo": 1531226340,
+                    "signedCertificateTimestampList": [
+                        {
+                            "status": "Verified",
+                            "origin": "TLS extension",
+                            "logDescription": "Google 'Pilot' log",
+                            "logId": "A4B90990B418581487BB13A2CC67700A3C359804F91BDFB8E377CD0EC80DDC10",
+                            "timestamp": 1523975034718,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3045022100C4852FB9AD464660AD29D844ECE82C3BA6241173BA17E6EDD314ADA9CAD9AB0D02203CE18BF535131084DD7A30C3F2B61143C168F5EF2A7839A4CEA75CFBDF3D6DFE"
+                        },
+                        {
+                            "status": "Verified",
+                            "origin": "TLS extension",
+                            "logDescription": "Comodo 'Sabre' CT log",
+                            "logId": "5581D4C2169036014AEA0B9B573C53F0C0E43878702508172FA3AA1D0713D30C",
+                            "timestamp": 1523975034466,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3046022100EB5F623666E179F490D71C645CDA1F0A8422400DB2A5C24D798F782CFD9CC6B90221009C652B30EDF8CB82DA6541802804FE63C8BC3E3F49824A098B5551BABB2C17A7"
+                        }
+                    ]
+                }
+            },
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.20",
-            "timestamp": 347760.525837,
+            "requestId": "29991.20",
+            "timestamp": 373047.600541,
             "dataLength": 63496,
             "encodedDataLength": 30339
         }
@@ -1376,17 +1983,121 @@
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.20",
-            "timestamp": 347760.525689,
-            "encodedDataLength": 30426,
+            "requestId": "29991.20",
+            "timestamp": 373047.600386,
+            "encodedDataLength": 30430,
             "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "29991.9",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.601581,
+            "type": "Image",
+            "response": {
+                "url": "https://www.christian-rossow.de/stats_mmci_count",
+                "status": 200,
+                "statusText": "OK",
+                "headers": {
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
+                    "Server": "Apache/2.4.6 (CentOS) OpenSSL/1.0.2k-fips PHP/5.4.16 SVN/1.7.14 mod_wsgi/3.4 Python/2.7.5",
+                    "X-Powered-By": "PHP/5.4.16",
+                    "Content-Type": "image/gif",
+                    "Cache-Control": "no-cache, must-revalidate",
+                    "Connection": "Keep-Alive",
+                    "Keep-Alive": "timeout=5, max=100",
+                    "Content-Length": "43",
+                    "Expires": "Sat, 26 Jul 2000 05:00:00 GMT"
+                },
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nServer: Apache/2.4.6 (CentOS) OpenSSL/1.0.2k-fips PHP/5.4.16 SVN/1.7.14 mod_wsgi/3.4 Python/2.7.5\r\nX-Powered-By: PHP/5.4.16\r\nCache-Control: no-cache, must-revalidate\r\nExpires: Sat, 26 Jul 2000 05:00:00 GMT\r\nContent-Length: 43\r\nKeep-Alive: timeout=5, max=100\r\nConnection: Keep-Alive\r\nContent-Type: image/gif\r\n\r\n",
+                "mimeType": "image/gif",
+                "requestHeaders": {
+                    "Pragma": "no-cache",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Host": "www.christian-rossow.de",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+                    "Referer": "http://syssec.mmci.uni-saarland.de/teaching",
+                    "Connection": "keep-alive",
+                    "Cache-Control": "no-cache"
+                },
+                "requestHeadersText": "GET /stats_mmci_count HTTP/1.1\r\nHost: www.christian-rossow.de\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: image/webp,image/apng,image/*,*/*;q=0.8\r\nReferer: http://syssec.mmci.uni-saarland.de/teaching\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n",
+                "connectionReused": false,
+                "connectionId": 267,
+                "remoteIPAddress": "81.169.252.150",
+                "remotePort": 443,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 364,
+                "timing": {
+                    "requestTime": 373047.310833,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": 2.889,
+                    "dnsEnd": 3.392,
+                    "connectStart": 3.392,
+                    "connectEnd": 62.231,
+                    "sslStart": 21.647,
+                    "sslEnd": 62.222,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 62.573,
+                    "sendEnd": 62.622,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 125.059
+                },
+                "protocol": "http/1.1",
+                "securityState": "secure",
+                "securityDetails": {
+                    "protocol": "TLS 1.2",
+                    "keyExchange": "ECDHE_RSA",
+                    "keyExchangeGroup": "P-256",
+                    "cipher": "AES_128_GCM",
+                    "certificateId": 0,
+                    "subjectName": "christian-rossow.de",
+                    "sanList": [
+                        "christian-rossow.de",
+                        "www.christian-rossow.de"
+                    ],
+                    "issuer": "Let's Encrypt Authority X3",
+                    "validFrom": 1525399993,
+                    "validTo": 1533175993,
+                    "signedCertificateTimestampList": [
+                        {
+                            "status": "Verified",
+                            "origin": "Embedded in certificate",
+                            "logDescription": "Cloudflare 'Nimbus2018' Log",
+                            "logId": "DB74AFEECB29ECB1FECA3E716D2CE5B9AABB36F7847183C75D9D4F37B61FBF64",
+                            "timestamp": 1525403593815,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "30440220521E295EECE480BE538F33167B36147D49BE502E585847A28F5EFB24EC9C1C7902201D358CDA6D7441B3ECED380C67C6025CA962415EA687469594FA42E2C288ABFD"
+                        },
+                        {
+                            "status": "Verified",
+                            "origin": "Embedded in certificate",
+                            "logDescription": "Google 'Icarus' log",
+                            "logId": "293C519654C83965BAAA50FC5807D4B76FBF587A2972DCA4C30CF4E54547F478",
+                            "timestamp": 1525403593849,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3045022100B3EA93B8F741D83416A19D9E804F4D2BAAEF72CB07723E1E7C119306414343830220673AC0215D1655F8ADD0E5B17EF4E37532074FD9DA325938D9E8666357894122"
+                        }
+                    ]
+                }
+            },
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.9",
-            "timestamp": 347760.52664,
+            "requestId": "29991.9",
+            "timestamp": 373047.601629,
             "dataLength": 43,
             "encodedDataLength": 43
         }
@@ -1394,8 +2105,8 @@
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.9",
-            "timestamp": 347760.52653,
+            "requestId": "29991.9",
+            "timestamp": 373047.601433,
             "encodedDataLength": 407,
             "blockedCrossSiteDocument": false
         }
@@ -1403,8 +2114,8 @@
     {
         "method": "Network.requestWillBeSent",
         "params": {
-            "requestId": "29276.28",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
+            "requestId": "29991.28",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
             "documentURL": "http://syssec.mmci.uni-saarland.de/teaching",
             "request": {
                 "url": "http://syssec.mmci.uni-saarland.de/favicon.ico",
@@ -1417,35 +2128,35 @@
                 "initialPriority": "High",
                 "referrerPolicy": "no-referrer-when-downgrade"
             },
-            "timestamp": 347760.541914,
-            "wallTime": 1525770307.50476,
+            "timestamp": 373047.61838,
+            "wallTime": 1525795594.58123,
             "initiator": {
                 "type": "other"
             },
             "type": "Other",
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.responseReceived",
         "params": {
-            "requestId": "29276.28",
-            "loaderId": "7EC223D7014CE5DB2606CB29F26A3339",
-            "timestamp": 347760.54834,
+            "requestId": "29991.28",
+            "loaderId": "554A858C1B5FD71E98E01AB0B3E1DE68",
+            "timestamp": 373047.62242,
             "type": "Other",
             "response": {
                 "url": "http://syssec.mmci.uni-saarland.de/favicon.ico",
                 "status": 404,
                 "statusText": "Not Found",
                 "headers": {
-                    "Date": "Tue, 08 May 2018 09:05:07 GMT",
+                    "Date": "Tue, 08 May 2018 16:06:34 GMT",
                     "Server": "Apache/2.4.25 (Debian)",
                     "Connection": "Keep-Alive",
-                    "Keep-Alive": "timeout=5, max=97",
+                    "Keep-Alive": "timeout=5, max=99",
                     "Content-Length": "302",
                     "Content-Type": "text/html; charset=iso-8859-1"
                 },
-                "headersText": "HTTP/1.1 404 Not Found\r\nDate: Tue, 08 May 2018 09:05:07 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nContent-Length: 302\r\nKeep-Alive: timeout=5, max=97\r\nConnection: Keep-Alive\r\nContent-Type: text/html; charset=iso-8859-1\r\n\r\n",
+                "headersText": "HTTP/1.1 404 Not Found\r\nDate: Tue, 08 May 2018 16:06:34 GMT\r\nServer: Apache/2.4.25 (Debian)\r\nContent-Length: 302\r\nKeep-Alive: timeout=5, max=99\r\nConnection: Keep-Alive\r\nContent-Type: text/html; charset=iso-8859-1\r\n\r\n",
                 "mimeType": "text/html",
                 "requestHeaders": {
                     "Pragma": "no-cache",
@@ -1460,14 +2171,14 @@
                 },
                 "requestHeadersText": "GET /favicon.ico HTTP/1.1\r\nHost: syssec.mmci.uni-saarland.de\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: image/webp,image/apng,image/*,*/*;q=0.8\r\nReferer: http://syssec.mmci.uni-saarland.de/teaching\r\nAccept-Encoding: gzip, deflate\r\nAccept-Language: en-US,en;q=0.9\r\n",
                 "connectionReused": true,
-                "connectionId": 239,
+                "connectionId": 266,
                 "remoteIPAddress": "139.19.86.150",
                 "remotePort": 80,
                 "fromDiskCache": false,
                 "fromServiceWorker": false,
                 "encodedDataLength": 216,
                 "timing": {
-                    "requestTime": 347760.542214,
+                    "requestTime": 373047.618634,
                     "proxyStart": -1,
                     "proxyEnd": -1,
                     "dnsStart": -1,
@@ -1478,23 +2189,23 @@
                     "sslEnd": -1,
                     "workerStart": -1,
                     "workerReady": -1,
-                    "sendStart": 3.299,
-                    "sendEnd": 3.373,
+                    "sendStart": 1.005,
+                    "sendEnd": 1.041,
                     "pushStart": 0,
                     "pushEnd": 0,
-                    "receiveHeadersEnd": 5.783
+                    "receiveHeadersEnd": 3.427
                 },
                 "protocol": "http/1.1",
                 "securityState": "neutral"
             },
-            "frameId": "2581C3BC89F2A0C9707983EED06B8D71"
+            "frameId": "47C089D6F2C111246134BE314FA7D480"
         }
     },
     {
         "method": "Network.dataReceived",
         "params": {
-            "requestId": "29276.28",
-            "timestamp": 347760.548707,
+            "requestId": "29991.28",
+            "timestamp": 373047.622913,
             "dataLength": 302,
             "encodedDataLength": 302
         }
@@ -1502,8 +2213,8 @@
     {
         "method": "Network.loadingFinished",
         "params": {
-            "requestId": "29276.28",
-            "timestamp": 347760.548461,
+            "requestId": "29991.28",
+            "timestamp": 373047.622531,
             "encodedDataLength": 518,
             "blockedCrossSiteDocument": false
         }
