@@ -126,20 +126,29 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
 
         for message in messages {
             use ChromeDebuggerMessage::NetworkRequestWillBeSent;
-            if let NetworkRequestWillBeSent { initiator, .. } = message {
+            if let NetworkRequestWillBeSent {
+                initiator,
+                redirect_response,
+                ..
+            } = message
+            {
                 let node = create_node(&message)?;
 
                 // Add dependencies for node/msg combination
-                match initiator {
-                    Initiator::Other {} => {
+                match (initiator, redirect_response) {
+                    (Initiator::Other {}, None) => {
                         let other = find_node("other".into())?;
                         add_dependency(node, other);
                     }
-                    Initiator::Parser { ref url } => {
+                    (Initiator::Other {}, Some(RedirectResponse { ref url })) => {
                         let other = find_node(url.clone())?;
                         add_dependency(node, other);
                     }
-                    Initiator::Script { ref stack } => {
+                    (Initiator::Parser { ref url }, None) => {
+                        let other = find_node(url.clone())?;
+                        add_dependency(node, other);
+                    }
+                    (Initiator::Script { ref stack }, None) => {
                         fn traverse_stack<FN, AD>(
                             node: NodeIndex,
                             stack: &Script,
@@ -163,9 +172,12 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
 
                         traverse_stack(node, stack, find_node, add_dependency)?;
                     }
+                    _ => {
+                        bail!("RedirectorResponse should only occur with the Initiator type other.")
                 }
             }
         }
+    }
     }
 
     graph.transitive_closure();
@@ -480,6 +492,7 @@ pub mod chrome {
             request_id: String,
             request: Request,
             initiator: Initiator,
+            redirect_response: Option<RedirectResponse>,
         },
         #[serde(rename = "Network.requestServedFromCache", rename_all = "camelCase")]
         NetworkRequestServedFromCache { request_id: String },
@@ -505,6 +518,11 @@ pub mod chrome {
 
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
     pub struct Request {
+        pub url: String,
+    }
+
+    #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+    pub struct RedirectResponse {
         pub url: String,
     }
 
