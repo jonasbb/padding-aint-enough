@@ -117,19 +117,20 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
         match *from {
             ChromeDebuggerMessage::NetworkRequestWillBeSent{
                 request: Request { ref url, .. },
-                ref request_id,
                 ..
             } => {
-                let u = Url::parse(&url).context("RequestInfo needs a domain name, but URL is not a valid URL.")?;
-                let ndn = u
-                    .host_str()
-                    .ok_or_else(|| format_err!("The URL must have a domain part, but does not. URL: '{}'", u))?;
+                let parsed_url;
+                let ndn = if url.starts_with("data:") {
+                    "data"
+                } else {
+                    parsed_url = Url::parse(&url).context("RequestInfo needs a domain name, but URL is not a valid URL.")?;
+                    parsed_url
+                        .host_str()
+                        .ok_or_else(|| format_err!("The URL must have a domain part, but does not. URL: '{}'", parsed_url))?
+                };
                 Ok(RequestInfo{
                     normalized_domain_name: ndn.to_string(),
-                    requests: vec![IndividualRequest {
-                        request_id: request_id.clone(),
-                        url: url.clone()
-                    }]
+                    requests: vec![IndividualRequest::try_from(from)?],
                 })
            },
             _ => bail!("IndividualRequest can only be created from ChromeDebuggerMessage::NetworkRequestWillBeSent")
