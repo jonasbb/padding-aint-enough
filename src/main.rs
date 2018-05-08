@@ -3,7 +3,7 @@
 extern crate env_logger;
 #[macro_use]
 extern crate failure;
-// #[macro_use]
+#[macro_use]
 extern crate log;
 #[macro_use]
 extern crate structopt;
@@ -168,9 +168,33 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     }
 
     graph.transitive_closure();
+    simplify_graph(&mut graph);
     export_as_graphml(&graph)?;
 
     Ok(())
+}
+
+fn simplify_graph(graph: &mut Graph<RequestInfo, ()>) {
+    debug!(
+        "Graph size (before simplify): {} / {}",
+        graph.node_count(),
+        graph.edge_count()
+    );
+    remove_self_loops(graph);
+}
+
+fn remove_self_loops(graph: &mut Graph<RequestInfo, ()>) {
+    // Keep all edges which return true
+    // remove all others
+    graph.retain_edges(|graph, edge_index| {
+        if let Some((a, b)) = graph.edge_endpoints(edge_index) {
+            // only keep those, which are not a self loop
+            a != b
+        } else {
+            // should not happen, but just do nothing
+            true
+        }
+    });
 }
 
 fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
