@@ -254,11 +254,12 @@ fn remove_depends_on_same_domain(graph: &mut Graph<RequestInfo, ()>) -> bool {
 
                 // We do not need to transfer all the edges, because we calculated the transitive closure,
                 // meaning all the edges are already transfered
-                let data = graph.remove_node(node).expect("Node id is valid");
-                graph
-                    .node_weight_mut(other)
-                    .expect("Succeeded before")
-                    .merge_with(data);
+                {
+                    let (mut node_weight, other_weight) = graph.index_twice_mut(node, other);
+                    other_weight.merge_with(node_weight);
+                }
+                let _ = graph.remove_node(node).expect("Node id is valid");
+
                 // The current node is merged, thus we MUST abort the inner loop
                 // The nodes will be renumbered, thus at the current node index there will be a different node.
                 // We therefore skip the node index increment
@@ -312,16 +313,17 @@ fn remove_dependency_subset(graph: &mut Graph<RequestInfo, ()>) -> bool {
                     did_changes = true;
 
                     // The two nodes might be totally unrelated, meaning we need to first transfer all the incoming edges of `node` to `other`
-                    let mut incomming = graph.neighbors_directed(node, Direction::Incoming).detach();
+                    let mut incomming =
+                        graph.neighbors_directed(node, Direction::Incoming).detach();
                     while let Some(n) = incomming.next_node(graph) {
                         graph.update_edge(n, other, ());
                     }
 
-                    let data = graph.remove_node(node).expect("Node id is valid");
-                    graph
-                        .node_weight_mut(other)
-                        .expect("Succeeded before")
-                        .merge_with(data);
+                    {
+                        let (mut node_weight, other_weight) = graph.index_twice_mut(node, other);
+                        other_weight.merge_with(node_weight);
+                    }
+                    let _ = graph.remove_node(node).expect("Node id is valid");
 
                     // The current node is merged, thus we MUST abort the inner loop
                     // The nodes will be renumbered, thus at the current node index there will be a different node.
@@ -393,10 +395,10 @@ struct RequestInfo {
 
 impl RequestInfo {
     /// Panics if `normalized_domain_name` is not equal
-    fn merge_with(&mut self, other: Self) {
+    fn merge_with(&mut self, other: &Self) {
         assert_eq!(self.normalized_domain_name, other.normalized_domain_name);
 
-        self.requests.extend(other.requests.into_iter());
+        self.requests.extend(other.requests.iter().cloned());
     }
 }
 
