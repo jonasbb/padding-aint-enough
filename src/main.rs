@@ -143,21 +143,25 @@ struct IndividualRequest {
     url: String,
 }
 
-// impl<'a> TryFrom<&'a ChromeDebuggerMessage> for IndividualRequest {
-//     type Error = Error;
+impl<'a> TryFrom<&'a ChromeDebuggerMessage> for IndividualRequest {
+    type Error = Error;
 
-//     fn try_from(from: &'a ChromeDebuggerMessage) -> Result<Self, Error> {
-//         match *from {
-//             ChromeDebuggerMessage::NetworkRequestWillBeSent{request: Request { ref url, .. },
-//             ref request_id,
-//             ..} => {Ok(IndividualRequest {
-//                 request_id: request_id.clone(),
-//                 url: url.clone(),
-//             })},
-//             _ => bail!("IndividualRequest can only be created from ChromeDebuggerMessage::NetworkRequestWillBeSent")
-//         }
-//     }
-// }
+    fn try_from(from: &'a ChromeDebuggerMessage) -> Result<Self, Error> {
+        match *from {
+            ChromeDebuggerMessage::NetworkRequestWillBeSent{
+                request: Request { ref url, .. },
+                ref request_id,
+                ..
+            } => {
+                Ok(IndividualRequest {
+                    request_id: request_id.clone(),
+                    url: url.clone(),
+                })
+            },
+            _ => bail!("IndividualRequest can only be created from ChromeDebuggerMessage::NetworkRequestWillBeSent")
+        }
+    }
+}
 
 pub mod chrome {
     // TODO missing support for redirects
