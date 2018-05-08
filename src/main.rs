@@ -250,6 +250,15 @@ struct RequestInfo {
     requests: Vec<IndividualRequest>,
 }
 
+impl RequestInfo {
+    /// Panics if `normalized_domain_name` is not equal
+    fn merge_with(&mut self, other: Self) {
+        assert_eq!(self.normalized_domain_name, other.normalized_domain_name);
+
+        self.requests.extend(other.requests.into_iter());
+    }
+}
+
 impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
     type Error = Error;
 
