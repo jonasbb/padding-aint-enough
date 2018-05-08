@@ -21,6 +21,7 @@ use failure::ResultExt;
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use petgraph::graphml::{Config as GraphMLConfig, GraphML};
 use petgraph::prelude::*;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fs::OpenOptions;
@@ -73,18 +74,96 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     let mut graph: Graph<_, ()> = Graph::new();
     let mut nodes_cache: HashMap<String, NodeIndex> = HashMap::new();
 
-    for message in messages {
-        use chrome::ChromeDebuggerMessage::*;
-        if let NetworkRequestWillBeSent {
-            request: Request { url, .. },
-            ..
-        } = message
-        {
-            let _entry = nodes_cache
-                .entry(url.clone())
-                .or_insert_with(|| graph.add_node(RequestInfo::try_from(message).expect(
+    // Insert a node for "other" type dependencies
+    nodes_cache.entry("other".to_string()).or_insert_with(|| {
+        graph.add_node(RequestInfo {
+            normalized_domain_name: "other".into(),
+            requests: Vec::new(),
+        })
+    });
+
+    {
+        let graph = RefCell::new(&mut graph);
+        let nodes_cache = RefCell::new(&mut nodes_cache);
+
+        // Create a new node and add it to the node cache
+        let create_node = |msg: &ChromeDebuggerMessage| -> Result<NodeIndex, Error> {
+            if let ChromeDebuggerMessage::NetworkRequestWillBeSent {
+                request: Request { ref url, .. },
+                ..
+            } = *msg
+            {
+                let mut graph = graph.borrow_mut();
+                let mut nodes_cache = nodes_cache.borrow_mut();
+
+                let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
+                    graph.add_node(RequestInfo::try_from(msg).expect(
                         "A requestWillBeSent must always be able to generate a valid node.",
-                    )));
+                    ))
+                });
+                Ok(*entry)
+            } else {
+                bail!("Cannot create node from this message type.")
+            }
+        };
+        // Find an existing node in the node cache by the URL
+        let find_node = |url: String| -> Result<NodeIndex, Error> {
+            let nodes_cache = nodes_cache.borrow();
+
+            match nodes_cache.get(&*url) {
+                Some(node) => Ok(*node),
+                // TODO this probably needs better error handling
+                // Also see https://projects.cispa.saarland/bushart/encrypted-dns/issues/3
+                None => bail!("Cannot find node in cache even though there is a dependency to it"),
+            }
+        };
+        let add_dependency = |from: NodeIndex, to: NodeIndex| {
+            let mut graph = graph.borrow_mut();
+
+            graph.update_edge(from, to, ());
+        };
+
+        for message in messages {
+            use ChromeDebuggerMessage::NetworkRequestWillBeSent;
+            if let NetworkRequestWillBeSent { initiator, .. } = message {
+                let node = create_node(&message)?;
+
+                // Add dependencies for node/msg combination
+                match initiator {
+                    Initiator::Other {} => {
+                        let other = find_node("other".into())?;
+                        add_dependency(node, other);
+                    }
+                    Initiator::Parser { ref url } => {
+                        let other = find_node(url.clone())?;
+                        add_dependency(node, other);
+                    }
+                    Initiator::Script { ref stack } => {
+                        fn traverse_stack<FN, AD>(
+                            node: NodeIndex,
+                            stack: &Script,
+                            find_node: FN,
+                            add_dependency: AD,
+                        ) -> Result<(), Error>
+                        where
+                            FN: Fn(String) -> Result<NodeIndex, Error>,
+                            AD: Fn(NodeIndex, NodeIndex),
+                        {
+                            for frame in &stack.call_frames {
+                                let other = find_node(frame.url.clone())?;
+                                add_dependency(node, other);
+                            }
+                            if let Some(parent) = &stack.parent {
+                                traverse_stack(node, parent, find_node, add_dependency)?;
+                            }
+
+                            Ok(())
+                        };
+
+                        traverse_stack(node, stack, find_node, add_dependency)?;
+                    }
+                }
+            }
         }
     }
 
