@@ -23,6 +23,7 @@ use petgraph::graphml::{Config as GraphMLConfig, GraphML};
 use petgraph::prelude::*;
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::convert::TryFrom;
 use std::fs::OpenOptions;
 use std::path::PathBuf;
@@ -181,6 +182,24 @@ fn simplify_graph(graph: &mut Graph<RequestInfo, ()>) {
         graph.edge_count()
     );
     remove_self_loops(graph);
+
+    let mut needs_another_iteration = true;
+    while needs_another_iteration {
+        needs_another_iteration = false;
+
+        needs_another_iteration |= remove_depends_on_same_domain(graph);
+        debug!(
+            "Graph size (after same domain): {} / {}",
+            graph.node_count(),
+            graph.edge_count()
+        );
+        needs_another_iteration |= remove_dependency_subset(graph);
+        debug!(
+            "Graph size (after dependency subset): {} / {}",
+            graph.node_count(),
+            graph.edge_count()
+        );
+    }
 }
 
 fn remove_self_loops(graph: &mut Graph<RequestInfo, ()>) {
@@ -195,6 +214,116 @@ fn remove_self_loops(graph: &mut Graph<RequestInfo, ()>) {
             true
         }
     });
+}
+
+/// Returns true if some changes occured
+fn remove_depends_on_same_domain(graph: &mut Graph<RequestInfo, ()>) -> bool {
+    let mut did_changes = false;
+
+    let mut i = 0;
+    'outer: while i < graph.node_count() {
+        let node = NodeIndex::new(i);
+        let node_domain = graph
+            .node_weight(node)
+            .expect("The node index is smaller than the node count")
+            .normalized_domain_name
+            .clone();
+
+        let mut neighbors = graph.neighbors(node).detach();
+        while let Some(other) = neighbors.next_node(graph) {
+            if node_domain == {
+                graph
+                    .node_weight(other)
+                    .expect("The other node index is smaller than the node count")
+                    .normalized_domain_name
+                    .clone()
+            } {
+                did_changes = true;
+
+                // We do not need to transfer all the edges, because we calculated the transitive closure,
+                // meaning all the edges are already transfered
+                let data = graph.remove_node(node).expect("Node id is valid");
+                graph
+                    .node_weight_mut(other)
+                    .expect("Succeeded before")
+                    .merge_with(data);
+                // The current node is merged, thus we MUST abort the inner loop
+                // The nodes will be renumbered, thus at the current node index there will be a different node.
+                // We therefore skip the node index increment
+                continue 'outer;
+            }
+        }
+
+        // increment node index
+        i += 1;
+    }
+
+    did_changes
+}
+
+/// Returns true if some changes occured
+fn remove_dependency_subset(graph: &mut Graph<RequestInfo, ()>) -> bool {
+    // If we have two nodes with equal domain but different dependencies,
+    // we can remove the node with more dependencies, if the other node
+    // has a strict subset of this nodes dependencies
+
+    let mut did_changes = false;
+
+    let mut i = 0;
+    'outer: while i < graph.node_count() {
+        let node_count = graph.node_count();
+        let node = NodeIndex::new(i);
+        let node_domain = graph
+            .node_weight(node)
+            .expect("The node index is smaller than the node count")
+            .normalized_domain_name
+            .clone();
+
+        for j in 0..node_count {
+            let other = NodeIndex::new(j);
+            if node == other {
+                // do not test for same nodes
+                continue;
+            }
+
+            if node_domain == {
+                graph
+                    .node_weight(other)
+                    .expect("The other node index is smaller than the node count")
+                    .normalized_domain_name
+                    .clone()
+            } {
+                let node_succs = graph.neighbors(node).collect::<HashSet<_>>();
+                let other_succs = graph.neighbors(other).collect::<HashSet<_>>();
+
+                if other_succs.is_subset(&node_succs) {
+                    did_changes = true;
+
+                    // The two nodes might be totally unrelated, meaning we need to first transfer all the incoming edges of `node` to `other`
+                    let mut incomming = graph.neighbors_directed(node, Direction::Incoming).detach();
+                    while let Some(n) = incomming.next_node(graph) {
+                        graph.update_edge(n, other, ());
+                    }
+
+                    let data = graph.remove_node(node).expect("Node id is valid");
+                    graph
+                        .node_weight_mut(other)
+                        .expect("Succeeded before")
+                        .merge_with(data);
+
+                    // The current node is merged, thus we MUST abort the inner loop
+                    // The nodes will be renumbered, thus at the current node index there will be a different node.
+                    // We therefore skip the node index increment
+                    continue 'outer;
+                }
+            }
+        }
+
+        // increment node index
+        i += 1;
+    }
+
+    did_changes
 }
 
 fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
