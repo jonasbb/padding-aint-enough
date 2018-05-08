@@ -120,9 +120,9 @@ def handle_url(url: str) -> None:
                         print("Total wall time reached")
                         break
                     signal.alarm(WAIT_SECONDS)
-                    if "id" in msg:
-                        continue
                     data = json.loads(msg)
+                    if "id" in data:
+                        continue
                     if data["method"].startswith("Debugger.") or data["method"].startswith("Target."):
                         continue
                     msglist.append(data)
