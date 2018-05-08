@@ -66,7 +66,6 @@ fn run() -> Result<(), Error> {
     })?;
     let messages: Vec<ChromeDebuggerMessage> = serde_json::from_reader(rdr)?;
     process_messages(&messages)?;
-    // println!("{:#?}", messages);
 
     Ok(())
 }
@@ -115,7 +114,7 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
                 Some(node) => Ok(*node),
                 // TODO this probably needs better error handling
                 // Also see https://projects.cispa.saarland/bushart/encrypted-dns/issues/3
-                None => bail!("Cannot find node in cache even though there is a dependency to it"),
+                None => bail!("Cannot find node in cache even though there is a dependency to it: '{}'", url),
             }
         };
         let add_dependency = |from: NodeIndex, to: NodeIndex| {
@@ -127,25 +126,29 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         for message in messages {
             use ChromeDebuggerMessage::NetworkRequestWillBeSent;
             if let NetworkRequestWillBeSent {
+                request_id,
                 initiator,
                 redirect_response,
                 ..
             } = message
             {
                 let node = create_node(&message)?;
+                if request_id == "16260.12" {
+                    println!("{:#?}", message);
+                }
 
                 // Add dependencies for node/msg combination
                 match (initiator, redirect_response) {
                     (Initiator::Other {}, None) => {
-                        let other = find_node("other".into())?;
+                        let other = find_node("other".into()).with_context(|_| format_err!("Handling other, ID {}", request_id))?;
                         add_dependency(node, other);
                     }
                     (Initiator::Other {}, Some(RedirectResponse { ref url })) => {
-                        let other = find_node(url.clone())?;
+                        let other = find_node(url.clone()).with_context(|_| format_err!("Handling redirect, ID {}", request_id))?;
                         add_dependency(node, other);
                     }
                     (Initiator::Parser { ref url }, None) => {
-                        let other = find_node(url.clone())?;
+                        let other = find_node(url.clone()).with_context(|_| format_err!("Handling parser, ID {}", request_id))?;
                         add_dependency(node, other);
                     }
                     (Initiator::Script { ref stack }, None) => {
@@ -170,7 +173,7 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
                             Ok(())
                         };
 
-                        traverse_stack(node, stack, find_node, add_dependency)?;
+                        traverse_stack(node, stack, find_node, add_dependency).with_context(|_| format_err!("Handling script, ID {}", request_id))?;
                     }
                     _ => {
                         bail!("RedirectorResponse should only occur with the Initiator type other.")
