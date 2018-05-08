@@ -70,7 +70,7 @@ fn run() -> Result<(), Error> {
 }
 
 fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
-    let mut graph: Graph<_, u8> = Graph::new();
+    let mut graph: Graph<_, ()> = Graph::new();
     let mut nodes_cache: HashMap<String, NodeIndex> = HashMap::new();
 
     for message in messages {
@@ -82,10 +82,18 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         {
             let _entry = nodes_cache
                 .entry(url.clone())
-                .or_insert_with(|| graph.add_node(url.clone()));
+                .or_insert_with(|| graph.add_node(RequestInfo::try_from(message).expect(
+                        "A requestWillBeSent must always be able to generate a valid node.",
+                    )));
         }
     }
 
+    export_as_graphml(&graph)?;
+
+    Ok(())
+}
+
+fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     let graphml = GraphML::with_config(
         &graph,
         GraphMLConfig::new()
@@ -99,7 +107,35 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     ).map_err(|err| {
         format_err!("Opening input file '{}' failed: {}", &fname.display(), err)
     })?;
-    wtr.write_all(graphml.to_string().as_bytes())?;
+    wtr.write_all(
+        graphml
+            .to_string_with_weight_functions(
+                |_ew| vec![],
+                |nw| {
+                    vec![
+                        ("domain_name".into(), (&*nw.normalized_domain_name).into()),
+                        (
+                            "request_ids".into(),
+                            (format!(
+                                "{:#?}",
+                                nw.requests
+                                    .iter()
+                                    .map(|r| &r.request_id)
+                                    .collect::<Vec<_>>()
+                            ).into()),
+                        ),
+                        (
+                            "urls".into(),
+                            (format!(
+                                "{:#?}",
+                                nw.requests.iter().map(|r| &r.url).collect::<Vec<_>>()
+                            ).into()),
+                        ),
+                    ]
+                },
+            )
+            .as_bytes(),
+    )?;
 
     Ok(())
 }
