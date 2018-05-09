@@ -123,8 +123,8 @@ def handle_url(url: str) -> None:
                     data = json.loads(msg)
                     if "id" in data:
                         continue
-                    if data["method"].startswith("Debugger.") or data["method"].startswith("Target."):
-                        continue
+                    # if data["method"].startswith("Debugger.") or data["method"].startswith("Target."):
+                    #     continue
                     msglist.append(data)
             except WebSocketTimeoutException:
                 pass
