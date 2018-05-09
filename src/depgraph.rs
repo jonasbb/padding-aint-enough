@@ -4,7 +4,7 @@ use petgraph::{graph::NodeIndex, Directed, Graph};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::convert::TryFrom;
-use RequestInfo;
+use {GraphExt, RequestInfo};
 
 pub struct DepGraph {
     graph: Graph<RequestInfo, (), Directed>,
@@ -37,6 +37,12 @@ impl DepGraph {
     }
 
     pub fn process_messages(&mut self, messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
+        self.do_process_messages(messages)?;
+        self.graph.transitive_closure();
+        Ok(())
+    }
+
+    fn do_process_messages(&mut self, messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         let graph = RefCell::new(&mut self.graph);
         let nodes_cache = RefCell::new(&mut self.nodes_cache);
 
@@ -136,6 +142,7 @@ impl DepGraph {
                 }
             }
         }
+
         Ok(())
     }
 }
@@ -144,28 +151,80 @@ impl DepGraph {
 mod test {
     use super::*;
     use misc_utils::fs::file_open_read;
-    use petgraph::{
-        algo::is_isomorphic,
-        graphml::{Config as GraphMLConfig, GraphML},
-    };
+    use petgraph::{algo::is_isomorphic, graph::IndexType, EdgeType};
     use serde_json;
     use std::path::Path;
 
-    fn build_from_file<P>(path: P) -> Result<DepGraph, Error>
+    fn get_messages<P>(path: P) -> Result<Vec<ChromeDebuggerMessage>, Error>
     where
         P: AsRef<Path>,
     {
         let path = path.as_ref();
-
         let rdr = file_open_read(path)
             .map_err(|err| format_err!("Opening input file '{}' failed: {}", path.display(), err))?;
-        let messages: Vec<ChromeDebuggerMessage> =
-            serde_json::from_reader(rdr).context("Failed to parse JSON")?;
+        Ok(serde_json::from_reader(rdr).context("Failed to parse JSON")?)
+    }
+
+    fn test_graphs_are_isomorph<N1, N2, E1, E2, Ty, Ix>(
+        expected: &Graph<N1, E1, Ty, Ix>,
+        test: &Graph<N2, E2, Ty, Ix>,
+    ) where
+        Ty: EdgeType,
+        Ix: IndexType,
+    {
+        assert_eq!(
+            expected.node_count(),
+            test.node_count(),
+            "Node count must be equal"
+        );
+        assert_eq!(
+            expected.edge_count(),
+            test.edge_count(),
+            "Edge count must be equal"
+        );
+
+        let pure_expected = expected.map(|_, _| (), |_, _| ());
+        let pure_test = test.map(|_, _| (), |_, _| ());
+        assert!(
+            is_isomorphic(&pure_expected, &pure_test),
+            "Graphs must be isomorphic"
+        );
+    }
+
+    #[test]
+    fn minimal_website_just_processing() {
+        let mut expected_graph = Graph::<&'static str, ()>::new();
+        let other = expected_graph.add_node("other");
+        let localhost = expected_graph.add_node("localhost");
+        let favicon = expected_graph.add_node("favicon");
+        let localhost_script = expected_graph.add_node("localhost script");
+        let jquery = expected_graph.add_node("jquery");
+        let fedora = expected_graph.add_node("fedora");
+        let google = expected_graph.add_node("google");
+        let pythonhaven = expected_graph.add_node("pythonhaven");
+
+        expected_graph.extend_with_edges(&[
+            // deps on other
+            (localhost, other),
+            (favicon, other),
+            // deps on localhost
+            (localhost_script, localhost),
+            (jquery, localhost),
+            (google, localhost),
+            (pythonhaven, localhost),
+            // misc deps
+            (fedora, localhost_script),
+            (pythonhaven, jquery),
+        ]);
+
         let mut depgraph = DepGraph::new();
         depgraph
-            .process_messages(&messages)
-            .context("Failed to process all messages from chrome")?;
-        Ok(depgraph)
+            .do_process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."))
+            .context("Failed to process all messages from chrome")
+            .expect("A graph must be buildable from the data.");
+
+        test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
     }
 
     #[test]
@@ -181,52 +240,41 @@ mod test {
         let pythonhaven = expected_graph.add_node("pythonhaven");
 
         expected_graph.extend_with_edges(&[
+            // self deps
+            (other, other),
+            (localhost, localhost),
+            (favicon, favicon),
+            (localhost_script, localhost_script),
+            (jquery, jquery),
+            (fedora, fedora),
+            (google, google),
+            (pythonhaven, pythonhaven),
+            // deps on other
             (localhost, other),
             (favicon, other),
+            (localhost_script, other),
+            (jquery, other),
+            (fedora, other),
+            (google, other),
+            (pythonhaven, other),
+            // deps on localhost
             (localhost_script, localhost),
             (jquery, localhost),
-            (fedora, localhost_script),
+            (fedora, localhost),
             (google, localhost),
             (pythonhaven, localhost),
+            // misc deps
+            (fedora, localhost_script),
             (pythonhaven, jquery),
         ]);
 
-        let depgraph = build_from_file("./test/data/minimal-webpage-2018-05-08.json")
-            .expect("Parsing the file must succeed.");
+        let mut depgraph = DepGraph::new();
+        depgraph
+            .process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."))
+            .context("Failed to process all messages from chrome")
+            .expect("A graph must be buildable from the data.");
 
-        assert_eq!(
-            expected_graph.node_count(),
-            depgraph.as_graph().node_count(),
-            "Node count must be equal"
-        );
-        assert_eq!(
-            expected_graph.edge_count(),
-            depgraph.as_graph().edge_count(),
-            "Edge count must be equal"
-        );
-        eprintln!(
-            "{}",
-            GraphML::with_config(
-                &expected_graph,
-                GraphMLConfig::new().export_node_weights(true)
-            ).to_string_with_weight_functions(
-                |_| Vec::new(),
-                |node| vec![("weight".to_string(), node.to_string().into())],
-            )
-        );
-        eprintln!(
-            "{}",
-            GraphML::with_config(
-                depgraph.as_graph(),
-                GraphMLConfig::new().export_node_weights(true)
-            ).to_string_with_weight_functions(|_| Vec::new(), RequestInfo::graphml_support)
-        );
-
-        let pure_expected_graph = expected_graph.map(|_, _| (), |_, _| ());
-        let pure_depgraph = depgraph.as_graph().map(|_, _| (), |_, _| ());
-        assert!(
-            is_isomorphic(&pure_expected_graph, &pure_depgraph),
-            "Graphs must be isomorphic"
-        );
+        test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
     }
 }
