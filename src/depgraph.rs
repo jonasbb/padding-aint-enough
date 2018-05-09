@@ -126,6 +126,10 @@ impl DepGraph {
                             AD: Fn(NodeIndex, NodeIndex),
                         {
                             for frame in &stack.call_frames {
+                                if frame.url == "" {
+                                    warn!("Script without URL {}", frame.script_id);
+                                    continue;
+                                }
                                 let other = find_node(frame.url.clone())?;
                                 add_dependency(node, other);
                             }
