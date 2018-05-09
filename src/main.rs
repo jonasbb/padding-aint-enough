@@ -258,6 +258,12 @@ pub mod chrome {
         TargetTargetInfoChanged {},
         #[serde(rename = "Target.targetDestroyed", rename_all = "camelCase")]
         TargetTargetDestroyed {},
+
+        // Everything Debugger
+        #[serde(rename = "Debugger.scriptParsed", rename_all = "camelCase")]
+        DebuggerScriptParsed {},
+        #[serde(rename = "Debugger.scriptFailedToParse", rename_all = "camelCase")]
+        DebuggerScriptFailedToParse {},
     }
 
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
