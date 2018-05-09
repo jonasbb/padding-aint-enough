@@ -291,8 +291,10 @@ pub mod chrome {
         pub parent: Option<Box<Script>>,
     }
 
+    #[serde(rename_all = "camelCase")]
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
     pub struct CallFrame {
         pub url: String,
+        pub script_id: String,
     }
 }
