@@ -1,0 +1,2368 @@
+[
+    {
+        "method": "Target.targetCreated",
+        "params": {
+            "targetInfo": {
+                "targetId": "1A9C646F710729A6F1D5716C45AD4D82",
+                "type": "background_page",
+                "title": "CryptoTokenExtension",
+                "url": "chrome-extension://kmendfapggjehodndflmmgagdbamhnfd/_generated_background_page.html",
+                "attached": false
+            }
+        }
+    },
+    {
+        "method": "Target.targetCreated",
+        "params": {
+            "targetInfo": {
+                "targetId": "3CFD2F60B9D7250B8B1BB23ABC4624CE",
+                "type": "background_page",
+                "title": "Google Network Speech",
+                "url": "chrome-extension://neajdppkdcdipfabeoofebfddakdcjhd/_generated_background_page.html",
+                "attached": false
+            }
+        }
+    },
+    {
+        "method": "Target.targetCreated",
+        "params": {
+            "targetInfo": {
+                "targetId": "55186CEC8A5BD8199090F5C8DBE2F0E9",
+                "type": "background_page",
+                "title": "Feedback",
+                "url": "chrome-extension://gfdkimpbcpahaombhbimeihdjnejgicl/_generated_background_page.html",
+                "attached": false
+            }
+        }
+    },
+    {
+        "method": "Target.targetCreated",
+        "params": {
+            "targetInfo": {
+                "targetId": "7AF03893467EBEB5EAB33EC77533DE24",
+                "type": "background_page",
+                "title": "Google Hangouts",
+                "url": "chrome-extension://nkeimhogjdpnpccoofpliimaahmaaome/background.html",
+                "attached": false
+            }
+        }
+    },
+    {
+        "method": "Target.targetCreated",
+        "params": {
+            "targetInfo": {
+                "targetId": "9A4099B276FA79D92602F1B955ECD584",
+                "type": "background_page",
+                "title": "Chrome Media Router",
+                "url": "chrome-extension://pkedcjkdefgpdelpbcmbmeomcjbeemfm/_generated_background_page.html",
+                "attached": false
+            }
+        }
+    },
+    {
+        "method": "Target.targetCreated",
+        "params": {
+            "targetInfo": {
+                "targetId": "CCA48860E13BEBFAD65D477E3CF75109",
+                "type": "background_page",
+                "title": "Google Docs Offline",
+                "url": "chrome-extension://ghbmnnjooekpmoecnnnilnnbdlolhkhi/_generated_background_page.html",
+                "attached": false
+            }
+        }
+    },
+    {
+        "method": "Target.targetCreated",
+        "params": {
+            "targetInfo": {
+                "targetId": "D02A7B1B52AC1313FAB3ED6862A046CD",
+                "type": "background_page",
+                "title": "Fedora User Agent",
+                "url": "chrome-extension://hojggiaghnldpcknpbciehjcaoafceil/_generated_background_page.html",
+                "attached": false
+            }
+        }
+    },
+    {
+        "method": "Target.targetCreated",
+        "params": {
+            "targetInfo": {
+                "targetId": "D4DE030EF7A72C7E86BD6AC3D36E9C06",
+                "type": "background_page",
+                "title": "Chrome Web Store Payments",
+                "url": "chrome-extension://nmmhkkegccagdldgiimedpiccmgmieda/_generated_background_page.html",
+                "attached": false
+            }
+        }
+    },
+    {
+        "method": "Target.targetCreated",
+        "params": {
+            "targetInfo": {
+                "targetId": "D63C922F1D5EA3F9DE95C10CF8F24DFD",
+                "type": "page",
+                "title": "Index of /",
+                "url": "file:///",
+                "attached": true
+            }
+        }
+    },
+    {
+        "method": "Target.targetCreated",
+        "params": {
+            "targetInfo": {
+                "targetId": "D89C82839BBFE676A94FF04383B07F46",
+                "type": "iframe",
+                "title": "Google Docs Offline",
+                "url": "data:,",
+                "attached": false
+            }
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "18",
+            "url": "file:///",
+            "startLine": 8,
+            "startColumn": 8,
+            "endLine": 125,
+            "endColumn": 0,
+            "executionContextId": 1,
+            "hash": "9DC609C20EFD815383524622B6905D21753E7F96",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 3111
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "19",
+            "url": "file:///",
+            "startLine": 223,
+            "startColumn": 8,
+            "endLine": 458,
+            "endColumn": 0,
+            "executionContextId": 1,
+            "hash": "5E740BF0B2C94AA17345DA177EF04382AAA76346",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 8114
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "20",
+            "url": "file:///",
+            "startLine": 458,
+            "startColumn": 17,
+            "endLine": 458,
+            "endColumn": 477,
+            "executionContextId": 1,
+            "hash": "1DD60971F87AA23126245DD4D70E59D94922B104",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 460
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "21",
+            "url": "file:///",
+            "startLine": 458,
+            "startColumn": 494,
+            "endLine": 689,
+            "endColumn": 0,
+            "executionContextId": 1,
+            "hash": "7764A8A0C70CEEC572B8A42458742BB7B0D4A241",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 8277
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "22",
+            "url": "file:///",
+            "startLine": 689,
+            "startColumn": 17,
+            "endLine": 689,
+            "endColumn": 28,
+            "executionContextId": 1,
+            "hash": "7B1D8692B9A4E6D2B6015104461127B40F555F85",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 11
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "23",
+            "url": "file:///",
+            "startLine": 690,
+            "startColumn": 8,
+            "endLine": 690,
+            "endColumn": 79,
+            "executionContextId": 1,
+            "hash": "DF6372B103D9C1D2882CB7C7EF9E1C7B5E6C0B21",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 71
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "24",
+            "url": "file:///",
+            "startLine": 691,
+            "startColumn": 8,
+            "endLine": 691,
+            "endColumn": 79,
+            "executionContextId": 1,
+            "hash": "96A6E523787E8CF51F0175C0363305D218893643",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 71
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "25",
+            "url": "file:///",
+            "startLine": 692,
+            "startColumn": 8,
+            "endLine": 692,
+            "endColumn": 76,
+            "executionContextId": 1,
+            "hash": "C427050158DD95345223CF579B9950625181FC06",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 68
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "26",
+            "url": "file:///",
+            "startLine": 693,
+            "startColumn": 8,
+            "endLine": 693,
+            "endColumn": 79,
+            "executionContextId": 1,
+            "hash": "59BEB343565C2B08F9FBBFD2E1164690F3F67D84",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 71
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "27",
+            "url": "file:///",
+            "startLine": 694,
+            "startColumn": 8,
+            "endLine": 694,
+            "endColumn": 81,
+            "executionContextId": 1,
+            "hash": "1789FDF0AB465474394200115F5F55C1EA67FDA5",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 73
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "28",
+            "url": "file:///",
+            "startLine": 695,
+            "startColumn": 8,
+            "endLine": 695,
+            "endColumn": 79,
+            "executionContextId": 1,
+            "hash": "2AF7F0C076AC9E93DD543D933FE79D333D4B3973",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 71
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "29",
+            "url": "file:///",
+            "startLine": 696,
+            "startColumn": 8,
+            "endLine": 696,
+            "endColumn": 83,
+            "executionContextId": 1,
+            "hash": "3ADADD00E1223628F2CF4597BD39006AD9E0D302",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 75
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "30",
+            "url": "file:///",
+            "startLine": 697,
+            "startColumn": 8,
+            "endLine": 697,
+            "endColumn": 95,
+            "executionContextId": 1,
+            "hash": "0C1E3D724E34511303E1F3F6EBB2647768FB7833",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 87
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "31",
+            "url": "file:///",
+            "startLine": 698,
+            "startColumn": 8,
+            "endLine": 698,
+            "endColumn": 81,
+            "executionContextId": 1,
+            "hash": "A9D7D043F57C8601723C00D2E8750611763B2022",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 73
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "32",
+            "url": "file:///",
+            "startLine": 699,
+            "startColumn": 8,
+            "endLine": 699,
+            "endColumn": 77,
+            "executionContextId": 1,
+            "hash": "4B26F592E1953CC192694252EB60B9CBCACF0A76",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 69
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "33",
+            "url": "file:///",
+            "startLine": 700,
+            "startColumn": 8,
+            "endLine": 700,
+            "endColumn": 77,
+            "executionContextId": 1,
+            "hash": "4B26F592E1953CC1CEB65E35EB60B9CBABE4B385",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 69
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "34",
+            "url": "file:///",
+            "startLine": 701,
+            "startColumn": 8,
+            "endLine": 701,
+            "endColumn": 73,
+            "executionContextId": 1,
+            "hash": "2066B6A1A2560D46984CB421126FEEC4177B3E60",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 65
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "35",
+            "url": "file:///",
+            "startLine": 702,
+            "startColumn": 8,
+            "endLine": 702,
+            "endColumn": 79,
+            "executionContextId": 1,
+            "hash": "15556493A86BB4E001E29128C7D50EF61F826C82",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 71
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "36",
+            "url": "file:///",
+            "startLine": 703,
+            "startColumn": 8,
+            "endLine": 703,
+            "endColumn": 76,
+            "executionContextId": 1,
+            "hash": "F45D0B3338E4CC493E9D8976B4C30007579158C7",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 68
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "37",
+            "url": "file:///",
+            "startLine": 704,
+            "startColumn": 8,
+            "endLine": 704,
+            "endColumn": 81,
+            "executionContextId": 1,
+            "hash": "47840220B3C325B73352AD17C15A6C286FD68941",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 73
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "38",
+            "url": "file:///",
+            "startLine": 705,
+            "startColumn": 8,
+            "endLine": 705,
+            "endColumn": 77,
+            "executionContextId": 1,
+            "hash": "6EE96132E1953CC1C62EA10716C522E36D2F1676",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 69
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "39",
+            "url": "file:///",
+            "startLine": 706,
+            "startColumn": 8,
+            "endLine": 706,
+            "endColumn": 71,
+            "executionContextId": 1,
+            "hash": "0930AB43849C599ACC4995822A78E06442B89D14",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 63
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "40",
+            "url": "file:///",
+            "startLine": 707,
+            "startColumn": 8,
+            "endLine": 707,
+            "endColumn": 76,
+            "executionContextId": 1,
+            "hash": "372CFFD37045B7E3AA2D7CF470C136E67C7FC9A3",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 68
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "41",
+            "url": "file:///",
+            "startLine": 708,
+            "startColumn": 8,
+            "endLine": 708,
+            "endColumn": 76,
+            "executionContextId": 1,
+            "hash": "062F84A1CCBF3D47C60F8D80FDEBC7DBE22B0B45",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 68
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "42",
+            "url": "file:///",
+            "startLine": 709,
+            "startColumn": 8,
+            "endLine": 709,
+            "endColumn": 76,
+            "executionContextId": 1,
+            "hash": "B9A3BBD22B2D72F3201EEE80E8B2844745B2C317",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 68
+        }
+    },
+    {
+        "method": "Network.requestWillBeSent",
+        "params": {
+            "requestId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "documentURL": "http://localhost:8000/test.html",
+            "request": {
+                "url": "http://localhost:8000/test.html",
+                "method": "GET",
+                "headers": {
+                    "Upgrade-Insecure-Requests": "1",
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "X-DevTools-Emulate-Network-Conditions-Client-Id": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+                },
+                "mixedContentType": "none",
+                "initialPriority": "VeryHigh",
+                "referrerPolicy": "no-referrer-when-downgrade"
+            },
+            "timestamp": 459298.821076,
+            "wallTime": 1525881845.783925,
+            "initiator": {
+                "type": "other"
+            },
+            "type": "Document",
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "timestamp": 459298.825806,
+            "type": "Document",
+            "response": {
+                "url": "http://localhost:8000/test.html",
+                "status": 200,
+                "statusText": "OK",
+                "headers": {
+                    "Server": "SimpleHTTP/0.6 Python/3.6.5",
+                    "Date": "Wed, 09 May 2018 16:04:05 GMT",
+                    "Content-type": "text/html",
+                    "Content-Length": "855",
+                    "Last-Modified": "Wed, 09 May 2018 16:02:33 GMT"
+                },
+                "headersText": "HTTP/1.0 200 OK\r\nServer: SimpleHTTP/0.6 Python/3.6.5\r\nDate: Wed, 09 May 2018 16:04:05 GMT\r\nContent-type: text/html\r\nContent-Length: 855\r\nLast-Modified: Wed, 09 May 2018 16:02:33 GMT\r\n\r\n",
+                "mimeType": "text/html",
+                "requestHeaders": {
+                    "Host": "localhost:8000",
+                    "Connection": "keep-alive",
+                    "Pragma": "no-cache",
+                    "Cache-Control": "no-cache",
+                    "Upgrade-Insecure-Requests": "1",
+                    "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Accept-Language": "en-US,en;q=0.9"
+                },
+                "requestHeadersText": "GET /test.html HTTP/1.1\r\nHost: localhost:8000\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n",
+                "connectionReused": true,
+                "connectionId": 198,
+                "remoteIPAddress": "127.0.0.1",
+                "remotePort": 8000,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 185,
+                "timing": {
+                    "requestTime": 459298.821409,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": -1,
+                    "dnsEnd": -1,
+                    "connectStart": -1,
+                    "connectEnd": -1,
+                    "sslStart": -1,
+                    "sslEnd": -1,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 3.252,
+                    "sendEnd": 3.95,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 4.051
+                },
+                "protocol": "http/1.0",
+                "securityState": "neutral"
+            },
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Target.targetInfoChanged",
+        "params": {
+            "targetInfo": {
+                "targetId": "D63C922F1D5EA3F9DE95C10CF8F24DFD",
+                "type": "page",
+                "title": "localhost:8000/test.html",
+                "url": "http://localhost:8000/test.html",
+                "attached": true
+            }
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "timestamp": 459298.846195,
+            "dataLength": 855,
+            "encodedDataLength": 855
+        }
+    },
+    {
+        "method": "Network.loadingFinished",
+        "params": {
+            "requestId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "timestamp": 459298.842595,
+            "encodedDataLength": 1040,
+            "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Network.requestWillBeSent",
+        "params": {
+            "requestId": "28543.2",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "documentURL": "http://localhost:8000/test.html",
+            "request": {
+                "url": "https://code.jquery.com/jquery-3.3.1.min.js",
+                "method": "GET",
+                "headers": {
+                    "Referer": "http://localhost:8000/test.html",
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36"
+                },
+                "mixedContentType": "none",
+                "initialPriority": "High",
+                "referrerPolicy": "no-referrer-when-downgrade"
+            },
+            "timestamp": 459298.853115,
+            "wallTime": 1525881845.81596,
+            "initiator": {
+                "type": "parser",
+                "url": "http://localhost:8000/test.html",
+                "lineNumber": 19
+            },
+            "type": "Script",
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "21",
+            "url": "http://localhost:8000/test.html",
+            "startLine": 11,
+            "startColumn": 8,
+            "endLine": 17,
+            "endColumn": 0,
+            "executionContextId": 1,
+            "hash": "65C3A0239D797525725F9FA56A7D1AE7A4CA5C45",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 275
+        }
+    },
+    {
+        "method": "Network.requestWillBeSent",
+        "params": {
+            "requestId": "28543.3",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "documentURL": "http://localhost:8000/test.html",
+            "request": {
+                "url": "http://localhost:8000/test.js",
+                "method": "GET",
+                "headers": {
+                    "Referer": "http://localhost:8000/test.html",
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36"
+                },
+                "mixedContentType": "none",
+                "initialPriority": "Low",
+                "referrerPolicy": "no-referrer-when-downgrade"
+            },
+            "timestamp": 459298.854053,
+            "wallTime": 1525881845.8169,
+            "initiator": {
+                "type": "script",
+                "stack": {
+                    "callFrames": [
+                        {
+                            "functionName": "",
+                            "scriptId": "21",
+                            "url": "http://localhost:8000/test.html",
+                            "lineNumber": 16,
+                            "columnNumber": 18
+                        }
+                    ]
+                }
+            },
+            "type": "Script",
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.requestWillBeSent",
+        "params": {
+            "requestId": "28543.4",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "documentURL": "http://localhost:8000/test.html",
+            "request": {
+                "url": "https://www.google.org/assets/static/images/logo_googledotorg-171e7482e5523603fc0eed236dd772d8.svg",
+                "method": "GET",
+                "headers": {
+                    "Referer": "http://localhost:8000/test.html",
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36"
+                },
+                "mixedContentType": "none",
+                "initialPriority": "Low",
+                "referrerPolicy": "no-referrer-when-downgrade"
+            },
+            "timestamp": 459298.854178,
+            "wallTime": 1525881845.81703,
+            "initiator": {
+                "type": "script",
+                "stack": {
+                    "callFrames": [],
+                    "parent": {
+                        "description": "Image",
+                        "callFrames": [
+                            {
+                                "functionName": "",
+                                "scriptId": "21",
+                                "url": "http://localhost:8000/test.html",
+                                "lineNumber": 12,
+                                "columnNumber": 18
+                            }
+                        ]
+                    }
+                }
+            },
+            "type": "Image",
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.resourceChangedPriority",
+        "params": {
+            "requestId": "28543.4",
+            "newPriority": "High",
+            "timestamp": 459298.863849
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "28543.3",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "timestamp": 459298.864103,
+            "type": "Script",
+            "response": {
+                "url": "http://localhost:8000/test.js",
+                "status": 200,
+                "statusText": "OK",
+                "headers": {
+                    "Date": "Wed, 09 May 2018 16:04:05 GMT",
+                    "Last-Modified": "Wed, 02 May 2018 14:46:45 GMT",
+                    "Server": "SimpleHTTP/0.6 Python/3.6.5",
+                    "Content-Length": "151",
+                    "Content-type": "application/javascript"
+                },
+                "headersText": "HTTP/1.0 200 OK\r\nServer: SimpleHTTP/0.6 Python/3.6.5\r\nDate: Wed, 09 May 2018 16:04:05 GMT\r\nContent-type: application/javascript\r\nContent-Length: 151\r\nLast-Modified: Wed, 02 May 2018 14:46:45 GMT\r\n\r\n",
+                "mimeType": "application/javascript",
+                "requestHeaders": {
+                    "Pragma": "no-cache",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Host": "localhost:8000",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "Accept": "*/*",
+                    "Referer": "http://localhost:8000/test.html",
+                    "Connection": "keep-alive",
+                    "Cache-Control": "no-cache"
+                },
+                "requestHeadersText": "GET /test.js HTTP/1.1\r\nHost: localhost:8000\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: */*\r\nReferer: http://localhost:8000/test.html\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n",
+                "connectionReused": true,
+                "connectionId": 200,
+                "remoteIPAddress": "127.0.0.1",
+                "remotePort": 8000,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 198,
+                "timing": {
+                    "requestTime": 459298.854935,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": -1,
+                    "dnsEnd": -1,
+                    "connectStart": -1,
+                    "connectEnd": -1,
+                    "sslStart": -1,
+                    "sslEnd": -1,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 1.965,
+                    "sendEnd": 2.037,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 3.746
+                },
+                "protocol": "http/1.0",
+                "securityState": "neutral"
+            },
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.3",
+            "timestamp": 459298.864136,
+            "dataLength": 151,
+            "encodedDataLength": 151
+        }
+    },
+    {
+        "method": "Network.loadingFinished",
+        "params": {
+            "requestId": "28543.3",
+            "timestamp": 459298.864026,
+            "encodedDataLength": 349,
+            "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "22",
+            "url": "http://localhost:8000/test.js",
+            "startLine": 0,
+            "startColumn": 0,
+            "endLine": 3,
+            "endColumn": 0,
+            "executionContextId": 1,
+            "hash": "EE45CCD1F3ABB796B88FF3E6A38798A3DB9DF436",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 151
+        }
+    },
+    {
+        "method": "Network.requestWillBeSent",
+        "params": {
+            "requestId": "28543.6",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "documentURL": "http://localhost:8000/test.html",
+            "request": {
+                "url": "https://getfedora.org/static/images/fedora-logotext.png",
+                "method": "GET",
+                "headers": {
+                    "Referer": "http://localhost:8000/test.html",
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36"
+                },
+                "mixedContentType": "none",
+                "initialPriority": "Low",
+                "referrerPolicy": "no-referrer-when-downgrade"
+            },
+            "timestamp": 459298.864745,
+            "wallTime": 1525881845.82759,
+            "initiator": {
+                "type": "script",
+                "stack": {
+                    "callFrames": [],
+                    "parent": {
+                        "description": "Image",
+                        "callFrames": [
+                            {
+                                "functionName": "",
+                                "scriptId": "22",
+                                "url": "http://localhost:8000/test.js",
+                                "lineNumber": 1,
+                                "columnNumber": 14
+                            }
+                        ]
+                    }
+                }
+            },
+            "type": "Image",
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.resourceChangedPriority",
+        "params": {
+            "requestId": "28543.6",
+            "newPriority": "High",
+            "timestamp": 459298.865955
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "28543.2",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "timestamp": 459298.893692,
+            "type": "Script",
+            "response": {
+                "url": "https://code.jquery.com/jquery-3.3.1.min.js",
+                "status": 200,
+                "statusText": "OK",
+                "headers": {
+                    "Date": "Wed, 09 May 2018 16:04:05 GMT",
+                    "Content-Encoding": "gzip",
+                    "Last-Modified": "Sat, 20 Jan 2018 17:26:44 GMT",
+                    "Server": "nginx",
+                    "ETag": "W/\"5a637bd4-1538f\"",
+                    "Vary": "",
+                    "X-HW": "1525881845.dop001.fr7.t,1525881845.cds043.fr7.shn,1525881845.dop001.fr7.t,1525881845.cds068.fr7.c",
+                    "Content-Type": "application/javascript; charset=utf-8",
+                    "Access-Control-Allow-Origin": "*",
+                    "Cache-Control": "max-age=315360000\npublic",
+                    "Connection": "Keep-Alive",
+                    "Accept-Ranges": "bytes",
+                    "Content-Length": "35358"
+                },
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Wed, 09 May 2018 16:04:05 GMT\r\nConnection: Keep-Alive\r\nAccept-Ranges: bytes\r\nContent-Encoding: gzip\r\nContent-Length: 35358\r\nContent-Type: application/javascript; charset=utf-8\r\nLast-Modified: Sat, 20 Jan 2018 17:26:44 GMT\r\nServer: nginx\r\nVary: \r\nETag: W/\"5a637bd4-1538f\"\r\nCache-Control: max-age=315360000\r\nCache-Control: public\r\nAccess-Control-Allow-Origin: *\r\nX-HW: 1525881845.dop001.fr7.t,1525881845.cds043.fr7.shn,1525881845.dop001.fr7.t,1525881845.cds068.fr7.c\r\n\r\n",
+                "mimeType": "application/javascript",
+                "requestHeaders": {
+                    "Pragma": "no-cache",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Host": "code.jquery.com",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "Accept": "*/*",
+                    "Referer": "http://localhost:8000/test.html",
+                    "Connection": "keep-alive",
+                    "Cache-Control": "no-cache"
+                },
+                "requestHeadersText": "GET /jquery-3.3.1.min.js HTTP/1.1\r\nHost: code.jquery.com\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: */*\r\nReferer: http://localhost:8000/test.html\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n",
+                "connectionReused": false,
+                "connectionId": 216,
+                "remoteIPAddress": "205.185.208.52",
+                "remotePort": 443,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 491,
+                "timing": {
+                    "requestTime": 459298.854731,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": 1.142,
+                    "dnsEnd": 1.945,
+                    "connectStart": 1.945,
+                    "connectEnd": 28.289,
+                    "sslStart": 8.482,
+                    "sslEnd": 28.281,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 28.36,
+                    "sendEnd": 28.401,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 38.408
+                },
+                "protocol": "http/1.1",
+                "securityState": "secure",
+                "securityDetails": {
+                    "protocol": "TLS 1.2",
+                    "keyExchange": "ECDHE_RSA",
+                    "keyExchangeGroup": "P-256",
+                    "cipher": "AES_128_GCM",
+                    "certificateId": 0,
+                    "subjectName": "code.jquery.com",
+                    "sanList": [
+                        "code.jquery.com",
+                        "content.jquery.com",
+                        "static.jquery.com"
+                    ],
+                    "issuer": "Let's Encrypt Authority X3",
+                    "validFrom": 1523482870,
+                    "validTo": 1531258870,
+                    "signedCertificateTimestampList": [
+                        {
+                            "status": "Verified",
+                            "origin": "Embedded in certificate",
+                            "logDescription": "Cloudflare 'Nimbus2018' Log",
+                            "logId": "DB74AFEECB29ECB1FECA3E716D2CE5B9AABB36F7847183C75D9D4F37B61FBF64",
+                            "timestamp": 1523486470488,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "304502205B7F46876308A67C617F35348B39A93FC9B94054F453D3EFCD46E5415044413902210088B92BF418E4F4FDBA4EE040842FBB18BC3076DF8BAABA5BEDA01DCAE76F79DD"
+                        },
+                        {
+                            "status": "Verified",
+                            "origin": "Embedded in certificate",
+                            "logDescription": "Google 'Icarus' log",
+                            "logId": "293C519654C83965BAAA50FC5807D4B76FBF587A2972DCA4C30CF4E54547F478",
+                            "timestamp": 1523486470507,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3046022100BEB426144471BAE6BE93B0C741995B0C8649A9ABCC91C1CF6EB1D6BA7D4A0E02022100E2674B73D51BA863AEE44635E757A066527929B6298CA50AF6CA0F5CFF985F88"
+                        }
+                    ]
+                }
+            },
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.2",
+            "timestamp": 459298.893912,
+            "dataLength": 65536,
+            "encodedDataLength": 32768
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.2",
+            "timestamp": 459298.894626,
+            "dataLength": 21391,
+            "encodedDataLength": 2590
+        }
+    },
+    {
+        "method": "Network.loadingFinished",
+        "params": {
+            "requestId": "28543.2",
+            "timestamp": 459298.894191,
+            "encodedDataLength": 35849,
+            "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "23",
+            "url": "https://code.jquery.com/jquery-3.3.1.min.js",
+            "startLine": 0,
+            "startColumn": 0,
+            "endLine": 2,
+            "endColumn": 0,
+            "executionContextId": 1,
+            "hash": "F6C0E713C8B781C495A1FBC349278058827F3C36",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 86927
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "24",
+            "url": "http://localhost:8000/test.html",
+            "startLine": 20,
+            "startColumn": 8,
+            "endLine": 24,
+            "endColumn": 0,
+            "executionContextId": 1,
+            "hash": "52FABF9268D7C799EC75E3C139DBA0C9167C8B26",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 261
+        }
+    },
+    {
+        "method": "Debugger.scriptParsed",
+        "params": {
+            "scriptId": "25",
+            "url": "",
+            "startLine": 0,
+            "startColumn": 0,
+            "endLine": 0,
+            "endColumn": 89,
+            "executionContextId": 1,
+            "hash": "0A953C30C9499B64A314F2E4DDE5B573F1181815",
+            "executionContextAuxData": {
+                "isDefault": true,
+                "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+            },
+            "isLiveEdit": false,
+            "sourceMapURL": "",
+            "hasSourceURL": false,
+            "isModule": false,
+            "length": 89,
+            "stackTrace": {
+                "callFrames": [
+                    {
+                        "functionName": "",
+                        "scriptId": "24",
+                        "url": "http://localhost:8000/test.html",
+                        "lineNumber": 22,
+                        "columnNumber": 9
+                    }
+                ]
+            }
+        }
+    },
+    {
+        "method": "Network.requestWillBeSent",
+        "params": {
+            "requestId": "28543.7",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "documentURL": "http://localhost:8000/test.html",
+            "request": {
+                "url": "https://cispa.saarland/img/cispa-logo-1000px.png",
+                "method": "GET",
+                "headers": {
+                    "Referer": "http://localhost:8000/test.html",
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36"
+                },
+                "mixedContentType": "none",
+                "initialPriority": "Low",
+                "referrerPolicy": "no-referrer-when-downgrade"
+            },
+            "timestamp": 459298.910982,
+            "wallTime": 1525881845.87383,
+            "initiator": {
+                "type": "script",
+                "stack": {
+                    "callFrames": [],
+                    "parent": {
+                        "description": "Image",
+                        "callFrames": [
+                            {
+                                "functionName": "",
+                                "scriptId": "23",
+                                "url": "https://code.jquery.com/jquery-3.3.1.min.js",
+                                "lineNumber": 1,
+                                "columnNumber": 49630
+                            },
+                            {
+                                "functionName": "z",
+                                "scriptId": "23",
+                                "url": "https://code.jquery.com/jquery-3.3.1.min.js",
+                                "lineNumber": 1,
+                                "columnNumber": 31765
+                            },
+                            {
+                                "functionName": "html",
+                                "scriptId": "23",
+                                "url": "https://code.jquery.com/jquery-3.3.1.min.js",
+                                "lineNumber": 1,
+                                "columnNumber": 49343
+                            },
+                            {
+                                "functionName": "",
+                                "scriptId": "25",
+                                "url": "",
+                                "lineNumber": 0,
+                                "columnNumber": 12
+                            },
+                            {
+                                "functionName": "",
+                                "scriptId": "24",
+                                "url": "http://localhost:8000/test.html",
+                                "lineNumber": 22,
+                                "columnNumber": 4
+                            }
+                        ]
+                    }
+                }
+            },
+            "type": "Image",
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.requestWillBeSent",
+        "params": {
+            "requestId": "28543.8",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "documentURL": "http://localhost:8000/test.html",
+            "request": {
+                "url": "https://pythonhaven.files.wordpress.com/2009/12/example2_graph.png?w=232&h=300",
+                "method": "GET",
+                "headers": {
+                    "Referer": "http://localhost:8000/test.html",
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36"
+                },
+                "mixedContentType": "none",
+                "initialPriority": "Low",
+                "referrerPolicy": "no-referrer-when-downgrade"
+            },
+            "timestamp": 459298.911126,
+            "wallTime": 1525881845.87398,
+            "initiator": {
+                "type": "script",
+                "stack": {
+                    "callFrames": [],
+                    "parent": {
+                        "description": "Image",
+                        "callFrames": [
+                            {
+                                "functionName": "",
+                                "scriptId": "23",
+                                "url": "https://code.jquery.com/jquery-3.3.1.min.js",
+                                "lineNumber": 1,
+                                "columnNumber": 49630
+                            },
+                            {
+                                "functionName": "z",
+                                "scriptId": "23",
+                                "url": "https://code.jquery.com/jquery-3.3.1.min.js",
+                                "lineNumber": 1,
+                                "columnNumber": 31765
+                            },
+                            {
+                                "functionName": "html",
+                                "scriptId": "23",
+                                "url": "https://code.jquery.com/jquery-3.3.1.min.js",
+                                "lineNumber": 1,
+                                "columnNumber": 49343
+                            },
+                            {
+                                "functionName": "",
+                                "scriptId": "24",
+                                "url": "http://localhost:8000/test.html",
+                                "lineNumber": 23,
+                                "columnNumber": 16
+                            }
+                        ]
+                    }
+                }
+            },
+            "type": "Image",
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.resourceChangedPriority",
+        "params": {
+            "requestId": "28543.8",
+            "newPriority": "High",
+            "timestamp": 459298.912169
+        }
+    },
+    {
+        "method": "Network.resourceChangedPriority",
+        "params": {
+            "requestId": "28543.7",
+            "newPriority": "High",
+            "timestamp": 459298.912181
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "28543.8",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "timestamp": 459298.939605,
+            "type": "Image",
+            "response": {
+                "url": "https://pythonhaven.files.wordpress.com/2009/12/example2_graph.png?w=232&h=300",
+                "status": 200,
+                "statusText": "",
+                "headers": {
+                    "x-nc": "HIT fra 22 np",
+                    "date": "Wed, 09 May 2018 16:04:05 GMT",
+                    "last-modified": "Wed, 09 Dec 2009 23:25:19 GMT",
+                    "server": "nginx",
+                    "vary": "Accept",
+                    "content-type": "image/png",
+                    "status": "200",
+                    "x-orig-src": "0_imageresize",
+                    "accept-ranges": "bytes",
+                    "content-length": "22646",
+                    "expires": "Sat, 26 May 2018 06:06:06 GMT"
+                },
+                "mimeType": "image/png",
+                "requestHeaders": {
+                    ":path": "/2009/12/example2_graph.png?w=232&h=300",
+                    "pragma": "no-cache",
+                    "accept-encoding": "gzip, deflate, br",
+                    "accept-language": "en-US,en;q=0.9",
+                    "user-agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+                    "cache-control": "no-cache",
+                    ":authority": "pythonhaven.files.wordpress.com",
+                    "referer": "http://localhost:8000/test.html",
+                    ":scheme": "https",
+                    ":method": "GET"
+                },
+                "connectionReused": false,
+                "connectionId": 258,
+                "remoteIPAddress": "192.0.72.22",
+                "remotePort": 443,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 183,
+                "timing": {
+                    "requestTime": 459298.911591,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": 1.693,
+                    "dnsEnd": 2.236,
+                    "connectStart": 2.236,
+                    "connectEnd": 20.68,
+                    "sslStart": 8.239,
+                    "sslEnd": 20.672,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 20.805,
+                    "sendEnd": 20.88,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 27.419
+                },
+                "protocol": "h2",
+                "securityState": "secure",
+                "securityDetails": {
+                    "protocol": "TLS 1.2",
+                    "keyExchange": "ECDHE_RSA",
+                    "keyExchangeGroup": "P-256",
+                    "cipher": "AES_128_GCM",
+                    "certificateId": 0,
+                    "subjectName": "*.files.wordpress.com",
+                    "sanList": [
+                        "*.files.wordpress.com",
+                        "files.wordpress.com"
+                    ],
+                    "issuer": "Go Daddy Secure Certificate Authority - G2",
+                    "validFrom": 1452916238,
+                    "validTo": 1550929339,
+                    "signedCertificateTimestampList": []
+                }
+            },
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.8",
+            "timestamp": 459298.943052,
+            "dataLength": 21694,
+            "encodedDataLength": 21721
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.8",
+            "timestamp": 459298.945598,
+            "dataLength": 952,
+            "encodedDataLength": 952
+        }
+    },
+    {
+        "method": "Network.loadingFinished",
+        "params": {
+            "requestId": "28543.8",
+            "timestamp": 459298.94509,
+            "encodedDataLength": 22856,
+            "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "28543.4",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "timestamp": 459298.947035,
+            "type": "Image",
+            "response": {
+                "url": "https://www.google.org/assets/static/images/logo_googledotorg-171e7482e5523603fc0eed236dd772d8.svg",
+                "status": 200,
+                "statusText": "",
+                "headers": {
+                    "date": "Wed, 09 May 2018 16:04:05 GMT",
+                    "content-encoding": "gzip",
+                    "x-content-type-options": "nosniff",
+                    "last-modified": "Thu, 20 Apr 2017 17:00:00 GMT",
+                    "server": "sffe",
+                    "vary": "Accept-Encoding",
+                    "content-type": "image/svg+xml",
+                    "status": "200",
+                    "cache-control": "private, max-age=31536000",
+                    "accept-ranges": "bytes",
+                    "alt-svc": "hq=\":443\"; ma=2592000; quic=51303433; quic=51303432; quic=51303431; quic=51303339; quic=51303335,quic=\":443\"; ma=2592000; v=\"43,42,41,39,35\"",
+                    "content-length": "1056",
+                    "x-xss-protection": "1; mode=block",
+                    "expires": "Wed, 09 May 2018 16:04:05 GMT"
+                },
+                "mimeType": "image/svg+xml",
+                "requestHeaders": {
+                    ":path": "/assets/static/images/logo_googledotorg-171e7482e5523603fc0eed236dd772d8.svg",
+                    "pragma": "no-cache",
+                    "accept-encoding": "gzip, deflate, br",
+                    "accept-language": "en-US,en;q=0.9",
+                    "user-agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+                    "cache-control": "no-cache",
+                    ":authority": "www.google.org",
+                    "referer": "http://localhost:8000/test.html",
+                    ":scheme": "https",
+                    ":method": "GET"
+                },
+                "connectionReused": false,
+                "connectionId": 227,
+                "remoteIPAddress": "216.239.32.27",
+                "remotePort": 443,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 321,
+                "timing": {
+                    "requestTime": 459298.855115,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": 3.531,
+                    "dnsEnd": 4.065,
+                    "connectStart": 4.065,
+                    "connectEnd": 50.37,
+                    "sslStart": 10.052,
+                    "sslEnd": 50.354,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 50.625,
+                    "sendEnd": 50.7,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 91.397
+                },
+                "protocol": "h2",
+                "securityState": "secure",
+                "securityDetails": {
+                    "protocol": "TLS 1.2",
+                    "keyExchange": "ECDHE_RSA",
+                    "keyExchangeGroup": "X25519",
+                    "cipher": "AES_128_GCM",
+                    "certificateId": 0,
+                    "subjectName": "misc.google.com",
+                    "sanList": [
+                        "misc.google.com",
+                        "*.actions.google.com",
+                        "*.adgoogle.net",
+                        "*.admeld.com",
+                        "*.advertiserscommunity.com",
+                        "*.adwords-community.com",
+                        "*.adwordsexpress.com",
+                        "*.angulardart.org",
+                        "*.anvato.com",
+                        "*.api.ai",
+                        "*.apigee.com",
+                        "*.appbridge.ca",
+                        "*.appbridge.io",
+                        "*.appbridge.it",
+                        "*.apture.com",
+                        "*.area120.com",
+                        "*.baseline.google.com",
+                        "*.baselinestudy.com",
+                        "*.baselinestudy.org",
+                        "*.beatthatquote.com",
+                        "*.blink.org",
+                        "*.brotli.org",
+                        "*.bumpshare.com",
+                        "*.bumptop.ca",
+                        "*.bumptop.com",
+                        "*.bumptop.net",
+                        "*.bumptop.org",
+                        "*.bumptunes.com",
+                        "*.campuslondon.com",
+                        "*.certificate-transparency.org",
+                        "*.chrome.com",
+                        "*.chromecast.com",
+                        "*.chromium.org",
+                        "*.cloudburstresearch.com",
+                        "*.cloudfunctions.net",
+                        "*.cloudrobotics.com",
+                        "*.conscrypt.com",
+                        "*.conscrypt.org",
+                        "*.coova.com",
+                        "*.coova.net",
+                        "*.coova.org",
+                        "*.crr.com",
+                        "*.cs4hs.com",
+                        "*.debug.com",
+                        "*.debugproject.com",
+                        "*.design.google",
+                        "*.developer.google.com",
+                        "*.developers.google.com",
+                        "*.devsitetest.how",
+                        "*.dialogflow.com",
+                        "*.environment.google",
+                        "*.episodic.com",
+                        "*.feedburner.com",
+                        "*.fflick.com",
+                        "*.financeleadsonline.com",
+                        "*.firebase.google.com",
+                        "*.flutterapp.com",
+                        "*.g-tun.com",
+                        "*.gbc.beatthatquote.com",
+                        "*.gerritcodereview.com",
+                        "*.getbumptop.com",
+                        "*.gipscorp.com",
+                        "*.globaledu.org",
+                        "*.gonglchuangl.net",
+                        "*.google.berlin",
+                        "*.google.org",
+                        "*.google.ventures",
+                        "*.googleapps.com",
+                        "*.googlecompare.co.uk",
+                        "*.googledanmark.com",
+                        "*.googlefinland.com",
+                        "*.googlemaps.com",
+                        "*.googlephotos.com",
+                        "*.googleplay.com",
+                        "*.googleplus.com",
+                        "*.googlesverige.com",
+                        "*.googletraveladservices.com",
+                        "*.googleventures.com",
+                        "*.gsrc.io",
+                        "*.gsuite.com",
+                        "*.hdrplusdata.org",
+                        "*.hindiweb.com",
+                        "*.howtogetmo.co.uk",
+                        "*.html5rocks.com",
+                        "*.hwgo.com",
+                        "*.impermium.com",
+                        "*.j2objc.org",
+                        "*.keytransparency.com",
+                        "*.keytransparency.foo",
+                        "*.keytransparency.org",
+                        "*.mdialog.com",
+                        "*.mfg-inspector.com",
+                        "*.mobileview.page",
+                        "*.moodstocks.com",
+                        "*.near.by",
+                        "*.oauthz.com",
+                        "*.on.here",
+                        "*.on2.com",
+                        "*.oneworldmanystories.com",
+                        "*.orbitera.com",
+                        "*.pagespeedmobilizer.com",
+                        "*.pageview.mobi",
+                        "*.partylikeits1986.org",
+                        "*.paxlicense.org",
+                        "*.personfinder.google.org",
+                        "*.pittpatt.com",
+                        "*.polymerproject.org",
+                        "*.postini.com",
+                        "*.projectara.com",
+                        "*.projectbaseline.com",
+                        "*.questvisual.com",
+                        "*.quickoffice.com",
+                        "*.quiksee.com",
+                        "*.quoteproxy.beatthatquote.com",
+                        "*.recaptcha.net",
+                        "*.revolv.com",
+                        "*.ridepenguin.com",
+                        "*.s.svc-1.google.com",
+                        "*.saynow.com",
+                        "*.schemer.com",
+                        "*.screenwisetrends.com",
+                        "*.screenwisetrendspanel.com",
+                        "*.snapseed.com",
+                        "*.solveforx.com",
+                        "*.spider.io",
+                        "*.staging.widevine.com",
+                        "*.storage-nightly-test.googleusercontent.com",
+                        "*.storage-staging-test.googleusercontent.com",
+                        "*.storage-test-test.googleusercontent.com",
+                        "*.support.google.com",
+                        "*.tensorflow.org",
+                        "*.thecleversense.com",
+                        "*.thinkquarterly.co.uk",
+                        "*.thinkquarterly.com",
+                        "*.txcloud.net",
+                        "*.txvia.com",
+                        "*.uat.widevine.com",
+                        "*.useplannr.com",
+                        "*.v8project.org",
+                        "*.verily.com",
+                        "*.verilylifesciences.com",
+                        "*.verilystudyhub.com",
+                        "*.wallet.com",
+                        "*.waymo.com",
+                        "*.waze.com",
+                        "*.webappfieldguide.com",
+                        "*.whatbrowser.org",
+                        "*.widevine.com",
+                        "*.womenwill.com",
+                        "*.womenwill.com.br",
+                        "*.womenwill.id",
+                        "*.womenwill.in",
+                        "*.womenwill.mx",
+                        "*.x.company",
+                        "*.x.team",
+                        "*.xn--9trs65b.com",
+                        "*.youtubemobilesupport.com",
+                        "*.zagat.com",
+                        "adgoogle.net",
+                        "admeld.com",
+                        "advertisercommunity.com",
+                        "advertiserscommunity.com",
+                        "adwords-community.com",
+                        "adwordsexpress.com",
+                        "angulardart.org",
+                        "anvato.com",
+                        "api.ai",
+                        "apigee.com",
+                        "appbridge.ca",
+                        "appbridge.io",
+                        "appbridge.it",
+                        "apture.com",
+                        "area120.com",
+                        "baselinestudy.com",
+                        "baselinestudy.org",
+                        "beatthatquote.com",
+                        "blink.org",
+                        "brotli.org",
+                        "bumpshare.com",
+                        "bumptop.ca",
+                        "bumptop.com",
+                        "bumptop.net",
+                        "bumptop.org",
+                        "bumptunes.com",
+                        "campuslondon.com",
+                        "certificate-transparency.org",
+                        "chrome.com",
+                        "chromecast.com",
+                        "chromium.org",
+                        "classroom.google.com",
+                        "clickserve.dartsearch.net",
+                        "clickserve.eu.dartsearch.net",
+                        "clickserve.uk.dartsearch.net",
+                        "clickserve.us2.dartsearch.net",
+                        "clickserver.googleads.com",
+                        "cloudburstresearch.com",
+                        "cloudfunctions.net",
+                        "cloudrobotics.com",
+                        "conscrypt.com",
+                        "conscrypt.org",
+                        "cookiechoices.org",
+                        "coova.com",
+                        "coova.net",
+                        "coova.org",
+                        "crr.com",
+                        "cs4hs.com",
+                        "debug.com",
+                        "debugproject.com",
+                        "design.google",
+                        "developer.dev.nestlabs.com",
+                        "developer.ft.nest.com",
+                        "developer.integration.nestlabs.com",
+                        "developer.nest.com",
+                        "developer.qa.nestlabs.com",
+                        "developer.stable.nestlabs.com",
+                        "developers.dev.nestlabs.com",
+                        "developers.ft.nest.com",
+                        "developers.integration.nestlabs.com",
+                        "developers.nest.com",
+                        "developers.qa.nestlabs.com",
+                        "developers.stable.nestlabs.com",
+                        "devsitetest.how",
+                        "dialogflow.com",
+                        "environment.google",
+                        "episodic.com",
+                        "feedburner.com",
+                        "fflick.com",
+                        "financeleadsonline.com",
+                        "flutterapp.com",
+                        "g-tun.com",
+                        "gbc.beatthatquote.com",
+                        "gerritcodereview.com",
+                        "getbumptop.com",
+                        "gipscorp.com",
+                        "globaledu.org",
+                        "gonglchuangl.net",
+                        "google.berlin",
+                        "google.org",
+                        "google.ventures",
+                        "googleapps.com",
+                        "googlecompare.co.uk",
+                        "googledanmark.com",
+                        "googlefinland.com",
+                        "googlemaps.com",
+                        "googlephotos.com",
+                        "googleplay.com",
+                        "googleplus.com",
+                        "googlesverige.com",
+                        "googletraveladservices.com",
+                        "googleventures.com",
+                        "gsrc.io",
+                        "gsuite.com",
+                        "hdrplusdata.org",
+                        "hindiweb.com",
+                        "howtogetmo.co.uk",
+                        "html5rocks.com",
+                        "hwgo.com",
+                        "images.zagat.com",
+                        "impermium.com",
+                        "j2objc.org",
+                        "keytransparency.com",
+                        "keytransparency.foo",
+                        "keytransparency.org",
+                        "mdialog.com",
+                        "mfg-inspector.com",
+                        "mobileview.page",
+                        "moodstocks.com",
+                        "n339.asp-cc.com",
+                        "near.by",
+                        "oauthz.com",
+                        "on.here",
+                        "on2.com",
+                        "oneworldmanystories.com",
+                        "orbitera.com",
+                        "pagespeedmobilizer.com",
+                        "pageview.mobi",
+                        "partylikeits1986.org",
+                        "paxlicense.org",
+                        "ping.feedburner.google.com",
+                        "pittpatt.com",
+                        "polymerproject.org",
+                        "postini.com",
+                        "projectara.com",
+                        "projectbaseline.com",
+                        "questvisual.com",
+                        "quiksee.com",
+                        "quoteproxy.beatthatquote.com",
+                        "recaptcha.net",
+                        "revolv.com",
+                        "ridepenguin.com",
+                        "rootmusic.bandpage.com",
+                        "s.svc-1.google.com",
+                        "saynow.com",
+                        "schemer.com",
+                        "screenwisetrends.com",
+                        "screenwisetrendspanel.com",
+                        "snapseed.com",
+                        "solveforx.com",
+                        "spider.io",
+                        "tensorflow.org",
+                        "thecleversense.com",
+                        "thinkquarterly.co.uk",
+                        "thinkquarterly.com",
+                        "txcloud.net",
+                        "txvia.com",
+                        "useplannr.com",
+                        "v8project.org",
+                        "verily.com",
+                        "verilylifesciences.com",
+                        "verilystudyhub.com",
+                        "wallet.com",
+                        "waymo.com",
+                        "waze.com",
+                        "webappfieldguide.com",
+                        "weltweitwachsen.de",
+                        "whatbrowser.org",
+                        "womenwill.com",
+                        "womenwill.com.br",
+                        "womenwill.id",
+                        "womenwill.in",
+                        "womenwill.mx",
+                        "www.advertisercommunity.com",
+                        "www.bandpage.com",
+                        "www.classroom.google.com",
+                        "www.cookiechoices.org",
+                        "www.weltweitwachsen.de",
+                        "www.zukunftswerkstatt.de",
+                        "x.company",
+                        "x.team",
+                        "xn--9trs65b.com",
+                        "youtubemobilesupport.com",
+                        "zagat.com",
+                        "zukunftswerkstatt.de"
+                    ],
+                    "issuer": "Google Internet Authority G3",
+                    "validFrom": 1524566359,
+                    "validTo": 1531819620,
+                    "signedCertificateTimestampList": [
+                        {
+                            "status": "Verified",
+                            "origin": "TLS extension",
+                            "logDescription": "Google 'Rocketeer' log",
+                            "logId": "EE4BBDB775CE60BAE142691FABE19E66A30F7E5FB072D88300C47B897AA8FDCB",
+                            "timestamp": 1524568442720,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3046022100A5266A9DE5A3639FEF631D69E5921E7CFE954F038FC7C6B5DE05C1249888B1B4022100B4020902DEC6A3FA98401BE6435F184767A05E96B7E0F48E233CFA2A80A83E8B"
+                        },
+                        {
+                            "status": "Verified",
+                            "origin": "TLS extension",
+                            "logDescription": "Comodo 'Sabre' CT log",
+                            "logId": "5581D4C2169036014AEA0B9B573C53F0C0E43878702508172FA3AA1D0713D30C",
+                            "timestamp": 1524568443040,
+                            "hashAlgorithm": "SHA-256",
+                            "signatureAlgorithm": "ECDSA",
+                            "signatureData": "3046022100997616D87897E9B0DAFAEF94B4E942518D38E6CCAEECF8E2756254EFFC0EA23E022100D44E621AB7CD962A49FE77B750102D3DB9A8E8FCFCDA0EB4445491B990367478"
+                        }
+                    ]
+                }
+            },
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.4",
+            "timestamp": 459298.947317,
+            "dataLength": 2496,
+            "encodedDataLength": 1074
+        }
+    },
+    {
+        "method": "Network.loadingFinished",
+        "params": {
+            "requestId": "28543.4",
+            "timestamp": 459298.946944,
+            "encodedDataLength": 1395,
+            "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "28543.7",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "timestamp": 459298.951137,
+            "type": "Image",
+            "response": {
+                "url": "https://cispa.saarland/img/cispa-logo-1000px.png",
+                "status": 200,
+                "statusText": "OK",
+                "headers": {
+                    "Date": "Wed, 09 May 2018 16:04:05 GMT",
+                    "Content-Encoding": "gzip",
+                    "X-Content-Type-Options": "nosniff",
+                    "Connection": "Keep-Alive",
+                    "Content-Length": "37581",
+                    "X-XSS-Protection": "1; mode=block",
+                    "Last-Modified": "Wed, 09 May 2018 13:32:11 GMT",
+                    "Server": "Apache",
+                    "X-Frame-Options": "sameorigin",
+                    "ETag": "\"9428-56bc5ee26e87d-gzip\"",
+                    "Vary": "Accept-Encoding",
+                    "Strict-Transport-Security": "max-age=15768000",
+                    "Content-Type": "image/png",
+                    "Cache-Control": "max-age=1314180",
+                    "Accept-Ranges": "bytes",
+                    "Keep-Alive": "timeout=5, max=100",
+                    "Expires": "Thu, 24 May 2018 21:07:05 GMT"
+                },
+                "headersText": "HTTP/1.1 200 OK\r\nDate: Wed, 09 May 2018 16:04:05 GMT\r\nServer: Apache\r\nStrict-Transport-Security: max-age=15768000\r\nLast-Modified: Wed, 09 May 2018 13:32:11 GMT\r\nETag: \"9428-56bc5ee26e87d-gzip\"\r\nAccept-Ranges: bytes\r\nVary: Accept-Encoding\r\nContent-Encoding: gzip\r\nCache-Control: max-age=1314180\r\nExpires: Thu, 24 May 2018 21:07:05 GMT\r\nX-Content-Type-Options: nosniff\r\nX-XSS-Protection: 1; mode=block\r\nX-Frame-Options: sameorigin\r\nContent-Length: 37581\r\nKeep-Alive: timeout=5, max=100\r\nConnection: Keep-Alive\r\nContent-Type: image/png\r\n\r\n",
+                "mimeType": "image/png",
+                "requestHeaders": {
+                    "Pragma": "no-cache",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Host": "cispa.saarland",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+                    "Referer": "http://localhost:8000/test.html",
+                    "Connection": "keep-alive",
+                    "Cache-Control": "no-cache"
+                },
+                "requestHeadersText": "GET /img/cispa-logo-1000px.png HTTP/1.1\r\nHost: cispa.saarland\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: image/webp,image/apng,image/*,*/*;q=0.8\r\nReferer: http://localhost:8000/test.html\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n",
+                "connectionReused": false,
+                "connectionId": 257,
+                "remoteIPAddress": "134.96.225.252",
+                "remotePort": 443,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 536,
+                "timing": {
+                    "requestTime": 459298.911302,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": 1.924,
+                    "dnsEnd": 2.448,
+                    "connectStart": 2.448,
+                    "connectEnd": 35.851,
+                    "sslStart": 3.03,
+                    "sslEnd": 35.844,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 35.947,
+                    "sendEnd": 35.974,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 39.075
+                },
+                "protocol": "http/1.1",
+                "securityState": "secure",
+                "securityDetails": {
+                    "protocol": "TLS 1.2",
+                    "keyExchange": "ECDHE_RSA",
+                    "keyExchangeGroup": "P-256",
+                    "cipher": "AES_256_GCM",
+                    "certificateId": 0,
+                    "subjectName": "www.cispa.saarland",
+                    "sanList": [
+                        "cispa-security.de",
+                        "cispa-security.org",
+                        "cispa.saarland",
+                        "cispa.uni-saarland.de",
+                        "www.cispa-security.de",
+                        "www.cispa-security.org",
+                        "www.cispa.saarland",
+                        "www.cispa.uni-saarland.de"
+                    ],
+                    "issuer": "CA Universitaet des Saarlandes",
+                    "validFrom": 1433755914,
+                    "validTo": 1528363914,
+                    "signedCertificateTimestampList": []
+                }
+            },
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.7",
+            "timestamp": 459298.95132,
+            "dataLength": 3590,
+            "encodedDataLength": 3560
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.7",
+            "timestamp": 459298.951544,
+            "dataLength": 33021,
+            "encodedDataLength": 32768
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.7",
+            "timestamp": 459298.951636,
+            "dataLength": 1317,
+            "encodedDataLength": 1253
+        }
+    },
+    {
+        "method": "Network.loadingFinished",
+        "params": {
+            "requestId": "28543.7",
+            "timestamp": 459298.95166,
+            "encodedDataLength": 38117,
+            "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "28543.6",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "timestamp": 459299.205959,
+            "type": "Image",
+            "response": {
+                "url": "https://getfedora.org/static/images/fedora-logotext.png",
+                "status": 200,
+                "statusText": "",
+                "headers": {
+                    "date": "Wed, 09 May 2018 16:04:06 GMT",
+                    "x-content-type-options": "nosniff",
+                    "apptime": "D=445",
+                    "status": "200",
+                    "content-length": "12249",
+                    "x-xss-protection": "1; mode=block",
+                    "referrer-policy": "same-origin",
+                    "appserver": "proxy11.fedoraproject.org",
+                    "last-modified": "Wed, 09 May 2018 15:03:38 GMT",
+                    "server": "Apache/2.4.33 (Fedora)",
+                    "x-frame-options": "SAMEORIGIN",
+                    "etag": "\"2fd9-56bc73531a55a\"",
+                    "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+                    "content-type": "image/png",
+                    "cache-control": "max-age=1800",
+                    "accept-ranges": "bytes",
+                    "expires": "Wed, 09 May 2018 16:34:06 GMT"
+                },
+                "mimeType": "image/png",
+                "requestHeaders": {
+                    ":path": "/static/images/fedora-logotext.png",
+                    "pragma": "no-cache",
+                    "accept-encoding": "gzip, deflate, br",
+                    "accept-language": "en-US,en;q=0.9",
+                    "user-agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+                    "cache-control": "no-cache",
+                    ":authority": "getfedora.org",
+                    "referer": "http://localhost:8000/test.html",
+                    ":scheme": "https",
+                    ":method": "GET"
+                },
+                "connectionReused": false,
+                "connectionId": 236,
+                "remoteIPAddress": "67.219.144.68",
+                "remotePort": 443,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 324,
+                "timing": {
+                    "requestTime": 459298.864967,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": 4.92,
+                    "dnsEnd": 5.452,
+                    "connectStart": 5.452,
+                    "connectEnd": 235.767,
+                    "sslStart": 109.117,
+                    "sslEnd": 235.758,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 235.941,
+                    "sendEnd": 236.051,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 340.387
+                },
+                "protocol": "h2",
+                "securityState": "secure",
+                "securityDetails": {
+                    "protocol": "TLS 1.2",
+                    "keyExchange": "ECDHE_RSA",
+                    "keyExchangeGroup": "X25519",
+                    "cipher": "AES_128_GCM",
+                    "certificateId": 0,
+                    "subjectName": "getfedora.org",
+                    "sanList": [
+                        "getfedora.org",
+                        "stg.getfedora.org"
+                    ],
+                    "issuer": "DigiCert SHA2 High Assurance Server CA",
+                    "validFrom": 1506988800,
+                    "validTo": 1609416000,
+                    "signedCertificateTimestampList": []
+                }
+            },
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.6",
+            "timestamp": 459299.208676,
+            "dataLength": 8713,
+            "encodedDataLength": 8776
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.6",
+            "timestamp": 459299.306416,
+            "dataLength": 3536,
+            "encodedDataLength": 3563
+        }
+    },
+    {
+        "method": "Network.loadingFinished",
+        "params": {
+            "requestId": "28543.6",
+            "timestamp": 459299.30636,
+            "encodedDataLength": 12663,
+            "blockedCrossSiteDocument": false
+        }
+    },
+    {
+        "method": "Network.requestWillBeSent",
+        "params": {
+            "requestId": "28543.9",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "documentURL": "http://localhost:8000/test.html",
+            "request": {
+                "url": "http://localhost:8000/favicon.ico",
+                "method": "GET",
+                "headers": {
+                    "Referer": "http://localhost:8000/test.html",
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36"
+                },
+                "mixedContentType": "none",
+                "initialPriority": "High",
+                "referrerPolicy": "no-referrer-when-downgrade"
+            },
+            "timestamp": 459299.308207,
+            "wallTime": 1525881846.27106,
+            "initiator": {
+                "type": "other"
+            },
+            "type": "Other",
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.responseReceived",
+        "params": {
+            "requestId": "28543.9",
+            "loaderId": "88CF4F8E5EBD65AF2F5E24D9181A12D1",
+            "timestamp": 459299.312822,
+            "type": "Other",
+            "response": {
+                "url": "http://localhost:8000/favicon.ico",
+                "status": 404,
+                "statusText": "File not found",
+                "headers": {
+                    "Date": "Wed, 09 May 2018 16:04:06 GMT",
+                    "Server": "SimpleHTTP/0.6 Python/3.6.5",
+                    "Connection": "close",
+                    "Content-Length": "469",
+                    "Content-Type": "text/html;charset=utf-8"
+                },
+                "headersText": "HTTP/1.0 404 File not found\r\nServer: SimpleHTTP/0.6 Python/3.6.5\r\nDate: Wed, 09 May 2018 16:04:06 GMT\r\nConnection: close\r\nContent-Type: text/html;charset=utf-8\r\nContent-Length: 469\r\n\r\n",
+                "mimeType": "text/html",
+                "requestHeaders": {
+                    "Pragma": "no-cache",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Host": "localhost:8000",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "User-Agent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36",
+                    "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+                    "Referer": "http://localhost:8000/test.html",
+                    "Connection": "keep-alive",
+                    "Cache-Control": "no-cache"
+                },
+                "requestHeadersText": "GET /favicon.ico HTTP/1.1\r\nHost: localhost:8000\r\nConnection: keep-alive\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nUser-Agent: Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3359.139 Safari/537.36\r\nAccept: image/webp,image/apng,image/*,*/*;q=0.8\r\nReferer: http://localhost:8000/test.html\r\nAccept-Encoding: gzip, deflate, br\r\nAccept-Language: en-US,en;q=0.9\r\n",
+                "connectionReused": false,
+                "connectionId": 270,
+                "remoteIPAddress": "127.0.0.1",
+                "remotePort": 8000,
+                "fromDiskCache": false,
+                "fromServiceWorker": false,
+                "encodedDataLength": 184,
+                "timing": {
+                    "requestTime": 459299.308598,
+                    "proxyStart": -1,
+                    "proxyEnd": -1,
+                    "dnsStart": 2.718,
+                    "dnsEnd": 2.721,
+                    "connectStart": 2.721,
+                    "connectEnd": 3.052,
+                    "sslStart": -1,
+                    "sslEnd": -1,
+                    "workerStart": -1,
+                    "workerReady": -1,
+                    "sendStart": 3.117,
+                    "sendEnd": 3.158,
+                    "pushStart": 0,
+                    "pushEnd": 0,
+                    "receiveHeadersEnd": 3.819
+                },
+                "protocol": "http/1.0",
+                "securityState": "neutral"
+            },
+            "frameId": "D63C922F1D5EA3F9DE95C10CF8F24DFD"
+        }
+    },
+    {
+        "method": "Network.dataReceived",
+        "params": {
+            "requestId": "28543.9",
+            "timestamp": 459299.313837,
+            "dataLength": 469,
+            "encodedDataLength": 469
+        }
+    },
+    {
+        "method": "Network.loadingFinished",
+        "params": {
+            "requestId": "28543.9",
+            "timestamp": 459299.312997,
+            "encodedDataLength": 653,
+            "blockedCrossSiteDocument": false
+        }
+    }
+]
