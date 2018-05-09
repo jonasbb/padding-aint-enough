@@ -1,8 +1,8 @@
 use chrome::{ChromeDebuggerMessage, Initiator, RedirectResponse, Request, Script};
 use failure::{Error, ResultExt};
-use petgraph::{graph::NodeIndex, Directed, Graph};
+use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
 use std::cell::RefCell;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use {GraphExt, RequestInfo};
 
@@ -145,6 +145,178 @@ impl DepGraph {
 
         Ok(())
     }
+
+    pub fn simplify_graph(&mut self) {
+        // The number of requests between all nodes must be constant, otherwise we are not merging nodes correctly
+        let request_count: usize = self.graph
+            .raw_nodes()
+            .iter()
+            .map(|n| n.weight.requests.len())
+            .sum();
+        trace!("Number of requests in graph (start): {}", request_count);
+
+        debug!(
+            "Graph size (before simplify): {} / {}",
+            self.graph.node_count(),
+            self.graph.edge_count()
+        );
+        self.remove_self_loops();
+
+        let mut needs_another_iteration = true;
+        while needs_another_iteration {
+            needs_another_iteration = false;
+
+            needs_another_iteration |= self.remove_depends_on_same_domain();
+            debug!(
+                "Graph size (after same domain): {} / {}",
+                self.graph.node_count(),
+                self.graph.edge_count()
+            );
+            needs_another_iteration |= self.remove_dependency_subset();
+            debug!(
+                "Graph size (after dependency subset): {} / {}",
+                self.graph.node_count(),
+                self.graph.edge_count()
+            );
+        }
+
+        let request_count_end: usize = self.graph
+            .raw_nodes()
+            .iter()
+            .map(|n| n.weight.requests.len())
+            .sum();
+        trace!("Number of requests in graph (end): {}", request_count_end);
+        assert_eq!(request_count, request_count_end);
+    }
+
+    fn remove_self_loops(&mut self) {
+        // Keep all edges which return true
+        // remove all others
+        self.graph.retain_edges(|graph, edge_index| {
+            if let Some((a, b)) = graph.edge_endpoints(edge_index) {
+                // only keep those, which are not a self loop
+                a != b
+            } else {
+                // should not happen, but just do nothing
+                true
+            }
+        });
+    }
+
+    /// Returns true if some changes occured
+    fn remove_depends_on_same_domain(&mut self) -> bool {
+        let mut did_changes = false;
+
+        let mut i = 0;
+        'outer: while i < self.graph.node_count() {
+            let node = NodeIndex::new(i);
+            let node_domain = self.graph
+                .node_weight(node)
+                .expect("The node index is smaller than the node count")
+                .normalized_domain_name
+                .clone();
+
+            let mut neighbors = self.graph.neighbors(node).detach();
+            while let Some(other) = neighbors.next_node(&self.graph) {
+                if node_domain == {
+                    self.graph
+                        .node_weight(other)
+                        .expect("The other node index is smaller than the node count")
+                        .normalized_domain_name
+                        .clone()
+                } {
+                    did_changes = true;
+
+                    // We do not need to transfer all the edges, because we calculated the transitive closure,
+                    // meaning all the edges are already transfered
+                    {
+                        let (mut node_weight, other_weight) =
+                            self.graph.index_twice_mut(node, other);
+                        other_weight.merge_with(node_weight);
+                    }
+                    let _ = self.graph.remove_node(node).expect("Node id is valid");
+
+                    // The current node is merged, thus we MUST abort the inner loop
+                    // The nodes will be renumbered, thus at the current node index there will be a different node.
+                    // We therefore skip the node index increment
+                    continue 'outer;
+                }
+            }
+
+            // increment node index
+            i += 1;
+        }
+
+        did_changes
+    }
+
+    /// Returns true if some changes occured
+    fn remove_dependency_subset(&mut self) -> bool {
+        // If we have two nodes with equal domain but different dependencies,
+        // we can remove the node with more dependencies, if the other node
+        // has a strict subset of this nodes dependencies
+
+        let mut did_changes = false;
+
+        let mut i = 0;
+        'outer: while i < self.graph.node_count() {
+            let node_count = self.graph.node_count();
+            let node = NodeIndex::new(i);
+            let node_domain = self.graph
+                .node_weight(node)
+                .expect("The node index is smaller than the node count")
+                .normalized_domain_name
+                .clone();
+
+            for j in 0..node_count {
+                let other = NodeIndex::new(j);
+                if node == other {
+                    // do not test for same nodes
+                    continue;
+                }
+
+                if node_domain == {
+                    self.graph
+                        .node_weight(other)
+                        .expect("The other node index is smaller than the node count")
+                        .normalized_domain_name
+                        .clone()
+                } {
+                    let node_succs = self.graph.neighbors(node).collect::<HashSet<_>>();
+                    let other_succs = self.graph.neighbors(other).collect::<HashSet<_>>();
+
+                    if other_succs.is_subset(&node_succs) {
+                        did_changes = true;
+
+                        // The two nodes might be totally unrelated, meaning we need to first transfer all the incoming edges of `node` to `other`
+                        let mut incomming = self.graph
+                            .neighbors_directed(node, Direction::Incoming)
+                            .detach();
+                        while let Some(n) = incomming.next_node(&self.graph) {
+                            self.graph.update_edge(n, other, ());
+                        }
+
+                        {
+                            let (mut node_weight, other_weight) =
+                                self.graph.index_twice_mut(node, other);
+                            other_weight.merge_with(node_weight);
+                        }
+                        let _ = self.graph.remove_node(node).expect("Node id is valid");
+
+                        // The current node is merged, thus we MUST abort the inner loop
+                        // The nodes will be renumbered, thus at the current node index there will be a different node.
+                        // We therefore skip the node index increment
+                        continue 'outer;
+                    }
+                }
+            }
+
+            // increment node index
+            i += 1;
+        }
+
+        did_changes
+    }
 }
 
 #[cfg(test)]
@@ -274,6 +446,164 @@ mod test {
                 .expect("Parsing the file must succeed."))
             .context("Failed to process all messages from chrome")
             .expect("A graph must be buildable from the data.");
+
+        test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
+    }
+
+    #[test]
+    fn minimal_website_remove_self_loops() {
+        let mut expected_graph = Graph::<&'static str, ()>::new();
+        let other = expected_graph.add_node("other");
+        let localhost = expected_graph.add_node("localhost");
+        let favicon = expected_graph.add_node("favicon");
+        let localhost_script = expected_graph.add_node("localhost script");
+        let jquery = expected_graph.add_node("jquery");
+        let fedora = expected_graph.add_node("fedora");
+        let google = expected_graph.add_node("google");
+        let pythonhaven = expected_graph.add_node("pythonhaven");
+
+        expected_graph.extend_with_edges(&[
+            // deps on other
+            (localhost, other),
+            (favicon, other),
+            (localhost_script, other),
+            (jquery, other),
+            (fedora, other),
+            (google, other),
+            (pythonhaven, other),
+            // deps on localhost
+            (localhost_script, localhost),
+            (jquery, localhost),
+            (fedora, localhost),
+            (google, localhost),
+            (pythonhaven, localhost),
+            // misc deps
+            (fedora, localhost_script),
+            (pythonhaven, jquery),
+        ]);
+
+        let mut depgraph = DepGraph::new();
+        depgraph
+            .process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."))
+            .context("Failed to process all messages from chrome")
+            .expect("A graph must be buildable from the data.");
+        depgraph.remove_self_loops();
+
+        test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
+    }
+
+    #[test]
+    fn minimal_website_remove_same_domain() {
+        let mut expected_graph = Graph::<&'static str, ()>::new();
+        let other = expected_graph.add_node("other");
+        let localhost = expected_graph.add_node("localhost");
+        let favicon = expected_graph.add_node("favicon");
+        let jquery = expected_graph.add_node("jquery");
+        let fedora = expected_graph.add_node("fedora");
+        let google = expected_graph.add_node("google");
+        let pythonhaven = expected_graph.add_node("pythonhaven");
+
+        expected_graph.extend_with_edges(&[
+            // deps on other
+            (localhost, other),
+            (favicon, other),
+            (jquery, other),
+            (fedora, other),
+            (google, other),
+            (pythonhaven, other),
+            // deps on localhost
+            (jquery, localhost),
+            (fedora, localhost),
+            (google, localhost),
+            (pythonhaven, localhost),
+            // misc
+            (pythonhaven, jquery),
+        ]);
+
+        let mut depgraph = DepGraph::new();
+        depgraph
+            .process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."))
+            .context("Failed to process all messages from chrome")
+            .expect("A graph must be buildable from the data.");
+        depgraph.remove_self_loops();
+        depgraph.remove_depends_on_same_domain();
+
+        test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
+    }
+
+    #[test]
+    fn minimal_website_remove_subset_deps() {
+        let mut expected_graph = Graph::<&'static str, ()>::new();
+        let other = expected_graph.add_node("other");
+        let localhost = expected_graph.add_node("localhost");
+        let jquery = expected_graph.add_node("jquery");
+        let fedora = expected_graph.add_node("fedora");
+        let google = expected_graph.add_node("google");
+        let pythonhaven = expected_graph.add_node("pythonhaven");
+
+        expected_graph.extend_with_edges(&[
+            // deps on other
+            (localhost, other),
+            (jquery, other),
+            (fedora, other),
+            (google, other),
+            (pythonhaven, other),
+            // deps on localhost
+            (jquery, localhost),
+            (fedora, localhost),
+            (google, localhost),
+            (pythonhaven, localhost),
+            // misc deps
+            (pythonhaven, jquery),
+        ]);
+
+        let mut depgraph = DepGraph::new();
+        depgraph
+            .process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."))
+            .context("Failed to process all messages from chrome")
+            .expect("A graph must be buildable from the data.");
+        depgraph.remove_self_loops();
+        depgraph.remove_dependency_subset();
+
+        test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
+    }
+
+    #[test]
+    fn minimal_website_simplify() {
+        let mut expected_graph = Graph::<&'static str, ()>::new();
+        let other = expected_graph.add_node("other");
+        let localhost = expected_graph.add_node("localhost");
+        let jquery = expected_graph.add_node("jquery");
+        let fedora = expected_graph.add_node("fedora");
+        let google = expected_graph.add_node("google");
+        let pythonhaven = expected_graph.add_node("pythonhaven");
+
+        expected_graph.extend_with_edges(&[
+            // deps on other
+            (localhost, other),
+            (jquery, other),
+            (fedora, other),
+            (google, other),
+            (pythonhaven, other),
+            // deps on localhost
+            (jquery, localhost),
+            (fedora, localhost),
+            (google, localhost),
+            (pythonhaven, localhost),
+            // misc deps
+            (pythonhaven, jquery),
+        ]);
+
+        let mut depgraph = DepGraph::new();
+        depgraph
+            .process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."))
+            .context("Failed to process all messages from chrome")
+            .expect("A graph must be buildable from the data.");
+        depgraph.simplify_graph();
 
         test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
     }
