@@ -94,24 +94,27 @@ impl DepGraph {
             } = message
             {
                 let node = create_node(&message)?;
+
+                // handle redirects
+                if let Some(RedirectResponse { url }) = redirect_response {
+                    let other = find_node(url.clone())
+                        .with_context(|_| format_err!("Handling redirect, ID {}", request_id))?;
+                    add_dependency(node, other);
+                }
+
                 // Add dependencies for node/msg combination
-                match (initiator, redirect_response) {
-                    (Initiator::Other {}, None) => {
+                match initiator {
+                    Initiator::Other {} => {
                         let other = find_node("other".into())
                             .with_context(|_| format_err!("Handling other, ID {}", request_id))?;
                         add_dependency(node, other);
                     }
-                    (Initiator::Other {}, Some(RedirectResponse { ref url })) => {
-                        let other = find_node(url.clone())
-                            .with_context(|_| format_err!("Handling redirect, ID {}", request_id))?;
-                        add_dependency(node, other);
-                    }
-                    (Initiator::Parser { ref url }, None) => {
+                    Initiator::Parser { ref url } => {
                         let other = find_node(url.clone())
                             .with_context(|_| format_err!("Handling parser, ID {}", request_id))?;
                         add_dependency(node, other);
                     }
-                    (Initiator::Script { ref stack }, None) => {
+                    Initiator::Script { ref stack } => {
                         fn traverse_stack<FN, AD>(
                             node: NodeIndex,
                             stack: &Script,
@@ -136,12 +139,9 @@ impl DepGraph {
                         traverse_stack(node, stack, find_node, add_dependency)
                             .with_context(|_| format_err!("Handling script, ID {}", request_id))?;
                     }
-                    _ => {
-                        bail!("RedirectorResponse should only occur with the Initiator type other.")
                     }
                 }
             }
-        }
 
         Ok(())
     }
