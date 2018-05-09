@@ -22,7 +22,7 @@ use depgraph::DepGraph;
 use failure::Error;
 use failure::ResultExt;
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
-use petgraph::graphml::{Config as GraphMLConfig, GraphML};
+use petgraph::graphml::{Config as GraphMlConfig, GraphMl};
 use petgraph::prelude::*;
 use std::borrow::Cow;
 use std::convert::TryFrom;
@@ -85,9 +85,9 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
 }
 
 fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
-    let graphml = GraphML::with_config(
+    let graphml = GraphMl::with_config(
         &graph,
-        GraphMLConfig::new()
+        GraphMlConfig::new()
             .export_node_weights(true)
             .export_edge_weights(true),
     );
@@ -121,7 +121,7 @@ impl RequestInfo {
         self.requests.extend(other.requests.iter().cloned());
     }
 
-    pub fn graphml_support(&self) -> Vec<(String, Cow<str>)> {
+    pub fn graphml_support(&self) -> Vec<(Cow<'static, str>, Cow<str>)> {
         vec![
             ("domain_name".into(), (&*self.normalized_domain_name).into()),
             (

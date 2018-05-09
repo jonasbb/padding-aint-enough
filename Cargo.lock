@@ -277,7 +277,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "petgraph"
 version = "0.4.11"
-source = "git+https://github.com/jonasbb/petgraph?branch=graphml#4bf62280f0f7f35287d8059afe0844e62bd64cd6"
+source = "git+https://github.com/jonasbb/petgraph?branch=graphml#246fdba22e7a06bc928dc16db1dab2edd1146e7f"
 dependencies = [
  "fixedbitset 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "ordermap 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
