@@ -71,6 +71,18 @@ fn run() -> Result<(), Error> {
 }
 
 fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
+    let mut graph = build_graph(messages).context("Failure to build the graph.")?;
+
+    graph.transitive_closure();
+    simplify_graph(&mut graph);
+    export_as_graphml(&graph)?;
+
+    Ok(())
+}
+
+fn build_graph(
+    messages: &[ChromeDebuggerMessage],
+) -> Result<Graph<RequestInfo, (), Directed>, Error> {
     let mut graph: Graph<_, ()> = Graph::new();
     let mut nodes_cache: HashMap<String, NodeIndex> = HashMap::new();
 
@@ -114,7 +126,10 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
                 Some(node) => Ok(*node),
                 // TODO this probably needs better error handling
                 // Also see https://projects.cispa.saarland/bushart/encrypted-dns/issues/3
-                None => bail!("Cannot find node in cache even though there is a dependency to it: '{}'", url),
+                None => bail!(
+                    "Cannot find node in cache even though there is a dependency to it: '{}'",
+                    url
+                ),
             }
         };
         let add_dependency = |from: NodeIndex, to: NodeIndex| {
@@ -140,15 +155,18 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
                 // Add dependencies for node/msg combination
                 match (initiator, redirect_response) {
                     (Initiator::Other {}, None) => {
-                        let other = find_node("other".into()).with_context(|_| format_err!("Handling other, ID {}", request_id))?;
+                        let other = find_node("other".into())
+                            .with_context(|_| format_err!("Handling other, ID {}", request_id))?;
                         add_dependency(node, other);
                     }
                     (Initiator::Other {}, Some(RedirectResponse { ref url })) => {
-                        let other = find_node(url.clone()).with_context(|_| format_err!("Handling redirect, ID {}", request_id))?;
+                        let other = find_node(url.clone())
+                            .with_context(|_| format_err!("Handling redirect, ID {}", request_id))?;
                         add_dependency(node, other);
                     }
                     (Initiator::Parser { ref url }, None) => {
-                        let other = find_node(url.clone()).with_context(|_| format_err!("Handling parser, ID {}", request_id))?;
+                        let other = find_node(url.clone())
+                            .with_context(|_| format_err!("Handling parser, ID {}", request_id))?;
                         add_dependency(node, other);
                     }
                     (Initiator::Script { ref stack }, None) => {
@@ -173,7 +191,8 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
                             Ok(())
                         };
 
-                        traverse_stack(node, stack, find_node, add_dependency).with_context(|_| format_err!("Handling script, ID {}", request_id))?;
+                        traverse_stack(node, stack, find_node, add_dependency)
+                            .with_context(|_| format_err!("Handling script, ID {}", request_id))?;
                     }
                     _ => {
                         bail!("RedirectorResponse should only occur with the Initiator type other.")
@@ -183,11 +202,7 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         }
     }
 
-    graph.transitive_closure();
-    simplify_graph(&mut graph);
-    export_as_graphml(&graph)?;
-
-    Ok(())
+    Ok(graph)
 }
 
 fn simplify_graph(graph: &mut Graph<RequestInfo, ()>) {
