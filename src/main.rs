@@ -77,12 +77,12 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         .process_messages(messages)
         .context("Failure to build the graph.")?;
     depgraph.simplify_graph();
+    depgraph.duplicate_domains();
     let graph = depgraph.into_graph();
     export_as_graphml(&graph)?;
 
     Ok(())
 }
-
 
 fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     let graphml = GraphML::with_config(

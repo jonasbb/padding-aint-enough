@@ -143,9 +143,9 @@ impl DepGraph {
                         traverse_stack(node, stack, find_node, add_dependency)
                             .with_context(|_| format_err!("Handling script, ID {}", request_id))?;
                     }
-                    }
                 }
             }
+        }
 
         Ok(())
     }
@@ -320,6 +320,46 @@ impl DepGraph {
         }
 
         did_changes
+    }
+
+    pub fn duplicate_domains(&self) {
+        let mut nodes_per_domain = HashMap::<_, Vec<_>>::new();
+        for node in self.graph.node_indices() {
+            let weight = self.graph.node_weight(node).unwrap();
+
+            let mut entry = nodes_per_domain
+                .entry(&weight.normalized_domain_name)
+                .or_insert_with(Vec::new);
+            entry.push(node);
+        }
+        let mut first = true;
+        for (domain, nodes) in nodes_per_domain
+            .into_iter()
+            .filter(|(_, nodes)| nodes.len() > 1)
+        {
+            if first {
+                info!("List of duplicate domains:");
+                first = false;
+            }
+            info!("  Duplicate '{}' ({})", domain, nodes.len());
+            for (i, node) in nodes.iter().enumerate() {
+                let mut deps: Vec<_> = self.graph
+                    .neighbors(*node)
+                    .into_iter()
+                    .map(|neigh| {
+                        &self.graph
+                            .node_weight(neigh)
+                            .unwrap()
+                            .normalized_domain_name
+                    })
+                    .collect();
+                deps.sort();
+                info!("    Dependency Set {} ({})", i + 1, deps.len());
+                for dep in deps {
+                    info!("      {}", dep);
+                }
+            }
+        }
     }
 }
 
