@@ -21,6 +21,7 @@ use failure::ResultExt;
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use petgraph::graphml::{Config as GraphMLConfig, GraphML};
 use petgraph::prelude::*;
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -390,31 +391,7 @@ fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     })?;
     wtr.write_all(
         graphml
-            .to_string_with_weight_functions(
-                |_ew| vec![],
-                |nw| {
-                    vec![
-                        ("domain_name".into(), (&*nw.normalized_domain_name).into()),
-                        (
-                            "request_ids".into(),
-                            (format!(
-                                "{:#?}",
-                                nw.requests
-                                    .iter()
-                                    .map(|r| &r.request_id)
-                                    .collect::<Vec<_>>()
-                            ).into()),
-                        ),
-                        (
-                            "urls".into(),
-                            (format!(
-                                "{:#?}",
-                                nw.requests.iter().map(|r| &r.url).collect::<Vec<_>>()
-                            ).into()),
-                        ),
-                    ]
-                },
-            )
+            .to_string_with_weight_functions(|_ew| vec![], RequestInfo::graphml_support)
             .as_bytes(),
     )?;
 
@@ -433,6 +410,29 @@ impl RequestInfo {
         assert_eq!(self.normalized_domain_name, other.normalized_domain_name);
 
         self.requests.extend(other.requests.iter().cloned());
+    }
+
+    pub fn graphml_support(&self) -> Vec<(String, Cow<str>)> {
+        vec![
+            ("domain_name".into(), (&*self.normalized_domain_name).into()),
+            (
+                "request_ids".into(),
+                (format!(
+                    "{:#?}",
+                    self.requests
+                        .iter()
+                        .map(|r| &r.request_id)
+                        .collect::<Vec<_>>()
+                ).into()),
+            ),
+            (
+                "urls".into(),
+                (format!(
+                    "{:#?}",
+                    self.requests.iter().map(|r| &r.url).collect::<Vec<_>>()
+                ).into()),
+            ),
+        ]
     }
 }
 
