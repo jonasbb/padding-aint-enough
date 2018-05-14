@@ -9,7 +9,6 @@ use {GraphExt, RequestInfo};
 pub struct DepGraph {
     graph: Graph<RequestInfo, (), Directed>,
     nodes_cache: HashMap<String, NodeIndex>,
-    script_id_cache: HashMap<String, HashSet<String>>,
 }
 
 impl DepGraph {
@@ -26,11 +25,7 @@ impl DepGraph {
             })
         });
 
-        DepGraph {
-            graph,
-            nodes_cache,
-            script_id_cache: HashMap::new(),
-        }
+        DepGraph { graph, nodes_cache }
     }
 
     pub fn as_graph(&self) -> &Graph<RequestInfo, (), Directed> {
@@ -47,10 +42,103 @@ impl DepGraph {
         Ok(())
     }
 
+    fn build_script_id_cache(
+        messages: &[ChromeDebuggerMessage],
+    ) -> Result<HashMap<String, HashSet<String>>, Error> {
+        let mut script_id_cache: HashMap<String, HashSet<String>> = HashMap::new();
+
+        {
+            let script_id_cache = RefCell::new(&mut script_id_cache);
+
+            // Find for a script ID all the URLs it depends on
+            let find_script_deps = |script_id: &str| -> Result<HashSet<String>, Error> {
+                let script_id_cache = script_id_cache.borrow();
+                match script_id_cache.get(script_id) {
+                    Some(deps) => Ok(deps.clone()),
+                    None => bail!(
+                        "Could not find any dependencies for script with ID {}",
+                        script_id
+                    ),
+                }
+            };
+
+            // The events Debugger.scriptParsed and Debugger.scriptFailedToParse might only appear after a network request, which has the script in the stack trace.
+            // Parse them before everything else such that the script_ids can be used for the network requests parts
+            for message in messages {
+                use ChromeDebuggerMessage::{DebuggerScriptFailedToParse, DebuggerScriptParsed};
+                match message {
+                    DebuggerScriptParsed {
+                        script_id,
+                        url,
+                        stack_trace,
+                    }
+                    | DebuggerScriptFailedToParse {
+                        script_id,
+                        url,
+                        stack_trace,
+                    } => {
+                        fn traverse_stack<FSD>(
+                            stack: &StackTrace,
+                            find_script_deps: FSD,
+                            mut url_deps_accu: HashSet<String>,
+                        ) -> Result<HashSet<String>, Error>
+                        where
+                            FSD: Fn(&str) -> Result<HashSet<String>, Error>,
+                        {
+                            for frame in &stack.call_frames {
+                                if frame.url == "" {
+                                    let deps =
+                                        find_script_deps(&*frame.script_id).with_context(|_| {
+                                            format_err!(
+                                                "Cannot get script dependencies for script ID {}",
+                                                frame.script_id,
+                                            )
+                                        })?;
+                                    url_deps_accu.extend(deps);
+                                } else {
+                                    url_deps_accu.insert(frame.url.clone());
+                                }
+                            }
+                            if let Some(parent) = &stack.parent {
+                                url_deps_accu =
+                                    traverse_stack(parent, find_script_deps, url_deps_accu)?;
+                            }
+
+                            Ok(url_deps_accu)
+                        };
+
+                        // some scripts do not have a stacktrace, skip them
+                        if let Some(stack_trace) = stack_trace {
+                            // Chrome contains special case URLs like "extensions::event_bindings"
+                            // They all start with "extensions::", so skip them
+                            if !url.starts_with("extensions::") {
+                                let mut deps =
+                                    traverse_stack(stack_trace, find_script_deps, HashSet::new())
+                                        .with_context(|_| {
+                                            format_err!(
+                                            "Handling script (failed to) parse event, Script ID {}",
+                                            script_id
+                                        )
+                                        })?;
+                                script_id_cache.borrow_mut().insert(script_id.clone(), deps);
+                            }
+                        }
+                    }
+
+                    // ignore other events
+                    _ => {}
+                }
+            }
+        }
+
+        Ok(script_id_cache)
+    }
+
     fn do_process_messages(&mut self, messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         let graph = RefCell::new(&mut self.graph);
         let nodes_cache = RefCell::new(&mut self.nodes_cache);
-        let script_id_cache = RefCell::new(&mut self.script_id_cache);
+        let script_id_cache = DepGraph::build_script_id_cache(messages)
+            .context("Failed to build the scrip_id_cache.")?;
 
         // Create a new node and add it to the node cache
         let create_node = |msg: &ChromeDebuggerMessage| -> Result<NodeIndex, Error> {
@@ -74,7 +162,6 @@ impl DepGraph {
         };
         // Find for a script ID all the URLs it depends on
         let find_script_deps = |script_id: &str| -> Result<HashSet<String>, Error> {
-            let script_id_cache = script_id_cache.borrow();
             match script_id_cache.get(script_id) {
                 Some(deps) => Ok(deps.clone()),
                 None => bail!(
@@ -125,74 +212,6 @@ impl DepGraph {
                 }
                 Ok(())
             };
-
-        // The events Debugger.scriptParsed and Debugger.scriptFailedToParse might only appear after a network request, which has the script in the stack trace.
-        // Parse them before everything else such that the script_ids can be used for the network requests parts
-        for message in messages {
-            use ChromeDebuggerMessage::{DebuggerScriptFailedToParse, DebuggerScriptParsed};
-            match message {
-                DebuggerScriptParsed {
-                    script_id,
-                    url,
-                    stack_trace,
-                }
-                | DebuggerScriptFailedToParse {
-                    script_id,
-                    url,
-                    stack_trace,
-                } => {
-                    fn traverse_stack<FSD>(
-                        stack: &StackTrace,
-                        find_script_deps: FSD,
-                        mut url_deps_accu: HashSet<String>,
-                    ) -> Result<HashSet<String>, Error>
-                    where
-                        FSD: Fn(&str) -> Result<HashSet<String>, Error>,
-                    {
-                        for frame in &stack.call_frames {
-                            if frame.url == "" {
-                                let deps =
-                                    find_script_deps(&*frame.script_id).with_context(|_| {
-                                        format_err!(
-                                            "Cannot get script dependencies for script ID {}",
-                                            frame.script_id,
-                                        )
-                                    })?;
-                                url_deps_accu.extend(deps);
-                            } else {
-                                url_deps_accu.insert(frame.url.clone());
-                            }
-                        }
-                        if let Some(parent) = &stack.parent {
-                            url_deps_accu =
-                                traverse_stack(parent, find_script_deps, url_deps_accu)?;
-                        }
-
-                        Ok(url_deps_accu)
-                    };
-
-                    // some scripts do not have a stacktrace, skip them
-                    if let Some(stack_trace) = stack_trace {
-                        // Chrome contains special case URLs like "extensions::event_bindings"
-                        // They all start with "extensions::", so skip them
-                        if !url.starts_with("extensions::") {
-                            let mut deps =
-                                traverse_stack(stack_trace, find_script_deps, HashSet::new())
-                                    .with_context(|_| {
-                                        format_err!(
-                                            "Handling script (failed to) parse event, Script ID {}",
-                                            script_id
-                                        )
-                                    })?;
-                            script_id_cache.borrow_mut().insert(script_id.clone(), deps);
-                        }
-                    }
-                }
-
-                // ignore other events
-                _ => {}
-            }
-        }
 
         for message in messages {
             use ChromeDebuggerMessage::NetworkRequestWillBeSent;
