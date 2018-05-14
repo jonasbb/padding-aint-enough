@@ -9,6 +9,7 @@ extern crate log;
 extern crate structopt;
 extern crate misc_utils;
 extern crate petgraph;
+extern crate petgraph_graphml;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -22,8 +23,8 @@ use depgraph::DepGraph;
 use failure::Error;
 use failure::ResultExt;
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
-use petgraph::graphml::{Config as GraphMlConfig, GraphMl};
 use petgraph::prelude::*;
+use petgraph_graphml::GraphMl;
 use std::borrow::Cow;
 use std::convert::TryFrom;
 use std::fs::OpenOptions;
@@ -85,24 +86,15 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
 }
 
 fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
-    let graphml = GraphMl::with_config(
-        &graph,
-        GraphMlConfig::new()
-            .export_node_weights(true)
-            .export_edge_weights(true),
-    );
+    let graphml = GraphMl::new(&graph).export_node_weights(Box::new(RequestInfo::graphml_support));
     let fname = PathBuf::from("res.graphml");
-    let mut wtr = file_open_write(
+    let wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
     ).map_err(|err| {
         format_err!("Opening input file '{}' failed: {}", &fname.display(), err)
     })?;
-    wtr.write_all(
-        graphml
-            .to_string_with_weight_functions(|_ew| vec![], RequestInfo::graphml_support)
-            .as_bytes(),
-    )?;
+    graphml.to_writer(wtr)?;
 
     Ok(())
 }

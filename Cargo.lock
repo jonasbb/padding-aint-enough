@@ -105,7 +105,8 @@ dependencies = [
  "failure 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "misc_utils 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "petgraph 0.4.11 (git+https://github.com/jonasbb/petgraph?branch=graphml)",
+ "petgraph 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "petgraph-graphml 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.49 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.49 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -276,11 +277,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "petgraph"
-version = "0.4.11"
-source = "git+https://github.com/jonasbb/petgraph?branch=graphml#246fdba22e7a06bc928dc16db1dab2edd1146e7f"
+version = "0.4.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "fixedbitset 0.1.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "ordermap 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "petgraph-graphml"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "petgraph 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "xml-rs 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -616,7 +625,8 @@ dependencies = [
 "checksum misc_utils 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "280a56334f5b8817348bdc0108a7043a47e8fd49ca3d57000fa3a07ef14da37d"
 "checksum ordermap 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)" = "a86ed3f5f244b372d6b1a00b72ef7f8876d0bc6a78a4c9985c53614041512063"
 "checksum percent-encoding 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "31010dd2e1ac33d5b46a5b413495239882813e0369f8ed8a5e266f173602f831"
-"checksum petgraph 0.4.11 (git+https://github.com/jonasbb/petgraph?branch=graphml)" = "<none>"
+"checksum petgraph 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)" = "8b30dc85588cd02b9b76f5e386535db546d21dc68506cff2abebee0b6445e8e4"
+"checksum petgraph-graphml 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "1305fdbdfe2c3cbabe4426765bae93570cbe4bcfd6dc0cbdab040937e132c48d"
 "checksum pkg-config 0.3.11 (registry+https://github.com/rust-lang/crates.io-index)" = "110d5ee3593dbb73f56294327fe5668bcc997897097cbc76b51e7aed3f52452f"
 "checksum proc-macro2 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)" = "1b06e2f335f48d24442b35a19df506a835fb3547bc3c06ef27340da9acf5cae7"
 "checksum quick-error 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "eda5fe9b71976e62bc81b781206aaa076401769b2143379d3eb2118388babac4"
