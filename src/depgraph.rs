@@ -9,6 +9,7 @@ use {GraphExt, RequestInfo};
 pub struct DepGraph {
     graph: Graph<RequestInfo, (), Directed>,
     nodes_cache: HashMap<String, NodeIndex>,
+    script_id_cache: HashMap<String, HashSet<String>>,
 }
 
 impl DepGraph {
@@ -25,7 +26,11 @@ impl DepGraph {
             })
         });
 
-        DepGraph { graph, nodes_cache }
+        DepGraph {
+            graph,
+            nodes_cache,
+            script_id_cache: HashMap::new(),
+        }
     }
 
     pub fn as_graph(&self) -> &Graph<RequestInfo, (), Directed> {
@@ -45,6 +50,7 @@ impl DepGraph {
     fn do_process_messages(&mut self, messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         let graph = RefCell::new(&mut self.graph);
         let nodes_cache = RefCell::new(&mut self.nodes_cache);
+        let script_id_cache = RefCell::new(&mut self.script_id_cache);
 
         // Create a new node and add it to the node cache
         let create_node = |msg: &ChromeDebuggerMessage| -> Result<NodeIndex, Error> {
@@ -66,23 +72,127 @@ impl DepGraph {
                 bail!("Cannot create node from this message type.")
             }
         };
-        // Find an existing node in the node cache by the URL
-        let find_node = |url: String| -> Result<NodeIndex, Error> {
-            let nodes_cache = nodes_cache.borrow();
-
-            match nodes_cache.get(&*url) {
-                Some(node) => Ok(*node),
+        // Find for a script ID all the URLs it depends on
+        let find_script_deps = |script_id: &str| -> Result<HashSet<String>, Error> {
+            let script_id_cache = script_id_cache.borrow();
+            match script_id_cache.get(script_id) {
+                Some(deps) => Ok(deps.clone()),
                 None => bail!(
-                    "Cannot find node in cache even though there is a dependency to it: '{}'",
-                    url
+                    "Could not find any dependencies for script with ID {}",
+                    script_id
                 ),
             }
         };
-        let add_dependency = |from: NodeIndex, to: NodeIndex| {
-            let mut graph = graph.borrow_mut();
+        // Add dependencies to the node `node`
+        // Uses the URL to lookup the node with for this URL
+        // If this fails, it uses the script ID to lookup all the URL this script ID depends on
+        // Adds all the found URLs as dependencies to the node.
+        let add_dependencies_to_node =
+            |node: NodeIndex, url: &str, script_id: Option<&str>| -> Result<(), Error> {
+                let nodes_cache = nodes_cache.borrow();
+                let mut graph = graph.borrow_mut();
 
-            graph.update_edge(from, to, ());
-        };
+                // convert a single URL to a NodeIndex
+                let url2node = |url: &str| -> Result<NodeIndex, Error> {
+                    nodes_cache
+                        .get(url)
+                        .cloned()
+                        .ok_or_else(|| format_err!("Could not find URL '{}' in cache", url))
+                };
+
+                if let Ok(dep) = url2node(url) {
+                    // if URL succeeds, then everything is fine
+                    graph.update_edge(node, dep, ());
+                } else if let Some(script_id) = script_id {
+                    // Lookup all the dependend URLs for the script
+                    // Convert them into NodeIndex (via node_cache)
+                    // Add them all as dependencies
+                    find_script_deps(script_id)
+                        .with_context(|_| format_err!("Failed to lookup script ID {}", script_id))?
+                        .into_iter()
+                        .map(|url| url2node(&*url))
+                        .collect::<Result<Vec<_>, Error>>()
+                        .context("Failed to convert a URL dependency of a script to a node.")?
+                        .into_iter()
+                        .for_each(|dep| {
+                            graph.update_edge(node, dep, ());
+                        });
+                } else {
+                    bail!(
+                        "Could not find URL '{}' in cache and script ID is missing",
+                        url
+                    )
+                }
+                Ok(())
+            };
+
+        // The events Debugger.scriptParsed and Debugger.scriptFailedToParse might only appear after a network request, which has the script in the stack trace.
+        // Parse them before everything else such that the script_ids can be used for the network requests parts
+        for message in messages {
+            use ChromeDebuggerMessage::{DebuggerScriptFailedToParse, DebuggerScriptParsed};
+            match message {
+                DebuggerScriptParsed {
+                    script_id,
+                    url,
+                    stack_trace,
+                }
+                | DebuggerScriptFailedToParse {
+                    script_id,
+                    url,
+                    stack_trace,
+                } => {
+                    fn traverse_stack<FSD>(
+                        stack: &StackTrace,
+                        find_script_deps: FSD,
+                        mut url_deps_accu: HashSet<String>,
+                    ) -> Result<HashSet<String>, Error>
+                    where
+                        FSD: Fn(&str) -> Result<HashSet<String>, Error>,
+                    {
+                        for frame in &stack.call_frames {
+                            if frame.url == "" {
+                                let deps =
+                                    find_script_deps(&*frame.script_id).with_context(|_| {
+                                        format_err!(
+                                            "Cannot get script dependencies for script ID {}",
+                                            frame.script_id,
+                                        )
+                                    })?;
+                                url_deps_accu.extend(deps);
+                            } else {
+                                url_deps_accu.insert(frame.url.clone());
+                            }
+                        }
+                        if let Some(parent) = &stack.parent {
+                            url_deps_accu =
+                                traverse_stack(parent, find_script_deps, url_deps_accu)?;
+                        }
+
+                        Ok(url_deps_accu)
+                    };
+
+                    // some scripts do not have a stacktrace, skip them
+                    if let Some(stack_trace) = stack_trace {
+                        // Chrome contains special case URLs like "extensions::event_bindings"
+                        // They all start with "extensions::", so skip them
+                        if !url.starts_with("extensions::") {
+                            let mut deps =
+                                traverse_stack(stack_trace, find_script_deps, HashSet::new())
+                                    .with_context(|_| {
+                                        format_err!(
+                                            "Handling script (failed to) parse event, Script ID {}",
+                                            script_id
+                                        )
+                                    })?;
+                            script_id_cache.borrow_mut().insert(script_id.clone(), deps);
+                        }
+                    }
+                }
+
+                // ignore other events
+                _ => {}
+            }
+        }
 
         for message in messages {
             use ChromeDebuggerMessage::NetworkRequestWillBeSent;
@@ -97,54 +207,48 @@ impl DepGraph {
 
                 // handle redirects
                 if let Some(RedirectResponse { url }) = redirect_response {
-                    let other = find_node(url.clone())
+                    add_dependencies_to_node(node, url, None)
                         .with_context(|_| format_err!("Handling redirect, ID {}", request_id))?;
-                    add_dependency(node, other);
                 }
 
                 // Add dependencies for node/msg combination
                 match initiator {
                     Initiator::Other {} => {
-                        let other = find_node("other".into())
+                        add_dependencies_to_node(node, "other", None)
                             .with_context(|_| format_err!("Handling other, ID {}", request_id))?;
-                        add_dependency(node, other);
                     }
                     Initiator::Parser { ref url } => {
-                        let other = find_node(url.clone())
+                        add_dependencies_to_node(node, url, None)
                             .with_context(|_| format_err!("Handling parser, ID {}", request_id))?;
-                        add_dependency(node, other);
                     }
                     Initiator::Script { ref stack } => {
-                        fn traverse_stack<FN, AD>(
+                        fn traverse_stack<ADTN>(
                             node: NodeIndex,
-                                stack: &StackTrace,
-                            find_node: FN,
-                            add_dependency: AD,
+                            stack: &StackTrace,
+                            add_dependencies_to_node: ADTN,
                         ) -> Result<(), Error>
                         where
-                            FN: Fn(String) -> Result<NodeIndex, Error>,
-                            AD: Fn(NodeIndex, NodeIndex),
+                            ADTN: Fn(NodeIndex, &str, Option<&str>) -> Result<(), Error>,
                         {
                             for frame in &stack.call_frames {
-                                if frame.url == "" {
-                                    warn!("Script without URL {}", frame.script_id);
-                                    continue;
-                                }
-                                let other = find_node(frame.url.clone())?;
-                                add_dependency(node, other);
+                                add_dependencies_to_node(
+                                    node,
+                                    &*frame.url,
+                                    Some(&*frame.script_id),
+                                )?;
                             }
                             if let Some(parent) = &stack.parent {
-                                traverse_stack(node, parent, find_node, add_dependency)?;
+                                traverse_stack(node, parent, add_dependencies_to_node)?;
                             }
 
                             Ok(())
                         };
 
-                        traverse_stack(node, stack, find_node, add_dependency)
+                        traverse_stack(node, stack, add_dependencies_to_node)
                             .with_context(|_| format_err!("Handling script, ID {}", request_id))?;
                     }
                 }
-            }
+            };
         }
 
         Ok(())
