@@ -250,6 +250,8 @@ pub mod chrome {
         TargetTargetInfoChanged {},
         #[serde(rename = "Target.targetDestroyed", rename_all = "camelCase")]
         TargetTargetDestroyed {},
+        #[serde(rename = "Target.attachedToTarget", rename_all = "camelCase")]
+        TargetAttachedToTarget {},
 
         // Everything Debugger
         #[serde(rename = "Debugger.scriptParsed", rename_all = "camelCase")]
