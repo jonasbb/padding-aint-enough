@@ -1,4 +1,4 @@
-use chrome::{ChromeDebuggerMessage, Initiator, RedirectResponse, Request, Script};
+use chrome::{ChromeDebuggerMessage, Initiator, RedirectResponse, Request, StackTrace};
 use failure::{Error, ResultExt};
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
 use std::cell::RefCell;
@@ -117,7 +117,7 @@ impl DepGraph {
                     Initiator::Script { ref stack } => {
                         fn traverse_stack<FN, AD>(
                             node: NodeIndex,
-                            stack: &Script,
+                                stack: &StackTrace,
                             find_node: FN,
                             add_dependency: AD,
                         ) -> Result<(), Error>

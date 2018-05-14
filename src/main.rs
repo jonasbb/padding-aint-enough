@@ -253,9 +253,17 @@ pub mod chrome {
 
         // Everything Debugger
         #[serde(rename = "Debugger.scriptParsed", rename_all = "camelCase")]
-        DebuggerScriptParsed {},
+        DebuggerScriptParsed {
+            script_id: String,
+            url: String,
+            stack_trace: Option<StackTrace>,
+        },
         #[serde(rename = "Debugger.scriptFailedToParse", rename_all = "camelCase")]
-        DebuggerScriptFailedToParse {},
+        DebuggerScriptFailedToParse {
+            script_id: String,
+            url: String,
+            stack_trace: Option<StackTrace>,
+        },
     }
 
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -273,14 +281,14 @@ pub mod chrome {
     pub enum Initiator {
         Other {},
         Parser { url: String },
-        Script { stack: Script },
+        Script { stack: StackTrace },
     }
 
     #[serde(rename_all = "camelCase")]
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-    pub struct Script {
+    pub struct StackTrace {
         pub call_frames: Vec<CallFrame>,
-        pub parent: Option<Box<Script>>,
+        pub parent: Option<Box<StackTrace>>,
     }
 
     #[serde(rename_all = "camelCase")]
