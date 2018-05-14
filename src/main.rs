@@ -14,6 +14,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+extern crate serde_pickle;
 extern crate url;
 
 mod depgraph;
@@ -96,7 +97,7 @@ fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     Ok(())
 }
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct RequestInfo {
     normalized_domain_name: String,
     requests: Vec<IndividualRequest>,
@@ -157,7 +158,7 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 struct IndividualRequest {
     request_id: String,
     url: String,

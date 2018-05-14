@@ -8,7 +8,7 @@ env_logger = "0.5.10"
 failure = "0.1.1"
 log = "0.4.1"
 misc_utils = "1.4.0"
-petgraph = "0.4.12"
+petgraph = { version = "0.4.12", features = [ "serde-1" ] }
 petgraph-graphml = "1.0.0"
 serde = "1.0.49"
 serde_derive = "1.0.49"

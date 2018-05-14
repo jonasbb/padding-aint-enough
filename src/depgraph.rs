@@ -6,6 +6,7 @@ use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
 use {GraphExt, RequestInfo};
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DepGraph {
     graph: Graph<RequestInfo, (), Directed>,
 }
