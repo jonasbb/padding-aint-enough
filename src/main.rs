@@ -79,6 +79,7 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     depgraph.duplicate_domains();
     let graph = depgraph.into_graph();
     export_as_graphml(&graph)?;
+    export_as_pickle(&graph)?;
 
     Ok(())
 }
@@ -93,6 +94,19 @@ fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
         format_err!("Opening input file '{}' failed: {}", &fname.display(), err)
     })?;
     graphml.to_writer(wtr)?;
+
+    Ok(())
+}
+
+fn export_as_pickle(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
+    let fname = PathBuf::from("res.pickle");
+    let mut wtr = file_open_write(
+        &fname,
+        WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
+    ).map_err(|err| {
+        format_err!("Opening input file '{}' failed: {}", &fname.display(), err)
+    })?;
+    serde_pickle::to_writer(&mut wtr, graph, true)?;
 
     Ok(())
 }
