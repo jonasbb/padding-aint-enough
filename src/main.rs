@@ -73,10 +73,7 @@ fn run() -> Result<(), Error> {
 }
 
 fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
-    let mut depgraph = DepGraph::new();
-    depgraph
-        .process_messages(messages)
-        .context("Failure to build the graph.")?;
+    let mut depgraph = DepGraph::new(messages).context("Failure to build the graph.")?;
     depgraph.simplify_graph();
     depgraph.duplicate_domains();
     let graph = depgraph.into_graph();
@@ -146,15 +143,10 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
                 request: Request { ref url, .. },
                 ..
             } => {
-                let parsed_url;
-                let ndn = if url.starts_with("data:") {
-                    "data"
-                } else {
-                    parsed_url = Url::parse(&url).context("RequestInfo needs a domain name, but URL is not a valid URL.")?;
-                    parsed_url
-                        .host_str()
-                        .ok_or_else(|| format_err!("The URL must have a domain part, but does not. URL: '{}'", parsed_url))?
-                };
+                let parsed_url = Url::parse(&url).context("RequestInfo needs a domain name, but URL is not a valid URL.")?;
+                let ndn = parsed_url
+                    .host_str()
+                    .ok_or_else(|| format_err!("The URL must have a domain part, but does not. URL: '{}'", parsed_url))?;
                 Ok(RequestInfo{
                     normalized_domain_name: ndn.to_string(),
                     requests: vec![IndividualRequest::try_from(from)?],

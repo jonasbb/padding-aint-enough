@@ -8,24 +8,14 @@ use {GraphExt, RequestInfo};
 
 pub struct DepGraph {
     graph: Graph<RequestInfo, (), Directed>,
-    nodes_cache: HashMap<String, NodeIndex>,
 }
 
 impl DepGraph {
-    pub fn new() -> Self {
-        let mut graph: Graph<_, _> = Graph::new();
-        let mut nodes_cache: HashMap<String, NodeIndex> = HashMap::new();
+    pub fn new(messages: &[ChromeDebuggerMessage]) -> Result<Self, Error> {
+        let mut graph = DepGraph::process_messages(messages)?;
+        graph.transitive_closure();
 
-        // Insert a node for "other" type dependencies
-        // This should be the root node of everything
-        nodes_cache.entry("other".to_string()).or_insert_with(|| {
-            graph.add_node(RequestInfo {
-                normalized_domain_name: "other".into(),
-                requests: Vec::new(),
-            })
-        });
-
-        DepGraph { graph, nodes_cache }
+        Ok(DepGraph { graph })
     }
 
     pub fn as_graph(&self) -> &Graph<RequestInfo, (), Directed> {
@@ -34,12 +24,6 @@ impl DepGraph {
 
     pub fn into_graph(self) -> Graph<RequestInfo, (), Directed> {
         self.graph
-    }
-
-    pub fn process_messages(&mut self, messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
-        self.do_process_messages(messages)?;
-        self.graph.transitive_closure();
-        Ok(())
     }
 
     fn build_script_id_cache(
@@ -134,48 +118,70 @@ impl DepGraph {
         Ok(script_id_cache)
     }
 
-    fn do_process_messages(&mut self, messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
-        let graph = RefCell::new(&mut self.graph);
-        let nodes_cache = RefCell::new(&mut self.nodes_cache);
+    fn process_messages(
+        messages: &[ChromeDebuggerMessage],
+    ) -> Result<Graph<RequestInfo, ()>, Error> {
         let script_id_cache = DepGraph::build_script_id_cache(messages)
             .context("Failed to build the scrip_id_cache.")?;
+        let mut graph = Graph::new();
+        let mut nodes_cache: HashMap<String, NodeIndex> = HashMap::new();
 
-        // Create a new node and add it to the node cache
-        let create_node = |msg: &ChromeDebuggerMessage| -> Result<NodeIndex, Error> {
-            if let ChromeDebuggerMessage::NetworkRequestWillBeSent {
-                request: Request { ref url, .. },
-                ..
-            } = *msg
-            {
-                let mut graph = graph.borrow_mut();
-                let mut nodes_cache = nodes_cache.borrow_mut();
+        // Insert a node for "other" type dependencies
+        // This should be the root node of everything
+        nodes_cache.entry("other".to_string()).or_insert_with(|| {
+            graph.add_node(RequestInfo {
+                normalized_domain_name: "other".into(),
+                requests: Vec::new(),
+            })
+        });
 
-                let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
-                    graph.add_node(RequestInfo::try_from(msg).expect(
-                        "A requestWillBeSent must always be able to generate a valid node.",
-                    ))
-                });
-                Ok(*entry)
-            } else {
-                bail!("Cannot create node from this message type.")
-            }
-        };
-        // Find for a script ID all the URLs it depends on
-        let find_script_deps = |script_id: &str| -> Result<HashSet<String>, Error> {
-            match script_id_cache.get(script_id) {
-                Some(deps) => Ok(deps.clone()),
-                None => bail!(
-                    "Could not find any dependencies for script with ID {}",
-                    script_id
-                ),
-            }
-        };
-        // Add dependencies to the node `node`
-        // Uses the URL to lookup the node with for this URL
-        // If this fails, it uses the script ID to lookup all the URL this script ID depends on
-        // Adds all the found URLs as dependencies to the node.
-        let add_dependencies_to_node =
-            |node: NodeIndex, url: &str, script_id: Option<&str>| -> Result<(), Error> {
+        {
+            let graph = RefCell::new(&mut graph);
+            let nodes_cache = RefCell::new(&mut nodes_cache);
+
+            // Create a new node and add it to the node cache
+            // Do not create a node if it is a data URI
+            let create_node = |msg: &ChromeDebuggerMessage| -> Result<Option<NodeIndex>, Error> {
+                if let ChromeDebuggerMessage::NetworkRequestWillBeSent {
+                    request: Request { ref url, .. },
+                    ..
+                } = *msg
+                {
+                    Ok(if url.starts_with("data:") {
+                        None
+                    } else {
+                        let mut graph = graph.borrow_mut();
+                        let mut nodes_cache = nodes_cache.borrow_mut();
+
+                        let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
+                            graph.add_node(RequestInfo::try_from(msg).expect(
+                                "A requestWillBeSent must always be able to generate a valid node.",
+                            ))
+                        });
+                        Some(*entry)
+                    })
+                } else {
+                    bail!("Cannot create node from this message type.")
+                }
+            };
+            // Find for a script ID all the URLs it depends on
+            let find_script_deps = |script_id: &str| -> Result<HashSet<String>, Error> {
+                match script_id_cache.get(script_id) {
+                    Some(deps) => Ok(deps.clone()),
+                    None => bail!(
+                        "Could not find any dependencies for script with ID {}",
+                        script_id
+                    ),
+                }
+            };
+            // Add dependencies to the node `node`
+            // Uses the URL to lookup the node with for this URL
+            // If this fails, it uses the script ID to lookup all the URL this script ID depends on
+            // Adds all the found URLs as dependencies to the node.
+            let add_dependencies_to_node = |node: NodeIndex,
+                                            url: &str,
+                                            script_id: Option<&str>|
+             -> Result<(), Error> {
                 let nodes_cache = nodes_cache.borrow();
                 let mut graph = graph.borrow_mut();
 
@@ -213,64 +219,72 @@ impl DepGraph {
                 Ok(())
             };
 
-        for message in messages {
-            use ChromeDebuggerMessage::NetworkRequestWillBeSent;
-            if let NetworkRequestWillBeSent {
-                request_id,
-                initiator,
-                redirect_response,
-                ..
-            } = message
-            {
-                let node = create_node(&message)?;
+            for message in messages {
+                use ChromeDebuggerMessage::NetworkRequestWillBeSent;
+                if let NetworkRequestWillBeSent {
+                    request_id,
+                    initiator,
+                    redirect_response,
+                    ..
+                } = message
+                {
+                    let node = match create_node(&message)? {
+                        Some(node) => node,
+                        // skip creation of data URIs
+                        None => continue,
+                    };
 
-                // handle redirects
-                if let Some(RedirectResponse { url }) = redirect_response {
-                    add_dependencies_to_node(node, url, None)
-                        .with_context(|_| format_err!("Handling redirect, ID {}", request_id))?;
-                }
-
-                // Add dependencies for node/msg combination
-                match initiator {
-                    Initiator::Other {} => {
-                        add_dependencies_to_node(node, "other", None)
-                            .with_context(|_| format_err!("Handling other, ID {}", request_id))?;
-                    }
-                    Initiator::Parser { ref url } => {
+                    // handle redirects
+                    if let Some(RedirectResponse { url }) = redirect_response {
                         add_dependencies_to_node(node, url, None)
-                            .with_context(|_| format_err!("Handling parser, ID {}", request_id))?;
+                            .with_context(|_| format_err!("Handling redirect, ID {}", request_id))?;
                     }
-                    Initiator::Script { ref stack } => {
-                        fn traverse_stack<ADTN>(
-                            node: NodeIndex,
-                            stack: &StackTrace,
-                            add_dependencies_to_node: ADTN,
-                        ) -> Result<(), Error>
-                        where
-                            ADTN: Fn(NodeIndex, &str, Option<&str>) -> Result<(), Error>,
-                        {
-                            for frame in &stack.call_frames {
-                                add_dependencies_to_node(
-                                    node,
-                                    &*frame.url,
-                                    Some(&*frame.script_id),
-                                )?;
-                            }
-                            if let Some(parent) = &stack.parent {
-                                traverse_stack(node, parent, add_dependencies_to_node)?;
-                            }
 
-                            Ok(())
-                        };
+                    // Add dependencies for node/msg combination
+                    match initiator {
+                        Initiator::Other {} => {
+                            add_dependencies_to_node(node, "other", None).with_context(|_| {
+                                format_err!("Handling other, ID {}", request_id)
+                            })?;
+                        }
+                        Initiator::Parser { ref url } => {
+                            add_dependencies_to_node(node, url, None).with_context(|_| {
+                                format_err!("Handling parser, ID {}", request_id)
+                            })?;
+                        }
+                        Initiator::Script { ref stack } => {
+                            fn traverse_stack<ADTN>(
+                                node: NodeIndex,
+                                stack: &StackTrace,
+                                add_dependencies_to_node: ADTN,
+                            ) -> Result<(), Error>
+                            where
+                                ADTN: Fn(NodeIndex, &str, Option<&str>) -> Result<(), Error>,
+                            {
+                                for frame in &stack.call_frames {
+                                    add_dependencies_to_node(
+                                        node,
+                                        &*frame.url,
+                                        Some(&*frame.script_id),
+                                    )?;
+                                }
+                                if let Some(parent) = &stack.parent {
+                                    traverse_stack(node, parent, add_dependencies_to_node)?;
+                                }
 
-                        traverse_stack(node, stack, add_dependencies_to_node)
-                            .with_context(|_| format_err!("Handling script, ID {}", request_id))?;
+                                Ok(())
+                            };
+
+                            traverse_stack(node, stack, add_dependencies_to_node).with_context(
+                                |_| format_err!("Handling script, ID {}", request_id),
+                            )?;
+                        }
                     }
-                }
-            };
+                };
+            }
         }
 
-        Ok(())
+        Ok(graph)
     }
 
     pub fn simplify_graph(&mut self) {
@@ -556,11 +570,11 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let mut depgraph = DepGraph::new();
-        depgraph
-            .do_process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
-                .expect("Parsing the file must succeed."))
-            .context("Failed to process all messages from chrome")
+        let depgraph = DepGraph::new(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
+            .expect("Parsing the file must succeed."))
+            .context(
+            "Failed to process all messages from chrome",
+        )
             .expect("A graph must be buildable from the data.");
 
         test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
@@ -607,11 +621,11 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let mut depgraph = DepGraph::new();
-        depgraph
-            .process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
-                .expect("Parsing the file must succeed."))
-            .context("Failed to process all messages from chrome")
+        let depgraph = DepGraph::new(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
+            .expect("Parsing the file must succeed."))
+            .context(
+            "Failed to process all messages from chrome",
+        )
             .expect("A graph must be buildable from the data.");
 
         test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
@@ -649,11 +663,12 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let mut depgraph = DepGraph::new();
-        depgraph
-            .process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
-                .expect("Parsing the file must succeed."))
-            .context("Failed to process all messages from chrome")
+        let mut depgraph = DepGraph::new(&get_messages(
+            "./test/data/minimal-webpage-2018-05-08.json",
+        ).expect("Parsing the file must succeed."))
+            .context(
+            "Failed to process all messages from chrome",
+        )
             .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
 
@@ -688,11 +703,12 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let mut depgraph = DepGraph::new();
-        depgraph
-            .process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
-                .expect("Parsing the file must succeed."))
-            .context("Failed to process all messages from chrome")
+        let mut depgraph = DepGraph::new(&get_messages(
+            "./test/data/minimal-webpage-2018-05-08.json",
+        ).expect("Parsing the file must succeed."))
+            .context(
+            "Failed to process all messages from chrome",
+        )
             .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
         depgraph.remove_depends_on_same_domain();
@@ -726,11 +742,12 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let mut depgraph = DepGraph::new();
-        depgraph
-            .process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
-                .expect("Parsing the file must succeed."))
-            .context("Failed to process all messages from chrome")
+        let mut depgraph = DepGraph::new(&get_messages(
+            "./test/data/minimal-webpage-2018-05-08.json",
+        ).expect("Parsing the file must succeed."))
+            .context(
+            "Failed to process all messages from chrome",
+        )
             .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
         depgraph.remove_dependency_subset();
@@ -764,11 +781,12 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let mut depgraph = DepGraph::new();
-        depgraph
-            .process_messages(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
-                .expect("Parsing the file must succeed."))
-            .context("Failed to process all messages from chrome")
+        let mut depgraph = DepGraph::new(&get_messages(
+            "./test/data/minimal-webpage-2018-05-08.json",
+        ).expect("Parsing the file must succeed."))
+            .context(
+            "Failed to process all messages from chrome",
+        )
             .expect("A graph must be buildable from the data.");
         depgraph.simplify_graph();
 
