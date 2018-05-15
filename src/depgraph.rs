@@ -291,6 +291,11 @@ impl DepGraph {
     }
 
     pub fn simplify_graph(&mut self) {
+        self.simplify_nodes();
+        self.simplify_edges();
+    }
+
+    fn simplify_nodes(&mut self) {
         // The number of requests between all nodes must be constant, otherwise we are not merging nodes correctly
         let request_count: usize = self.graph
             .raw_nodes()
@@ -331,6 +336,32 @@ impl DepGraph {
             .sum();
         trace!("Number of requests in graph (end): {}", request_count_end);
         assert_eq!(request_count, request_count_end);
+    }
+
+    fn simplify_edges(&mut self) {
+        // Remove some duplicate edges
+        //
+        // An edge is duplicate, if the end of the edge is reachable by any path from the successors of this node.
+
+        // right now the transitive closure property still holds, so if we keep a snapshot of the
+        // current edges a reachability lookup is easy and does not require any graph traversal.
+        let edges: HashSet<(NodeIndex, NodeIndex)> = self.graph
+            .raw_edges()
+            .into_iter()
+            .map(|edge| (edge.source(), edge.target()))
+            .collect();
+        self.graph.retain_edges(|g, edge| {
+            let (start, end) = g.edge_endpoints(edge)
+                .expect("Must be a valid edge because it is given by the graph");
+            for succ in g.neighbors(start) {
+                if edges.contains(&(succ, end)) {
+                    // this edge is unneccesary, as a successor of this node has the same dependency
+                    return false;
+                }
+            }
+            // this is a neccessary edge
+            true
+        });
     }
 
     fn remove_self_loops(&mut self) {
@@ -723,7 +754,7 @@ mod test {
     }
 
     #[test]
-    fn minimal_website_simplify() {
+    fn minimal_website_simplify_nodes() {
         let mut expected_graph = Graph::<&'static str, ()>::new();
         let other = expected_graph.add_node("other");
         let localhost = expected_graph.add_node("localhost");
@@ -744,6 +775,39 @@ mod test {
             (fedora, localhost),
             (google, localhost),
             (pythonhaven, localhost),
+            // misc deps
+            (pythonhaven, jquery),
+        ]);
+
+        let mut depgraph = DepGraph::new(&get_messages(
+            "./test/data/minimal-webpage-2018-05-08.json",
+        ).expect("Parsing the file must succeed."))
+            .context(
+            "Failed to process all messages from chrome",
+        )
+            .expect("A graph must be buildable from the data.");
+        depgraph.simplify_nodes();
+
+        test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
+    }
+
+    #[test]
+    fn minimal_website_simplify() {
+        let mut expected_graph = Graph::<&'static str, ()>::new();
+        let other = expected_graph.add_node("other");
+        let localhost = expected_graph.add_node("localhost");
+        let jquery = expected_graph.add_node("jquery");
+        let fedora = expected_graph.add_node("fedora");
+        let google = expected_graph.add_node("google");
+        let pythonhaven = expected_graph.add_node("pythonhaven");
+
+        expected_graph.extend_with_edges(&[
+            // deps on other
+            (localhost, other),
+            // deps on localhost
+            (jquery, localhost),
+            (fedora, localhost),
+            (google, localhost),
             // misc deps
             (pythonhaven, jquery),
         ]);
