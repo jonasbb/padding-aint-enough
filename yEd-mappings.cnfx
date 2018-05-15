@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<styles>
+  <style name="Domain Name as Labels" scope="node" selectionOnly="false">
+    <mapping>
+      <source name="domain_name" origin="customProperty" type="string"/>
+      <target name="labelText" type="string">
+        <hints>
+          <hint type="int">0</hint>
+          <hint type="boolean">true</hint>
+        </hints>
+      </target>
+      <conversion type="asIs"/>
+    </mapping>
+  </style>
+  <style name="RequestIDs as Labels" scope="node" selectionOnly="false">
+    <mapping>
+      <source name="request_ids" origin="customProperty" type="string"/>
+      <target name="labelText" type="string">
+        <hints>
+          <hint type="int">0</hint>
+          <hint type="boolean">true</hint>
+        </hints>
+      </target>
+      <conversion type="asIs"/>
+    </mapping>
+  </style>
+  <style name="URLs as Labels" scope="node" selectionOnly="false">
+    <mapping>
+      <source name="urls" origin="customProperty" type="string"/>
+      <target name="labelText" type="string">
+        <hints>
+          <hint type="int">0</hint>
+          <hint type="boolean">true</hint>
+        </hints>
+      </target>
+      <conversion type="asIs"/>
+    </mapping>
+  </style>
+</styles>
