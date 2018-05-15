@@ -148,7 +148,8 @@ impl DepGraph {
                     ..
                 } = *msg
                 {
-                    Ok(if url.starts_with("data:") {
+                    Ok(
+                        if url.starts_with("data:") || url.starts_with("chrome-extension:") {
                         None
                     } else {
                         let mut graph = graph.borrow_mut();
@@ -160,7 +161,8 @@ impl DepGraph {
                             ))
                         });
                         Some(*entry)
-                    })
+                        },
+                    )
                 } else {
                     bail!("Cannot create node from this message type.")
                 }
