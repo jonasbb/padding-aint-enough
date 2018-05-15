@@ -12,6 +12,7 @@ pub struct DepGraph {
 }
 
 impl DepGraph {
+    /// Generate a new `DepGraph` based on `ChromeDebuggerMessage`s
     pub fn new(messages: &[ChromeDebuggerMessage]) -> Result<Self, Error> {
         let mut graph = DepGraph::process_messages(messages)?;
         graph.transitive_closure();
@@ -19,12 +20,24 @@ impl DepGraph {
         Ok(DepGraph { graph })
     }
 
+    /// Return a reference to the internal graph representation
     pub fn as_graph(&self) -> &Graph<RequestInfo, (), Directed> {
         &self.graph
     }
 
+    /// Return the internal graph and destroy the `DepGraph`
     pub fn into_graph(self) -> Graph<RequestInfo, (), Directed> {
         self.graph
+    }
+
+    /// Return the list of domain names observed
+    pub fn get_domain_names(&self) -> Vec<String> {
+        self.graph
+            .raw_nodes()
+            .into_iter()
+            .map(|node| node.weight.normalized_domain_name.to_string())
+            .filter(|domain| domain != "other")
+            .collect()
     }
 
     fn build_script_id_cache(
@@ -150,17 +163,17 @@ impl DepGraph {
                 {
                     Ok(
                         if url.starts_with("data:") || url.starts_with("chrome-extension:") {
-                        None
-                    } else {
-                        let mut graph = graph.borrow_mut();
-                        let mut nodes_cache = nodes_cache.borrow_mut();
+                            None
+                        } else {
+                            let mut graph = graph.borrow_mut();
+                            let mut nodes_cache = nodes_cache.borrow_mut();
 
-                        let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
-                            graph.add_node(RequestInfo::try_from(msg).expect(
+                            let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
+                                graph.add_node(RequestInfo::try_from(msg).expect(
                                 "A requestWillBeSent must always be able to generate a valid node.",
                             ))
-                        });
-                        Some(*entry)
+                            });
+                            Some(*entry)
                         },
                     )
                 } else {
