@@ -548,42 +548,6 @@ mod test {
     }
 
     #[test]
-    fn minimal_website_just_processing() {
-        let mut expected_graph = Graph::<&'static str, ()>::new();
-        let other = expected_graph.add_node("other");
-        let localhost = expected_graph.add_node("localhost");
-        let favicon = expected_graph.add_node("favicon");
-        let localhost_script = expected_graph.add_node("localhost script");
-        let jquery = expected_graph.add_node("jquery");
-        let fedora = expected_graph.add_node("fedora");
-        let google = expected_graph.add_node("google");
-        let pythonhaven = expected_graph.add_node("pythonhaven");
-
-        expected_graph.extend_with_edges(&[
-            // deps on other
-            (localhost, other),
-            (favicon, other),
-            // deps on localhost
-            (localhost_script, localhost),
-            (jquery, localhost),
-            (google, localhost),
-            (pythonhaven, localhost),
-            // misc deps
-            (fedora, localhost_script),
-            (pythonhaven, jquery),
-        ]);
-
-        let depgraph = DepGraph::new(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
-            .expect("Parsing the file must succeed."))
-            .context(
-            "Failed to process all messages from chrome",
-        )
-            .expect("A graph must be buildable from the data.");
-
-        test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
-    }
-
-    #[test]
     fn minimal_website() {
         let mut expected_graph = Graph::<&'static str, ()>::new();
         let other = expected_graph.add_node("other");
