@@ -1,4 +1,5 @@
 use chrome::{ChromeDebuggerMessage, Initiator, RedirectResponse, Request, StackTrace};
+use chrono::{DateTime, Utc};
 use failure::{Error, ResultExt};
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
 use std::cell::RefCell;
@@ -145,6 +146,9 @@ impl DepGraph {
             graph.add_node(RequestInfo {
                 normalized_domain_name: "other".into(),
                 requests: Vec::new(),
+                earliest_wall_time: DateTime::parse_from_rfc3339("1970-01-01T00:00:00Z")
+                    .unwrap()
+                    .with_timezone(&Utc),
             })
         });
 
@@ -265,12 +269,14 @@ impl DepGraph {
                                     format_err!("Handling other (document root), ID {}", request_id)
                                 })?;
                             } else if request.headers.referer.is_some() {
-                                add_dependencies_to_node(node, document_url, None).with_context(|_| {
-                                    format_err!(
-                                        "Handling other (has referer), ID {}",
-                                        request_id
-                                    )
-                                })?;
+                                add_dependencies_to_node(node, document_url, None).with_context(
+                                    |_| {
+                                        format_err!(
+                                            "Handling other (has referer), ID {}",
+                                            request_id
+                                        )
+                                    },
+                                )?;
                             } else {
                                 warn!("Unhandled other dependency: ID {}", request_id)
                             }
@@ -322,7 +328,10 @@ impl DepGraph {
             graph.retain_nodes(|graph, node| {
                 let retain = graph.contains_edge(node, root);
                 if !retain {
-                    warn!("Remove node because it does not depend on root: {}", graph[node].requests[0].url);
+                    warn!(
+                        "Remove node because it does not depend on root: {}",
+                        graph[node].requests[0].url
+                    );
                 }
                 retain
             });
