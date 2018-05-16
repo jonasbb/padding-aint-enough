@@ -14,8 +14,7 @@ pub struct DepGraph {
 impl DepGraph {
     /// Generate a new `DepGraph` based on `ChromeDebuggerMessage`s
     pub fn new(messages: &[ChromeDebuggerMessage]) -> Result<Self, Error> {
-        let mut graph = DepGraph::process_messages(messages)?;
-        graph.transitive_closure();
+        let graph = DepGraph::process_messages(messages)?;
 
         Ok(DepGraph { graph })
     }
@@ -311,6 +310,22 @@ impl DepGraph {
                     }
                 };
             }
+        }
+
+        // this allows us to easily check if there is a connection between each node and the root
+        graph.transitive_closure();
+
+        // Remove all nodes which do not depend on the real root
+        // This should only by the alternative root and favicon images
+        if let Some(&root) = nodes_cache.get("other") {
+            // Remove all nodes which have no connection to the root node
+            graph.retain_nodes(|graph, node| {
+                let retain = graph.contains_edge(node, root);
+                if !retain {
+                    warn!("Remove node because it does not depend on root: {}", graph[node].requests[0].url);
+                }
+                retain
+            });
         }
 
         Ok(graph)
