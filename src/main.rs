@@ -237,6 +237,8 @@ pub mod chrome {
         // Everything Network
         #[serde(rename = "Network.requestWillBeSent", rename_all = "camelCase")]
         NetworkRequestWillBeSent {
+            #[serde(rename = "documentURL")]
+            document_url: String,
             request_id: String,
             request: Request,
             initiator: Initiator,
@@ -283,6 +285,13 @@ pub mod chrome {
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
     pub struct Request {
         pub url: String,
+        pub headers: Headers,
+    }
+
+    #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+    pub struct Headers {
+        #[serde(rename = "Referer")]
+        pub referer: Option<String>,
     }
 
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]

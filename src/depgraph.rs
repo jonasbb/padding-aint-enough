@@ -238,9 +238,11 @@ impl DepGraph {
             for message in messages {
                 use ChromeDebuggerMessage::NetworkRequestWillBeSent;
                 if let NetworkRequestWillBeSent {
+                    document_url,
                     request_id,
                     initiator,
                     redirect_response,
+                    request,
                     ..
                 } = message
                 {
@@ -259,9 +261,20 @@ impl DepGraph {
                     // Add dependencies for node/msg combination
                     match initiator {
                         Initiator::Other {} => {
-                            add_dependencies_to_node(node, "other", None).with_context(|_| {
-                                format_err!("Handling other, ID {}", request_id)
-                            })?;
+                            if request.url == *document_url {
+                                add_dependencies_to_node(node, "other", None).with_context(|_| {
+                                    format_err!("Handling other (document root), ID {}", request_id)
+                                })?;
+                            } else if request.headers.referer.is_some() {
+                                add_dependencies_to_node(node, document_url, None).with_context(|_| {
+                                    format_err!(
+                                        "Handling other (has referer), ID {}",
+                                        request_id
+                                    )
+                                })?;
+                            } else {
+                                warn!("Unhandled other dependency: ID {}", request_id)
+                            }
                         }
                         Initiator::Parser { ref url } => {
                             add_dependencies_to_node(node, url, None).with_context(|_| {
@@ -623,6 +636,7 @@ mod test {
             (pythonhaven, other),
             // deps on localhost
             (localhost_script, localhost),
+            (favicon, localhost),
             (jquery, localhost),
             (fedora, localhost),
             (google, localhost),
@@ -665,6 +679,7 @@ mod test {
             (pythonhaven, other),
             // deps on localhost
             (localhost_script, localhost),
+            (favicon, localhost),
             (jquery, localhost),
             (fedora, localhost),
             (google, localhost),
@@ -691,7 +706,6 @@ mod test {
         let mut expected_graph = Graph::<&'static str, ()>::new();
         let other = expected_graph.add_node("other");
         let localhost = expected_graph.add_node("localhost");
-        let favicon = expected_graph.add_node("favicon");
         let jquery = expected_graph.add_node("jquery");
         let fedora = expected_graph.add_node("fedora");
         let google = expected_graph.add_node("google");
@@ -700,7 +714,6 @@ mod test {
         expected_graph.extend_with_edges(&[
             // deps on other
             (localhost, other),
-            (favicon, other),
             (jquery, other),
             (fedora, other),
             (google, other),
