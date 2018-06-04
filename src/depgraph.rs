@@ -347,7 +347,8 @@ impl DepGraph {
 
     fn simplify_nodes(&mut self) {
         // The number of requests between all nodes must be constant, otherwise we are not merging nodes correctly
-        let request_count: usize = self.graph
+        let request_count: usize = self
+            .graph
             .raw_nodes()
             .iter()
             .map(|n| n.weight.requests.len())
@@ -379,7 +380,8 @@ impl DepGraph {
             );
         }
 
-        let request_count_end: usize = self.graph
+        let request_count_end: usize = self
+            .graph
             .raw_nodes()
             .iter()
             .map(|n| n.weight.requests.len())
@@ -395,13 +397,15 @@ impl DepGraph {
 
         // right now the transitive closure property still holds, so if we keep a snapshot of the
         // current edges a reachability lookup is easy and does not require any graph traversal.
-        let edges: HashSet<(NodeIndex, NodeIndex)> = self.graph
+        let edges: HashSet<(NodeIndex, NodeIndex)> = self
+            .graph
             .raw_edges()
             .into_iter()
             .map(|edge| (edge.source(), edge.target()))
             .collect();
         self.graph.retain_edges(|g, edge| {
-            let (start, end) = g.edge_endpoints(edge)
+            let (start, end) = g
+                .edge_endpoints(edge)
                 .expect("Must be a valid edge because it is given by the graph");
             for succ in g.neighbors(start) {
                 if edges.contains(&(succ, end)) {
@@ -435,7 +439,8 @@ impl DepGraph {
         let mut i = 0;
         'outer: while i < self.graph.node_count() {
             let node = NodeIndex::new(i);
-            let node_domain = self.graph
+            let node_domain = self
+                .graph
                 .node_weight(node)
                 .expect("The node index is smaller than the node count")
                 .normalized_domain_name
@@ -487,7 +492,8 @@ impl DepGraph {
         'outer: while i < self.graph.node_count() {
             let node_count = self.graph.node_count();
             let node = NodeIndex::new(i);
-            let node_domain = self.graph
+            let node_domain = self
+                .graph
                 .node_weight(node)
                 .expect("The node index is smaller than the node count")
                 .normalized_domain_name
@@ -514,7 +520,8 @@ impl DepGraph {
                         did_changes = true;
 
                         // The two nodes might be totally unrelated, meaning we need to first transfer all the incoming edges of `node` to `other`
-                        let mut incomming = self.graph
+                        let mut incomming = self
+                            .graph
                             .neighbors_directed(node, Direction::Incoming)
                             .detach();
                         while let Some(n) = incomming.next_node(&self.graph) {
@@ -564,11 +571,13 @@ impl DepGraph {
             }
             info!("  Duplicate '{}' ({})", domain, nodes.len());
             for (i, node) in nodes.iter().enumerate() {
-                let mut deps: Vec<_> = self.graph
+                let mut deps: Vec<_> = self
+                    .graph
                     .neighbors(*node)
                     .into_iter()
                     .map(|neigh| {
-                        &self.graph
+                        &self
+                            .graph
                             .node_weight(neigh)
                             .unwrap()
                             .normalized_domain_name
@@ -670,11 +679,10 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let depgraph = DepGraph::new(&get_messages("./test/data/minimal-webpage-2018-05-08.json")
-            .expect("Parsing the file must succeed."))
-            .context(
-            "Failed to process all messages from chrome",
-        )
+        let depgraph = DepGraph::new(
+            &get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."),
+        ).context("Failed to process all messages from chrome")
             .expect("A graph must be buildable from the data.");
 
         test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
@@ -713,12 +721,10 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let mut depgraph = DepGraph::new(&get_messages(
-            "./test/data/minimal-webpage-2018-05-08.json",
-        ).expect("Parsing the file must succeed."))
-            .context(
-            "Failed to process all messages from chrome",
-        )
+        let mut depgraph = DepGraph::new(
+            &get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."),
+        ).context("Failed to process all messages from chrome")
             .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
 
@@ -751,12 +757,10 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let mut depgraph = DepGraph::new(&get_messages(
-            "./test/data/minimal-webpage-2018-05-08.json",
-        ).expect("Parsing the file must succeed."))
-            .context(
-            "Failed to process all messages from chrome",
-        )
+        let mut depgraph = DepGraph::new(
+            &get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."),
+        ).context("Failed to process all messages from chrome")
             .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
         depgraph.remove_depends_on_same_domain();
@@ -790,12 +794,10 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let mut depgraph = DepGraph::new(&get_messages(
-            "./test/data/minimal-webpage-2018-05-08.json",
-        ).expect("Parsing the file must succeed."))
-            .context(
-            "Failed to process all messages from chrome",
-        )
+        let mut depgraph = DepGraph::new(
+            &get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."),
+        ).context("Failed to process all messages from chrome")
             .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
         depgraph.remove_dependency_subset();
@@ -829,12 +831,10 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let mut depgraph = DepGraph::new(&get_messages(
-            "./test/data/minimal-webpage-2018-05-08.json",
-        ).expect("Parsing the file must succeed."))
-            .context(
-            "Failed to process all messages from chrome",
-        )
+        let mut depgraph = DepGraph::new(
+            &get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."),
+        ).context("Failed to process all messages from chrome")
             .expect("A graph must be buildable from the data.");
         depgraph.simplify_nodes();
 
@@ -862,12 +862,10 @@ mod test {
             (pythonhaven, jquery),
         ]);
 
-        let mut depgraph = DepGraph::new(&get_messages(
-            "./test/data/minimal-webpage-2018-05-08.json",
-        ).expect("Parsing the file must succeed."))
-            .context(
-            "Failed to process all messages from chrome",
-        )
+        let mut depgraph = DepGraph::new(
+            &get_messages("./test/data/minimal-webpage-2018-05-08.json")
+                .expect("Parsing the file must succeed."),
+        ).context("Failed to process all messages from chrome")
             .expect("A graph must be buildable from the data.");
         depgraph.simplify_graph();
 
