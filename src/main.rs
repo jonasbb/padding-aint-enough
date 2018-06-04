@@ -16,6 +16,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 extern crate serde_pickle;
+extern crate serde_with;
 extern crate url;
 
 mod depgraph;
@@ -256,6 +257,7 @@ where
 
 pub mod chrome {
     use chrono::{DateTime, Utc};
+    use serde_with::chrono::datetime_utc_ts_seconds_from_any;
 
     #[serde(tag = "method", content = "params")]
     #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -269,7 +271,7 @@ pub mod chrome {
             request: Request,
             initiator: Initiator,
             redirect_response: Option<RedirectResponse>,
-            #[serde(deserialize_with = "::deserialize::timestamp")]
+            #[serde(deserialize_with = "datetime_utc_ts_seconds_from_any::deserialize")]
             wall_time: DateTime<Utc>,
         },
         #[serde(rename = "Network.requestServedFromCache", rename_all = "camelCase")]
@@ -347,125 +349,5 @@ pub mod chrome {
     pub struct CallFrame {
         pub url: String,
         pub script_id: String,
-    }
-}
-
-mod deserialize {
-    use chrono::{DateTime, NaiveDateTime, Utc};
-    use serde::de::{Deserializer, Error, Unexpected, Visitor};
-
-    /// Deserialize a Unix timestamp with optional subsecond precision into a `DateTime<Utc>`.
-    pub fn timestamp<'de, D>(deserializer: D) -> Result<DateTime<Utc>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct Helper;
-        impl<'de> Visitor<'de> for Helper {
-            type Value = DateTime<Utc>;
-
-            fn expecting(&self, formatter: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-                formatter.write_str(
-                    "Invalid timestamp. Must be in the form of '123456789' or '123456789.123456'.",
-                )
-            }
-
-            fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
-            where
-                E: Error,
-            {
-                let ndt = NaiveDateTime::from_timestamp_opt(value, 0);
-                if let Some(ndt) = ndt {
-                    Ok(DateTime::<Utc>::from_utc(ndt, Utc))
-                } else {
-                    Err(Error::custom(format!(
-                        "Invalid or out of range value '{}' for NaiveDateTime",
-                        value
-                    )))
-                }
-            }
-
-            fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
-            where
-                E: Error,
-            {
-                let ndt = NaiveDateTime::from_timestamp_opt(value as i64, 0);
-                if let Some(ndt) = ndt {
-                    Ok(DateTime::<Utc>::from_utc(ndt, Utc))
-                } else {
-                    Err(Error::custom(format!(
-                        "Invalid or out of range value '{}' for NaiveDateTime",
-                        value
-                    )))
-                }
-            }
-
-            fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
-            where
-                E: Error,
-            {
-                let seconds = value.trunc() as i64;
-                let nsecs = (value.fract() * 1_000_000_000_f64) as u32;
-                let ndt = NaiveDateTime::from_timestamp_opt(seconds, nsecs);
-                if let Some(ndt) = ndt {
-                    Ok(DateTime::<Utc>::from_utc(ndt, Utc))
-                } else {
-                    Err(Error::custom(format!(
-                        "Invalid or out of range value '{}' for NaiveDateTime",
-                        value
-                    )))
-                }
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where
-                E: Error,
-            {
-                let parts: Vec<_> = value.split('.').collect();
-
-                match *parts.as_slice() {
-                    [seconds] => {
-                        if let Ok(seconds) = i64::from_str_radix(seconds, 10) {
-                            let ndt = NaiveDateTime::from_timestamp_opt(seconds, 0);
-                            if let Some(ndt) = ndt {
-                                Ok(DateTime::<Utc>::from_utc(ndt, Utc))
-                            } else {
-                                Err(Error::custom(format!(
-                                    "Invalid or out of range value '{}' for NaiveDateTime",
-                                    value
-                                )))
-                            }
-                        } else {
-                            Err(Error::invalid_value(Unexpected::Str(value), &self))
-                        }
-                    }
-                    [seconds, subseconds] => {
-                        if let Ok(seconds) = i64::from_str_radix(seconds, 10) {
-                            let subseclen = subseconds.chars().count() as u32;
-                            if let Ok(mut subseconds) = u32::from_str_radix(subseconds, 10) {
-                                // convert subseconds to nanoseconds (10^-9), require 9 places for nanoseconds
-                                subseconds *= 10u32.pow(9 - subseclen);
-                                let ndt = NaiveDateTime::from_timestamp_opt(seconds, subseconds);
-                                if let Some(ndt) = ndt {
-                                    Ok(DateTime::<Utc>::from_utc(ndt, Utc))
-                                } else {
-                                    Err(Error::custom(format!(
-                                        "Invalid or out of range value '{}' for NaiveDateTime",
-                                        value
-                                    )))
-                                }
-                            } else {
-                                Err(Error::invalid_value(Unexpected::Str(value), &self))
-                            }
-                        } else {
-                            Err(Error::invalid_value(Unexpected::Str(value), &self))
-                        }
-                    }
-
-                    _ => Err(Error::invalid_value(Unexpected::Str(value), &self)),
-                }
-            }
-        }
-
-        deserializer.deserialize_any(Helper)
     }
 }
