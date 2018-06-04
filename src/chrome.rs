@@ -104,11 +104,10 @@ pub struct Response {
 }
 
 #[serde(rename_all = "camelCase")]
-#[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
 pub struct Timing {
     /// Start time of the request. All other times are relative to this one
-    #[serde(deserialize_with = "datetime_utc_ts_seconds_from_any::deserialize")]
-    pub request_time: DateTime<Utc>,
+    pub request_time: f64,
     /// Value in Milliseconds
     #[serde(deserialize_with = "negative_is_none::deserialize")]
     pub dns_start: Option<f64>,

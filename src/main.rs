@@ -93,7 +93,42 @@ fn url_to_domain(url: &str) -> Result<String, Error> {
         })?)
 }
 
+fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
+    let timings: Vec<(String, String, Timing)> = messages
+        .into_iter()
+        .filter_map(|msg| {
+            if let ChromeDebuggerMessage::NetworkResponseReceived {
+                response: Response { url, timing },
+                ..
+            } = msg
+            {
+                if !should_ignore_url(url) {
+                    if let Some(timing) = timing {
+                        if timing.dns_start.is_some() {
+                            return Some((url_to_domain(url).unwrap(), url.clone(), *timing));
+                        }
+                    }
+                }
+            }
+            None
+        })
+        .collect();
+
+    let fname = PathBuf::from("dns-timing.pickle");
+    let mut wtr = file_open_write(
+        &fname,
+        WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
+    ).map_err(|err| {
+        format_err!("Opening input file '{}' failed: {}", &fname.display(), err)
+    })?;
+    serde_pickle::to_writer(&mut wtr, &timings, true)?;
+
+    Ok(())
+}
+
 fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
+    dns_timing_chart(messages)?;
+
     let mut depgraph = DepGraph::new(messages).context("Failure to build the graph.")?;
     depgraph.simplify_graph();
     depgraph.duplicate_domains();
