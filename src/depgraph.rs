@@ -2,6 +2,7 @@ use chrome::{ChromeDebuggerMessage, Initiator, RedirectResponse, Request, StackT
 use chrono::{DateTime, Utc};
 use failure::{Error, ResultExt};
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
+use should_ignore_url;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::convert::TryFrom;
@@ -164,21 +165,19 @@ impl DepGraph {
                     ..
                 } = *msg
                 {
-                    Ok(
-                        if url.starts_with("data:") || url.starts_with("chrome-extension:") {
-                            None
-                        } else {
-                            let mut graph = graph.borrow_mut();
-                            let mut nodes_cache = nodes_cache.borrow_mut();
+                    Ok(if should_ignore_url(url) {
+                        None
+                    } else {
+                        let mut graph = graph.borrow_mut();
+                        let mut nodes_cache = nodes_cache.borrow_mut();
 
-                            let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
-                                graph.add_node(RequestInfo::try_from(msg).expect(
+                        let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
+                            graph.add_node(RequestInfo::try_from(msg).expect(
                                 "A requestWillBeSent must always be able to generate a valid node.",
                             ))
-                            });
-                            Some(*entry)
-                        },
-                    )
+                        });
+                        Some(*entry)
+                    })
                 } else {
                     bail!("Cannot create node from this message type.")
                 }

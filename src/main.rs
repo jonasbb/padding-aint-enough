@@ -79,6 +79,20 @@ fn run() -> Result<(), Error> {
     Ok(())
 }
 
+fn url_to_domain(url: &str) -> Result<String, Error> {
+    let parsed_url =
+        Url::parse(&url).context("RequestInfo needs a domain name, but URL is not a valid URL.")?;
+    Ok(parsed_url
+        .host_str()
+        .map(|d| d.to_string())
+        .ok_or_else(|| {
+            format_err!(
+                "The URL must have a domain part, but does not. URL: '{}'",
+                parsed_url
+            )
+        })?)
+}
+
 fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     let mut depgraph = DepGraph::new(messages).context("Failure to build the graph.")?;
     depgraph.simplify_graph();
@@ -185,13 +199,9 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
                 request: Request { ref url, .. },
                 ..
             } => {
-                let parsed_url = Url::parse(&url).context("RequestInfo needs a domain name, but URL is not a valid URL.")?;
-                let ndn = parsed_url
-                    .host_str()
-                    .ok_or_else(|| format_err!("The URL must have a domain part, but does not. URL: '{}'", parsed_url))?;
                 let ind_req = IndividualRequest::try_from(from)?;
                 Ok(RequestInfo{
-                    normalized_domain_name: ndn.to_string(),
+                    normalized_domain_name: url_to_domain(url)?,
                     earliest_wall_time: ind_req.wall_time,
                     requests: vec![ind_req],
                 })
@@ -255,4 +265,12 @@ where
             }
         }
     }
+}
+
+/// Some internal URLs in chrome are not interesting for us, so ignore them
+///
+/// Data URIs are not fetched from a server, so they do not cause network traffic.
+/// chrome-extension is specific to chrome and does not cause network traffic.
+fn should_ignore_url(url: &str) -> bool {
+    url.starts_with("data:") || url.starts_with("chrome-extension:")
 }
