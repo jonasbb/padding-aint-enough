@@ -14,6 +14,8 @@ extern crate petgraph_graphml;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate lazy_static;
 extern crate num_traits;
 extern crate serde_json;
 extern crate serde_pickle;
@@ -34,10 +36,24 @@ use petgraph_graphml::GraphMl;
 use std::borrow::Cow;
 use std::cmp;
 use std::convert::TryFrom;
-use std::fs::OpenOptions;
-use std::path::PathBuf;
+use std::fs::{create_dir_all, remove_dir_all, OpenOptions};
+use std::path::{Path, PathBuf};
+use std::process::Command;
+use std::sync::RwLock;
 use structopt::StructOpt;
 use url::Url;
+
+lazy_static! {
+    /// Global output directory for all generated files
+    static ref OUTDIR: RwLock<PathBuf> = RwLock::new(PathBuf::new());
+
+    static ref PYTHON_DNS_TIMING: PathBuf = Path::new("./python/dns-timing-chart.py")
+        .canonicalize()
+        .expect("Canonicalizing a path should not fail.");
+}
+
+const DNS_TIMING: &str = "dns-timing.pickle";
+const DEP_GRAPH: &str = "dependencies.graphml";
 
 #[derive(StructOpt, Debug)]
 #[structopt(author = "", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
@@ -73,10 +89,27 @@ fn run() -> Result<(), Error> {
             err
         )
     })?;
+
+    // Setup output dir, but only if input file exists
+    let outdir = cli_args.webpage_log.with_extension("generated");
+    // Create directory and delete old versions
+    let _ = remove_dir_all(&outdir);
+    create_dir_all(&outdir)?;
+    {
+        let mut lock = OUTDIR.write().expect("Setting output dir may not fail");
+        *lock = outdir;
+    }
+
     let messages: Vec<ChromeDebuggerMessage> = serde_json::from_reader(rdr)?;
     process_messages(&messages)?;
 
     Ok(())
+}
+
+/// Returns a directory under which all output files should be created
+fn get_output_dir() -> PathBuf {
+    let lock = OUTDIR.read().expect("Unlocking the RwLock must work");
+    lock.clone()
 }
 
 fn url_to_domain(url: &str) -> Result<String, Error> {
@@ -114,7 +147,7 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         })
         .collect();
 
-    let fname = PathBuf::from("dns-timing.pickle");
+    let fname = get_output_dir().join(DNS_TIMING);
     let mut wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
@@ -128,6 +161,16 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
 
 fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     dns_timing_chart(messages)?;
+    let _status = Command::new(&*PYTHON_DNS_TIMING)
+        .arg(
+            &*get_output_dir()
+                .join(DNS_TIMING)
+                .canonicalize()?
+                .to_string_lossy(),
+        )
+        .current_dir(get_output_dir())
+        .status()
+        .context("Could not start Python process")?;
 
     let mut depgraph = DepGraph::new(messages).context("Failure to build the graph.")?;
     depgraph.simplify_graph();
@@ -146,7 +189,7 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
 
 fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     let graphml = GraphMl::new(&graph).export_node_weights(Box::new(RequestInfo::graphml_support));
-    let fname = PathBuf::from("res.graphml");
+    let fname = get_output_dir().join(DEP_GRAPH);
     let wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
@@ -159,7 +202,7 @@ fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
 }
 
 fn export_as_pickle(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
-    let fname = PathBuf::from("res.pickle");
+    let fname = get_output_dir().join("dependencies.pickle");
     let mut wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
