@@ -43,7 +43,9 @@ def main() -> None:
     plt.barh(range(len(begin)), end - begin, left=(begin - min(begin)))
     plt.yticks(range(len(begin)), event)
     fig = plt.gcf()
-    fig.set_size_inches(min(max(max(end - begin), 5), 20), len(begin) / 3)
+    fig.set_size_inches(
+        min(max(max(end - begin), 5), 20),
+        len(begin) / 3 + 0.6)
     # ensure there is enough space for the labels
     fig.tight_layout()
     fig.savefig(outfile)
