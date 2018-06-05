@@ -1,5 +1,6 @@
 *.pickle
-res.graphml
+*.graphml
+*.generated
 
 # Created by https://www.gitignore.io/api/python,rust
 
