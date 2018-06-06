@@ -73,6 +73,7 @@ fn main() {
         for fail in err.causes() {
             let _ = writeln!(out, "  {}", fail);
         }
+        let _ = writeln!(out, "{}", err.backtrace());
         std::process::exit(1);
     }
 }
