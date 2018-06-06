@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde_with::chrono::datetime_utc_ts_seconds_from_any;
 
 #[serde(tag = "method", content = "params")]
@@ -106,30 +106,79 @@ pub struct Response {
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Copy, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
 pub struct Timing {
-    /// Start time of the request. All other times are relative to this one
-    pub request_time: f64,
+    /// Start time of the request in seconds. All other times are relative to this one.
+    #[serde(
+        deserialize_with = "duration_seconds::deserialize",
+        serialize_with = "duration_seconds_with_microseconds::serialize"
+    )]
+    pub request_time: Duration,
     /// Value in Milliseconds
-    #[serde(deserialize_with = "negative_is_none::deserialize")]
-    pub dns_start: Option<f64>,
+    #[serde(
+        deserialize_with = "duration_millis_opt::deserialize",
+        serialize_with = "duration_seconds_with_microseconds_opt::serialize"
+    )]
+    pub dns_start: Option<Duration>,
     /// Value in Milliseconds
-    #[serde(deserialize_with = "negative_is_none::deserialize")]
-    pub dns_end: Option<f64>,
+    #[serde(
+        deserialize_with = "duration_millis_opt::deserialize",
+        serialize_with = "duration_seconds_with_microseconds_opt::serialize"
+    )]
+    pub dns_end: Option<Duration>,
 }
 
-pub mod negative_is_none {
-    use num_traits;
+pub mod duration_millis_opt {
+    use chrono::Duration;
     use serde::de::{Deserialize, Deserializer};
 
-    pub fn deserialize<'de, T, D>(deserializer: D) -> Result<Option<T>, D::Error>
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
     where
-        T: Deserialize<'de> + num_traits::Signed + num_traits::One,
         D: Deserializer<'de>,
     {
-        let v = T::deserialize(deserializer)?;
-        Ok(if v.is_negative() && v.abs().is_one() {
-            None
-        } else {
-            Some(v)
+        f64::deserialize(deserializer).map(|v| {
+            if v < 0. {
+                None
+            } else {
+                Some(Duration::nanoseconds((v * 1_000_000.) as i64))
+            }
         })
+    }
+}
+
+pub mod duration_seconds {
+    use chrono::Duration;
+    use serde::de::{Deserialize, Deserializer};
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        f64::deserialize(deserializer).map(|v| Duration::nanoseconds((v * 1_000_000_000.) as i64))
+    }
+}
+
+pub mod duration_seconds_with_microseconds {
+    use chrono::Duration;
+    use serde::ser::Serializer;
+
+    pub fn serialize<S>(value: &Duration, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f64(value.num_microseconds().unwrap() as f64 / 1_000_000.)
+    }
+}
+
+pub mod duration_seconds_with_microseconds_opt {
+    use chrono::Duration;
+    use serde::ser::Serializer;
+
+    pub fn serialize<S>(value: &Option<Duration>, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match value {
+            None => serializer.serialize_f64(-1.),
+            Some(v) => serializer.serialize_f64(v.num_microseconds().unwrap() as f64 / 1_000_000.),
+        }
     }
 }
