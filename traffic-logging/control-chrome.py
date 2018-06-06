@@ -111,7 +111,6 @@ def handle_url(url: str) -> None:
 
             signal.signal(signal.SIGALRM, close_browser_timeout)
 
-            # TODO set an overall time limit, not just the timer
             start = time.monotonic()
             msglist: t.List[t.Any] = list()
             try:
@@ -123,8 +122,6 @@ def handle_url(url: str) -> None:
                     data = json.loads(msg)
                     if "id" in data:
                         continue
-                    # if data["method"].startswith("Debugger.") or data["method"].startswith("Target."):
-                    #     continue
                     msglist.append(data)
             except WebSocketTimeoutException:
                 pass
