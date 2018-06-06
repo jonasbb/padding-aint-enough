@@ -25,7 +25,7 @@ def main() -> None:
         data = pickle.load(f)
 
     (root, _ext) = os.path.splitext(sys.argv[1])
-    outfile = root + ".png"
+    outfile = root + ".svg"
 
     # Sort by time, such that the earliest start is at the top
     data.sort(
@@ -35,7 +35,10 @@ def main() -> None:
 
     begin = np.array([t["requestTime"] + t["dnsStart"] for (_, _, t) in data])
     end = np.array([t["requestTime"] + t["dnsEnd"] for (_, _, t) in data])
-    event = [d for (d, _, _) in data]
+    event = [
+        f"{d} ({round(t * 1000, 3)} ms)"
+        for ((d, _, _), t) in zip(data, end - begin)
+    ]
 
     # for x in zip(begin, end, end-begin):
     #     print(x)
@@ -43,9 +46,7 @@ def main() -> None:
     plt.barh(range(len(begin)), end - begin, left=(begin - min(begin)))
     plt.yticks(range(len(begin)), event)
     fig = plt.gcf()
-    fig.set_size_inches(
-        min(max(max(end - begin), 5), 20),
-        len(begin) / 3 + 0.6)
+    fig.set_size_inches(15, len(begin) / 3 + 0.6)
     # ensure there is enough space for the labels
     fig.tight_layout()
     fig.savefig(outfile)
