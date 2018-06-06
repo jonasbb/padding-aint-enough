@@ -241,34 +241,47 @@ impl RequestInfo {
             ("domain_name".into(), (&*self.normalized_domain_name).into()),
             (
                 "earliest_wall_time".into(),
-                self.earliest_wall_time.to_string().into(),
+                self.earliest_wall_time
+                    .map(|v| v.to_string())
+                    .unwrap_or_else(|| "".to_string())
+                    .into(),
             ),
             (
                 "request_ids".into(),
-                (format!(
+                format!(
                     "{:#?}",
                     self.requests
                         .iter()
                         .map(|r| &r.request_id)
                         .collect::<Vec<_>>()
-                ).into()),
+                ).into(),
             ),
             (
                 "urls".into(),
-                (format!(
+                format!(
                     "{:#?}",
                     self.requests.iter().map(|r| &r.url).collect::<Vec<_>>()
-                ).into()),
+                ).into(),
             ),
             (
                 "wall_times".into(),
-                (format!(
+                format!(
                     "{:#?}",
                     self.requests
                         .iter()
                         .map(|r| &r.wall_time)
                         .collect::<Vec<_>>()
-                ).into()),
+                ).into(),
+            ),
+            (
+                "domain+time".into(),
+                format!(
+                    "{}\n{}",
+                    self.normalized_domain_name,
+                    self.earliest_wall_time
+                        .map(|v| v.to_string())
+                        .unwrap_or_else(|| "".to_string())
+                ).into(),
             ),
         ]
     }
@@ -340,7 +353,7 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for IndividualRequest {
                     url: url.clone(),
                     wall_time: None,
                 })
-            },
+           },
             _ => bail!("IndividualRequest can only be created from ChromeDebuggerMessage::NetworkRequestWillBeSent")
         }
     }

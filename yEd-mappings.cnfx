@@ -48,4 +48,16 @@
       <conversion type="asIs"/>
     </mapping>
   </style>
+  <style name="Domain+Time" scope="node" selectionOnly="false">
+    <mapping>
+      <source name="domain+time" origin="customProperty" type="string"/>
+      <target name="labelText" type="string">
+        <hints>
+          <hint type="int">0</hint>
+          <hint type="boolean">true</hint>
+        </hints>
+      </target>
+      <conversion type="asIs"/>
+    </mapping>
+  </style>
 </styles>
