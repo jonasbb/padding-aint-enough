@@ -1,5 +1,4 @@
 use chrome::{ChromeDebuggerMessage, Initiator, RedirectResponse, Request, StackTrace};
-use chrono::{DateTime, Utc};
 use failure::{Error, ResultExt};
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
 use should_ignore_url;
@@ -136,6 +135,8 @@ impl DepGraph {
     fn process_messages(
         messages: &[ChromeDebuggerMessage],
     ) -> Result<Graph<RequestInfo, ()>, Error> {
+        use ChromeDebuggerMessage::{NetworkRequestWillBeSent, NetworkWebSocketCreated};
+
         let script_id_cache = DepGraph::build_script_id_cache(messages)
             .context("Failed to build the scrip_id_cache.")?;
         let mut graph = Graph::new();
@@ -147,9 +148,7 @@ impl DepGraph {
             graph.add_node(RequestInfo {
                 normalized_domain_name: "other".into(),
                 requests: Vec::new(),
-                earliest_wall_time: DateTime::parse_from_rfc3339("1970-01-01T00:00:00Z")
-                    .unwrap()
-                    .with_timezone(&Utc),
+                earliest_wall_time: None,
             })
         });
 
@@ -160,11 +159,25 @@ impl DepGraph {
             // Create a new node and add it to the node cache
             // Do not create a node if it is a data URI
             let create_node = |msg: &ChromeDebuggerMessage| -> Result<Option<NodeIndex>, Error> {
-                if let ChromeDebuggerMessage::NetworkRequestWillBeSent {
+                if let NetworkRequestWillBeSent {
                     request: Request { ref url, .. },
                     ..
                 } = *msg
                 {
+                    Ok(if should_ignore_url(url) {
+                        None
+                    } else {
+                        let mut graph = graph.borrow_mut();
+                        let mut nodes_cache = nodes_cache.borrow_mut();
+
+                        let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
+                            graph.add_node(RequestInfo::try_from(msg).expect(
+                                "A requestWillBeSent must always be able to generate a valid node.",
+                            ))
+                        });
+                        Some(*entry)
+                    })
+                } else if let NetworkWebSocketCreated { ref url, .. } = *msg {
                     Ok(if should_ignore_url(url) {
                         None
                     } else {
@@ -237,82 +250,116 @@ impl DepGraph {
                 Ok(())
             };
 
+            /// Traverse the stackframe of an initiator and add all the occuring scripts as dependencies
+            fn traverse_stack<ADTN>(
+                node: NodeIndex,
+                stack: &StackTrace,
+                add_dependencies_to_node: ADTN,
+            ) -> Result<(), Error>
+            where
+                ADTN: Fn(NodeIndex, &str, Option<&str>) -> Result<(), Error>,
+            {
+                for frame in &stack.call_frames {
+                    add_dependencies_to_node(node, &*frame.url, Some(&*frame.script_id))?;
+                }
+                if let Some(parent) = &stack.parent {
+                    traverse_stack(node, parent, add_dependencies_to_node)?;
+                }
+
+                Ok(())
+            };
+
             for message in messages {
-                use ChromeDebuggerMessage::NetworkRequestWillBeSent;
-                if let NetworkRequestWillBeSent {
-                    document_url,
-                    request_id,
-                    initiator,
-                    redirect_response,
-                    request,
-                    ..
-                } = message
-                {
-                    let node = match create_node(&message)? {
-                        Some(node) => node,
-                        // skip creation of data URIs
-                        None => continue,
-                    };
+                match message {
+                    NetworkRequestWillBeSent {
+                        document_url,
+                        request_id,
+                        initiator,
+                        redirect_response,
+                        request,
+                        ..
+                    } => {
+                        let node = match create_node(&message)? {
+                            Some(node) => node,
+                            // skip creation of data URIs
+                            None => continue,
+                        };
 
-                    // handle redirects
-                    if let Some(RedirectResponse { url }) = redirect_response {
-                        add_dependencies_to_node(node, url, None)
-                            .with_context(|_| format_err!("Handling redirect, ID {}", request_id))?;
-                    }
-
-                    // Add dependencies for node/msg combination
-                    match initiator {
-                        Initiator::Other {} => {
-                            if request.url == *document_url {
-                                add_dependencies_to_node(node, "other", None).with_context(|_| {
-                                    format_err!("Handling other (document root), ID {}", request_id)
-                                })?;
-                            } else if request.headers.referer.is_some() {
-                                add_dependencies_to_node(node, document_url, None).with_context(
-                                    |_| {
-                                        format_err!(
-                                            "Handling other (has referer), ID {}",
-                                            request_id
-                                        )
-                                    },
-                                )?;
-                            } else {
-                                warn!("Unhandled other dependency: ID {}", request_id)
-                            }
-                        }
-                        Initiator::Parser { ref url } => {
+                        // handle redirects
+                        if let Some(RedirectResponse { url }) = redirect_response {
                             add_dependencies_to_node(node, url, None).with_context(|_| {
-                                format_err!("Handling parser, ID {}", request_id)
+                                format_err!("Handling redirect, ID {}", request_id)
                             })?;
                         }
-                        Initiator::Script { ref stack } => {
-                            fn traverse_stack<ADTN>(
-                                node: NodeIndex,
-                                stack: &StackTrace,
-                                add_dependencies_to_node: ADTN,
-                            ) -> Result<(), Error>
-                            where
-                                ADTN: Fn(NodeIndex, &str, Option<&str>) -> Result<(), Error>,
-                            {
-                                for frame in &stack.call_frames {
-                                    add_dependencies_to_node(
-                                        node,
-                                        &*frame.url,
-                                        Some(&*frame.script_id),
+
+                        // Add dependencies for node/msg combination
+                        match initiator {
+                            Initiator::Other {} => {
+                                if request.url == *document_url {
+                                    add_dependencies_to_node(node, "other", None).with_context(
+                                        |_| {
+                                            format_err!(
+                                                "Handling other (document root), ID {}",
+                                                request_id
+                                            )
+                                        },
                                     )?;
+                                } else if request.headers.referer.is_some() {
+                                    add_dependencies_to_node(node, document_url, None)
+                                        .with_context(|_| {
+                                            format_err!(
+                                                "Handling other (has referer), ID {}",
+                                                request_id
+                                            )
+                                        })?;
+                                } else {
+                                    warn!("Unhandled other dependency: ID {}", request_id)
                                 }
-                                if let Some(parent) = &stack.parent {
-                                    traverse_stack(node, parent, add_dependencies_to_node)?;
-                                }
-
-                                Ok(())
-                            };
-
-                            traverse_stack(node, stack, add_dependencies_to_node).with_context(
-                                |_| format_err!("Handling script, ID {}", request_id),
-                            )?;
+                            }
+                            Initiator::Parser { ref url } => {
+                                add_dependencies_to_node(node, url, None).with_context(|_| {
+                                    format_err!("Handling parser, ID {}", request_id)
+                                })?;
+                            }
+                            Initiator::Script { ref stack } => {
+                                traverse_stack(node, stack, add_dependencies_to_node)
+                                    .with_context(|_| {
+                                        format_err!("Handling script, ID {}", request_id)
+                                    })?;
+                            }
                         }
                     }
+
+                    NetworkWebSocketCreated {
+                        request_id,
+                        initiator,
+                        ..
+                    } => {
+                        let node = match create_node(&message)? {
+                            Some(node) => node,
+                            // skip creation of data URIs
+                            None => continue,
+                        };
+                        // Add dependencies for node/msg combination
+                        match initiator {
+                            Initiator::Other {} => {
+                                error!("Unhandled other dependency: ID {}", request_id)
+                            }
+                            Initiator::Parser { ref url } => {
+                                add_dependencies_to_node(node, url, None).with_context(|_| {
+                                    format_err!("Handling parser, ID {}", request_id)
+                                })?;
+                            }
+                            Initiator::Script { ref stack } => {
+                                traverse_stack(node, stack, add_dependencies_to_node)
+                                    .with_context(|_| {
+                                        format_err!("Handling script, ID {}", request_id)
+                                    })?;
+                            }
+                        }
+                    }
+
+                    _ => {}
                 };
             }
         }

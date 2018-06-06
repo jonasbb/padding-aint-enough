@@ -31,6 +31,24 @@ pub enum ChromeDebuggerMessage {
     NetworkDataReceived { request_id: String },
     #[serde(rename = "Network.loadingFinished", rename_all = "camelCase")]
     NetworkLoadingFinished { request_id: String },
+    #[serde(rename = "Network.webSocketCreated", rename_all = "camelCase")]
+    NetworkWebSocketCreated {
+        request_id: String,
+        url: String,
+        initiator: Initiator,
+    },
+    #[serde(rename = "Network.webSocketClosed", rename_all = "camelCase")]
+    NetworkWebSocketClosed { request_id: String },
+    #[serde(rename = "Network.webSocketWillSendHandshakeRequest", rename_all = "camelCase")]
+    NetworkWebSocketWillSendHandshakeRequest { request_id: String },
+    #[serde(rename = "Network.webSocketHandshakeResponseReceived", rename_all = "camelCase")]
+    NetworkWebSocketHandshakeResponseReceived { request_id: String },
+    #[serde(rename = "Network.webSocketFrameError", rename_all = "camelCase")]
+    NetworkWebSocketFrameError { request_id: String },
+    #[serde(rename = "Network.webSocketFrameReceived", rename_all = "camelCase")]
+    NetworkWebSocketFrameReceived { request_id: String },
+    #[serde(rename = "Network.webSocketFrameSent", rename_all = "camelCase")]
+    NetworkWebSocketFrameSent { request_id: String },
 
     // Everything Target
     #[serde(rename = "Target.targetCreated", rename_all = "camelCase")]

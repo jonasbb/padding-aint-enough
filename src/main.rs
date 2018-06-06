@@ -217,7 +217,7 @@ fn export_as_pickle(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct RequestInfo {
     normalized_domain_name: String,
-    earliest_wall_time: DateTime<Utc>,
+    earliest_wall_time: Option<DateTime<Utc>>,
     requests: Vec<IndividualRequest>,
 }
 
@@ -227,7 +227,12 @@ impl RequestInfo {
         assert_eq!(self.normalized_domain_name, other.normalized_domain_name);
 
         self.requests.extend(other.requests.iter().cloned());
-        self.earliest_wall_time = cmp::min(self.earliest_wall_time, other.earliest_wall_time);
+        self.earliest_wall_time = match (self.earliest_wall_time, other.earliest_wall_time) {
+            (None, None) => None,
+            (Some(s), None) => Some(s),
+            (None, Some(o)) => Some(o),
+            (Some(s), Some(o)) => Some(cmp::min(s, o)),
+        };
     }
 
     pub fn graphml_support(&self) -> Vec<(Cow<'static, str>, Cow<str>)> {
@@ -284,6 +289,17 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
                     requests: vec![ind_req],
                 })
            },
+            ChromeDebuggerMessage::NetworkWebSocketCreated{
+                ref url,
+                ..
+            } => {
+                let ind_req = IndividualRequest::try_from(from)?;
+                Ok(RequestInfo{
+                    normalized_domain_name: url_to_domain(url)?,
+                    earliest_wall_time: ind_req.wall_time,
+                    requests: vec![ind_req],
+                })
+           },
             _ => bail!("IndividualRequest can only be created from ChromeDebuggerMessage::NetworkRequestWillBeSent")
         }
     }
@@ -293,7 +309,7 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
 struct IndividualRequest {
     request_id: String,
     url: String,
-    wall_time: DateTime<Utc>,
+    wall_time: Option<DateTime<Utc>>,
 }
 
 impl<'a> TryFrom<&'a ChromeDebuggerMessage> for IndividualRequest {
@@ -310,7 +326,18 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for IndividualRequest {
                 Ok(IndividualRequest {
                     request_id: request_id.clone(),
                     url: url.clone(),
-                    wall_time,
+                    wall_time: Some(wall_time),
+                })
+            },
+            ChromeDebuggerMessage::NetworkWebSocketCreated{
+                ref url,
+                ref request_id,
+                ..
+            } => {
+                Ok(IndividualRequest {
+                    request_id: request_id.clone(),
+                    url: url.clone(),
+                    wall_time: None,
                 })
             },
             _ => bail!("IndividualRequest can only be created from ChromeDebuggerMessage::NetworkRequestWillBeSent")
