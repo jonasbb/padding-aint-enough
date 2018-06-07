@@ -41,7 +41,7 @@ def handle_url(url: str) -> None:
                 stderr=subprocess.DEVNULL,
         ) as chrome:
             # give chrome some time to fully start
-            time.sleep(2)
+            time.sleep(4)
 
             wsurl = get_wsurl_for_url(special_url)
             ws = create_ws_connection(wsurl)
