@@ -4,9 +4,12 @@ image: "rust:latest"
 
 variables:
   RUST_BACKTRACE: "1"
+  GIT_DEPTH: "3"
 
 # Use cargo to test the project
 test:cargo:
+  before_script:
+  - rustup update nightly
   script:
   - rustc --version && cargo --version      # Print version info for debugging
   - cargo +nightly build --all --verbose
