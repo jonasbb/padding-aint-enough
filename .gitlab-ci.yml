@@ -2,9 +2,12 @@
 # https://hub.docker.com/r/library/rust/tags/
 image: "rust:latest"
 
+variables:
+  RUST_BACKTRACE: "1"
+
 # Use cargo to test the project
 test:cargo:
   script:
   - rustc --version && cargo --version      # Print version info for debugging
-  - cargo build --all --verbose
-  - cargo test --all --verbose
+  - cargo +nightly build --all --verbose
+  - cargo +nightly test --all --verbose
