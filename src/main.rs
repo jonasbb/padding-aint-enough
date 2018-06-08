@@ -16,6 +16,7 @@ extern crate serde;
 extern crate serde_derive;
 #[macro_use]
 extern crate lazy_static;
+extern crate encrypted_dns;
 extern crate num_traits;
 extern crate serde_json;
 extern crate serde_pickle;
@@ -28,13 +29,15 @@ mod depgraph;
 use chrome::*;
 use chrono::{DateTime, Utc};
 use depgraph::DepGraph;
-use failure::Error;
-use failure::ResultExt;
+use encrypted_dns::dnstap::Message_Type;
+use encrypted_dns::protos::DnstapContent;
+use failure::{Error, ResultExt};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
 use std::borrow::Cow;
 use std::cmp;
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::fs::{create_dir_all, remove_dir_all, OpenOptions};
 use std::path::{Path, PathBuf};
@@ -103,6 +106,118 @@ fn run() -> Result<(), Error> {
 
     let messages: Vec<ChromeDebuggerMessage> = serde_json::from_reader(rdr)?;
     process_messages(&messages)?;
+    let dnstap_file = cli_args.webpage_log.with_extension("dnstap");
+    process_dnstap(&*dnstap_file)
+}
+
+fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
+    // process dnstap if available
+    if dnstap_file.exists() {
+        let events: Vec<encrypted_dns::protos::Dnstap> =
+            encrypted_dns::process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
+
+        let mut unanswered_client_queries = BTreeMap::new();
+        let mut matched = Vec::new();
+
+        for ev in events.into_iter().filter(|ev| {
+            // The only interesting information is the timestamp which is also contained in the response
+            let DnstapContent::Message { message_type, .. } = ev.content;
+            message_type != Message_Type::FORWARDER_QUERY
+        }) {
+            let DnstapContent::Message {
+                message_type,
+                query_message,
+                response_message,
+                query_time,
+                response_time,
+                query_port,
+                ..
+            } = ev.content;
+            match message_type {
+                Message_Type::CLIENT_QUERY => {
+                    let (dnsmsg, _size) = query_message.expect("Unbound always sets this");
+                    let qname = dnsmsg.queries()[0].name().to_utf8();
+                    let qtype = dnsmsg.queries()[0].query_type().to_string();
+                    let id = dnsmsg.id();
+                    let start = query_time.expect("Unbound always sets this");
+                    let port = query_port.expect("Unbound always sets this");
+
+                    let key = MatchKey {
+                        qname: qname.clone(),
+                        qtype: qtype.clone(),
+                        id,
+                        port,
+                    };
+                    let value = UnmatchedClientQuery {
+                        qname,
+                        qtype,
+                        start,
+                    };
+                    unanswered_client_queries.insert(key, value);
+                }
+
+                Message_Type::CLIENT_RESPONSE => {
+                    let (dnsmsg, _size) = response_message.expect("Unbound always sets this");
+                    let qname = dnsmsg.queries()[0].name().to_utf8();
+                    let qtype = dnsmsg.queries()[0].query_type().to_string();
+                    let id = dnsmsg.id();
+                    let end = response_time.expect("Unbound always sets this");
+                    let port = query_port.expect("Unbound always sets this");
+
+                    let key = MatchKey {
+                        qname,
+                        qtype,
+                        id,
+                        port,
+                    };
+                    if let Some(unmatched) = unanswered_client_queries.remove(&key) {
+                        matched.push(Query {
+                            source: QuerySource::Client,
+                            qname: unmatched.qname,
+                            qtype: unmatched.qtype,
+                            start: unmatched.start,
+                            end,
+                        })
+                    };
+                }
+
+                Message_Type::FORWARDER_RESPONSE => {
+                    let (dnsmsg, _size) = response_message.expect("Unbound always sets this");
+                    let qname = dnsmsg.queries()[0].name().to_utf8();
+                    let qtype = dnsmsg.queries()[0].query_type().to_string();
+                    let start = query_time.expect("Unbound always sets this");
+                    let end = response_time.expect("Unbound always sets this");
+                    matched.push(Query {
+                        source: QuerySource::Forwarder,
+                        qname,
+                        qtype,
+                        start,
+                        end,
+                    });
+                }
+
+                _ => bail!("Unexpected message type {:?}", message_type),
+            }
+        }
+
+        // cleanup some messages
+        matched.retain(|query| {
+            // filter out all the queries which are just noise
+            !(query.qtype == "NULL" && query.qname.starts_with("_ta"))
+                && !(query.qtype == "A"
+                    && (query.qname == "end.example." || query.qname == "start.example."))
+        });
+
+        let fname = get_output_dir().join("dns.pickle");
+        let mut wtr = file_open_write(
+            &fname,
+            WriteOptions::default()
+                .set_open_options(OpenOptions::new().create(true).truncate(true)),
+        ).map_err(|err| {
+            format_err!("Opening output file '{}' failed: {}", &fname.display(), err)
+        })?;
+        serde_pickle::to_writer(&mut wtr, &matched, true)?;
+    }
 
     Ok(())
 }
@@ -195,7 +310,7 @@ fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
     ).map_err(|err| {
-        format_err!("Opening input file '{}' failed: {}", &fname.display(), err)
+        format_err!("Opening output file '{}' failed: {}", &fname.display(), err)
     })?;
     graphml.to_writer(wtr)?;
 
@@ -208,7 +323,7 @@ fn export_as_pickle(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
     ).map_err(|err| {
-        format_err!("Opening input file '{}' failed: {}", &fname.display(), err)
+        format_err!("Opening output file '{}' failed: {}", &fname.display(), err)
     })?;
     serde_pickle::to_writer(&mut wtr, graph, true)?;
 
@@ -392,4 +507,34 @@ where
 /// chrome-extension is specific to chrome and does not cause network traffic.
 fn should_ignore_url(url: &str) -> bool {
     url.starts_with("data:") || url.starts_with("chrome-extension:")
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
+struct Query {
+    source: QuerySource,
+    qname: String,
+    qtype: String,
+    start: DateTime<Utc>,
+    end: DateTime<Utc>,
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
+enum QuerySource {
+    Client,
+    Forwarder,
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
+struct MatchKey {
+    qname: String,
+    qtype: String,
+    id: u16,
+    port: u16,
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+struct UnmatchedClientQuery {
+    qname: String,
+    qtype: String,
+    start: DateTime<Utc>,
 }

@@ -9,7 +9,7 @@ extern crate misc_utils;
 extern crate protobuf;
 extern crate trust_dns;
 
-mod protos;
+pub mod protos;
 
 use failure::Error;
 use framestream::DecoderReader;
