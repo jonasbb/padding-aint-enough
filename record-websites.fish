@@ -57,7 +57,7 @@ for i in (seq $argv[1])
     # copy experiment results
     popd
     mv $TMPDIR/website-log.json ./website-log-$i.json
-    cp $TMPDIR/dnstap.log ./dnstap-$i.log
+    cp $TMPDIR/dnstap.log ./website-log-$i.dnstap
 
     # cleanup
     rm -rf $TMPDIR
