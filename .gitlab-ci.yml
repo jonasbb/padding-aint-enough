@@ -2,6 +2,10 @@
 # https://hub.docker.com/r/library/rust/tags/
 image: "rust:latest"
 
+stages:
+  - install
+  - test
+
 cache:
   paths:
   - cargo/
@@ -11,8 +15,14 @@ variables:
   GIT_DEPTH: "3"
   CARGO_HOME: $CI_PROJECT_DIR/cargo
 
+install:
+  stage: install
+  script:
+  - apt-get install protobuf-c-dev
+
 # Use cargo to test the project
 test:cargo:
+  stage: test
   before_script:
   - rustup update nightly
   script:
