@@ -2,28 +2,22 @@
 # https://hub.docker.com/r/library/rust/tags/
 image: "rust:latest"
 
-stages:
-  - install
-  - test
-
 cache:
   paths:
-  - cargo/
+  - cargo
 
 variables:
   RUST_BACKTRACE: "1"
   GIT_DEPTH: "3"
   CARGO_HOME: $CI_PROJECT_DIR/cargo
 
-install:
-  stage: install
-  script:
-  - apt-get install protobuf-c-dev
-
 # Use cargo to test the project
 test:cargo:
-  stage: test
+  dependencies:
+  - install
   before_script:
+  - apt-get update
+  - apt-get install -y protobuf-compiler
   - rustup update nightly
   script:
   - rustc --version && cargo --version      # Print version info for debugging
