@@ -10,6 +10,8 @@ repository = "https://github.com/jedisct1/rust-framestream"
 [dependencies]
 byteorder = "1.0.0"
 bytes = "0.4.1"
+failure = "0.1.1"
+failure_derive = "0.1.1"
 log = "0.4.2"
 
 [profile.release]

@@ -1,5 +1,6 @@
 use byteorder::*;
 use constants::*;
+use failure::Backtrace;
 use std::io::Cursor;
 use std::io::{self, Read};
 
@@ -10,20 +11,35 @@ pub struct DecoderReader<R: Read> {
     saw_start: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Fail)]
 pub enum DecodeError {
-    Io(io::Error),
-    InvalidMagicBytes { magic_bytes: u32 },
-    UnknownFieldsInHeader { magic_bytes: u32 },
-    UnwantedContentType,
-    TooShortFrameLength,
-    DuplicateStartFrame,
-    InvalidLength,
+    #[fail(display = "Error while reading data {}.", _0)]
+    Io(#[cause] io::Error, Backtrace),
+    #[fail(display = "Found unexpected magic bytes '{:x}'.", magic_bytes)]
+    InvalidMagicBytes {
+        magic_bytes: u32,
+        backtrace: Backtrace,
+    },
+    #[fail(display = "Unknown field in header with '{:x}'.", magic_bytes)]
+    UnknownFieldsInHeader {
+        magic_bytes: u32,
+        backtrace: Backtrace,
+    },
+    #[fail(display = "Unwanted Content Type: found '{}' but wants '{}'.", got, expected)]
+    UnwantedContentType {
+        got: String,
+        expected: String,
+        backtrace: Backtrace,
+    },
+    #[fail(display = "Received multiple start frames in same stream.")]
+    DuplicateStartFrame(Backtrace),
+    #[fail(display = "Received frame has an invalid length")]
+    InvalidLength(Backtrace),
 }
 
 impl From<io::Error> for DecodeError {
     fn from(error: io::Error) -> DecodeError {
-        DecodeError::Io(error)
+        DecodeError::Io(error, Backtrace::new())
     }
 }
 
@@ -53,13 +69,16 @@ impl<R: Read> DecoderReader<R> {
         trace!("Escape Frame");
         let frame_length = self.reader.read_u32::<BigEndian>()? as usize;
         if frame_length < 4 {
-            return Err(DecodeError::TooShortFrameLength);
+            return Err(DecodeError::InvalidLength(Backtrace::new()));
         }
         trace!("Frame Length: {}", frame_length);
         match self.reader.read_u32::<BigEndian>()? {
             CONTROL_START => self.read_start_frame(frame_length),
             CONTROL_STOP => self.read_stop_frame(frame_length),
-            unkwn => Err(DecodeError::InvalidMagicBytes { magic_bytes: unkwn }),
+            unkwn => Err(DecodeError::InvalidMagicBytes {
+                magic_bytes: unkwn,
+                backtrace: Backtrace::new(),
+            }),
         }
     }
 
@@ -81,11 +100,20 @@ impl<R: Read> DecoderReader<R> {
                     trace!("Content Type {:?}", content_type);
                     if let Some(ref expected_content_type) = self.content_type {
                         if expected_content_type.as_bytes() != &*content_type {
-                            return Err(DecodeError::UnwantedContentType);
+                            return Err(DecodeError::UnwantedContentType {
+                                got: String::from_utf8_lossy(&*content_type).to_string(),
+                                expected: expected_content_type.clone(),
+                                backtrace: Backtrace::new(),
+                            });
                         }
                     }
                 }
-                magic_bytes => return Err(DecodeError::UnknownFieldsInHeader { magic_bytes }),
+                magic_bytes => {
+                    return Err(DecodeError::UnknownFieldsInHeader {
+                        magic_bytes,
+                        backtrace: Backtrace::new(),
+                    })
+                }
             }
         }
 
@@ -94,7 +122,7 @@ impl<R: Read> DecoderReader<R> {
 
     fn read_stop_frame(&mut self, frame_length: usize) -> Result<Frame, DecodeError> {
         if frame_length != 4 {
-            Err(DecodeError::InvalidLength)
+            Err(DecodeError::InvalidLength(Backtrace::new()))
         } else {
             Ok(Frame::Stop)
         }
@@ -115,7 +143,7 @@ impl<R: Read> Iterator for DecoderReader<R> {
         match self.read_frame() {
             Ok(Frame::Start) => {
                 if self.saw_start {
-                    Some(Err(DecodeError::DuplicateStartFrame))
+                    Some(Err(DecodeError::DuplicateStartFrame(Backtrace::new())))
                 } else {
                     self.saw_start = true;
                     self.next()
