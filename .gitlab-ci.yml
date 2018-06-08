@@ -13,8 +13,6 @@ variables:
 
 # Use cargo to test the project
 test:cargo:
-  dependencies:
-  - install
   before_script:
   - apt-get update
   - apt-get install -y protobuf-compiler
