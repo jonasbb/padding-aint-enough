@@ -22,8 +22,8 @@ pub enum DnstapContent {
         message_type: dnstap::Message_Type,
         query_address: Option<IpAddr>,
         response_address: Option<IpAddr>,
-        query_port: Option<u32>,
-        response_port: Option<u32>,
+        query_port: Option<u16>,
+        response_port: Option<u16>,
         query_time: Option<DateTime<Utc>>,
         response_time: Option<DateTime<Utc>>,
         query_message: Option<(DnsMessage, usize)>,
@@ -91,12 +91,12 @@ impl DnstapContent {
             }
         };
         let query_port = if from.has_query_port() {
-            Some(from.get_query_port())
+            Some(from.get_query_port() as u16)
         } else {
             None
         };
         let response_port = if from.has_response_port() {
-            Some(from.get_response_port())
+            Some(from.get_response_port() as u16)
         } else {
             None
         };
