@@ -25,7 +25,7 @@ pub fn process_dnstap<P: AsRef<Path>>(
 
     let rdr = file_open_read(path)
         .map_err(|err| format_err!("Opening input file '{}' failed: {}", path.display(), err))?;
-    let fstrm = DecoderReader::with_content_type(rdr, "dnstap.Dnstap".into());
+    let fstrm = DecoderReader::with_content_type(rdr, "protobuf:dnstap.Dnstap".into());
 
     Ok(fstrm
         .into_iter()
