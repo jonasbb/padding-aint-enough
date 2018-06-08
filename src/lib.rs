@@ -18,25 +18,20 @@ pub use protos::dnstap;
 use std::convert::TryFrom;
 use std::path::Path;
 
-pub fn get_dns_name<P: AsRef<Path>>(path: P) -> Result<(), Error> {
+pub fn process_dnstap<P: AsRef<Path>>(
+    path: P,
+) -> Result<impl Iterator<Item = Result<protos::Dnstap, Error>>, Error> {
     let path = path.as_ref();
 
     let rdr = file_open_read(path)
         .map_err(|err| format_err!("Opening input file '{}' failed: {}", path.display(), err))?;
-    let fstrm = DecoderReader::new(rdr, None);
+    let fstrm = DecoderReader::with_content_type(rdr, "dnstap.Dnstap".into());
 
-    fstrm
+    Ok(fstrm
         .into_iter()
         .map(|msg| -> Result<protos::Dnstap, Error> {
             Ok(protos::Dnstap::try_from(protobuf::parse_from_bytes::<
                 dnstap::Dnstap,
             >(&*(msg?))?)?)
-        })
-        .for_each(|msg| println!("{:?}", msg));
-
-    Ok(())
-}
-
-pub fn x() -> Result<(), Error> {
-    get_dns_name("./test/data/exp/dnstap-1.log")
+        }))
 }
