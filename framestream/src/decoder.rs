@@ -50,10 +50,17 @@ pub enum Frame {
 }
 
 impl<R: Read> DecoderReader<R> {
-    pub fn new(reader: R, content_type: Option<String>) -> DecoderReader<R> {
+    pub fn new(reader: R) -> DecoderReader<R> {
         DecoderReader {
             reader,
-            content_type,
+            content_type: None,
+            saw_start: false,
+        }
+    }
+    pub fn with_content_type(reader: R, content_type: String) -> DecoderReader<R> {
+        DecoderReader {
+            reader,
+            content_type: Some(content_type),
             saw_start: false,
         }
     }
@@ -159,7 +166,7 @@ impl<R: Read> Iterator for DecoderReader<R> {
 #[test]
 fn test_fstrm() {
     let data = include_bytes!("../test.fstrm");
-    let rdr = DecoderReader::new(Cursor::new(&data[..]), None);
+    let rdr = DecoderReader::new(Cursor::new(&data[..]));
 
     let expected = vec![
         b"Hello, world #0\n",
