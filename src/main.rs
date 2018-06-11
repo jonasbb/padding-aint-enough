@@ -104,10 +104,12 @@ fn run() -> Result<(), Error> {
         *lock = outdir;
     }
 
+    let dnstap_file = cli_args.webpage_log.with_extension("dnstap");
+    process_dnstap(&*dnstap_file)?;
     let messages: Vec<ChromeDebuggerMessage> = serde_json::from_reader(rdr)?;
     process_messages(&messages)?;
-    let dnstap_file = cli_args.webpage_log.with_extension("dnstap");
-    process_dnstap(&*dnstap_file)
+
+    Ok(())
 }
 
 fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
