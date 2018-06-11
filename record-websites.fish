@@ -25,20 +25,6 @@ for i in (seq $argv[1])
     echo "Done Setup Logging"
     echo
 
-    # Prepare Unbound, flush+restart to empty cache
-    sudo unbound-control flush_zone .
-    sudo unbound-control flush_bogus
-    sudo unbound-control flush_negative
-    sudo unbound-control flush_infra all
-    sudo systemctl restart unbound
-    sleep 2
-    sudo unbound-control reload
-    sleep 2
-
-    # before experiment
-    echo "Before Experiment"
-    dig @127.0.0.1 start.example. >/dev/null 2>&1
-    echo
     # run the experiment
     echo "Start Experiment"
     echo python3 $SCRIPT $argv[2]

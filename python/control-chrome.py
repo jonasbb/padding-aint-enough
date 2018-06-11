@@ -19,6 +19,10 @@ WEBPAGE_TOTAL_TIME = 60.
 CHROME_DEBUG_PORT = 9229
 
 
+def file_relative(*path: str) -> str:
+    return os.path.join(os.path.dirname(__file__), *path)
+
+
 def handle_url(url: str) -> None:
     special_url = "file:///"
 
@@ -31,6 +35,8 @@ def handle_url(url: str) -> None:
         with subprocess.Popen(
             [
                 "google-chrome",
+                # Disable the NXDOMAIN hijacking checks (7-15 random TLD lookups)
+                "--disable-background-networking",
                 # "--headless",
                 f"--user-data-dir={tmpdir}",
                 f"--remote-debugging-port={CHROME_DEBUG_PORT}",
@@ -41,7 +47,7 @@ def handle_url(url: str) -> None:
                 stderr=subprocess.DEVNULL,
         ) as chrome:
             # give chrome some time to fully start
-            time.sleep(4)
+            time.sleep(3)
 
             wsurl = get_wsurl_for_url(special_url)
             ws = create_ws_connection(wsurl)
@@ -89,6 +95,12 @@ def handle_url(url: str) -> None:
                     }
                 }))
             time.sleep(1)
+
+            # Execute before experiment scripts
+            subprocess.run(
+                file_relative("..", "scripts", "before-experiment.fish"),
+                stdin=subprocess.DEVNULL)
+
             # Go to target url
             ws.send(
                 json.dumps({
