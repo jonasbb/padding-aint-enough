@@ -15,7 +15,7 @@ from websocket import WebSocketTimeoutException
 
 # Wait this many seconds after every browser event before a browser close can occur
 WAIT_SECONDS = 5
-WEBPAGE_TOTAL_TIME = 60.
+WEBPAGE_TOTAL_TIME = 20.
 CHROME_DEBUG_PORT = 9229
 
 
@@ -97,9 +97,11 @@ def handle_url(url: str) -> None:
             time.sleep(1)
 
             # Execute before experiment scripts
+            print("Start 'before-experiment.fish'")
             subprocess.run(
                 file_relative("..", "scripts", "before-experiment.fish"),
                 stdin=subprocess.DEVNULL)
+            print("Finished 'before-experiment.fish'")
 
             # Go to target url
             ws.send(

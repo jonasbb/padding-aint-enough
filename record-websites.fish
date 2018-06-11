@@ -1,7 +1,7 @@
 #!/usr/bin/fish
 
 set -l DNSTAP_SOCK /var/run/unbound/dnstap.sock
-set -l SCRIPT (realpath (dirname (status --current-filename))/traffic-logging/control-chrome.py)
+set -l SCRIPT (realpath (dirname (status --current-filename))/python/control-chrome.py)
 
 echo $DNSTAP_SOCK
 echo $SCRIPT
@@ -42,8 +42,8 @@ for i in (seq $argv[1])
 
     # copy experiment results
     popd
-    mv $TMPDIR/website-log.json ./website-log-$i.json
-    cp $TMPDIR/dnstap.log ./website-log-$i.dnstap
+    mv --force $TMPDIR/website-log.json ./website-log-$i.json
+    cp --force $TMPDIR/dnstap.log ./website-log-$i.dnstap
 
     # cleanup
     rm -rf $TMPDIR

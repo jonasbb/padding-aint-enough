@@ -4,9 +4,11 @@
 
 pushd (dirname (status --current-filename))
 
+echo Flush
 ./flush-unbound.fish
+echo Prefetch
 ./prefetch-unbound.fish
 
-echo "Before Experiment"
+echo "start.example marker query"
 dig @127.0.0.1 start.example. >/dev/null 2>&1
 echo
