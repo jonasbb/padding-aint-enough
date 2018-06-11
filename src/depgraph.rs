@@ -21,16 +21,19 @@ impl DepGraph {
     }
 
     /// Return a reference to the internal graph representation
+    #[allow(dead_code)]
     pub fn as_graph(&self) -> &Graph<RequestInfo, (), Directed> {
         &self.graph
     }
 
     /// Return the internal graph and destroy the `DepGraph`
+    #[allow(dead_code)]
     pub fn into_graph(self) -> Graph<RequestInfo, (), Directed> {
         self.graph
     }
 
     /// Return the list of domain names observed
+    #[allow(dead_code)]
     pub fn get_domain_names(&self) -> Vec<String> {
         self.graph
             .raw_nodes()

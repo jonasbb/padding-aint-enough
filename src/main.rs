@@ -293,14 +293,13 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     let mut depgraph = DepGraph::new(messages).context("Failure to build the graph.")?;
     depgraph.simplify_graph();
     depgraph.duplicate_domains();
-    let domain_names = depgraph.get_domain_names();
-    let graph = depgraph.into_graph();
-    export_as_graphml(&graph)?;
-    export_as_pickle(&graph)?;
+    let graph = depgraph.as_graph();
+    export_as_graphml(graph)?;
+    export_as_pickle(graph)?;
 
-    for domain in domain_names {
-        println!("{}", domain);
-    }
+    // for domain in  depgraph.get_domain_names(){
+    //     println!("{}", domain);
+    // }
 
     Ok(())
 }
