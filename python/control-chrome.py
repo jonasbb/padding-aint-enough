@@ -37,7 +37,7 @@ def handle_url(url: str) -> None:
                 "google-chrome",
                 # Disable the NXDOMAIN hijacking checks (7-15 random TLD lookups)
                 "--disable-background-networking",
-                # "--headless",
+                "--headless",
                 f"--user-data-dir={tmpdir}",
                 f"--remote-debugging-port={CHROME_DEBUG_PORT}",
                 special_url
