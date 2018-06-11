@@ -5,6 +5,7 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 
 [dependencies]
 chrono = { version = "0.4.2", features = [ "serde" ] }
+csv = "1.0.0"
 env_logger = "0.5.10"
 failure = "0.1.1"
 framestream = { path = "./framestream" }
