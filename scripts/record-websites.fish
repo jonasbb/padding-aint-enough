@@ -1,7 +1,7 @@
 #!/usr/bin/fish
 
 set -l DNSTAP_SOCK /var/run/unbound/dnstap.sock
-set -l SCRIPT (realpath (dirname (status --current-filename))/python/control-chrome.py)
+set -l SCRIPT (realpath (dirname (status --current-filename))/../python/control-chrome.py)
 
 echo $DNSTAP_SOCK
 echo $SCRIPT
