@@ -116,7 +116,25 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
     // process dnstap if available
     if dnstap_file.exists() {
         info!("Found dnstap file.");
+        let mut events: Vec<encrypted_dns::protos::Dnstap> =
             encrypted_dns::process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
+
+        // the dnstap events can be out of order, so sort them by timestamp
+        // always take the later timestamp if there are multiple
+        events.sort_by_key(|ev| {
+            let DnstapContent::Message {
+                query_time,
+                response_time,
+                ..
+            } = ev.content;
+            if let Some(time) = response_time {
+                return time;
+            } else if let Some(time) = query_time {
+                return time;
+            } else {
+                panic!("The dnstap message must contain either a query or response time.")
+            }
+        });
 
         let mut unanswered_client_queries = BTreeMap::new();
         let mut matched = Vec::new();
