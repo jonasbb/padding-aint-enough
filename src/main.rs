@@ -139,11 +139,51 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
         let mut unanswered_client_queries = BTreeMap::new();
         let mut matched = Vec::new();
 
-        for ev in events.into_iter().filter(|ev| {
-            // The only interesting information is the timestamp which is also contained in the response
-            let DnstapContent::Message { message_type, .. } = ev.content;
-            message_type != Message_Type::FORWARDER_QUERY
-        }) {
+        for ev in events
+            .into_iter()
+                // search for the CLIENT_RESPONE `start.example.` message as the end of the prefetching events
+            .skip_while(|ev| {
+                let DnstapContent::Message {
+                    message_type,
+                    ref response_message,
+                    ..
+                } = ev.content;
+                if message_type == Message_Type::CLIENT_RESPONSE {
+                    let (dnsmsg, _size) =
+                        response_message.as_ref().expect("Unbound always sets this");
+                    let qname = dnsmsg.queries()[0].name().to_utf8();
+                    if qname == "start.example." {
+                        return false;
+                    }
+                }
+                true
+            })
+            // the skip while returns the CLIENT_RESPONSE with `start.example.`
+            // We want to remove this as well, so skip over the first element here
+            .skip(1)
+            // Only process messages until the end message is found in form of the first (thus CLIENT_QUERY)
+            // message forr domain `end.example.`
+            .take_while(|ev| {
+                let DnstapContent::Message {
+                    message_type,
+                    ref query_message,
+                    ..
+                } = ev.content;
+                if message_type == Message_Type::CLIENT_QUERY {
+                    let (dnsmsg, _size) =
+                        query_message.as_ref().expect("Unbound always sets this");
+                    let qname = dnsmsg.queries()[0].name().to_utf8();
+                    if qname == "end.example." {
+                        return false;
+                    }
+                }
+                true
+            })
+            .filter(|ev| {
+                // The only interesting information is the timestamp which is also contained in the response
+                let DnstapContent::Message { message_type, .. } = ev.content;
+                message_type != Message_Type::FORWARDER_QUERY
+            }) {
             let DnstapContent::Message {
                 message_type,
                 query_message,
@@ -229,12 +269,8 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
         }
 
         // cleanup some messages
-        matched.retain(|query| {
-            // filter out all the queries which are just noise
-            !(query.qtype == "NULL" && query.qname.starts_with("_ta"))
-                && !(query.qtype == "A"
-                    && (query.qname == "end.example." || query.qname == "start.example."))
-        });
+        // filter out all the queries which are just noise
+        matched.retain(|query| !(query.qtype == "NULL" && query.qname.starts_with("_ta")));
 
         let fname = get_output_dir().join("dns.pickle");
         let mut wtr = file_open_write(
@@ -287,9 +323,9 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
                 ..
             } => {
                 if !should_ignore_url(url) && timing.dns_start.is_some() {
-                            return Some((url_to_domain(url).unwrap(), url.clone(), *timing));
-                        }
-            None
+                    return Some((url_to_domain(url).unwrap(), url.clone(), *timing));
+                }
+                None
             }
             // Ignore all other messages
             _ => None,
