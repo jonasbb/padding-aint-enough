@@ -576,7 +576,10 @@ where
 /// Data URIs are not fetched from a server, so they do not cause network traffic.
 /// chrome-extension is specific to chrome and does not cause network traffic.
 fn should_ignore_url(url: &str) -> bool {
-    url.starts_with("data:") || url.starts_with("chrome-extension:")
+    url.starts_with("data:")
+        || url.starts_with("chrome-extension:")
+        || url.starts_with("blob:")
+        || url.starts_with("about:")
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]

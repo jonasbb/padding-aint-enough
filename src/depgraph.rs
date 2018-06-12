@@ -219,6 +219,11 @@ impl DepGraph {
                 let nodes_cache = nodes_cache.borrow();
                 let mut graph = graph.borrow_mut();
 
+                // skip invalid URLs, such as about:blank
+                if should_ignore_url(url) {
+                    return Ok(());
+                }
+
                 // convert a single URL to a NodeIndex
                 let url2node = |url: &str| -> Result<NodeIndex, Error> {
                     nodes_cache
