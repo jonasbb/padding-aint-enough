@@ -483,6 +483,15 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
 
     fn try_from(from: &'a ChromeDebuggerMessage) -> Result<Self, Error> {
         match *from {
+            ChromeDebuggerMessage::TargetTargetInfoChanged {
+                target_info: TargetInfo{ref url, ..}
+            } => {
+                Ok(RequestInfo {
+                    normalized_domain_name: url_to_domain(&url)?,
+                    earliest_wall_time: None,
+                    requests: vec![],
+                })
+            }
             ChromeDebuggerMessage::NetworkRequestWillBeSent{
                 request: Request { ref url, .. },
                 ..

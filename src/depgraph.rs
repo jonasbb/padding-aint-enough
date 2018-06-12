@@ -1,4 +1,6 @@
-use chrome::{ChromeDebuggerMessage, Initiator, RedirectResponse, Request, StackTrace};
+use chrome::{
+    ChromeDebuggerMessage, Initiator, RedirectResponse, Request, StackTrace, TargetInfo, TargetType,
+};
 use failure::{Error, ResultExt};
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
 use should_ignore_url;
@@ -138,7 +140,9 @@ impl DepGraph {
     fn process_messages(
         messages: &[ChromeDebuggerMessage],
     ) -> Result<Graph<RequestInfo, ()>, Error> {
-        use ChromeDebuggerMessage::{NetworkRequestWillBeSent, NetworkWebSocketCreated};
+        use ChromeDebuggerMessage::{
+            NetworkRequestWillBeSent, NetworkWebSocketCreated, TargetTargetInfoChanged,
+        };
 
         let script_id_cache = DepGraph::build_script_id_cache(messages)
             .context("Failed to build the scrip_id_cache.")?;
@@ -162,7 +166,20 @@ impl DepGraph {
             // Create a new node and add it to the node cache
             // Do not create a node if it is a data URI
             let create_node = |msg: &ChromeDebuggerMessage| -> Result<Option<NodeIndex>, Error> {
-                if let NetworkRequestWillBeSent {
+                if let TargetTargetInfoChanged {
+                    target_info: TargetInfo { ref url, .. },
+                } = *msg
+                {
+                    let mut graph = graph.borrow_mut();
+                    let mut nodes_cache = nodes_cache.borrow_mut();
+
+                    let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
+                        graph.add_node(RequestInfo::try_from(msg).expect(
+                            "A targetInfoChanged must always be able to generate a valid node.",
+                        ))
+                    });
+                    Ok(Some(*entry))
+                } else if let NetworkRequestWillBeSent {
                     request: Request { ref url, .. },
                     ..
                 } = *msg
@@ -189,7 +206,7 @@ impl DepGraph {
 
                         let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
                             graph.add_node(RequestInfo::try_from(msg).expect(
-                                "A requestWillBeSent must always be able to generate a valid node.",
+                                "A webSocketCreated must always be able to generate a valid node.",
                             ))
                         });
                         Some(*entry)
@@ -279,6 +296,19 @@ impl DepGraph {
 
             for message in messages {
                 match message {
+                    TargetTargetInfoChanged {
+                        target_info: TargetInfo { target_type, .. },
+                    } => {
+                        if *target_type == TargetType::Page {
+                            let node = match create_node(&message)? {
+                                Some(node) => node,
+                                // skip creation of data URIs
+                                None => continue,
+                            };
+                            add_dependencies_to_node(node, "other", None)
+                                .context("Handling target info changed")?;
+                        }
+                    }
                     NetworkRequestWillBeSent {
                         document_url,
                         request_id,

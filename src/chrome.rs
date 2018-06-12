@@ -54,7 +54,7 @@ pub enum ChromeDebuggerMessage {
     #[serde(rename = "Target.targetCreated", rename_all = "camelCase")]
     TargetTargetCreated {},
     #[serde(rename = "Target.targetInfoChanged", rename_all = "camelCase")]
-    TargetTargetInfoChanged {},
+    TargetTargetInfoChanged { target_info: TargetInfo },
     #[serde(rename = "Target.targetDestroyed", rename_all = "camelCase")]
     TargetTargetDestroyed {},
     #[serde(rename = "Target.attachedToTarget", rename_all = "camelCase")]
@@ -143,6 +143,20 @@ pub struct Timing {
         serialize_with = "duration_seconds_with_microseconds_opt::serialize"
     )]
     pub dns_end: Option<Duration>,
+}
+
+#[serde(rename_all = "camelCase")]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Serialize, Deserialize)]
+pub struct TargetInfo {
+    pub url: String,
+    #[serde(rename = "type")]
+    pub target_type: TargetType,
+}
+
+#[serde(rename_all = "snake_case")]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Serialize, Deserialize)]
+pub enum TargetType {
+    Page,
 }
 
 pub mod duration_millis_opt {
