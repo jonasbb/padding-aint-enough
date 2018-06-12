@@ -223,7 +223,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                 }
 
                 Message_Type::CLIENT_RESPONSE => {
-                    let (dnsmsg, _size) = response_message.expect("Unbound always sets this");
+                    let (dnsmsg, size) = response_message.expect("Unbound always sets this");
                     let qname = dnsmsg.queries()[0].name().to_utf8();
                     let qtype = dnsmsg.queries()[0].query_type().to_string();
                     let id = dnsmsg.id();
@@ -243,6 +243,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                             qtype: unmatched.qtype,
                             start: unmatched.start,
                             end,
+                            response_size: size as u32,
                         })
                     } else {
                         info!("Unmatched Client Response for '{}' ({})", qname, qtype);
@@ -250,7 +251,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                 }
 
                 Message_Type::FORWARDER_RESPONSE => {
-                    let (dnsmsg, _size) = response_message.expect("Unbound always sets this");
+                    let (dnsmsg, size) = response_message.expect("Unbound always sets this");
                     let qname = dnsmsg.queries()[0].name().to_utf8();
                     let qtype = dnsmsg.queries()[0].query_type().to_string();
                     let start = query_time.expect("Unbound always sets this");
@@ -261,6 +262,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                         qtype,
                         start,
                         end,
+                        response_size: size as u32,
                     });
                 }
 
@@ -584,6 +586,7 @@ struct Query {
     qtype: String,
     start: DateTime<Utc>,
     end: DateTime<Utc>,
+    response_size: u32,
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
