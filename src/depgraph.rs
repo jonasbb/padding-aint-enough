@@ -114,7 +114,7 @@ impl DepGraph {
                         if let Some(stack_trace) = stack_trace {
                             // Chrome contains special case URLs like "extensions::event_bindings"
                             // They all start with "extensions::", so skip them
-                            if !url.starts_with("extensions::") {
+                            if !should_ignore_url(&url) {
                                 let mut deps =
                                     traverse_stack(stack_trace, find_script_deps, HashSet::new())
                                         .with_context(|_| {
@@ -125,6 +125,11 @@ impl DepGraph {
                                         })?;
                                 script_id_cache.borrow_mut().insert(script_id.clone(), deps);
                             }
+                        } else if url == "" {
+                            warn!("Script without URL nor backtrace, Script ID {}", script_id);
+                            script_id_cache
+                                .borrow_mut()
+                                .insert(script_id.clone(), HashSet::new());
                         }
                     }
 

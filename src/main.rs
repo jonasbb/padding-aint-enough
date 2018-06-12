@@ -595,6 +595,7 @@ fn should_ignore_url(url: &str) -> bool {
         || url.starts_with("chrome-extension:")
         || url.starts_with("blob:")
         || url.starts_with("about:")
+        || url.starts_with("extensions::")
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
