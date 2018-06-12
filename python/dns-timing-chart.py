@@ -9,6 +9,7 @@ import IPython
 import matplotlib.pyplot as plt
 import numpy as np
 from dateutil.parser import parse as parse_iso8601
+from matplotlib.lines import Line2D
 
 
 def print_help(prg_name: str) -> None:
@@ -29,22 +30,48 @@ def get_next_ind() -> int:
     return tmp
 
 
-def source2color(source: str) -> str:
-    if source == "Forwarder":
-        return "r"
-    elif source == "Client":
-        return "g"
-    else:
-        return "b"
+def mk_legend() -> t.List[Line2D]:
+    return [
+        Line2D([0], [0], color='r', lw=4, label='1 Pkt'),
+        Line2D([0], [0], color='y', lw=4, label='2 Pkts'),
+        Line2D([0], [0], color='m', lw=4, label='3 Pkts'),
+        Line2D([0], [0], color='b', lw=4, label='4 Pkts'),
+        Line2D([0], [0], color='k', lw=4, label='5+ Pkts')
+    ]
 
 
-def source2height(source: str) -> float:
+def info_from_source(source: str, size: int) -> t.Tuple[str, float, float]:
+    height = None
+    color = None
+    alpha = None
     if source == "Forwarder":
-        return 0.66
+        height = 1.
+        alpha = 0.66
+        if size <= 1 * 468:
+            # red
+            color = "r"
+        elif size <= 2 * 468:
+            # yellow
+            color = "y"
+        elif size <= 3 * 468:
+            # magenta
+            color = "m"
+        elif size <= 4 * 468:
+            # blue
+            color = "b"
+        else:
+            # black
+            color = "k"
     elif source == "Client":
-        return 1
+        height = 0.5
+        color = "g"
+        alpha = 0.33
     else:
-        return 0.33
+        height = 0.33
+        color = "crimson"
+        alpha = 0.5
+
+    return (color, height, alpha)
 
 
 def main() -> None:
@@ -91,32 +118,59 @@ def main() -> None:
         dns_names = np.array(
             [f"{elem['qname']} ({elem['qtype']})" for elem in dns])
         dns_source = np.array([elem['source'][0] for elem in dns])
+        dns_size = np.array([elem['response_size'] for elem in dns])
 
         label2index: t.Dict[str, int] = dict()
+        prev_end = None
 
-        for (source, label, start, end) in zip(dns_source, dns_names,
-                                               dns_start, dns_end):
+        for (source, label, start, end, response_size) in zip(
+                dns_source, dns_names, dns_start, dns_end, dns_size):
             if label not in label2index.keys():
                 label2index[label] = get_next_ind()
             ind = label2index[label]
+            (color, height, alpha) = info_from_source(source, response_size)
             plt.barh(
                 ind,
                 end - start,
                 left=start - min_dns_start,
-                color=source2color(source),
-                alpha=0.5,
-                height=source2height(source))
+                color=color,
+                alpha=alpha,
+                height=height)
+
+            # put text labels next to every Forwarder time range with information about
+            # 1. the time difference to the previous message
+            # 2. the duration the request itself took
+            if source == "Forwarder":
+                label = ""
+                if prev_end:
+                    label += f" 𝚫 {round((start-prev_end) * 1000, 3)} ms "
+                prev_end = end
+                label += f"\n⏱ {round((end-start) * 1000, 3)} ms"
+                plt.text(
+                    end - min_dns_start,
+                    ind,
+                    label,
+                    horizontalalignment='left',
+                    verticalalignment='center',
+                    fontname="Symbola")
 
         for (label, ind) in label2index.items():
             yticks.append(ind)
             yticks_labels.append(label)
 
     plt.yticks(yticks, yticks_labels)
+    plt.xlabel("Time in seconds")
     fig = plt.gcf()
-    fig.set_size_inches(15, len(yticks) / 3 + 0.6)
+    lgd = fig.legend(
+        handles=mk_legend(),
+        loc="upper left",
+        bbox_to_anchor=(1, 0.95),
+        bbox_transform=fig.transFigure,
+        fancybox=True)
+    fig.set_size_inches(15, len(yticks) / 2.5 + 0.6)
     # ensure there is enough space for the labels
     fig.tight_layout()
-    fig.savefig(outfile)
+    fig.savefig(outfile, bbox_extra_artists=(lgd, ), bbox_inches='tight')
 
 
 if __name__ == "__main__":
