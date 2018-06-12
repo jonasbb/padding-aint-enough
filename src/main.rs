@@ -247,21 +247,26 @@ fn url_to_domain(url: &str) -> Result<String, Error> {
 fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     let timings: Vec<(String, String, Timing)> = messages
         .into_iter()
-        .filter_map(|msg| {
-            if let ChromeDebuggerMessage::NetworkResponseReceived {
-                response: Response { url, timing },
+        .filter_map(|msg| match msg {
+            ChromeDebuggerMessage::NetworkRequestWillBeSent {
+                redirect_response: Some(RedirectResponse { url, timing }),
                 ..
-            } = msg
-            {
-                if !should_ignore_url(url) {
-                    if let Some(timing) = timing {
-                        if timing.dns_start.is_some() {
+            }
+            | ChromeDebuggerMessage::NetworkResponseReceived {
+                response:
+                    Response {
+                        url,
+                        timing: Some(timing),
+                    },
+                ..
+            } => {
+                if !should_ignore_url(url) && timing.dns_start.is_some() {
                             return Some((url_to_domain(url).unwrap(), url.clone(), *timing));
                         }
-                    }
-                }
-            }
             None
+            }
+            // Ignore all other messages
+            _ => None,
         })
         .collect();
 

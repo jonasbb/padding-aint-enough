@@ -87,9 +87,10 @@ pub struct Headers {
     pub referer: Option<String>,
 }
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
 pub struct RedirectResponse {
     pub url: String,
+    pub timing: Timing,
 }
 
 #[serde(tag = "type", rename_all = "lowercase")]

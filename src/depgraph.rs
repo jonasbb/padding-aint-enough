@@ -289,7 +289,7 @@ impl DepGraph {
                         };
 
                         // handle redirects
-                        if let Some(RedirectResponse { url }) = redirect_response {
+                        if let Some(RedirectResponse { url, .. }) = redirect_response {
                             add_dependencies_to_node(node, url, None).with_context(|_| {
                                 format_err!("Handling redirect, ID {}", request_id)
                             })?;
