@@ -115,7 +115,7 @@ fn run() -> Result<(), Error> {
 fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
     // process dnstap if available
     if dnstap_file.exists() {
-        let events: Vec<encrypted_dns::protos::Dnstap> =
+        info!("Found dnstap file.");
             encrypted_dns::process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
 
         let mut unanswered_client_queries = BTreeMap::new();
@@ -155,7 +155,13 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                         qtype,
                         start,
                     };
-                    unanswered_client_queries.insert(key, value);
+                    let existing_value = unanswered_client_queries.insert(key, value);
+                    if let Some(existing_value) = existing_value {
+                        info!(
+                            "Duplicate Client Query for '{}' ({})",
+                            existing_value.qname, existing_value.qtype
+                        );
+                    }
                 }
 
                 Message_Type::CLIENT_RESPONSE => {
@@ -167,8 +173,8 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                     let port = query_port.expect("Unbound always sets this");
 
                     let key = MatchKey {
-                        qname,
-                        qtype,
+                        qname: qname.clone(),
+                        qtype: qtype.clone(),
                         id,
                         port,
                     };
@@ -180,6 +186,8 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                             start: unmatched.start,
                             end,
                         })
+                    } else {
+                        info!("Unmatched Client Response for '{}' ({})", qname, qtype);
                     };
                 }
 
