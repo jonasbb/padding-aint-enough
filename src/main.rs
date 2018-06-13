@@ -345,7 +345,13 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         })
         .collect();
 
+    // protect against failed network requests. Sometimes this might end up empty, in which case we do not want to plot anything
     let fname = get_output_dir().join(DNS_TIMING);
+    if timings.is_empty() {
+        warn!("Skipping {} because no timing information available", fname.display());
+        return Ok(());
+    }
+
     let mut wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
@@ -354,12 +360,7 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     })?;
     serde_pickle::to_writer(&mut wtr, &timings, true)?;
 
-    Ok(())
-}
-
-fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
-    dns_timing_chart(messages)?;
-    let _status = Command::new(&*PYTHON_DNS_TIMING)
+    let status = Command::new(&*PYTHON_DNS_TIMING)
         .arg(
             &*get_output_dir()
                 .join(DNS_TIMING)
@@ -369,6 +370,19 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         .current_dir(get_output_dir())
         .status()
         .context("Could not start Python process")?;
+
+    if !status.success() {
+        match status.code() {
+            Some(code) => bail!("Python exited with status code: {}", code),
+            None => bail!("Python terminated by signal"),
+        }
+    }
+
+    Ok(())
+}
+
+fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
+    dns_timing_chart(messages)?;
 
     let mut depgraph = DepGraph::new(messages).context("Failure to build the graph.")?;
     depgraph.simplify_graph();
