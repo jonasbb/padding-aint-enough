@@ -107,7 +107,12 @@ fn run() -> Result<(), Error> {
     let dnstap_file = cli_args.webpage_log.with_extension("dnstap");
     process_dnstap(&*dnstap_file)
         .with_context(|_| format_err!("Processing dnstap file '{}'", dnstap_file.display()))?;
-    let messages: Vec<ChromeDebuggerMessage> = serde_json::from_reader(rdr)?;
+    let messages: Vec<ChromeDebuggerMessage> = serde_json::from_reader(rdr).with_context(|_| {
+        format_err!(
+            "Error while deserializing '{}'",
+            cli_args.webpage_log.display()
+        )
+    })?;
     process_messages(&messages).with_context(|_| {
         format_err!(
             "Processing chrome debugger log '{}'",
