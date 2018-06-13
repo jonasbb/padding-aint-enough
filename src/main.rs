@@ -359,6 +359,8 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         format_err!("Opening input file '{}' failed: {}", &fname.display(), err)
     })?;
     serde_pickle::to_writer(&mut wtr, &timings, true)?;
+    // we need to close the writer to flush everything
+    drop(wtr);
 
     let status = Command::new(&*PYTHON_DNS_TIMING)
         .arg(
