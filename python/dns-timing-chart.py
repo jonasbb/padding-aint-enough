@@ -98,12 +98,6 @@ def main() -> None:
         for ((d, _, _), t) in zip(data, end - begin)
     ]
 
-    # plot first part
-    plt.barh(range(len(begin)), end - begin, left=(begin - min(begin)))
-    # plt.yticks(range(len(begin)), event)
-    yticks = list(range(len(begin)))
-    yticks_labels = list(event)
-
     # also consume DNS information if available
     dns_pickle = os.path.join(os.path.dirname(sys.argv[1]), "dns.pickle")
     if os.path.exists(dns_pickle):
@@ -120,6 +114,28 @@ def main() -> None:
         dns_source = np.array([elem['source'][0] for elem in dns])
         dns_size = np.array([elem['response_size'] for elem in dns])
 
+    minimum_size = max((max(end) - min(begin)),
+                       (max(dns_end) - min_dns_start)) * 0.01
+    ensure_size = lambda x: max(x, minimum_size)
+
+    # plot Chrome's reported DNS times
+    # The real time is with 100% color, the extended size is with lower alpha
+    plt.barh(
+        range(len(begin)),
+        end - begin,
+        left=(begin - min(begin)),
+        color="dodgerblue",
+        alpha=1)
+    plt.barh(
+        range(len(begin)), [ensure_size(x) for x in (end - begin)],
+        left=(begin - min(begin)),
+        alpha=0.5,
+        color="dodgerblue")
+    # plt.yticks(range(len(begin)), event)
+    yticks = list(range(len(begin)))
+    yticks_labels = list(event)
+
+    if os.path.exists(dns_pickle):
         label2index: t.Dict[str, int] = dict()
         prev_end = None
 
@@ -129,6 +145,18 @@ def main() -> None:
                 label2index[label] = get_next_ind()
             ind = label2index[label]
             (color, height, alpha) = info_from_source(source, response_size)
+
+            width = end - start
+            # if the plot would be too thin, create a wider one but with less alpha
+            if ensure_size(width) > width:
+                plt.barh(
+                    ind,
+                    ensure_size(end - start),
+                    left=start - min_dns_start,
+                    color=color,
+                    alpha=alpha / 3,
+                    height=height)
+
             plt.barh(
                 ind,
                 end - start,
