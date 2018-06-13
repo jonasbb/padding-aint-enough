@@ -21,3 +21,4 @@ test:cargo:
   - rustc --version && cargo --version      # Print version info for debugging
   - cargo +nightly build --all --verbose
   - cargo +nightly test --all --verbose
+  - for f in ./test/data/*.json; do env RUST_BACKTRACE=1 RUST_LOG=encrypted_dns=trace cargo run --bin encrypted-dns -- "$f"; done
