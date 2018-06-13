@@ -157,6 +157,11 @@ pub struct TargetInfo {
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Serialize, Deserialize)]
 pub enum TargetType {
     Page,
+    BackgroundPage,
+    Iframe,
+    ServiceWorker,
+    Worker,
+    Browser,
 }
 
 pub mod duration_millis_opt {
