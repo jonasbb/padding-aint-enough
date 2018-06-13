@@ -272,7 +272,7 @@ impl DepGraph {
                             graph.update_edge(node, dep, ());
                         });
                 } else {
-                    bail!(
+                    warn!(
                         "Could not find URL '{}' in cache and script ID is missing",
                         url
                     )
