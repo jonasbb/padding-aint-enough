@@ -10,15 +10,23 @@ variables:
   RUST_BACKTRACE: "1"
   GIT_DEPTH: "3"
   CARGO_HOME: $CI_PROJECT_DIR/cargo
+  MPLBACKEND: Agg
 
 # Use cargo to test the project
 test:cargo:
   before_script:
+  - echo "deb http://ftp.de.debian.org/debian testing main" >> /etc/apt/sources.list
   - apt-get update
   - apt-get install -y protobuf-compiler
+  - apt-get -t testing -y install python3.6 python3-ipython python3-matplotlib python3-numpy
+  - update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
+  - update-alternatives --set python3 `which python3.6`
   - rustup update nightly
+  - rustup default nightly
   script:
+  - python3 --version
   - rustc --version && cargo --version      # Print version info for debugging
-  - cargo +nightly build --all --verbose
-  - cargo +nightly test --all --verbose
+  - cargo build --all --verbose
+  - cargo test --all --verbose
   - for f in ./test/data/*.json; do env RUST_BACKTRACE=1 RUST_LOG=encrypted_dns=trace cargo run --bin encrypted-dns -- "$f"; done
+  - for f in ./test/data/*/*.json; do env RUST_BACKTRACE=1 RUST_LOG=encrypted_dns=trace cargo run --bin encrypted-dns -- "$f"; done

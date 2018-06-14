@@ -98,6 +98,8 @@ def main() -> None:
         for ((d, _, _), t) in zip(data, end - begin)
     ]
 
+    minimum_size = (max(end) - min(begin)) * 0.01
+
     # also consume DNS information if available
     dns_pickle = os.path.join(os.path.dirname(sys.argv[1]), "dns.pickle")
     if os.path.exists(dns_pickle):
@@ -114,8 +116,8 @@ def main() -> None:
         dns_source = np.array([elem['source'][0] for elem in dns])
         dns_size = np.array([elem['response_size'] for elem in dns])
 
-    minimum_size = max((max(end) - min(begin)),
-                       (max(dns_end) - min_dns_start)) * 0.01
+        minimum_size = max(minimum_size, (max(dns_end) - min_dns_start) * 0.01)
+
     ensure_size = lambda x: max(x, minimum_size)
 
     # plot Chrome's reported DNS times
