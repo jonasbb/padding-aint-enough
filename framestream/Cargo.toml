@@ -13,8 +13,3 @@ bytes = "0.4.1"
 failure = "0.1.1"
 failure_derive = "0.1.1"
 log = "0.4.2"
-
-[profile.release]
-lto = true
-panic = "abort"
-opt-level = 3

@@ -1,0 +1,15 @@
+[package]
+name = "pylib"
+version = "0.1.0"
+authors = ["Jonas Bushart <jonas@bushart.org>"]
+
+[lib]
+name = "pylib"
+crate-type = [ "lib", "cdylib" ]
+
+[dependencies]
+
+[dependencies.pyo3]
+git = "https://github.com/PyO3/pyo3/"
+features = [ "extension-module", "python3" ]
+
