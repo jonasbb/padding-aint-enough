@@ -29,8 +29,9 @@ mod depgraph;
 use chrome::*;
 use chrono::{DateTime, Utc};
 use depgraph::DepGraph;
-use encrypted_dns::dnstap::Message_Type;
-use encrypted_dns::protos::DnstapContent;
+use encrypted_dns::{
+    dnstap::Message_Type, protos::DnstapContent, MatchKey, Query, QuerySource, UnmatchedClientQuery,
+};
 use failure::{Error, ResultExt};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use petgraph::prelude::*;
@@ -206,7 +207,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
             } = ev.content;
             match message_type {
                 Message_Type::CLIENT_QUERY => {
-                    let (dnsmsg, _size) = query_message.expect("Unbound always sets this");
+                    let (dnsmsg, size) = query_message.expect("Unbound always sets this");
                     let qname = dnsmsg.queries()[0].name().to_utf8();
                     let qtype = dnsmsg.queries()[0].query_type().to_string();
                     let id = dnsmsg.id();
@@ -223,6 +224,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                         qname,
                         qtype,
                         start,
+                        size: size as u32,
                     };
                     let existing_value = unanswered_client_queries.insert(key, value);
                     if let Some(existing_value) = existing_value {
@@ -254,6 +256,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                             qtype: unmatched.qtype,
                             start: unmatched.start,
                             end,
+                            query_size: unmatched.size,
                             response_size: size as u32,
                         })
                     } else {
@@ -273,6 +276,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                         qtype,
                         start,
                         end,
+                        query_size: u32::max_value(),
                         response_size: size as u32,
                     });
                 }
@@ -617,35 +621,4 @@ fn should_ignore_url(url: &str) -> bool {
         || url.starts_with("blob:")
         || url.starts_with("about:")
         || url.starts_with("extensions::")
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
-struct Query {
-    source: QuerySource,
-    qname: String,
-    qtype: String,
-    start: DateTime<Utc>,
-    end: DateTime<Utc>,
-    response_size: u32,
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
-enum QuerySource {
-    Client,
-    Forwarder,
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-struct MatchKey {
-    qname: String,
-    qtype: String,
-    id: u16,
-    port: u16,
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-struct UnmatchedClientQuery {
-    qname: String,
-    qtype: String,
-    start: DateTime<Utc>,
 }
