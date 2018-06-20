@@ -299,6 +299,9 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
         // cleanup some messages
         // filter out all the queries which are just noise
         matched.retain(|query| !(query.qtype == "NULL" && query.qname.starts_with("_ta")));
+        for msg in unanswered_client_queries {
+            debug!("Unanswered client query: {:?}", msg);
+        }
 
         let fname = get_output_dir().join("dns.pickle");
         let mut wtr = file_open_write(
@@ -363,7 +366,10 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     // protect against failed network requests. Sometimes this might end up empty, in which case we do not want to plot anything
     let fname = get_output_dir().join(DNS_TIMING);
     if timings.is_empty() {
-        warn!("Skipping {} because no timing information available", fname.display());
+        warn!(
+            "Skipping {} because no timing information available",
+            fname.display()
+        );
         return Ok(());
     }
 

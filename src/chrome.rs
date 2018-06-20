@@ -1,6 +1,7 @@
 use chrono::{DateTime, Duration, Utc};
 use serde_with::chrono::datetime_utc_ts_seconds_from_any;
 
+#[cfg_attr(feature = "cargo-clippy", allow(large_enum_variant))]
 #[serde(tag = "method", content = "params")]
 #[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
 pub enum ChromeDebuggerMessage {
