@@ -148,41 +148,46 @@ def main() -> None:
             ind = label2index[label]
             (color, height, alpha) = info_from_source(source, response_size)
 
-            width = end - start
-            # if the plot would be too thin, create a wider one but with less alpha
-            if ensure_size(width) > width:
+            if source == "ForwarderLostQuery":
+                ((x1, y1), (x2, y2)) = ((start - min_dns_start, ind - 0.5),
+                                        (start - min_dns_start, ind + 0.5))
+                plt.plot((x1, x2), (y1, y2), 'k-', linewidth=.5, snap=True)
+            else:
+                width = end - start
+                # if the plot would be too thin, create a wider one but with less alpha
+                if ensure_size(width) > width:
+                    plt.barh(
+                        ind,
+                        ensure_size(end - start),
+                        left=start - min_dns_start,
+                        color=color,
+                        alpha=alpha / 3,
+                        height=height)
+
                 plt.barh(
                     ind,
-                    ensure_size(end - start),
+                    end - start,
                     left=start - min_dns_start,
                     color=color,
-                    alpha=alpha / 3,
+                    alpha=alpha,
                     height=height)
 
-            plt.barh(
-                ind,
-                end - start,
-                left=start - min_dns_start,
-                color=color,
-                alpha=alpha,
-                height=height)
-
-            # put text labels next to every Forwarder time range with information about
-            # 1. the time difference to the previous message
-            # 2. the duration the request itself took
-            if source == "Forwarder":
-                label = ""
-                if prev_end:
-                    label += f" 𝚫 {round((start-prev_end) * 1000, 3)} ms "
-                prev_end = end
-                label += f"\n⏱ {round((end-start) * 1000, 3)} ms"
-                plt.text(
-                    end - min_dns_start,
-                    ind,
-                    label,
-                    horizontalalignment='left',
-                    verticalalignment='center',
-                    fontname="Symbola")
+                # put text labels next to every Forwarder time range with information about
+                # 1. the time difference to the previous message
+                # 2. the duration the request itself took
+                if source == "Forwarder":
+                    label = ""
+                    if prev_end:
+                        label += f" 𝚫 {round((start-prev_end) * 1000, 3)} ms "
+                    prev_end = end
+                    label += f"\n⏱ {round((end-start) * 1000, 3)} ms"
+                    plt.text(
+                        end - min_dns_start,
+                        ind,
+                        label,
+                        horizontalalignment='left',
+                        verticalalignment='center',
+                        fontname="Symbola")
 
         for (label, ind) in label2index.items():
             yticks.append(ind)

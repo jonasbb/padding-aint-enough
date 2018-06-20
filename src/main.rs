@@ -190,11 +190,6 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                     }
                 }
                 true
-            })
-            .filter(|ev| {
-                // The only interesting information is the timestamp which is also contained in the response
-                let DnstapContent::Message { message_type, .. } = ev.content;
-                message_type != Message_Type::FORWARDER_QUERY
             }) {
             let DnstapContent::Message {
                 message_type,
@@ -279,6 +274,22 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                         query_size: u32::max_value(),
                         response_size: size as u32,
                     });
+                }
+
+                Message_Type::FORWARDER_QUERY => {
+                    let (dnsmsg, size) = query_message.expect("Unbound always sets this");
+                    let qname = dnsmsg.queries()[0].name().to_utf8();
+                    let qtype = dnsmsg.queries()[0].query_type().to_string();
+                    let start = query_time.expect("Unbound always sets this");
+                    matched.push(Query {
+                        source: QuerySource::ForwarderLostQuery,
+                        qname,
+                        qtype,
+                        start,
+                        end: start,
+                        query_size: size as u32,
+                        response_size: u32::max_value(),
+                    })
                 }
 
                 _ => bail!("Unexpected message type {:?}", message_type),
