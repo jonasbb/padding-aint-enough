@@ -1,13 +1,19 @@
-#![feature(proc_macro, specialization, const_fn)]
+#![feature(proc_macro, specialization, const_fn, nll)]
 
 extern crate failure;
+#[macro_use]
+extern crate log;
 extern crate misc_utils;
 extern crate pyo3;
+extern crate rayon;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_pickle;
 
+mod knn;
+
+pub use knn::*;
 
 use failure::{format_err, Error};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};

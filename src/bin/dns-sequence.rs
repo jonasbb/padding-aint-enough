@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![feature(transpose_result)]
 
 extern crate chrono;
 extern crate env_logger;
@@ -11,6 +12,7 @@ extern crate structopt;
 extern crate encrypted_dns;
 extern crate misc_utils;
 extern crate pylib;
+extern crate rayon;
 extern crate serde;
 extern crate serde_pickle;
 
@@ -21,9 +23,10 @@ use encrypted_dns::{
 use failure::{Error, ResultExt};
 use misc_utils::fs::{file_open_write, WriteOptions};
 use pylib::*;
+use rayon::prelude::*;
 use serde::Serialize;
 use std::collections::BTreeMap;
-use std::fs::OpenOptions;
+use std::fs::{self, *};
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
@@ -31,7 +34,7 @@ use structopt::StructOpt;
 #[structopt(author = "", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
 struct CliArgs {
     #[structopt(parse(from_os_str))]
-    dnstap_files: Vec<PathBuf>,
+    base_dir: PathBuf,
 }
 
 fn main() {
@@ -55,15 +58,136 @@ fn run() -> Result<(), Error> {
     env_logger::init();
     let cli_args = CliArgs::from_args();
 
-    for dnstap_file in cli_args.dnstap_files {
-        process_dnstap(&*dnstap_file)
-            .with_context(|_| format_err!("Processing dnstap file '{}'", dnstap_file.display()))?;
+    let directories: Vec<PathBuf> = fs::read_dir(cli_args.base_dir)?
+        .into_iter()
+        .flat_map(|x| {
+            x.and_then(|entry| {
+                // Result<Option<PathBuf>>
+                entry.file_type().map(|ft| {
+                    if ft.is_dir() {
+                        Some(entry.path())
+                    } else {
+                        None
+                    }
+                })
+            }).transpose()
+        })
+        .collect::<Result<_, _>>()?;
+
+    let data: Vec<(String, Vec<Sequence>)> = directories
+        .into_par_iter()
+        .map(|dir| {
+            let label = dir
+                .file_name()
+                .expect("Each directory has a name")
+                .to_string_lossy()
+                .to_string();
+
+            let mut filenames: Vec<PathBuf> = fs::read_dir(&dir)?
+                .into_iter()
+                .flat_map(|x| {
+                    x.and_then(|entry| {
+                        // Result<Option<PathBuf>>
+                        entry.file_type().map(|ft| {
+                            if ft.is_file()
+                                && entry.file_name().to_string_lossy().contains(".dnstap")
+                            {
+                                Some(entry.path())
+                            } else {
+                                None
+                            }
+                        })
+                    }).transpose()
+                })
+                .collect::<Result<_, _>>()?;
+            // sort filenames for predictable results
+            filenames.sort();
+
+            let sequences: Vec<Sequence> = filenames
+                .into_iter()
+                .map(|dnstap_file| {
+                    debug!("Processing dnstap file '{}'", dnstap_file.display());
+                    Ok(process_dnstap(&*dnstap_file).with_context(|_| {
+                        format_err!("Processing dnstap file '{}'", dnstap_file.display())
+                    })?)
+                })
+                .collect::<Result<_, Error>>()?;
+
+            // Some directories do not contain data, e.g., because the site didn't exists
+            // Skip all directories with 0 results
+            if sequences.is_empty() {
+                warn!("Directory contains no data: {}", dir.display());
+                Ok(None)
+            } else {
+                Ok(Some((label, sequences)))
+            }
+        })
+        // Remove all the empty directories from the previous step
+        .filter_map(|x| x.transpose())
+        .collect::<Result<_, Error>>()?;
+
+    let most_k = 5;
+    let mut res = vec![(0, 0, 0); most_k];
+    for fold in 0..10 {
+        info!("Testing for fold {}", fold);
+        let (training_data, test) = split_training_test_data(&*data, fold);
+        let len = test.len();
+        let (test_labels, test_data) = test.into_iter().fold(
+            (Vec::with_capacity(len), Vec::with_capacity(len)),
+            |(mut labels, mut data), elem| {
+                labels.push(elem.0);
+                data.push(elem.1);
+                (labels, data)
+            },
+        );
+
+        for k in 1..=most_k {
+            let classification = knn(&*training_data, &*test_data, k as u8);
+            assert_eq!(classification.len(), test_labels.len());
+            let (correct, undecided) = classification.into_iter().zip(&test_labels).fold(
+                (0, 0),
+                |(mut corr, mut und), (class, label)| {
+                    if class == *label {
+                        corr += 1;
+                    }
+                    if class.contains(&*label) {
+                        und += 1;
+                    }
+                    (corr, und)
+                },
+            );
+            info!(
+                "Fold: {} k: {} - {} / {} correct (In list of choices: {})",
+                fold,
+                k,
+                correct,
+                test_labels.len(),
+                undecided
+            );
+            // update stats
+            res[k - 1].0 += correct;
+            res[k - 1].1 += undecided;
+            res[k - 1].2 += test_labels.len();
+        }
+    }
+
+    for (k, (correct, undecided, total)) in res.iter().enumerate() {
+        println!(
+            r"Results for k={k}:
+Correct: {}/{total}
+Multiple Options: {}/{total}
+",
+            correct,
+            undecided,
+            k = k + 1,
+            total = total
+        )
     }
 
     Ok(())
 }
 
-fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
+fn process_dnstap(dnstap_file: &Path) -> Result<Sequence, Error> {
     // process dnstap if available
     let mut events: Vec<encrypted_dns::protos::Dnstap> =
         encrypted_dns::process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
@@ -208,12 +332,12 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
     // end time is the time when the response arrives, which is the most interesting field for the attacker
     matched.sort_by_key(|x| x.end);
 
-    convert_to_sequence(&matched);
+    let seq = convert_to_sequence(&matched);
 
     // let fname = dnstap_file.with_extension("sequence.pickle");
-    // save_as_pickle(&fname, &matched)?;
+    // save_as_pickle(&fname, &seq)?;
 
-    Ok(())
+    Ok(seq)
 }
 
 fn convert_to_sequence(data: &[Query]) -> Sequence {
