@@ -8,6 +8,11 @@ name = "pylib"
 crate-type = [ "lib", "cdylib" ]
 
 [dependencies]
+failure = "0.1.1"
+misc_utils = "1.4.0"
+serde = "1.0.66"
+serde_derive = "1.0.66"
+serde-pickle = "0.4.1"
 
 [dependencies.pyo3]
 git = "https://github.com/PyO3/pyo3/"

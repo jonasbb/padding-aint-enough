@@ -216,39 +216,24 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
     Ok(())
 }
 
-fn convert_to_sequence(data: &[Query]) -> Vec<SequenceElement> {
+fn convert_to_sequence(data: &[Query]) -> Sequence {
     let base_gap_size = Duration::microseconds(1000);
 
     let mut last_end = None;
-    data.into_iter()
-        .flat_map(|d| {
-            let mut gap = None;
-            if let Some(last_end) = last_end {
-                gap = gap_size(d.end - last_end, base_gap_size);
-                println!("Gap: {:?}", gap);
-            }
-            last_end = Some(d.end);
+    Sequence::new(
+        data.into_iter()
+            .flat_map(|d| {
+                let mut gap = None;
+                if let Some(last_end) = last_end {
+                    gap = gap_size(d.end - last_end, base_gap_size);
+                }
+                last_end = Some(d.end);
 
-            let size = pad_size(d.response_size, false, Padding::Q128R468);
-            println!("Size: {:?} {} {} -- {}", size, d.start, d.end, d.qname);
-            gap.into_iter().chain(Some(size))
-        })
-        .for_each(|x| println!("{:?}", x));
-    // for d in data {
-    //     if let Some(last_end) = last_end {
-    //         let gap: Duration = d.end - last_end;
-    //         println!("{:?}", gap_size(gap, base_gap_size));
-    //     }
-    //     last_end = Some(d.end);
-    //     println!(
-    //         "{:?} {} {} -- {}",
-    //         pad_size(d.response_size, false, Padding::Q128R468),
-    //         d.start,
-    //         d.end,
-    //         d.qname
-    //     );
-    // }
-    unimplemented!()
+                let size = pad_size(d.response_size, false, Padding::Q128R468);
+                gap.into_iter().chain(Some(size))
+            })
+            .collect(),
+    )
 }
 
 fn gap_size(gap: Duration, base: Duration) -> Option<SequenceElement> {

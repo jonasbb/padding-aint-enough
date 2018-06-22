@@ -653,7 +653,12 @@ dependencies = [
 name = "pylib"
 version = "0.1.0"
 dependencies = [
+ "failure 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pyo3 0.2.5 (git+https://github.com/PyO3/pyo3/)",
+ "serde 1.0.66 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde-pickle 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.66 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
