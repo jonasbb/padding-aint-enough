@@ -370,7 +370,6 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
             "Skipping {} because no timing information available",
             fname.display()
         );
-        return Ok(());
     }
 
     let mut wtr = file_open_write(

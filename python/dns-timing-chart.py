@@ -101,7 +101,10 @@ def main() -> None:
         f"{d} ({round(t * 1000, 3)} ms)" for ((d, _, _), t) in zip(data, end - begin)
     ]
 
-    minimum_size = (max(end) - min(begin)) * 0.01
+    if len(data) > 0:
+        minimum_size = (max(end) - min(begin)) * 0.01
+    else:
+        minimum_size = 99999999
 
     # also consume DNS information if available
     dns_pickle = os.path.join(os.path.dirname(sys.argv[1]), "dns.pickle")
@@ -120,22 +123,23 @@ def main() -> None:
 
     ensure_size = lambda x: max(x, minimum_size)
 
-    # plot Chrome's reported DNS times
-    # The real time is with 100% color, the extended size is with lower alpha
-    plt.barh(
-        range(len(begin)),
-        end - begin,
-        left=(begin - min(begin)),
-        color="dodgerblue",
-        alpha=1,
-    )
-    plt.barh(
-        range(len(begin)),
-        [ensure_size(x) for x in (end - begin)],
-        left=(begin - min(begin)),
-        alpha=0.5,
-        color="dodgerblue",
-    )
+    if len(data) > 0:
+        # plot Chrome's reported DNS times
+        # The real time is with 100% color, the extended size is with lower alpha
+        plt.barh(
+            range(len(begin)),
+            end - begin,
+            left=(begin - min(begin)),
+            color="dodgerblue",
+            alpha=1,
+        )
+        plt.barh(
+            range(len(begin)),
+            [ensure_size(x) for x in (end - begin)],
+            left=(begin - min(begin)),
+            alpha=0.5,
+            color="dodgerblue",
+        )
     # plt.yticks(range(len(begin)), event)
     yticks = list(range(len(begin)))
     yticks_labels = list(event)
