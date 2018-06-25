@@ -95,12 +95,24 @@ impl Sequence {
         // other is always shorter or equal sized
 
         if other.0.is_empty() {
-            // TODO give different costs for different elements
-            return self.0.len();
+            let mut cost: usize = 0;
+            for x in &self.0 {
+                cost = cost.saturating_add(x.insert_cost());
+            }
+            return cost;
         }
 
         let mut prev_prev_row = vec![0usize; other.0.len() + 1];
-        let mut previous_row: Vec<usize> = (0..(other.0.len() + 1)).into_iter().collect();
+        // let mut previous_row: Vec<usize> = (0..(other.0.len() + 1)).into_iter().collect();
+        let mut cost = 0;
+        let mut previous_row: Vec<usize> = Some(0)
+            .into_iter()
+            .chain(other.0.iter().cloned().map(|elem| elem.insert_cost()))
+            .map(|c| {
+                cost += c;
+                cost
+            })
+            .collect();
         let mut current_row = vec![0usize; other.0.len() + 1];
         assert_eq!(
             previous_row.len(),
@@ -111,25 +123,20 @@ impl Sequence {
         for (i, elem1) in self.0.iter().enumerate() {
             current_row.clear();
             // TODO give different costs for different elements
-            current_row.push(i + 1);
+            current_row.push(previous_row[0].saturating_add(elem1.delete_cost()));
 
-            for (j, elem2) in other.0.iter().enumerate() {
-                // TODO give different costs for different elements
-                let insertions = previous_row[j + 1] + 1;
-                let deletions = current_row[j] + 1;
-                let substitutions = if elem1 == elem2 {
-                    previous_row[j]
-                } else {
-                    previous_row[j] + 1
-                };
-                let mut cost = insertions.min(deletions).min(substitutions);
-
-                // swapping
-                if i > 0 && j > 0 && self.0[i] == other.0[j - 1] && self.0[i - 1] == other.0[j] {
-                    // TODO give different costs for different elements
-                    cost = cost.min(prev_prev_row[j - 1] + 1)
-                }
-
+            for (j, &elem2) in other.0.iter().enumerate() {
+                let insertions = previous_row[j + 1].saturating_add(elem1.insert_cost());
+                let deletions = current_row[j].saturating_add(elem2.delete_cost());
+                let substitutions = previous_row[j].saturating_add(elem1.substitute_cost(elem2));
+                let swapping =
+                    if i > 0 && j > 0 && self.0[i] == other.0[j - 1] && self.0[i - 1] == other.0[j]
+                    {
+                        prev_prev_row[j - 1].saturating_add(elem1.swap_cost(elem2))
+                    } else {
+                        std::usize::MAX
+                    };
+                let cost = insertions.min(deletions).min(substitutions).min(swapping);
                 current_row.push(cost);
             }
 
@@ -153,6 +160,52 @@ impl From<Vec<SequenceElement>> for Sequence {
 pub enum SequenceElement {
     Size(u8),
     Gap(u8),
+}
+
+impl SequenceElement {
+    fn insert_cost(self) -> usize {
+        use SequenceElement::*;
+        match self {
+            Size(0) => {
+                // A size 0 packet should never occur
+                error!("Sequence contains a Size(0) elements");
+                std::usize::MAX
+            }
+            Size(_) => 10,
+            Gap(g) => g as usize * 3,
+        }
+    }
+
+    fn delete_cost(self) -> usize {
+        // The delete costs have to be identical to the insert costs in order to be a metric.
+        // There is no order in which two Sequences will be compared, so
+        // xABCy -> xACy
+        // must be the same as
+        // xACy -> xABCy
+        self.insert_cost()
+    }
+
+    fn substitute_cost(self, other: Self) -> usize {
+        if self == other {
+            return 0;
+        }
+
+        use SequenceElement::*;
+        match (self, other) {
+            // 2/3rds cost
+            (Size(_), Size(_)) => self.insert_cost().saturating_add(other.delete_cost()) / 3,
+            (Gap(g1), Gap(g2)) => (g1.max(g2) - g1.min(g2)) as usize * 2,
+            (a, b) => a.delete_cost().saturating_add(b.insert_cost()),
+        }
+    }
+
+    fn swap_cost(self, other: Self) -> usize {
+        if self == other {
+            return 0;
+        }
+
+        10
+    }
 }
 
 #[allow(dead_code)]
@@ -181,19 +234,65 @@ fn test_edit_distance_dist1() {
 
     // substitution
     let seq2 = Sequence(vec![Size(2), Gap(2), Size(1), Size(2), Size(1)]);
-    assert_eq!(1, seq1.distance(&seq2));
+    assert_eq!(10, seq1.distance(&seq2));
 
     // swapping
     let seq3 = Sequence(vec![Size(1), Gap(2), Size(2), Size(1), Size(1)]);
-    assert_eq!(1, seq1.distance(&seq3));
+    assert_eq!(10, seq1.distance(&seq3));
 
     // deletion
     let seq4 = Sequence(vec![Size(1), Size(1), Size(2), Size(1)]);
-    assert_eq!(1, seq1.distance(&seq4));
+    assert_eq!(10, seq1.distance(&seq4));
 
     // insertion
     let seq5 = Sequence(vec![Size(1), Size(2), Gap(2), Size(1), Size(2), Size(1)]);
-    assert_eq!(1, seq1.distance(&seq5));
+    assert_eq!(10, seq1.distance(&seq5));
+}
+
+#[test]
+fn test_edit_distance_inserts() {
+    use SequenceElement::*;
+    let seq1 = Sequence(vec![]);
+    let seq2 = Sequence(vec![Size(1), Size(1)]);
+
+    let seq6 = Sequence(vec![Gap(3)]);
+    let seq7 = Sequence(vec![Gap(10)]);
+    println!("Smaller gap: {}", seq1.distance(&seq6));
+    println!("Bigger gap: {}", seq1.distance(&seq7));
+    assert!(
+        seq1.distance(&seq6) < seq1.distance(&seq7),
+        "Bigger Gaps have higher cost."
+    );
+
+    let seq6 = Sequence(vec![Size(1), Gap(3), Size(1)]);
+    let seq7 = Sequence(vec![Size(1), Gap(10), Size(1)]);
+    println!("Smaller gap: {}", seq2.distance(&seq6));
+    println!("Bigger gap: {}", seq2.distance(&seq7));
+    assert!(
+        seq2.distance(&seq6) < seq2.distance(&seq7),
+        "Bigger Gaps have higher cost."
+    );
+}
+
+#[test]
+fn test_edit_distance_substitutions() {
+    use SequenceElement::*;
+    let seq1 = Sequence(vec![Size(1)]);
+    let seq2 = Sequence(vec![Gap(10)]);
+
+    let seqa = Sequence(vec![Gap(9)]);
+    let seqb = Sequence(vec![Gap(1)]);
+    println!("Smaller gap change: {}", seq1.distance(&seqa));
+    println!("Bigger gap change: {}", seq1.distance(&seqb));
+    assert!(
+        seq1.distance(&seqa) < seq1.distance(&seqb),
+        "Bigger Gap changes have higher cost."
+    );
+
+    assert!(
+        seq1.distance(&seqa) < seq2.distance(&seqa),
+        "Gap to Gap change is smaller than Size to Gap change"
+    )
 }
 
 #[test]
