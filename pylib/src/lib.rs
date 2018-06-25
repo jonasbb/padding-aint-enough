@@ -234,7 +234,7 @@ fn test_edit_distance_dist1() {
 
     // substitution
     let seq2 = Sequence(vec![Size(2), Gap(2), Size(1), Size(2), Size(1)]);
-    assert_eq!(10, seq1.distance(&seq2));
+    assert_eq!(6, seq1.distance(&seq2));
 
     // swapping
     let seq3 = Sequence(vec![Size(1), Gap(2), Size(2), Size(1), Size(1)]);
@@ -242,7 +242,7 @@ fn test_edit_distance_dist1() {
 
     // deletion
     let seq4 = Sequence(vec![Size(1), Size(1), Size(2), Size(1)]);
-    assert_eq!(10, seq1.distance(&seq4));
+    assert_eq!(6, seq1.distance(&seq4));
 
     // insertion
     let seq5 = Sequence(vec![Size(1), Size(2), Gap(2), Size(1), Size(2), Size(1)]);
@@ -282,15 +282,17 @@ fn test_edit_distance_substitutions() {
 
     let seqa = Sequence(vec![Gap(9)]);
     let seqb = Sequence(vec![Gap(1)]);
-    println!("Smaller gap change: {}", seq1.distance(&seqa));
-    println!("Bigger gap change: {}", seq1.distance(&seqb));
+    println!("Smaller gap change: {}", seq2.distance(&seqa));
+    println!("Bigger gap change: {}", seq2.distance(&seqb));
     assert!(
-        seq1.distance(&seqa) < seq1.distance(&seqb),
+        seq2.distance(&seqa) < seq2.distance(&seqb),
         "Bigger Gap changes have higher cost."
     );
 
+    println!("Size to Gap change: {}", seq1.distance(&seqa));
+    println!("Gap to Gap change: {}", seq2.distance(&seqa));
     assert!(
-        seq1.distance(&seqa) < seq2.distance(&seqa),
+        seq1.distance(&seqa) > seq2.distance(&seqa),
         "Gap to Gap change is smaller than Size to Gap change"
     )
 }
