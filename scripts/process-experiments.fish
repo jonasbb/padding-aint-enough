@@ -21,8 +21,8 @@ fd --extension json . "$EXPERIMENTS" --exec ./target/release/encrypted-dns '{}' 
 
 # copy all files into a single images directory
 pushd $EXPERIMENTS
-rm -rf ./images/**
-mkdir --parents ./images/
+rm -rf ./images
+mkdir --parents ./images
 for f in ./*/**/*.svg
     cp $f ./images/(echo $f | tr '/' '-' | tail -c+3)
 end
