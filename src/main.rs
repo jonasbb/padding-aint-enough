@@ -306,15 +306,17 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
             debug!("Unanswered client query: {:?}", msg);
         }
 
-        let fname = get_output_dir().join("dns.pickle");
-        let mut wtr = file_open_write(
-            &fname,
-            WriteOptions::default()
-                .set_open_options(OpenOptions::new().create(true).truncate(true)),
-        ).map_err(|err| {
-            format_err!("Opening output file '{}' failed: {}", &fname.display(), err)
-        })?;
-        serde_pickle::to_writer(&mut wtr, &matched, true)?;
+        if !matched.is_empty() {
+            let fname = get_output_dir().join("dns.pickle");
+            let mut wtr = file_open_write(
+                &fname,
+                WriteOptions::default()
+                    .set_open_options(OpenOptions::new().create(true).truncate(true)),
+            ).map_err(|err| {
+                format_err!("Opening output file '{}' failed: {}", &fname.display(), err)
+            })?;
+            serde_pickle::to_writer(&mut wtr, &matched, true)?;
+        }
     }
 
     Ok(())
