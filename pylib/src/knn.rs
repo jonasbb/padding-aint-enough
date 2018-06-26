@@ -1,6 +1,4 @@
-use rayon::prelude::{
-    IntoParallelIterator, IntoParallelRefIterator, ParallelIterator,
-};
+use rayon::prelude::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use std::cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd, Reverse};
 use std::collections::{BinaryHeap, HashMap};
 use Sequence;
@@ -33,17 +31,32 @@ pub fn knn(
             }
 
             let mut most_common_label: HashMap<String, usize> = HashMap::new();
+            // let mut distance = 0;
             for _ in 0..k {
                 if let Some(class) = distances.pop() {
                     *most_common_label
                         .entry(class.0.label.to_string())
                         .or_insert(0) += 1;
+                    // distance = class.0.distance;
                 }
             }
+            // // additionally to the first k entries also collect all entries with equal cost/distance than the highest one so far
+            // while let Some(class) = distances.pop() {
+            //     if class.0.distance <= distance {
+            //         *most_common_label
+            //             .entry(class.0.label.to_string())
+            //             .or_insert(0) += 1;
+            //     } else {
+            //         // the entries are sorted by distance in increasing order
+            //         // so as soon as the first one doesn't match anymore, the others
+            //         // won't match either
+            //         break;
+            //     }
+            // }
             let mut labels = most_common_label
                 .iter()
                 .fold(
-                    (0, Vec::with_capacity(2)),
+                    (0, Vec::with_capacity(5)),
                     |(mut count, mut labels), (other_label, &other_count)| {
                         if other_count > count {
                             labels.clear();
