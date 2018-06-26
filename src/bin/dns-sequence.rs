@@ -2,9 +2,12 @@
 #![feature(transpose_result)]
 
 extern crate chrono;
+extern crate csv;
 extern crate env_logger;
 #[macro_use]
 extern crate failure;
+#[macro_use]
+extern crate lazy_static;
 #[macro_use]
 extern crate log;
 #[macro_use]
@@ -14,27 +17,39 @@ extern crate misc_utils;
 extern crate pylib;
 extern crate rayon;
 extern crate serde;
+#[macro_use]
+extern crate serde_derive;
 extern crate serde_pickle;
 
 use chrono::Duration;
+use csv::ReaderBuilder;
 use encrypted_dns::{
     dnstap::Message_Type, protos::DnstapContent, MatchKey, Query, QuerySource, UnmatchedClientQuery,
 };
 use failure::{Error, ResultExt};
-use misc_utils::fs::{file_open_write, WriteOptions};
+use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use pylib::*;
 use rayon::prelude::*;
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::fs::{self, *};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::RwLock;
 use structopt::StructOpt;
+
+lazy_static! {
+    static ref CONFUSION_DOMAINS: RwLock<Arc<BTreeMap<String, String>>> =
+        RwLock::new(Arc::new(BTreeMap::new()));
+}
 
 #[derive(StructOpt, Debug)]
 #[structopt(author = "", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
 struct CliArgs {
     #[structopt(parse(from_os_str))]
     base_dir: PathBuf,
+    #[structopt(short = "d", long = "confusion_domains", parse(from_os_str))]
+    confusion_domains: Vec<PathBuf>,
 }
 
 fn main() {
@@ -58,6 +73,8 @@ fn run() -> Result<(), Error> {
     env_logger::init();
     let cli_args = CliArgs::from_args();
 
+    prepare_confusion_domains(&cli_args.confusion_domains)?;
+
     let directories: Vec<PathBuf> = fs::read_dir(cli_args.base_dir)?
         .into_iter()
         .flat_map(|x| {
@@ -73,6 +90,8 @@ fn run() -> Result<(), Error> {
             }).transpose()
         })
         .collect::<Result<_, _>>()?;
+
+    let check_confusion_domains = make_check_confusion_domains();
 
     let data: Vec<(String, Vec<Sequence>)> = directories
         .into_par_iter()
@@ -119,6 +138,7 @@ fn run() -> Result<(), Error> {
                 warn!("Directory contains no data: {}", dir.display());
                 Ok(None)
             } else {
+                let label = check_confusion_domains(&label);
                 Ok(Some((label, sequences)))
             }
         })
@@ -407,4 +427,58 @@ fn block_padding(size: u32, block_size: u32) -> u32 {
 
 enum Padding {
     Q128R468,
+}
+
+fn prepare_confusion_domains<D, P>(data: D) -> Result<(), Error>
+where
+    D: IntoIterator<Item = P>,
+    P: AsRef<Path>,
+{
+    #[derive(Debug, Deserialize)]
+    struct Record {
+        domain: String,
+        is_similar_to: String,
+    };
+
+    let mut conf_domains = BTreeMap::new();
+
+    for path in data {
+        let path = path.as_ref();
+        let mut reader = ReaderBuilder::new().has_headers(false).from_reader(
+            file_open_read(path).map_err(|err| {
+                format_err!(
+                    "Opening confusion file '{}' failed: {}",
+                    path.display(),
+                    err
+                )
+            })?,
+        );
+        for record in reader.deserialize() {
+            let record: Record = record?;
+            let existing =
+                conf_domains.insert(record.domain.to_string(), record.is_similar_to.to_string());
+            if let Some(existing) = existing {
+                if existing != record.is_similar_to {
+                    error!("Duplicate confusion mappings for domain '{}' but with different targets: 1) '{}' 2) '{}", record.domain, existing, record.is_similar_to);
+                }
+            }
+        }
+    }
+
+    let mut lock = CONFUSION_DOMAINS.write().unwrap();
+    *lock = Arc::new(conf_domains);
+
+    Ok(())
+}
+
+fn make_check_confusion_domains() -> impl Fn(&str) -> String {
+    let lock = CONFUSION_DOMAINS.read().unwrap();
+    let conf_domains: Arc<_> = lock.clone();
+    move |domain: &str| -> String {
+        let mut curr = domain;
+        while let Some(other) = conf_domains.get(curr) {
+            curr = other;
+        }
+        curr.to_string()
+    }
 }
