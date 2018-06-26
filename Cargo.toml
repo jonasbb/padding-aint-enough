@@ -3,11 +3,6 @@ name = "encrypted-dns"
 version = "0.1.0"
 authors = ["Jonas Bushart <jonas@bushart.org>"]
 
-[workspace]
-members = [
-    "pylib"
-]
-
 [dependencies]
 chrono = { version = "0.4.2", features = [ "serde" ] }
 csv = "1.0.0"
@@ -21,7 +16,6 @@ num-traits = "0.2.4"
 petgraph = { version = "0.4.12", features = [ "serde-1" ] }
 petgraph-graphml = "1.0.0"
 protobuf = "2.0.2"
-pylib = { path = "./pylib" }
 rayon = "1.0.1"
 serde = "1.0.49"
 serde_derive = "1.0.49"

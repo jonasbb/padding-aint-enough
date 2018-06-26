@@ -36,14 +36,16 @@ use failure::{Error, ResultExt};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
-use std::borrow::Cow;
-use std::cmp;
-use std::collections::BTreeMap;
-use std::convert::TryFrom;
-use std::fs::{create_dir_all, remove_dir_all, OpenOptions};
-use std::path::{Path, PathBuf};
-use std::process::Command;
-use std::sync::RwLock;
+use std::{
+    borrow::Cow,
+    cmp,
+    collections::BTreeMap,
+    convert::TryFrom,
+    fs::{create_dir_all, remove_dir_all, OpenOptions},
+    path::{Path, PathBuf},
+    process::Command,
+    sync::RwLock,
+};
 use structopt::StructOpt;
 use url::Url;
 

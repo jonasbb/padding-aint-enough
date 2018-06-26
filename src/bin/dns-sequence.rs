@@ -14,7 +14,6 @@ extern crate log;
 extern crate structopt;
 extern crate encrypted_dns;
 extern crate misc_utils;
-extern crate pylib;
 extern crate rayon;
 extern crate serde;
 #[macro_use]
@@ -24,18 +23,21 @@ extern crate serde_pickle;
 use chrono::Duration;
 use csv::ReaderBuilder;
 use encrypted_dns::{
-    dnstap::Message_Type, protos::DnstapContent, MatchKey, Query, QuerySource, UnmatchedClientQuery,
+    dnstap::Message_Type,
+    protos::DnstapContent,
+    sequences::{knn, split_training_test_data, Sequence, SequenceElement},
+    MatchKey, Query, QuerySource, UnmatchedClientQuery,
 };
 use failure::{Error, ResultExt};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
-use pylib::*;
 use rayon::prelude::*;
 use serde::Serialize;
-use std::collections::BTreeMap;
-use std::fs::{self, *};
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use std::sync::RwLock;
+use std::{
+    collections::BTreeMap,
+    fs::{self, OpenOptions},
+    path::{Path, PathBuf},
+    sync::{Arc, RwLock},
+};
 use structopt::StructOpt;
 
 lazy_static! {
