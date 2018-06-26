@@ -14,8 +14,8 @@ from websocket import WebSocketTimeoutException
 from websocket import create_connection as create_ws_connection
 
 # Wait this many seconds after every browser event before a browser close can occur
-WAIT_SECONDS = 5
-WEBPAGE_TOTAL_TIME = 20.
+WAIT_SECONDS = 7
+WEBPAGE_TOTAL_TIME = 25.
 CHROME_DEBUG_PORT = 9229
 
 
