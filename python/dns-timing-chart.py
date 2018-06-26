@@ -104,7 +104,7 @@ def main() -> None:
     if len(data) > 0:
         minimum_size = (max(end) - min(begin)) * 0.01
     else:
-        minimum_size = 99999999
+        minimum_size = 0
 
     # also consume DNS information if available
     dns_pickle = os.path.join(os.path.dirname(sys.argv[1]), "dns.pickle")
