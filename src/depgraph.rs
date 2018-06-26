@@ -4,10 +4,13 @@ use chrome::{
 use failure::{Error, ResultExt};
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
 use should_ignore_url;
-use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
-use std::convert::TryFrom;
-use {GraphExt, RequestInfo};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    convert::TryFrom,
+};
+use GraphExt;
+use RequestInfo;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DepGraph {

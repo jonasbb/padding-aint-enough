@@ -2,11 +2,11 @@ pub mod dnstap;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 use failure::Error;
-use std::convert::TryFrom;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
-use trust_dns::op::Message as DnsMessage;
-use trust_dns::rr::Name as DnsName;
-use trust_dns::serialize::binary::BinDecodable;
+use std::{
+    convert::TryFrom,
+    net::{IpAddr, Ipv4Addr, Ipv6Addr},
+};
+use trust_dns::{op::Message as DnsMessage, rr::Name as DnsName, serialize::binary::BinDecodable};
 
 #[derive(Clone, Debug)]
 pub struct Dnstap {
