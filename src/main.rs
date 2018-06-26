@@ -298,7 +298,10 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
 
         // cleanup some messages
         // filter out all the queries which are just noise
-        matched.retain(|query| !(query.qtype == "NULL" && query.qname.starts_with("_ta")));
+        matched.retain(|query| {
+            !(query.qtype == "NULL" && query.qname.starts_with("_ta"))
+                && query.qname != "fedoraproject.org."
+        });
         for msg in unanswered_client_queries {
             debug!("Unanswered client query: {:?}", msg);
         }
