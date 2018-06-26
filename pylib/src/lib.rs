@@ -171,8 +171,8 @@ impl SequenceElement {
                 error!("Sequence contains a Size(0) elements");
                 std::usize::MAX
             }
-            Size(_) => 10,
-            Gap(g) => g as usize * 3,
+            Size(_) => 20,
+            Gap(g) => g as usize * 5,
         }
     }
 
@@ -192,7 +192,7 @@ impl SequenceElement {
 
         use SequenceElement::*;
         match (self, other) {
-            // 2/3rds cost
+            // 2/3rds cost of insert
             (Size(_), Size(_)) => self.insert_cost().saturating_add(other.delete_cost()) / 3,
             (Gap(g1), Gap(g2)) => (g1.max(g2) - g1.min(g2)) as usize * 2,
             (a, b) => a.delete_cost().saturating_add(b.insert_cost()),
@@ -204,7 +204,7 @@ impl SequenceElement {
             return 0;
         }
 
-        10
+        20
     }
 }
 
@@ -234,19 +234,19 @@ fn test_edit_distance_dist1() {
 
     // substitution
     let seq2 = Sequence(vec![Size(2), Gap(2), Size(1), Size(2), Size(1)]);
-    assert_eq!(6, seq1.distance(&seq2));
+    assert_eq!(13, seq1.distance(&seq2));
 
     // swapping
     let seq3 = Sequence(vec![Size(1), Gap(2), Size(2), Size(1), Size(1)]);
-    assert_eq!(10, seq1.distance(&seq3));
+    assert_eq!(20, seq1.distance(&seq3));
 
     // deletion
     let seq4 = Sequence(vec![Size(1), Size(1), Size(2), Size(1)]);
-    assert_eq!(6, seq1.distance(&seq4));
+    assert_eq!(10, seq1.distance(&seq4));
 
     // insertion
     let seq5 = Sequence(vec![Size(1), Size(2), Gap(2), Size(1), Size(2), Size(1)]);
-    assert_eq!(10, seq1.distance(&seq5));
+    assert_eq!(20, seq1.distance(&seq5));
 }
 
 #[test]
