@@ -5,12 +5,16 @@ use std::{
     mem,
 };
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default, Serialize, Deserialize)]
-pub struct Sequence(Vec<SequenceElement>);
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct Sequence(Vec<SequenceElement>, String);
 
 impl Sequence {
-    pub fn new(sequence: Vec<SequenceElement>) -> Sequence {
-        Sequence(sequence)
+    pub fn new(sequence: Vec<SequenceElement>, identifier: String) -> Sequence {
+        Sequence(sequence, identifier)
+    }
+
+    pub fn id(&self) -> &str {
+        &*self.1
     }
 }
 
@@ -74,12 +78,6 @@ impl Sequence {
         *previous_row
             .last()
             .expect("The rows are never empty, thus there is a last.")
-    }
-}
-
-impl From<Vec<SequenceElement>> for Sequence {
-    fn from(sequence: Vec<SequenceElement>) -> Self {
-        Self::new(sequence)
     }
 }
 

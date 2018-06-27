@@ -166,18 +166,27 @@ fn run() -> Result<(), Error> {
         for k in 1..=most_k {
             let classification = knn(&*training_data, &*test_data, k as u8);
             assert_eq!(classification.len(), test_labels.len());
-            let (correct, undecided) = classification.into_iter().zip(&test_labels).fold(
-                (0, 0),
-                |(mut corr, mut und), (class, label)| {
+            let (correct, undecided) = classification
+                .into_iter()
+                .zip(&test_labels)
+                .zip(&test_data)
+                .fold((0, 0), |(mut corr, mut und), ((class, label), sequence)| {
                     if class == *label {
                         corr += 1;
+                    } else {
+                        println!(
+                            "K {} Seq: {}, Expected: '{}'  Got: '{}'",
+                            k,
+                            sequence.id(),
+                            label,
+                            class
+                        );
                     }
                     if class.contains(&*label) {
                         und += 1;
                     }
                     (corr, und)
-                },
-            );
+                });
             info!(
                 "Fold: {} k: {} - {} / {} correct (In list of choices: {})",
                 fold,
@@ -354,15 +363,12 @@ fn process_dnstap(dnstap_file: &Path) -> Result<Sequence, Error> {
     // end time is the time when the response arrives, which is the most interesting field for the attacker
     matched.sort_by_key(|x| x.end);
 
-    let seq = convert_to_sequence(&matched);
-
-    // let fname = dnstap_file.with_extension("sequence.pickle");
-    // save_as_pickle(&fname, &seq)?;
+    let seq = convert_to_sequence(&matched, dnstap_file.to_string_lossy().to_string());
 
     Ok(seq)
 }
 
-fn convert_to_sequence(data: &[Query]) -> Sequence {
+fn convert_to_sequence(data: &[Query], identifier: String) -> Sequence {
     let base_gap_size = Duration::microseconds(1000);
 
     let mut last_end = None;
@@ -379,6 +385,7 @@ fn convert_to_sequence(data: &[Query]) -> Sequence {
                 gap.into_iter().chain(Some(size))
             })
             .collect(),
+        identifier,
     )
 }
 
