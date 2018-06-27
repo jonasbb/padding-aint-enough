@@ -181,12 +181,16 @@ impl DepGraph {
                     let mut graph = graph.borrow_mut();
                     let mut nodes_cache = nodes_cache.borrow_mut();
 
-                    let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
-                        graph.add_node(RequestInfo::try_from(msg).expect(
-                            "A targetInfoChanged must always be able to generate a valid node.",
-                        ))
-                    });
-                    Ok(Some(*entry))
+                    Ok(if should_ignore_url(url) {
+                        None
+                    } else {
+                        let entry = nodes_cache.entry(url.clone()).or_insert_with(|| {
+                            graph.add_node(RequestInfo::try_from(msg).expect(
+                                "A targetInfoChanged must always be able to generate a valid node.",
+                            ))
+                        });
+                        Some(*entry)
+                    })
                 } else if let NetworkRequestWillBeSent {
                     request: Request { ref url, .. },
                     ..
