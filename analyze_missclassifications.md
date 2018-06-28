@@ -2,15 +2,23 @@
 
 1. [Raw Data](#raw-data)
 2. [Aggregated Data](#aggregated-data)
-    1. [`360.cn`](#360cn)
-    2. [`amazon.de`](#amazonde)
-    3. [`bing.com`](#bingcom)
-    4. [`coccoc.com`](#coccoccom)
-    5. [`csdn.net`](#csdnnet)
-    6. [`detail.tmall.com`](#detailtmallcom)
-    7. [`espn.com`](#espncom)
-    8. [`fbcdn.net`](#fbcdnnet)
-    9. [`google.ca`](#googleca)
+    1. [`360.cn` - 5x](#360cn---5x)
+    2. [`amazon.de` - 11x](#amazonde---11x)
+    3. [`bing.com` - 5x](#bingcom---5x)
+    4. [`coccoc.com` - 5x](#coccoccom---5x)
+    5. [`csdn.net` - 11x](#csdnnet---11x)
+    6. [`detail.tmall.com` - 9x](#detailtmallcom---9x)
+    7. [`espn.com` - 5x](#espncom---5x)
+    8. [`fbcdn.net` - 10x](#fbcdnnet---10x)
+    9. [`google.ca` - 5x](#googleca---5x)
+    10. [`microsoftonline.com` - 46x](#microsoftonlinecom---46x)
+    11. [`office.com` - 20x](#officecom---20x)
+    12. [`reddit.com` - 20x](#redditcom---20x)
+    13. [`soso.com` - 24x](#sosocom---24x)
+    14. [`t.co` - 22x](#tco---22x)
+3. [Problems](#problems)
+    1. [Empty Files](#empty-files)
+    2. [Single Domains](#single-domains)
 
 ## Raw Data
 
@@ -330,95 +338,99 @@ K 5 Seq: ../dnscaptures_working/weibo.com/website-log-9.dnstap, Expected: 'weibo
 Counts how often each file is being misclassified.
 The most are 5 as the test was run for `k = 1..=5`.
 
-```text
-5 ../dnscaptures_working/360.cn/website-log-1.dnstap ✔
-2 ../dnscaptures_working/alipay.com/website-log-1.p
-4 ../dnscaptures_working/alipay.com/website-log-7.dnstap
-2 ../dnscaptures_working/amazon.de/website-log-6.dnstap ✔
-5 ../dnscaptures_working/amazon.de/website-log-7.dnstap ✔
-4 ../dnscaptures_working/amazon.de/website-log-8.dnstap ✔
-5 ../dnscaptures_working/bing.com/website-log-8.dnstap ✔
-5 ../dnscaptures_working/coccoc.com/website-log-1.dnstap ✔
-5 ../dnscaptures_working/csdn.net/website-log-10.dnstap ✔
-5 ../dnscaptures_working/csdn.net/website-log-1.dnstap ✔
-1 ../dnscaptures_working/csdn.net/website-log-3.dnstap ✔
-4 ../dnscaptures_working/detail.tmall.com/website-log-7.dnstap ✔
-5 ../dnscaptures_working/detail.tmall.com/website-log-8.dnstap ✔
-5 ../dnscaptures_working/espn.com/website-log-9.dnstap ✔
-5 ../dnscaptures_working/fbcdn.net/website-log-6.dnstap ✔
-5 ../dnscaptures_working/fbcdn.net/website-log-9.dnstap ✔
-5 ../dnscaptures_working/google.ca/website-log-7.dnstap ✔
-2 ../dnscaptures_working/google.co.jp/website-log-10.dnstap
-5 ../dnscaptures_working/google.com.tw/website-log-1.dnstap
-2 ../dnscaptures_working/google.fr/website-log-3.dnstap
-5 ../dnscaptures_working/google.it/website-log-2.dnstap
-5 ../dnscaptures_working/instagram.com/website-log-6.dnstap
-5 ../dnscaptures_working/linkedin.com/website-log-6.dnstap
-1 ../dnscaptures_working/mail.ru/website-log-7.dnstap
-5 ../dnscaptures_working/microsoftonline.com/website-log-10.dnstap
-4 ../dnscaptures_working/microsoftonline.com/website-log-1.dnstap
-5 ../dnscaptures_working/microsoftonline.com/website-log-2.dnstap
-4 ../dnscaptures_working/microsoftonline.com/website-log-3.dnstap
-4 ../dnscaptures_working/microsoftonline.com/website-log-4.dnstap
-5 ../dnscaptures_working/microsoftonline.com/website-log-5.dnstap
-5 ../dnscaptures_working/microsoftonline.com/website-log-6.dnstap
-5 ../dnscaptures_working/microsoftonline.com/website-log-7.dnstap
-5 ../dnscaptures_working/microsoftonline.com/website-log-8.dnstap
-4 ../dnscaptures_working/microsoftonline.com/website-log-9.dnstap
-1 ../dnscaptures_working/netflix.com/website-log-10.dnstap
-5 ../dnscaptures_working/netflix.com/website-log-4.dnstap
-5 ../dnscaptures_working/office.com/website-log-10.dnstap
-5 ../dnscaptures_working/office.com/website-log-2.dnstap
-5 ../dnscaptures_working/office.com/website-log-6.dnstap
-5 ../dnscaptures_working/office.com/website-log-7.dnstap
-1 ../dnscaptures_working/pages.tmall.com/website-log-3.dnstap
-1 ../dnscaptures_working/pages.tmall.com/website-log-5.dnstap
-1 ../dnscaptures_working/pages.tmall.com/website-log-9.dnstap
-1 ../dnscaptures_working/pixnet.net/website-log-1.dnstap
-5 ../dnscaptures_working/popads.net/website-log-1.dnstap
-1 ../dnscaptures_working/popads.net/website-log-8.dnstap
-5 ../dnscaptures_working/qq.com/website-log-8.dnstap
-5 ../dnscaptures_working/qq.com/website-log-9.dnstap
-5 ../dnscaptures_working/reddit.com/website-log-1.dnstap
-5 ../dnscaptures_working/reddit.com/website-log-5.dnstap
-5 ../dnscaptures_working/reddit.com/website-log-7.dnstap
-5 ../dnscaptures_working/reddit.com/website-log-9.dnstap
-5 ../dnscaptures_working/soso.com/website-log-10.dnstap
-5 ../dnscaptures_working/soso.com/website-log-1.dnstap
-4 ../dnscaptures_working/soso.com/website-log-2.dnstap
-1 ../dnscaptures_working/soso.com/website-log-5.dnstap
-5 ../dnscaptures_working/soso.com/website-log-6.dnstap
-4 ../dnscaptures_working/soso.com/website-log-8.dnstap
-5 ../dnscaptures_working/t.co/website-log-10.dnstap
-2 ../dnscaptures_working/t.co/website-log-1.dnstap
-2 ../dnscaptures_working/t.co/website-log-2.dnstap
-2 ../dnscaptures_working/t.co/website-log-3.dnstap
-2 ../dnscaptures_working/t.co/website-log-4.dnstap
-2 ../dnscaptures_working/t.co/website-log-5.dnstap
-5 ../dnscaptures_working/t.co/website-log-6.dnstap
-2 ../dnscaptures_working/t.co/website-log-7.dnstap
-5 ../dnscaptures_working/tmall.com/website-log-3.dnstap
-5 ../dnscaptures_working/tumblr.com/website-log-8.dnstap
-5 ../dnscaptures_working/twitch.tv/website-log-3.dnstap
-5 ../dnscaptures_working/twitter.com/website-log-10.dnstap
-2 ../dnscaptures_working/vk.com/website-log-3.dnstap
-4 ../dnscaptures_working/weibo.com/website-log-9.dnstap
-5 ../dnscaptures_working/whatsapp.com/website-log-5.dnstap
-5 ../dnscaptures_working/whatsapp.com/website-log-8.dnstap
-5 ../dnscaptures_working/xhamster.com/website-log-1.dnstap
-5 ../dnscaptures_working/xhamster.com/website-log-7.dnstap
-```
+| #occurences | File                                                             | Analyzed |
+| ----------: | :--------------------------------------------------------------- | :------: |
+| 5           | ../dnscaptures_working/360.cn/website-log-1.dnstap               | ✔        |
+| 2           | ../dnscaptures_working/alipay.com/website-log-1.p                |          |
+| 4           | ../dnscaptures_working/alipay.com/website-log-7.dnstap           |          |
+| 2           | ../dnscaptures_working/amazon.de/website-log-6.dnstap            | ✔        |
+| 5           | ../dnscaptures_working/amazon.de/website-log-7.dnstap            | ✔        |
+| 4           | ../dnscaptures_working/amazon.de/website-log-8.dnstap            | ✔        |
+| 5           | ../dnscaptures_working/bing.com/website-log-8.dnstap             | ✔        |
+| 5           | ../dnscaptures_working/coccoc.com/website-log-1.dnstap           | ✔        |
+| 5           | ../dnscaptures_working/csdn.net/website-log-1.dnstap             | ✔        |
+| 1           | ../dnscaptures_working/csdn.net/website-log-3.dnstap             | ✔        |
+| 5           | ../dnscaptures_working/csdn.net/website-log-10.dnstap            | ✔        |
+| 4           | ../dnscaptures_working/detail.tmall.com/website-log-7.dnstap     | ✔        |
+| 5           | ../dnscaptures_working/detail.tmall.com/website-log-8.dnstap     | ✔        |
+| 5           | ../dnscaptures_working/espn.com/website-log-9.dnstap             | ✔        |
+| 5           | ../dnscaptures_working/fbcdn.net/website-log-6.dnstap            | ✔        |
+| 5           | ../dnscaptures_working/fbcdn.net/website-log-9.dnstap            | ✔        |
+| 5           | ../dnscaptures_working/google.ca/website-log-7.dnstap            | ✔        |
+| 2           | ../dnscaptures_working/google.co.jp/website-log-10.dnstap        |          |
+| 5           | ../dnscaptures_working/google.com.tw/website-log-1.dnstap        |          |
+| 2           | ../dnscaptures_working/google.fr/website-log-3.dnstap            |          |
+| 5           | ../dnscaptures_working/google.it/website-log-2.dnstap            |          |
+| 5           | ../dnscaptures_working/instagram.com/website-log-6.dnstap        |          |
+| 5           | ../dnscaptures_working/linkedin.com/website-log-6.dnstap         |          |
+| 1           | ../dnscaptures_working/mail.ru/website-log-7.dnstap              |          |
+| 4           | ../dnscaptures_working/microsoftonline.com/website-log-1.dnstap  | ✔        |
+| 5           | ../dnscaptures_working/microsoftonline.com/website-log-2.dnstap  | ✔        |
+| 4           | ../dnscaptures_working/microsoftonline.com/website-log-3.dnstap  | ✔        |
+| 4           | ../dnscaptures_working/microsoftonline.com/website-log-4.dnstap  | ✔        |
+| 5           | ../dnscaptures_working/microsoftonline.com/website-log-5.dnstap  | ✔        |
+| 5           | ../dnscaptures_working/microsoftonline.com/website-log-6.dnstap  | ✔        |
+| 5           | ../dnscaptures_working/microsoftonline.com/website-log-7.dnstap  | ✔        |
+| 5           | ../dnscaptures_working/microsoftonline.com/website-log-8.dnstap  | ✔        |
+| 4           | ../dnscaptures_working/microsoftonline.com/website-log-9.dnstap  | ✔        |
+| 5           | ../dnscaptures_working/microsoftonline.com/website-log-10.dnstap | ✔        |
+| 1           | ../dnscaptures_working/netflix.com/website-log-10.dnstap         |          |
+| 5           | ../dnscaptures_working/netflix.com/website-log-4.dnstap          |          |
+| 5           | ../dnscaptures_working/office.com/website-log-2.dnstap           | ✔        |
+| 5           | ../dnscaptures_working/office.com/website-log-6.dnstap           | ✔        |
+| 5           | ../dnscaptures_working/office.com/website-log-7.dnstap           | ✔        |
+| 5           | ../dnscaptures_working/office.com/website-log-10.dnstap          | ✔        |
+| 1           | ../dnscaptures_working/pages.tmall.com/website-log-3.dnstap      |          |
+| 1           | ../dnscaptures_working/pages.tmall.com/website-log-5.dnstap      |          |
+| 1           | ../dnscaptures_working/pages.tmall.com/website-log-9.dnstap      |          |
+| 1           | ../dnscaptures_working/pixnet.net/website-log-1.dnstap           |          |
+| 5           | ../dnscaptures_working/popads.net/website-log-1.dnstap           |          |
+| 1           | ../dnscaptures_working/popads.net/website-log-8.dnstap           |          |
+| 5           | ../dnscaptures_working/qq.com/website-log-8.dnstap               |          |
+| 5           | ../dnscaptures_working/qq.com/website-log-9.dnstap               |          |
+| 5           | ../dnscaptures_working/reddit.com/website-log-1.dnstap           | ✔        |
+| 5           | ../dnscaptures_working/reddit.com/website-log-5.dnstap           | ✔        |
+| 5           | ../dnscaptures_working/reddit.com/website-log-7.dnstap           | ✔        |
+| 5           | ../dnscaptures_working/reddit.com/website-log-9.dnstap           | ✔        |
+| 5           | ../dnscaptures_working/soso.com/website-log-1.dnstap             | ✔        |
+| 4           | ../dnscaptures_working/soso.com/website-log-2.dnstap             | ✔        |
+| 1           | ../dnscaptures_working/soso.com/website-log-5.dnstap             | ✔        |
+| 5           | ../dnscaptures_working/soso.com/website-log-6.dnstap             | ✔        |
+| 4           | ../dnscaptures_working/soso.com/website-log-8.dnstap             | ✔        |
+| 5           | ../dnscaptures_working/soso.com/website-log-10.dnstap            | ✔        |
+| 2           | ../dnscaptures_working/t.co/website-log-1.dnstap                 | ✔        |
+| 2           | ../dnscaptures_working/t.co/website-log-2.dnstap                 | ✔        |
+| 2           | ../dnscaptures_working/t.co/website-log-3.dnstap                 | ✔        |
+| 2           | ../dnscaptures_working/t.co/website-log-4.dnstap                 | ✔        |
+| 2           | ../dnscaptures_working/t.co/website-log-5.dnstap                 | ✔        |
+| 5           | ../dnscaptures_working/t.co/website-log-6.dnstap                 | ✔        |
+| 2           | ../dnscaptures_working/t.co/website-log-7.dnstap                 | ✔        |
+| 5           | ../dnscaptures_working/t.co/website-log-10.dnstap                | ✔        |
+| 5           | ../dnscaptures_working/tmall.com/website-log-3.dnstap            |          |
+| 5           | ../dnscaptures_working/tumblr.com/website-log-8.dnstap           |          |
+| 5           | ../dnscaptures_working/twitch.tv/website-log-3.dnstap            |          |
+| 5           | ../dnscaptures_working/twitter.com/website-log-10.dnstap         |          |
+| 2           | ../dnscaptures_working/vk.com/website-log-3.dnstap               |          |
+| 4           | ../dnscaptures_working/weibo.com/website-log-9.dnstap            |          |
+| 5           | ../dnscaptures_working/whatsapp.com/website-log-5.dnstap         |          |
+| 5           | ../dnscaptures_working/whatsapp.com/website-log-8.dnstap         |          |
+| 5           | ../dnscaptures_working/xhamster.com/website-log-1.dnstap         |          |
+| 5           | ../dnscaptures_working/xhamster.com/website-log-7.dnstap         |          |
 
-### `360.cn`
+### `360.cn` - 5x
 
 * `paypal.com`
 
-### `amazon.de`
+### `amazon.de` - 11x
 
 * `amazon.de`
 * `amazon.in`
 
-### `bing.com`
+These two Amazon domains have almost identical HTTP and DNS request patterns.
+Not all Amazon websites are identical.
+Namely the `amazon.com` website looks completely different.
+
+### `bing.com` - 5x
 
 Seems to be very easily confused.
 
@@ -428,15 +440,16 @@ Seems to be very easily confused.
 4. `Google Inc. - instagram.com - netflix.com - twitter.com`
 5. `Google Inc. - alipay.com - instagram.com - netflix.com - twitter.com`
 
-### `coccoc.com`
+### `coccoc.com` - 5x
 
 1. `t.co`
 2. `t.co - whatsapp.com`
 3. `whatsapp.com`
 4. `whatsapp.com`
 5. `whatsapp.com`
+* See [empty files][].
 
-### `csdn.net`
+### `csdn.net` - 11x
 
 * Log 1
     * `microsoft.com`
@@ -449,7 +462,7 @@ Seems to be very easily confused.
     4. `tumblr.com - whatsapp.com`
     5. `whatsapp.com`
 
-### `detail.tmall.com`
+### `detail.tmall.com` - 9x
 
 * Log 7
     1. n/a
@@ -464,21 +477,176 @@ Seems to be very easily confused.
     4. `Google Inc. - detail.tmall.com - netflix.com - sogou.com`
     5. `Google Inc.`
 
-### `espn.com`
+### `espn.com` - 5x
 
 * `ebay.com`
 
-### `fbcdn.net`
+### `fbcdn.net` - 10x
 
 * Log 6
     * `netflix.com`
 * Log 9
     * `tumblr.com`
 
-### `google.ca`
+### `google.ca` - 5x
 
 1. `t.co`
 2. `t.co - whatsapp.com`
 3. `Google Inc. - t.co - whatsapp.com`
 4. `whatsapp.com`
 5. `whatsapp.com`
+* See [empty files][].
+
+### `microsoftonline.com` - 46x
+
+All logs:
+
+* `t.co`
+* `microsoftonline.com - t.co` (only four times)
+
+See [single domains][].
+
+This is a non-functional website. It has IPv4 addresses, but the browser cannot connect to them.
+Thus the first lookup pair (A + DNSKEY) is perfromed but nothing else is happening.
+This matches the DNS requests happening for `t.co`, thus this can be easily explained.
+Nothing can be done to avoid this problem.
+
+### `office.com` - 20x
+
+* Log 2
+    * `t.co`
+    * See [single domains][].
+* Log 6
+    * `t.co`
+    * See [single domains][].
+* Log 7
+    * `t.co`
+    * See [single domains][].
+* Log 10
+    1. `t.co`
+    2. `t.co - whatsapp.com`
+    3. `Google Inc. - t.co - whatsapp.com`
+    4. `whatsapp.com`
+    5. `whatsapp.com`
+    * See [empty files][].
+
+### `reddit.com` - 20x
+
+* Log 1
+    * `twitter.com`
+* Log 5
+    1. `wikia.com`
+    2. `wikia.com - youtube.com`
+    3. `wikia.com`
+    4. `wikia.com - youtube.com`
+    5. `wikia.com - youtube.com`
+* Log 7
+    * `taobao.com`
+* Log 9
+    * `netflix.com`
+
+### `soso.com` - 24x
+
+* Log 1
+    * `facebook.com`
+* Log 2
+    1. n/a
+    2. `Google Inc. - sogou.com`
+    3. `Google Inc. - csdn.net - sogou.com`
+    4. `Google Inc.`
+    5. `Google Inc. - sogou.com`
+* Log 5
+    * `k=5` `Google Inc. - sogou.com`
+* Log 6
+    1. `whatsapp.com`
+    2. `Google Inc. - whatsapp.com`
+    3. `whatsapp.com`
+    4. `whatsapp.com`
+    5. `whatsapp.com`
+    * See [empty files][].
+* Log 8
+    1. `csdn.net`
+    2. `csdn.net - sogou.com`
+    3. `csdn.net`
+    4. `csdn.net - sogou.com`
+    5. n/a
+* Log 10
+    1. `t.co`
+    2. `t.co - whatsapp.com`
+    3. `Google Inc. - t.co - whatsapp.com`
+    4. `whatsapp.com`
+    5. `whatsapp.com`
+    * See [empty files][].
+
+### `t.co` - 22x
+
+* Log 1
+    * `k=4` `microsoftonline.com - t.co`
+    * `k=5` `microsoftonline.com`
+    * See [single domains][].
+* Log 2
+    * `k=4` `microsoftonline.com - t.co`
+    * `k=5` `microsoftonline.com`
+    * See [single domains][].
+* Log 3
+    * `k=4` `microsoftonline.com - t.co`
+    * `k=5` `microsoftonline.com`
+    * See [single domains][].
+* Log 4
+    * `k=4` `microsoftonline.com - t.co`
+    * `k=5` `microsoftonline.com`
+    * See [single domains][].
+* Log 5
+    * `k=4` `microsoftonline.com - t.co`
+    * `k=5` `microsoftonline.com`
+    * See [single domains][].
+* Log 6
+    1. `whatsapp.com`
+    2. `Google Inc. - whatsapp.com`
+    3. `whatsapp.com`
+    4. `whatsapp.com`
+    5. `whatsapp.com`
+    * See [empty files][].
+* Log 7
+    * `k=4` `microsoftonline.com - t.co`
+    * `k=5` `microsoftonline.com`
+    * See [single domains][].
+* Log 10
+    * `netflix.com`
+
+## Problems
+
+### Empty Files
+[empty files]: #empty-files
+
+Some runs create empty files (54B on disk).
+
+| Domain         | Log   |
+| :------------- | ----: |
+| `coccoc.com`   | 1     |
+| `google.ca`    | 7     |
+| `google.com`   | 1     |
+| `google.it`    | 2     |
+| `linkedin.com` | 6     |
+| `office.com`   | 10    |
+| `soso.com`     | 6, 10 |
+| `t.co`         | 6     |
+| `tmall.com`    | 3     |
+| `tumblr.com`   | 8     |
+| `twitch.tv`    | 3     |
+| `whatsapp.com` | 5, 8  |
+| `xhamster.com` | 1, 7  |
+
+### Single Domains
+[single domains]: #single-domains
+
+In cases where there is only a single domain involved it is not possible to distinguish such domains from each other.
+This happens for very simple domains, such as `t.co`, which consists only of a single static HTML document embedding one static image.
+Other cases, like `microsoftonline.com`, are domains, which have an A record in DNS but no reachable webserver.
+In those cases a single lookup is performed.
+Sometimes it looks like some kind of connection problem.
+`office.com` has four logs (2, 6, 7, 10) which show only a single HTTP request in the logs, the other six are significantly more complex.
+The current logs do not contain enough information to understand the cause of this problem.
+It could be some network connectivity problem, or maybe some CAPTCHA.
+
+The resulting dnstap-file contains a pair of DNS requests, first an A request followed by the corresponding DNSKEY.
