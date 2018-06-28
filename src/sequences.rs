@@ -142,32 +142,32 @@ mod test_edit_dist {
 
     #[test]
     fn test_edit_distance_dist1() {
-        let seq1 = Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)]);
+        let seq1 = Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into());
 
         // substitution
-        let seq2 = Sequence(vec![Size(2), Gap(2), Size(1), Size(2), Size(1)]);
+        let seq2 = Sequence(vec![Size(2), Gap(2), Size(1), Size(2), Size(1)], "".into());
         assert_eq!(13, seq1.distance(&seq2));
 
         // swapping
-        let seq3 = Sequence(vec![Size(1), Gap(2), Size(2), Size(1), Size(1)]);
+        let seq3 = Sequence(vec![Size(1), Gap(2), Size(2), Size(1), Size(1)], "".into());
         assert_eq!(20, seq1.distance(&seq3));
 
         // deletion
-        let seq4 = Sequence(vec![Size(1), Size(1), Size(2), Size(1)]);
+        let seq4 = Sequence(vec![Size(1), Size(1), Size(2), Size(1)], "".into());
         assert_eq!(10, seq1.distance(&seq4));
 
         // insertion
-        let seq5 = Sequence(vec![Size(1), Size(2), Gap(2), Size(1), Size(2), Size(1)]);
+        let seq5 = Sequence(vec![Size(1), Size(2), Gap(2), Size(1), Size(2), Size(1)], "".into());
         assert_eq!(20, seq1.distance(&seq5));
     }
 
     #[test]
     fn test_edit_distance_inserts() {
-        let seq1 = Sequence(vec![]);
-        let seq2 = Sequence(vec![Size(1), Size(1)]);
+        let seq1 = Sequence(vec![], "".into());
+        let seq2 = Sequence(vec![Size(1), Size(1)], "".into());
 
-        let seq6 = Sequence(vec![Gap(3)]);
-        let seq7 = Sequence(vec![Gap(10)]);
+        let seq6 = Sequence(vec![Gap(3)], "".into());
+        let seq7 = Sequence(vec![Gap(10)], "".into());
         println!("Smaller gap: {}", seq1.distance(&seq6));
         println!("Bigger gap: {}", seq1.distance(&seq7));
         assert!(
@@ -175,8 +175,8 @@ mod test_edit_dist {
             "Bigger Gaps have higher cost."
         );
 
-        let seq6 = Sequence(vec![Size(1), Gap(3), Size(1)]);
-        let seq7 = Sequence(vec![Size(1), Gap(10), Size(1)]);
+        let seq6 = Sequence(vec![Size(1), Gap(3), Size(1)], "".into());
+        let seq7 = Sequence(vec![Size(1), Gap(10), Size(1)], "".into());
         println!("Smaller gap: {}", seq2.distance(&seq6));
         println!("Bigger gap: {}", seq2.distance(&seq7));
         assert!(
@@ -187,11 +187,11 @@ mod test_edit_dist {
 
     #[test]
     fn test_edit_distance_substitutions() {
-        let seq1 = Sequence(vec![Size(1)]);
-        let seq2 = Sequence(vec![Gap(10)]);
+        let seq1 = Sequence(vec![Size(1)], "".into());
+        let seq2 = Sequence(vec![Gap(10)], "".into());
 
-        let seqa = Sequence(vec![Gap(9)]);
-        let seqb = Sequence(vec![Gap(1)]);
+        let seqa = Sequence(vec![Gap(9)], "".into());
+        let seqb = Sequence(vec![Gap(1)], "".into());
         println!("Smaller gap change: {}", seq2.distance(&seqa));
         println!("Bigger gap change: {}", seq2.distance(&seqb));
         assert!(
@@ -209,13 +209,13 @@ mod test_edit_dist {
 
     #[test]
     fn test_edit_distance_equal() {
-        let seq1 = Sequence::new(vec![]);
-        let seq2 = Sequence::new(vec![]);
+        let seq1 = Sequence::new(vec![], "".into());
+        let seq2 = Sequence::new(vec![], "".into());
         assert_eq!(seq1, seq2);
         assert_eq!(0, seq1.distance(&seq2));
 
-        let seq3 = Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)]);
-        let seq4 = Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)]);
+        let seq3 = Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into());
+        let seq4 = Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into());
         assert_eq!(0, seq3.distance(&seq4));
     }
 }
@@ -349,14 +349,14 @@ fn test_knn() {
     let trainings_data = vec![
         (
             "A".into(),
-            vec![Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)])],
+            vec![Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into())],
         ),
         (
             "B".into(),
-            vec![Sequence(vec![Size(1)]), Sequence(vec![Size(2)])],
+            vec![Sequence(vec![Size(1)], "".into()), Sequence(vec![Size(2)], "".into())],
         ),
     ];
-    let validation_data = vec![Sequence::new(vec![Size(1)])];
+    let validation_data = vec![Sequence::new(vec![Size(1)], "".into())];
 
     assert_eq!(vec!["B"], knn(&*trainings_data, &*validation_data, 1));
     assert_eq!(vec!["B"], knn(&*trainings_data, &*validation_data, 2));
@@ -369,11 +369,11 @@ fn test_knn_tie() {
     let trainings_data = vec![
         (
             "A".into(),
-            vec![Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)])],
+            vec![Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into())],
         ),
-        ("B".into(), vec![Sequence(vec![Size(1)])]),
+        ("B".into(), vec![Sequence(vec![Size(1)], "".into())]),
     ];
-    let validation_data = vec![Sequence::new(vec![Size(1)])];
+    let validation_data = vec![Sequence::new(vec![Size(1)], "".into())];
 
     assert_eq!(vec!["B"], knn(&*trainings_data, &*validation_data, 1));
     assert_eq!(vec!["A - B"], knn(&*trainings_data, &*validation_data, 2));
