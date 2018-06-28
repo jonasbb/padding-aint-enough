@@ -130,6 +130,7 @@ fn run() -> Result<(), Error> {
                         format_err!("Processing dnstap file '{}'", dnstap_file.display())
                     })?)
                 })
+                .filter_map(|seq| seq.transpose())
                 .collect::<Result<_, Error>>()?;
 
             // Some directories do not contain data, e.g., because the site didn't exists
@@ -216,7 +217,7 @@ Multiple Options: {}/{total}
     Ok(())
 }
 
-fn process_dnstap(dnstap_file: &Path) -> Result<Sequence, Error> {
+fn process_dnstap(dnstap_file: &Path) -> Result<Option<Sequence>, Error> {
     // process dnstap if available
     let mut events: Vec<encrypted_dns::protos::Dnstap> =
         encrypted_dns::process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
@@ -353,7 +354,10 @@ fn process_dnstap(dnstap_file: &Path) -> Result<Sequence, Error> {
 
     // cleanup some messages
     // filter out all the queries which are just noise
-    matched.retain(|query| !(query.qtype == "NULL" && query.qname.starts_with("_ta")));
+    matched.retain(|query| {
+        !(query.qtype == "NULL" && query.qname.starts_with("_ta"))
+            && query.qname != "fedoraproject.org."
+    });
     for msg in unanswered_client_queries {
         debug!("Unanswered forwarder query: {:?}", msg);
     }
@@ -366,11 +370,15 @@ fn process_dnstap(dnstap_file: &Path) -> Result<Sequence, Error> {
     Ok(seq)
 }
 
-fn convert_to_sequence(data: &[Query], identifier: String) -> Sequence {
+fn convert_to_sequence(data: &[Query], identifier: String) -> Option<Sequence> {
     let base_gap_size = Duration::microseconds(1000);
 
+    if data.is_empty() {
+        return None;
+    }
+
     let mut last_end = None;
-    Sequence::new(
+    Some(Sequence::new(
         data.into_iter()
             .flat_map(|d| {
                 let mut gap = None;
@@ -384,7 +392,7 @@ fn convert_to_sequence(data: &[Query], identifier: String) -> Sequence {
             })
             .collect(),
         identifier,
-    )
+    ))
 }
 
 fn gap_size(gap: Duration, base: Duration) -> Option<SequenceElement> {
