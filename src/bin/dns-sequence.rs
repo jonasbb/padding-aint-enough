@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 #![feature(transpose_result)]
 
 extern crate chrono;
@@ -29,12 +28,11 @@ use encrypted_dns::{
     MatchKey, Query, QuerySource, UnmatchedClientQuery,
 };
 use failure::{Error, ResultExt};
-use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
+use misc_utils::fs::file_open_read;
 use rayon::prelude::*;
-use serde::Serialize;
 use std::{
     collections::BTreeMap,
-    fs::{self, OpenOptions},
+    fs,
     path::{Path, PathBuf},
     sync::{Arc, RwLock},
 };
@@ -405,17 +403,6 @@ fn gap_size(gap: Duration, base: Duration) -> Option<SequenceElement> {
     } else {
         SequenceElement::Gap(dist).into()
     }
-}
-
-fn save_as_pickle<D: Serialize>(path: &Path, data: &D) -> Result<(), Error> {
-    let mut wtr = file_open_write(
-        path,
-        WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    ).map_err(|err| {
-        format_err!("Opening output file '{}' failed: {}", path.display(), err)
-    })?;
-    serde_pickle::to_writer(&mut wtr, data, true)?;
-    Ok(())
 }
 
 fn pad_size(size: u32, is_query: bool, padding: Padding) -> SequenceElement {
