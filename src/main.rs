@@ -107,9 +107,14 @@ fn run() -> Result<(), Error> {
         *lock = outdir;
     }
 
+    // Try processing of .dnstap and .dnstap.xz files
     let dnstap_file = cli_args.webpage_log.with_extension("dnstap");
     process_dnstap(&*dnstap_file)
         .with_context(|_| format_err!("Processing dnstap file '{}'", dnstap_file.display()))?;
+    let dnstap_file = cli_args.webpage_log.with_extension("dnstap.xz");
+    process_dnstap(&*dnstap_file)
+        .with_context(|_| format_err!("Processing dnstap file '{}'", dnstap_file.display()))?;
+
     let messages: Vec<ChromeDebuggerMessage> = serde_json::from_reader(rdr).with_context(|_| {
         format_err!(
             "Error while deserializing '{}'",
