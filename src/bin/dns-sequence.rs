@@ -147,7 +147,7 @@ fn run() -> Result<(), Error> {
         .filter_map(|x| x.transpose())
         .collect::<Result<_, Error>>()?;
 
-    let most_k = 5;
+    let most_k = 3;
     let mut res = vec![(0, 0, 0); most_k];
     for fold in 0..10 {
         info!("Testing for fold {}", fold);
