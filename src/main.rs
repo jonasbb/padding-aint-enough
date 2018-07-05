@@ -114,7 +114,11 @@ fn run() -> Result<(), Error> {
     let dnstap_file = cli_args.webpage_log.with_extension("dnstap");
     process_dnstap(&*dnstap_file)
         .with_context(|_| format_err!("Processing dnstap file '{}'", dnstap_file.display()))?;
-    let dnstap_file = cli_args.webpage_log.with_extension("dnstap.xz");
+    // replace json.xz with dnstap.xz
+    let dnstap_file = cli_args
+        .webpage_log
+        .with_extension("")
+        .with_extension("dnstap.xz");
     process_dnstap(&*dnstap_file)
         .with_context(|_| format_err!("Processing dnstap file '{}'", dnstap_file.display()))?;
 
