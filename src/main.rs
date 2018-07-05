@@ -62,7 +62,10 @@ const DNS_TIMING: &str = "dns-timing.pickle";
 const DEP_GRAPH: &str = "dependencies.graphml";
 
 #[derive(StructOpt, Debug)]
-#[structopt(author = "", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
+#[structopt(
+    author = "",
+    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+)]
 struct CliArgs {
     #[structopt(parse(from_os_str))]
     webpage_log: PathBuf,

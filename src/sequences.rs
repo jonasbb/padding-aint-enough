@@ -157,7 +157,10 @@ mod test_edit_dist {
         assert_eq!(10, seq1.distance(&seq4));
 
         // insertion
-        let seq5 = Sequence(vec![Size(1), Size(2), Gap(2), Size(1), Size(2), Size(1)], "".into());
+        let seq5 = Sequence(
+            vec![Size(1), Size(2), Gap(2), Size(1), Size(2), Size(1)],
+            "".into(),
+        );
         assert_eq!(20, seq1.distance(&seq5));
     }
 
@@ -312,8 +315,8 @@ pub fn split_training_test_data(
         training.push((label.to_string(), trainings));
         // only take each test element once, if it belongs to exactly that fold
         if (fold as usize) < elements.len() {
-        test.push((label.to_string(), element));
-    }
+            test.push((label.to_string(), element));
+        }
     }
 
     debug!("Finished splitting trainings and test data");
@@ -352,11 +355,17 @@ fn test_knn() {
     let trainings_data = vec![
         (
             "A".into(),
-            vec![Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into())],
+            vec![Sequence(
+                vec![Size(1), Gap(2), Size(1), Size(2), Size(1)],
+                "".into(),
+            )],
         ),
         (
             "B".into(),
-            vec![Sequence(vec![Size(1)], "".into()), Sequence(vec![Size(2)], "".into())],
+            vec![
+                Sequence(vec![Size(1)], "".into()),
+                Sequence(vec![Size(2)], "".into()),
+            ],
         ),
     ];
     let validation_data = vec![Sequence::new(vec![Size(1)], "".into())];
@@ -372,7 +381,10 @@ fn test_knn_tie() {
     let trainings_data = vec![
         (
             "A".into(),
-            vec![Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into())],
+            vec![Sequence(
+                vec![Size(1), Gap(2), Size(1), Size(2), Size(1)],
+                "".into(),
+            )],
         ),
         ("B".into(), vec![Sequence(vec![Size(1)], "".into())]),
     ];

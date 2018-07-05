@@ -25,7 +25,10 @@ use std::{
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(author = "", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
+#[structopt(
+    author = "",
+    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+)]
 struct CliArgs {
     #[structopt(parse(from_os_str))]
     alexa_top_file: PathBuf,
