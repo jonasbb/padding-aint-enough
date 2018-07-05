@@ -1,9 +1,10 @@
 use rayon::prelude::*;
 use std::{
-    cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd, Reverse},
-    collections::{BinaryHeap, HashMap},
+    cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
+    collections::HashMap,
     mem,
 };
+use take_smallest;
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Sequence(Vec<SequenceElement>, String);
@@ -233,18 +234,19 @@ pub fn knn(
     validation_data
         .into_par_iter()
         .map(|vsample| {
-            let mut distances: BinaryHeap<_> = trainings_data
-                .into_par_iter()
+            let distances = take_smallest(
+                trainings_data
+                .into_iter()
                 // iterate over all elements of the trainings data
-                .flat_map(|(label, tsample)| tsample.par_iter().map(move |s| (label, s)))
-                // calculate distance for each
-                .map(|(label, s)| Reverse(ClassifierData {label, distance:vsample.distance(s)}))
-                .collect();
+                .flat_map(|(label, tsample)| tsample.iter().map(move |s| ClassifierData {label, distance:vsample.distance(s)})),
+                // collect the k smallest distances
+                k as usize,
+            );
 
             // k == 1 is easy, just take the one with smallest distance
             if k == 1 {
-                if let Some(x) = distances.pop() {
-                    return x.0.label.to_string();
+                if distances.len() >= 1 {
+                    return distances[0].label.to_string();
                 } else {
                     panic!("Not enough trainings data");
                 }
@@ -252,13 +254,10 @@ pub fn knn(
 
             let mut most_common_label: HashMap<String, usize> = HashMap::new();
             // let mut distance = 0;
-            for _ in 0..k {
-                if let Some(class) = distances.pop() {
+            for class in distances {
                     *most_common_label
-                        .entry(class.0.label.to_string())
+                    .entry(class.label.to_string())
                         .or_insert(0) += 1;
-                    // distance = class.0.distance;
-                }
             }
             // // additionally to the first k entries also collect all entries with equal cost/distance than the highest one so far
             // while let Some(class) = distances.pop() {
