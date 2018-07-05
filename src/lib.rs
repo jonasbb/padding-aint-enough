@@ -20,7 +20,7 @@ pub mod protos;
 pub mod sequences;
 
 use chrono::{DateTime, Utc};
-use failure::Error;
+use failure::{Error, ResultExt};
 use framestream::DecoderReader;
 use misc_utils::fs::file_open_read;
 pub use protos::dnstap;
@@ -37,11 +37,19 @@ pub fn process_dnstap<P: AsRef<Path>>(
 
     Ok(fstrm
         .into_iter()
-        .map(|msg| -> Result<protos::Dnstap, Error> {
-            Ok(protos::Dnstap::try_from(protobuf::parse_from_bytes::<
-                dnstap::Dnstap,
-            >(&*(msg?))?)?)
-        }))
+        .map(|msg| -> Result<Option<protos::Dnstap>, Error> {
+            let raw_dnstap = protobuf::parse_from_bytes::<dnstap::Dnstap>(&msg?)
+                .context("Parsing protobuf failed.")?;
+            match protos::Dnstap::try_from(raw_dnstap) {
+                Ok(dnstap) => Ok(Some(dnstap)),
+                Err(err) => {
+                    warn!("Skipping DNS event due to conversion errror: {}", err);
+                    eprintln!("Skipping DNS event due to conversion errror: {}", err);
+                    Ok(None)
+                }
+            }
+        })
+        .filter_map(|x| x.transpose()))
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
