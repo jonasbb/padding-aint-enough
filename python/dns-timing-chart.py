@@ -218,7 +218,11 @@ def main() -> None:
     )
     fig.set_size_inches(15, len(yticks) / 2.5 + 0.6)
     # ensure there is enough space for the labels
-    fig.tight_layout()
+    try:
+        fig.tight_layout()
+    except ValueError:
+        print(f"Skipping empty output file {outfile}", file=sys.stderr)
+        return
     fig.savefig(outfile, bbox_extra_artists=(lgd,), bbox_inches="tight")
 
 
