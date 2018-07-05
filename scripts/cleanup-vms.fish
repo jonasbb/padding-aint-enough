@@ -23,7 +23,7 @@ if test ! -w "$LOCAL_DIR"
 end
 
 # get a list of "old" directories, created more than 4 hours ago
-for dir in (ssh "$SSHHOST" "find ./dnscaptures/ -type d -ctime +4")
+for dir in (ssh "$SSHHOST" "find ./dnscaptures/ -type d -mmin +240")
     echo "$dir"
     rsync -avz --remove-source-files "$SSHHOST:$dir" "$LOCAL_DIR"
     # delete empty directory left behind by rsync
