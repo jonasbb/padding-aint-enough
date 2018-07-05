@@ -17,7 +17,7 @@ set -l SCRIPT (realpath (dirname (status --current-filename))/../)
 
 cargo build --release --bin encrypted-dns
 # search in experiments folder for all files with json extension and process them
-fd --extension json . "$EXPERIMENTS" --exec ./target/release/encrypted-dns '{}' \;
+fd --no-ignore --extension json --extension json.xz . "$EXPERIMENTS" --exec ./target/release/encrypted-dns '{}' \;
 
 # copy all files into a single images directory
 pushd $EXPERIMENTS
