@@ -174,7 +174,7 @@ fn run() -> Result<(), Error> {
                         corr += 1;
                     } else {
                         println!(
-                            "K {} Seq: {}, Expected: '{}'  Got: '{}'",
+                            r#"K' {} Seq: {} Expected: "{}" Got: "{}""#,
                             k,
                             sequence.id(),
                             label,
