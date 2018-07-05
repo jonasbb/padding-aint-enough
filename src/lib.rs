@@ -8,6 +8,7 @@ extern crate failure;
 extern crate framestream;
 #[macro_use]
 extern crate log;
+extern crate min_max_heap;
 extern crate misc_utils;
 extern crate serde;
 #[macro_use]
@@ -22,6 +23,7 @@ pub mod sequences;
 use chrono::{DateTime, Utc};
 use failure::{Error, ResultExt};
 use framestream::DecoderReader;
+use min_max_heap::MinMaxHeap;
 use misc_utils::fs::file_open_read;
 pub use protos::dnstap;
 use std::{convert::TryFrom, path::Path};
@@ -87,4 +89,62 @@ pub struct UnmatchedClientQuery {
     pub qtype: String,
     pub start: DateTime<Utc>,
     pub size: u32,
+}
+
+pub fn take_smallest<I, T>(iter: I, n: usize) -> Vec<T>
+where
+    I: IntoIterator<Item = T>,
+    T: Ord,
+{
+    let mut heap = MinMaxHeap::with_capacity(n);
+    let mut iter = iter.into_iter();
+
+    // fill the heap with n elements
+    for _ in 0..n {
+        match iter.next() {
+            Some(v) => heap.push(v),
+            None => break,
+        }
+    }
+
+    // replace exisiting elements keeping the heap size
+    for v in iter {
+        heap.push_pop_max(v);
+    }
+
+    let res = heap.into_vec_asc();
+    assert!(
+        res.len() <= n,
+        "Output vector only contains more than n elements."
+    );
+    res
+}
+
+pub fn take_largest<I, T>(iter: I, n: usize) -> Vec<T>
+where
+    I: IntoIterator<Item = T>,
+    T: Ord,
+{
+    let mut heap = MinMaxHeap::with_capacity(n);
+    let mut iter = iter.into_iter();
+
+    // fill the heap with n elements
+    for _ in 0..n {
+        match iter.next() {
+            Some(v) => heap.push(v),
+            None => break,
+        }
+    }
+
+    // replace exisiting elements keeping the heap size
+    for v in iter {
+        heap.push_pop_min(v);
+    }
+
+    let res = heap.into_vec_desc();
+    assert!(
+        res.len() <= n,
+        "Output vector only contains more than n elements."
+    );
+    res
 }

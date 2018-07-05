@@ -11,6 +11,7 @@ failure = "0.1.1"
 framestream = { path = "./framestream" }
 lazy_static = "1.0.1"
 log = "0.4.1"
+min-max-heap = "1.2.0"
 misc_utils = "1.4.0"
 num-traits = "0.2.4"
 petgraph = { version = "0.4.12", features = [ "serde-1" ] }
