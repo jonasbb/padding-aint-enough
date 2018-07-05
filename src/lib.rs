@@ -30,6 +30,7 @@ pub fn process_dnstap<P: AsRef<Path>>(
     path: P,
 ) -> Result<impl Iterator<Item = Result<protos::Dnstap, Error>>, Error> {
     let path = path.as_ref();
+    let path_str = path.to_string_lossy().to_string();
 
     let rdr = file_open_read(path)
         .map_err(|err| format_err!("Opening input file '{}' failed: {}", path.display(), err))?;
@@ -37,14 +38,16 @@ pub fn process_dnstap<P: AsRef<Path>>(
 
     Ok(fstrm
         .into_iter()
-        .map(|msg| -> Result<Option<protos::Dnstap>, Error> {
+        .map(move |msg| -> Result<Option<protos::Dnstap>, Error> {
             let raw_dnstap = protobuf::parse_from_bytes::<dnstap::Dnstap>(&msg?)
                 .context("Parsing protobuf failed.")?;
             match protos::Dnstap::try_from(raw_dnstap) {
                 Ok(dnstap) => Ok(Some(dnstap)),
                 Err(err) => {
-                    warn!("Skipping DNS event due to conversion errror: {}", err);
-                    eprintln!("Skipping DNS event due to conversion errror: {}", err);
+                    warn!(
+                        "Skipping DNS event due to conversion errror in file '{}': {}",
+                        path_str, err
+                    );
                     Ok(None)
                 }
             }
