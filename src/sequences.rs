@@ -6,7 +6,7 @@ use std::{
 };
 use take_smallest;
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sequence(Vec<SequenceElement>, String);
 
 impl Sequence {
@@ -20,6 +20,16 @@ impl Sequence {
 }
 
 impl Sequence {
+    pub fn complexity(&self) -> usize {
+        self.0
+            .iter()
+            .filter_map(|x| match x {
+                SequenceElement::Size(n) => Some(*n as usize),
+                _ => None,
+            })
+            .sum()
+    }
+
     pub fn distance(&self, other: &Self) -> usize {
         if self.0.len() < other.0.len() {
             return other.distance(self);
@@ -79,6 +89,29 @@ impl Sequence {
         *previous_row
             .last()
             .expect("The rows are never empty, thus there is a last.")
+    }
+}
+
+impl PartialEq for Sequence {
+    fn eq(&self, other: &Self) -> bool {
+        // compare IDs first, only then the sequences
+        self.1 == other.1 && self.0 == other.0
+    }
+}
+
+impl Eq for Sequence {}
+
+impl Ord for Sequence {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.complexity()
+            .cmp(&other.complexity())
+            .then_with(|| self.1.cmp(&other.1))
+    }
+}
+
+impl PartialOrd for Sequence {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
     }
 }
 
@@ -255,9 +288,9 @@ pub fn knn(
             let mut most_common_label: HashMap<String, usize> = HashMap::new();
             // let mut distance = 0;
             for class in distances {
-                    *most_common_label
+                *most_common_label
                     .entry(class.label.to_string())
-                        .or_insert(0) += 1;
+                    .or_insert(0) += 1;
             }
             // // additionally to the first k entries also collect all entries with equal cost/distance than the highest one so far
             // while let Some(class) = distances.pop() {

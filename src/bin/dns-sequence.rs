@@ -25,7 +25,7 @@ use encrypted_dns::{
     dnstap::Message_Type,
     protos::DnstapContent,
     sequences::{knn, split_training_test_data, Sequence, SequenceElement},
-    MatchKey, Query, QuerySource, UnmatchedClientQuery,
+    take_largest, MatchKey, Query, QuerySource, UnmatchedClientQuery,
 };
 use failure::{Error, ResultExt};
 use misc_utils::fs::file_open_read;
@@ -125,7 +125,7 @@ fn run() -> Result<(), Error> {
             // sort filenames for predictable results
             filenames.sort();
 
-            let sequences: Vec<Sequence> = filenames
+            let mut sequences: Vec<Sequence> = filenames
                 .into_iter()
                 .map(|dnstap_file| {
                     debug!("Processing dnstap file '{}'", dnstap_file.display());
@@ -135,6 +135,11 @@ fn run() -> Result<(), Error> {
                 })
                 .filter_map(|seq| seq.transpose())
                 .collect::<Result<_, Error>>()?;
+
+            // TODO this is sooo ugly
+            // Only retain 5 of the possibilities which have the highest number of diversity
+            // Sequences are sorted by complexity
+            sequences = take_largest(sequences, 5);
 
             // Some directories do not contain data, e.g., because the site didn't exists
             // Skip all directories with 0 results
