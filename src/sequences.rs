@@ -306,11 +306,14 @@ pub fn split_training_test_data(
             error!("{} has no data", label);
         }
 
-        let mut elements = elements.clone();
-        let element = elements.remove(fold as usize % elements.len());
+        let mut trainings = elements.clone();
+        let element = trainings.remove(fold as usize % elements.len());
 
-        training.push((label.to_string(), elements));
+        training.push((label.to_string(), trainings));
+        // only take each test element once, if it belongs to exactly that fold
+        if (fold as usize) < elements.len() {
         test.push((label.to_string(), element));
+    }
     }
 
     debug!("Finished splitting trainings and test data");
