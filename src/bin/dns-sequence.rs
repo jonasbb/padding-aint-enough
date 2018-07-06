@@ -155,7 +155,7 @@ fn run() -> Result<(), Error> {
         .filter_map(|x| x.transpose())
         .collect::<Result<_, Error>>()?;
 
-    let most_k = 3;
+    let most_k = 5;
     let mut res = vec![(0, 0, 0); most_k];
     for fold in 0..10 {
         info!("Testing for fold {}", fold);
@@ -170,7 +170,7 @@ fn run() -> Result<(), Error> {
             },
         );
 
-        for k in 1..=most_k {
+        for k in (1..=most_k).step_by(2) {
             let classification = knn(&*training_data, &*test_data, k as u8);
             assert_eq!(classification.len(), test_labels.len());
             let (correct, undecided) = classification
