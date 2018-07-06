@@ -182,7 +182,7 @@ fn run() -> Result<(), Error> {
                         corr += 1;
                     } else {
                         println!(
-                            r#"K' {} Seq: {} Expected: "{}" Got: "{}""#,
+                            r#"K: {} Seq: {} Expected: "{}" Got: "{}""#,
                             k,
                             sequence.id(),
                             label,
