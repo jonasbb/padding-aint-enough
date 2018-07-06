@@ -278,7 +278,7 @@ pub fn knn(
 
             // k == 1 is easy, just take the one with smallest distance
             if k == 1 {
-                if distances.len() >= 1 {
+                if !distances.is_empty() {
                     return distances[0].label.to_string();
                 } else {
                     panic!("Not enough trainings data");
