@@ -78,6 +78,9 @@ fn run() -> Result<(), Error> {
 
     prepare_confusion_domains(&cli_args.confusion_domains)?;
 
+    // Controls how many folds there are
+    let at_most_sequences_per_label = 5;
+
     let directories: Vec<PathBuf> = fs::read_dir(cli_args.base_dir)?
         .into_iter()
         .flat_map(|x| {
@@ -139,7 +142,7 @@ fn run() -> Result<(), Error> {
             // TODO this is sooo ugly
             // Only retain 5 of the possibilities which have the highest number of diversity
             // Sequences are sorted by complexity
-            sequences = take_largest(sequences, 5);
+            sequences = take_largest(sequences, at_most_sequences_per_label);
 
             // Some directories do not contain data, e.g., because the site didn't exists
             // Skip all directories with 0 results
@@ -157,9 +160,9 @@ fn run() -> Result<(), Error> {
 
     let most_k = 5;
     let mut res = vec![(0, 0, 0); most_k];
-    for fold in 0..10 {
+    for fold in 0..at_most_sequences_per_label {
         info!("Testing for fold {}", fold);
-        let (training_data, test) = split_training_test_data(&*data, fold);
+        let (training_data, test) = split_training_test_data(&*data, fold as u8);
         let len = test.len();
         let (test_labels, test_data) = test.into_iter().fold(
             (Vec::with_capacity(len), Vec::with_capacity(len)),
