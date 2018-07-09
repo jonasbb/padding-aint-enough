@@ -76,89 +76,14 @@ fn run() -> Result<(), Error> {
     env_logger::init();
     let cli_args = CliArgs::from_args();
 
-    prepare_confusion_domains(&cli_args.confusion_domains)?;
-
     // Controls how many folds there are
     let at_most_sequences_per_label = 5;
-
-    let directories: Vec<PathBuf> = fs::read_dir(cli_args.base_dir)?
-        .into_iter()
-        .flat_map(|x| {
-            x.and_then(|entry| {
-                // Result<Option<PathBuf>>
-                entry.file_type().map(|ft| {
-                    if ft.is_dir() {
-                        Some(entry.path())
-                    } else {
-                        None
-                    }
-                })
-            }).transpose()
-        })
-        .collect::<Result<_, _>>()?;
-
-    let check_confusion_domains = make_check_confusion_domains();
-
-    let data: Vec<(String, Vec<Sequence>)> = directories
-        .into_par_iter()
-        .map(|dir| {
-            let label = dir
-                .file_name()
-                .expect("Each directory has a name")
-                .to_string_lossy()
-                .to_string();
-
-            let mut filenames: Vec<PathBuf> = fs::read_dir(&dir)?
-                .into_iter()
-                .flat_map(|x| {
-                    x.and_then(|entry| {
-                        // Result<Option<PathBuf>>
-                        entry.file_type().map(|ft| {
-                            if ft.is_file()
-                                && entry.file_name().to_string_lossy().contains(".dnstap")
-                            {
-                                Some(entry.path())
-                            } else {
-                                None
-                            }
-                        })
-                    }).transpose()
-                })
-                .collect::<Result<_, _>>()?;
-            // sort filenames for predictable results
-            filenames.sort();
-
-            let mut sequences: Vec<Sequence> = filenames
-                .into_iter()
-                .map(|dnstap_file| {
-                    debug!("Processing dnstap file '{}'", dnstap_file.display());
-                    Ok(process_dnstap(&*dnstap_file).with_context(|_| {
-                        format_err!("Processing dnstap file '{}'", dnstap_file.display())
-                    })?)
-                })
-                .filter_map(|seq| seq.transpose())
-                .collect::<Result<_, Error>>()?;
-
-            // TODO this is sooo ugly
-            // Only retain 5 of the possibilities which have the highest number of diversity
-            // Sequences are sorted by complexity
-            sequences = take_largest(sequences, at_most_sequences_per_label);
-
-            // Some directories do not contain data, e.g., because the site didn't exists
-            // Skip all directories with 0 results
-            if sequences.is_empty() {
-                warn!("Directory contains no data: {}", dir.display());
-                Ok(None)
-            } else {
-                let label = check_confusion_domains(&label);
-                Ok(Some((label, sequences)))
-            }
-        })
-        // Remove all the empty directories from the previous step
-        .filter_map(|x| x.transpose())
-        .collect::<Result<_, Error>>()?;
-
+    // Controls the maximum k for knn
     let most_k = 5;
+
+    prepare_confusion_domains(&cli_args.confusion_domains)?;
+    let data = load_all_dnstap_files(&cli_args.base_dir, at_most_sequences_per_label)?;
+
     let mut res = vec![(0, 0, 0); most_k];
     for fold in 0..at_most_sequences_per_label {
         info!("Testing for fold {}", fold);
@@ -228,6 +153,7 @@ Multiple Options: {}/{total}
     Ok(())
 }
 
+/// Load a dnstap file and generate a Sequence from it
 fn process_dnstap(dnstap_file: &Path) -> Result<Option<Sequence>, Error> {
     // process dnstap if available
     let mut events: Vec<encrypted_dns::protos::Dnstap> =
@@ -381,6 +307,9 @@ fn process_dnstap(dnstap_file: &Path) -> Result<Option<Sequence>, Error> {
     Ok(seq)
 }
 
+/// Takes a list of Queries and returns a Sequence
+///
+/// The functions abstracts over some details of Queries, such as absolute size and absolute time.
 fn convert_to_sequence(data: &[Query], identifier: String) -> Option<Sequence> {
     let base_gap_size = Duration::microseconds(1000);
 
@@ -496,4 +425,92 @@ fn make_check_confusion_domains() -> impl Fn(&str) -> String {
         }
         curr.to_string()
     }
+}
+
+fn load_all_dnstap_files(
+    base_dir: &Path,
+    at_most_sequences_per_label: usize,
+) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
+    let check_confusion_domains = make_check_confusion_domains();
+
+    // Get a list of directories
+    // Each directory corresponds to a label
+    let directories: Vec<PathBuf> = fs::read_dir(base_dir)?
+        .into_iter()
+        .flat_map(|x| {
+            x.and_then(|entry| {
+                // Result<Option<PathBuf>>
+                entry.file_type().map(|ft| {
+                    if ft.is_dir() {
+                        Some(entry.path())
+                    } else {
+                        None
+                    }
+                })
+            }).transpose()
+        })
+        .collect::<Result<_, _>>()?;
+
+    // Pairs of Label with Data (the Sequences)
+    let data: Vec<(String, Vec<Sequence>)> = directories
+        .into_par_iter()
+        .map(|dir| {
+            let label = dir
+                .file_name()
+                .expect("Each directory has a name")
+                .to_string_lossy()
+                .to_string();
+
+            let mut filenames: Vec<PathBuf> = fs::read_dir(&dir)?
+                .into_iter()
+                .flat_map(|x| {
+                    x.and_then(|entry| {
+                        // Result<Option<PathBuf>>
+                        entry.file_type().map(|ft| {
+                            if ft.is_file()
+                                && entry.file_name().to_string_lossy().contains(".dnstap")
+                            {
+                                Some(entry.path())
+                            } else {
+                                None
+                            }
+                        })
+                    }).transpose()
+                })
+                .collect::<Result<_, _>>()?;
+            // sort filenames for predictable results
+            filenames.sort();
+
+            let mut sequences: Vec<Sequence> = filenames
+                .into_iter()
+                .map(|dnstap_file| {
+                    debug!("Processing dnstap file '{}'", dnstap_file.display());
+                    Ok(process_dnstap(&*dnstap_file).with_context(|_| {
+                        format_err!("Processing dnstap file '{}'", dnstap_file.display())
+                    })?)
+                })
+                .filter_map(|seq| seq.transpose())
+                .collect::<Result<_, Error>>()?;
+
+            // TODO this is sooo ugly
+            // Only retain 5 of the possibilities which have the highest number of diversity
+            // Sequences are sorted by complexity
+            sequences = take_largest(sequences, at_most_sequences_per_label);
+
+            // Some directories do not contain data, e.g., because the site didn't exists
+            // Skip all directories with 0 results
+            if sequences.is_empty() {
+                warn!("Directory contains no data: {}", dir.display());
+                Ok(None)
+            } else {
+                let label = check_confusion_domains(&label);
+                Ok(Some((label, sequences)))
+            }
+        })
+        // Remove all the empty directories from the previous step
+        .filter_map(|x| x.transpose())
+        .collect::<Result<_, Error>>()?;
+
+    // return all loaded data
+    Ok(data)
 }
