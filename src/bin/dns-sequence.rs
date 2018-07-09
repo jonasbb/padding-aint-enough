@@ -20,7 +20,7 @@ extern crate serde_derive;
 extern crate serde_pickle;
 
 use chrono::Duration;
-use csv::ReaderBuilder;
+use csv::{ReaderBuilder, Writer as CsvWriter, WriterBuilder};
 use encrypted_dns::{
     dnstap::Message_Type,
     protos::DnstapContent,
@@ -28,11 +28,12 @@ use encrypted_dns::{
     take_largest, MatchKey, Query, QuerySource, UnmatchedClientQuery,
 };
 use failure::{Error, ResultExt};
-use misc_utils::fs::file_open_read;
+use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use rayon::prelude::*;
 use std::{
     collections::BTreeMap,
     fs,
+    io::{stdout, Write},
     path::{Path, PathBuf},
     sync::{Arc, RwLock},
 };
@@ -53,6 +54,8 @@ struct CliArgs {
     base_dir: PathBuf,
     #[structopt(short = "d", long = "confusion_domains", parse(from_os_str))]
     confusion_domains: Vec<PathBuf>,
+    #[structopt(long = "misclassifications", parse(from_os_str))]
+    misclassifications: Option<PathBuf>,
 }
 
 fn main() {
@@ -80,6 +83,13 @@ fn run() -> Result<(), Error> {
     let at_most_sequences_per_label = 5;
     // Controls the maximum k for knn
     let most_k = 5;
+
+    let writer: Box<Write> = cli_args
+        .misclassifications
+        .map(|path| file_open_write(path, WriteOptions::new()))
+        .unwrap_or_else(|| Ok(Box::new(stdout())))
+        .context("Cannot open writer for misclassifications.")?;
+    let mut mis_writer = WriterBuilder::new().has_headers(true).from_writer(writer);
 
     prepare_confusion_domains(&cli_args.confusion_domains)?;
     let data = load_all_dnstap_files(&cli_args.base_dir, at_most_sequences_per_label)?;
@@ -109,13 +119,14 @@ fn run() -> Result<(), Error> {
                     if class == *label {
                         corr += 1;
                     } else {
-                        println!(
-                            r#"K: {} Seq: {} Expected: "{}" Got: "{}""#,
-                            k,
-                            sequence.id(),
-                            label,
-                            class
-                        );
+                        if log_misclassification(&mut mis_writer, k, &sequence, &label, &class)
+                            .is_err()
+                        {
+                            error!(
+                                "Cannot log misclassification for sequence: {}",
+                                sequence.id()
+                            );
+                        }
                     }
                     if class.contains(&*label) {
                         und += 1;
@@ -512,4 +523,50 @@ fn load_all_dnstap_files(
 
     // return all loaded data
     Ok(data)
+}
+
+fn log_misclassification<W>(
+    csv_writer: &mut CsvWriter<W>,
+    k: usize,
+    sequence: &Sequence,
+    label: &str,
+    class: &str,
+) -> Result<(), Error>
+where
+    W: Write,
+{
+    #[derive(Serialize)]
+    struct Out<'a> {
+        id: &'a str,
+        k: usize,
+        label: &'a str,
+        class: &'a str,
+        reason: Option<&'a str>,
+    };
+
+    let mut reason = None;
+
+    // Test if sequence only contains two responses of size 1 and then 2
+    let packets:Vec<_> = sequence.as_elements().iter().filter(|elem| {
+        if let SequenceElement::Size(_) = elem {
+            true
+        } else {
+            false
+        }
+    }).cloned().collect();
+    if packets == [SequenceElement::Size(1), SequenceElement::Size(2)] {
+        reason = Some("R001 Sequence only contains two packets.");
+    }
+
+    let out = Out {
+        id: sequence.id(),
+        k,
+        label,
+        class,
+        reason,
+    };
+
+    csv_writer
+        .serialize(&out)
+        .map_err(|err| format_err!("{}", err))
 }

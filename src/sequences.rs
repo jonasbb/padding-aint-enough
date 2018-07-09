@@ -90,6 +90,10 @@ impl Sequence {
             .last()
             .expect("The rows are never empty, thus there is a last.")
     }
+
+    pub fn as_elements(&self) -> &[SequenceElement] {
+        &self.0
+    }
 }
 
 impl PartialEq for Sequence {
