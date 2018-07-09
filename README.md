@@ -33,3 +33,21 @@ Run the test in the VMs:
 ```bash
 stdbuf -oL -eL /mnt/scripts/foreach-domain.fish ./alexa-top10000-rr00.txt 2>&1 | ts | tee log.txt
 ```
+
+Convert the output of `dns-sequences` into a CSV file with all the wrong classifications:
+
+```bash
+rg 'Seq:' "$INPUT" | xsv select --no-headers --delimiter=' ' 2,4,6,8 > "$OUTPUT"
+```
+
+Domains most often wrongly classified, based on the CSV above:
+
+```bash
+xsv select 3 "$INPUT" | sort | uniq -c | sort -n
+```
+
+Most common wrong classification results, based on the CSV above:
+
+```bash
+xsv select 3,4 "$INPUT" | sort | uniq -c | sort -n
+```
