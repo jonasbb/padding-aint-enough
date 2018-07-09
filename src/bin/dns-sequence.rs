@@ -118,15 +118,13 @@ fn run() -> Result<(), Error> {
                 .fold((0, 0), |(mut corr, mut und), ((class, label), sequence)| {
                     if class == *label {
                         corr += 1;
-                    } else {
-                        if log_misclassification(&mut mis_writer, k, &sequence, &label, &class)
-                            .is_err()
-                        {
-                            error!(
-                                "Cannot log misclassification for sequence: {}",
-                                sequence.id()
-                            );
-                        }
+                    } else if log_misclassification(&mut mis_writer, k, &sequence, &label, &class)
+                        .is_err()
+                    {
+                        error!(
+                            "Cannot log misclassification for sequence: {}",
+                            sequence.id()
+                        );
                     }
                     if class.contains(&*label) {
                         und += 1;
@@ -400,12 +398,8 @@ where
     for path in data {
         let path = path.as_ref();
         let mut reader = ReaderBuilder::new().has_headers(false).from_reader(
-            file_open_read(path).with_context(|_| {
-                format!(
-                    "Opening confusion file '{}' failed",
-                    path.display()
-                )
-            })?,
+            file_open_read(path)
+                .with_context(|_| format!("Opening confusion file '{}' failed", path.display()))?,
         );
         for record in reader.deserialize() {
             let record: Record = record?;
@@ -549,11 +543,11 @@ where
         .as_elements()
         .iter()
         .filter(|elem| {
-        if let SequenceElement::Size(_) = elem {
-            true
-        } else {
-            false
-        }
+            if let SequenceElement::Size(_) = elem {
+                true
+            } else {
+                false
+            }
         })
         .cloned()
         .collect();
@@ -584,7 +578,7 @@ where
         }
         [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(2)] => {
             Some("R003 Two domains for website. (A + DNSKEY) * 2")
-    }
+        }
         _ => None,
     };
 
