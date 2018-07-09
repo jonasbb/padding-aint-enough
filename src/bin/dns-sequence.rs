@@ -544,19 +544,49 @@ where
         reason: Option<&'a str>,
     };
 
-    let mut reason = None;
-
     // Test if sequence only contains two responses of size 1 and then 2
-    let packets:Vec<_> = sequence.as_elements().iter().filter(|elem| {
+    let packets: Vec<_> = sequence
+        .as_elements()
+        .iter()
+        .filter(|elem| {
         if let SequenceElement::Size(_) = elem {
             true
         } else {
             false
         }
-    }).cloned().collect();
-    if packets == [SequenceElement::Size(1), SequenceElement::Size(2)] {
-        reason = Some("R001 Sequence only contains two packets.");
+        })
+        .cloned()
+        .collect();
+
+    let reason = match &*packets {
+        [] => {
+            error!(
+                "Empty sequence for ID {}. Should never occur",
+                sequence.id()
+            );
+            None
+        }
+        [SequenceElement::Size(n)] => Some(match n {
+            0 => unreachable!("Packets of size 0 may never occur."),
+            1 => "R004 Single packet of size 1.",
+            2 => "R004 Single packet of size 2.",
+            3 => "R004 Single packet of size 3.",
+            4 => "R004 Single packet of size 4.",
+            5 => "R004 Single packet of size 5.",
+            6 => "R004 Single packet of size 6.",
+            _ => "R004 A single packet of unknown size.",
+        }),
+        [SequenceElement::Size(1), SequenceElement::Size(2)] => {
+            Some("R001 Single Domain. A + DNSKEY")
+        }
+        [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1)] => {
+            Some("R002 Single Domain with www redirect. A + DNSKEY + A (for www)")
+        }
+        [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(2)] => {
+            Some("R003 Two domains for website. (A + DNSKEY) * 2")
     }
+        _ => None,
+    };
 
     let out = Out {
         id: sequence.id(),
