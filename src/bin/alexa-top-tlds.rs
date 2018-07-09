@@ -3,7 +3,6 @@
 /// Read the Alexa Top x Domains CSV file and collect all observable domains in it
 extern crate csv;
 extern crate env_logger;
-#[macro_use]
 extern crate failure;
 #[macro_use]
 extern crate log;
@@ -58,11 +57,10 @@ fn run() -> Result<(), Error> {
     let cli_args = CliArgs::from_args();
     info!("Process file '{}'", cli_args.alexa_top_file.display());
 
-    let file = file_open_read(&cli_args.alexa_top_file).map_err(|err| {
-        format_err!(
-            "Opening alexa top file at '{}' failed: {}",
-            cli_args.alexa_top_file.display(),
-            err
+    let file = file_open_read(&cli_args.alexa_top_file).with_context(|_| {
+        format!(
+            "Opening alexa top file at '{}' failed",
+            cli_args.alexa_top_file.display()
         )
     })?;
     let mut rdr = ReaderBuilder::new()

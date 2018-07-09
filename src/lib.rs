@@ -35,7 +35,7 @@ pub fn process_dnstap<P: AsRef<Path>>(
     let path_str = path.to_string_lossy().to_string();
 
     let rdr = file_open_read(path)
-        .map_err(|err| format_err!("Opening input file '{}' failed: {}", path.display(), err))?;
+        .with_context(|_| format!("Opening input file '{}' failed", path.display(), ))?;
     let fstrm = DecoderReader::with_content_type(rdr, "protobuf:dnstap.Dnstap".into());
 
     Ok(fstrm

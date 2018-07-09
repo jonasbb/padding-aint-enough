@@ -389,11 +389,10 @@ where
     for path in data {
         let path = path.as_ref();
         let mut reader = ReaderBuilder::new().has_headers(false).from_reader(
-            file_open_read(path).map_err(|err| {
-                format_err!(
-                    "Opening confusion file '{}' failed: {}",
-                    path.display(),
-                    err
+            file_open_read(path).with_context(|_| {
+                format!(
+                    "Opening confusion file '{}' failed",
+                    path.display()
                 )
             })?,
         );
@@ -486,7 +485,7 @@ fn load_all_dnstap_files(
                 .map(|dnstap_file| {
                     debug!("Processing dnstap file '{}'", dnstap_file.display());
                     Ok(process_dnstap(&*dnstap_file).with_context(|_| {
-                        format_err!("Processing dnstap file '{}'", dnstap_file.display())
+                        format!("Processing dnstap file '{}'", dnstap_file.display())
                     })?)
                 })
                 .filter_map(|seq| seq.transpose())

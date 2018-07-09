@@ -92,11 +92,10 @@ fn run() -> Result<(), Error> {
     env_logger::init();
     let cli_args = CliArgs::from_args();
 
-    let rdr = file_open_read(&cli_args.webpage_log).map_err(|err| {
-        format_err!(
-            "Opening input file '{}' failed: {}",
+    let rdr = file_open_read(&cli_args.webpage_log).with_context(|_| {
+        format!(
+            "Opening input file '{}' failed",
             cli_args.webpage_log.display(),
-            err
         )
     })?;
 
@@ -113,23 +112,23 @@ fn run() -> Result<(), Error> {
     // Try processing of .dnstap and .dnstap.xz files
     let dnstap_file = cli_args.webpage_log.with_extension("dnstap");
     process_dnstap(&*dnstap_file)
-        .with_context(|_| format_err!("Processing dnstap file '{}'", dnstap_file.display()))?;
+        .with_context(|_| format!("Processing dnstap file '{}'", dnstap_file.display()))?;
     // replace json.xz with dnstap.xz
     let dnstap_file = cli_args
         .webpage_log
         .with_extension("")
         .with_extension("dnstap.xz");
     process_dnstap(&*dnstap_file)
-        .with_context(|_| format_err!("Processing dnstap file '{}'", dnstap_file.display()))?;
+        .with_context(|_| format!("Processing dnstap file '{}'", dnstap_file.display()))?;
 
     let messages: Vec<ChromeDebuggerMessage> = serde_json::from_reader(rdr).with_context(|_| {
-        format_err!(
+        format!(
             "Error while deserializing '{}'",
             cli_args.webpage_log.display()
         )
     })?;
     process_messages(&messages).with_context(|_| {
-        format_err!(
+        format!(
             "Processing chrome debugger log '{}'",
             cli_args.webpage_log.display()
         )
@@ -322,13 +321,12 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
 
         if !matched.is_empty() {
             let fname = get_output_dir().join("dns.pickle");
-            let mut wtr = file_open_write(
-                &fname,
-                WriteOptions::default()
-                    .set_open_options(OpenOptions::new().create(true).truncate(true)),
-            ).map_err(|err| {
-                format_err!("Opening output file '{}' failed: {}", &fname.display(), err)
-            })?;
+            let mut wtr =
+                file_open_write(
+                    &fname,
+                    WriteOptions::default()
+                        .set_open_options(OpenOptions::new().create(true).truncate(true)),
+                ).with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
             serde_pickle::to_writer(&mut wtr, &matched, true)?;
         }
     }
@@ -394,8 +392,8 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     let mut wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    ).map_err(|err| {
-        format_err!("Opening input file '{}' failed: {}", &fname.display(), err)
+    ).with_context(|_| {
+        format!("Opening input file '{}' failed", &fname.display(),)
     })?;
     serde_pickle::to_writer(&mut wtr, &timings, true)?;
     // we need to close the writer to flush everything
@@ -445,9 +443,7 @@ fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     let wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    ).map_err(|err| {
-        format_err!("Opening output file '{}' failed: {}", &fname.display(), err)
-    })?;
+    ).with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
     graphml.to_writer(wtr)?;
 
     Ok(())
@@ -458,8 +454,8 @@ fn export_as_pickle(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     let mut wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    ).map_err(|err| {
-        format_err!("Opening output file '{}' failed: {}", &fname.display(), err)
+    ).with_context(|_| {
+        format!("Opening output file '{}' failed", &fname.display(),)
     })?;
     serde_pickle::to_writer(&mut wtr, graph, true)?;
 

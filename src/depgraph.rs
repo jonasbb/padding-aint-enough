@@ -95,7 +95,7 @@ impl DepGraph {
                                 if frame.url == "" {
                                     let deps =
                                         find_script_deps(&*frame.script_id).with_context(|_| {
-                                            format_err!(
+                                            format!(
                                                 "Cannot get script dependencies for script ID {}",
                                                 frame.script_id,
                                             )
@@ -121,7 +121,7 @@ impl DepGraph {
                                 let mut deps =
                                     traverse_stack(stack_trace, find_script_deps, HashSet::new())
                                         .with_context(|_| {
-                                            format_err!(
+                                            format!(
                                             "Handling script (failed to) parse event, Script ID {}",
                                             script_id
                                         )
@@ -269,7 +269,7 @@ impl DepGraph {
                     // Convert them into NodeIndex (via node_cache)
                     // Add them all as dependencies
                     find_script_deps(script_id)
-                        .with_context(|_| format_err!("Failed to lookup script ID {}", script_id))?
+                        .with_context(|_| format!("Failed to lookup script ID {}", script_id))?
                         .into_iter()
                         .map(|url| url2node(&*url))
                         .collect::<Result<Vec<_>, Error>>()
@@ -338,7 +338,7 @@ impl DepGraph {
                         // handle redirects
                         if let Some(RedirectResponse { url, .. }) = redirect_response {
                             add_dependencies_to_node(node, url, None).with_context(|_| {
-                                format_err!("Handling redirect, ID {}", request_id)
+                                format!("Handling redirect, ID {}", request_id)
                             })?;
                         }
 
@@ -348,7 +348,7 @@ impl DepGraph {
                                 if request.url == *document_url {
                                     add_dependencies_to_node(node, "other", None).with_context(
                                         |_| {
-                                            format_err!(
+                                            format!(
                                                 "Handling other (document root), ID {}",
                                                 request_id
                                             )
@@ -357,7 +357,7 @@ impl DepGraph {
                                 } else if request.headers.referer.is_some() {
                                     add_dependencies_to_node(node, document_url, None)
                                         .with_context(|_| {
-                                            format_err!(
+                                            format!(
                                                 "Handling other (has referer), ID {}",
                                                 request_id
                                             )
@@ -368,13 +368,13 @@ impl DepGraph {
                             }
                             Initiator::Parser { ref url } => {
                                 add_dependencies_to_node(node, url, None).with_context(|_| {
-                                    format_err!("Handling parser, ID {}", request_id)
+                                    format!("Handling parser, ID {}", request_id)
                                 })?;
                             }
                             Initiator::Script { ref stack } => {
                                 traverse_stack(node, stack, add_dependencies_to_node)
                                     .with_context(|_| {
-                                        format_err!("Handling script, ID {}", request_id)
+                                        format!("Handling script, ID {}", request_id)
                                     })?;
                             }
                         }
@@ -397,13 +397,13 @@ impl DepGraph {
                             }
                             Initiator::Parser { ref url } => {
                                 add_dependencies_to_node(node, url, None).with_context(|_| {
-                                    format_err!("Handling parser, ID {}", request_id)
+                                    format!("Handling parser, ID {}", request_id)
                                 })?;
                             }
                             Initiator::Script { ref stack } => {
                                 traverse_stack(node, stack, add_dependencies_to_node)
                                     .with_context(|_| {
-                                        format_err!("Handling script, ID {}", request_id)
+                                        format!("Handling script, ID {}", request_id)
                                     })?;
                             }
                         }
@@ -703,7 +703,7 @@ mod test {
     {
         let path = path.as_ref();
         let rdr = file_open_read(path)
-            .map_err(|err| format_err!("Opening input file '{}' failed: {}", path.display(), err))?;
+            .with_context(|_| format!("Opening input file '{}' failed", path.display()))?;
         Ok(serde_json::from_reader(rdr).context("Failed to parse JSON")?)
     }
 
