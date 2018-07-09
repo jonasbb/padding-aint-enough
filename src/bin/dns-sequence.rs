@@ -579,6 +579,9 @@ where
         [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(2)] => {
             Some("R003 Two domains for website. (A + DNSKEY) * 2")
         }
+        [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
+            Some("R005 Two domains for website, second is CNAME.")
+        }
         _ => None,
     };
 
