@@ -1,8 +1,13 @@
 extern crate protoc_rust;
 
+use std::{env, fs::DirBuilder, path::Path};
+
 fn main() {
+    let out_dir = Path::new(&env::var("OUT_DIR").unwrap()).join("protos");
+    DirBuilder::new().recursive(true).create(&out_dir).unwrap();
+
     protoc_rust::run(protoc_rust::Args {
-        out_dir: "src/protos",
+        out_dir: &out_dir.to_string_lossy(),
         input: &["protos/dnstap.proto"],
         includes: &["protos"],
         customize: protoc_rust::Customize {
