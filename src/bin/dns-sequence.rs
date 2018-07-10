@@ -91,12 +91,17 @@ fn run() -> Result<(), Error> {
         .context("Cannot open writer for misclassifications.")?;
     let mut mis_writer = WriterBuilder::new().has_headers(true).from_writer(writer);
 
+    info!("Start loading confusion domains...");
     prepare_confusion_domains(&cli_args.confusion_domains)?;
+    info!("Done loading confusion domains.");
+    info!("Start loading dnstap files...");
     let data = load_all_dnstap_files(&cli_args.base_dir, at_most_sequences_per_label)?;
+    info!("Done loading dnstap files.");
 
     let mut res = vec![(0, 0, 0); most_k];
     for fold in 0..at_most_sequences_per_label {
         info!("Testing for fold {}", fold);
+        info!("Start splitting trainings and test data...");
         let (training_data, test) = split_training_test_data(&*data, fold as u8);
         let len = test.len();
         let (test_labels, test_data) = test.into_iter().fold(
@@ -107,6 +112,7 @@ fn run() -> Result<(), Error> {
                 (labels, data)
             },
         );
+        info!("Done splitting trainings and test data.");
 
         for k in (1..=most_k).step_by(2) {
             let classification = knn(&*training_data, &*test_data, k as u8);
@@ -146,6 +152,7 @@ fn run() -> Result<(), Error> {
         }
     }
 
+    // print final results
     for (k, (correct, undecided, total)) in res.iter().enumerate() {
         println!(
             r"Results for k={k}:
