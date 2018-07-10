@@ -82,7 +82,7 @@ fn run() -> Result<(), Error> {
     // Controls how many folds there are
     let at_most_sequences_per_label = 5;
     // Controls the maximum k for knn
-    let most_k = 5;
+    let most_k = 1;
 
     let writer: Box<Write> = cli_args
         .misclassifications
