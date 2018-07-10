@@ -2,12 +2,17 @@
 
 1. [How to Do Stuff](#how-to-do-stuff)
 2. [Reasons for Misclassifications](#reasons-for-misclassifications)
-    1. [R001](#r001)
+    1. [General Troubles](#general-troubles)
+    2. [R001](#r001)
         1. [Examples](#examples)
-    2. [R002](#r002)
-    3. [R003](#r003)
-    4. [R004](#r004)
-    5. [R005](#r005)
+    3. [R002](#r002)
+    4. [R003](#r003)
+    5. [R004](#r004)
+    6. [R005](#r005)
+        1. [Example](#example)
+    7. [R006](#r006)
+        1. [Example](#example)
+    8. [R007](#r007)
         1. [Example](#example)
 
 ## How to Do Stuff
@@ -66,6 +71,12 @@ xsv select 3,4 "$INPUT" | sort | uniq -c | sort -n
 
 ## Reasons for Misclassifications
 
+### General Troubles
+
+The normal A + DNSKEY pair does not always occur.
+If the effective 2LD is in fact a 3LD, e.g., `olx.co.ao`, and the 2LD already does not provide DNSSEC, then the resolver never tries to perform DNSSEC validation for the 3LD.
+Thus, the DNSKEY is missing.
+
 ### R001
 [R001]: #r001
 
@@ -108,3 +119,24 @@ Thus, the pattern observes is a A + DNSKEY pair, followed by two A's and then tw
 `telegram.org` includes `www.google-analytics.com` as single third-party domain.
 `www.google-analytics.com` is a CNAME to `www.google-analytics.l.google.com`, which is another domain.
 After an A request for both third-party domains, the server issues DNSKEY requests for both third-party domains.
+
+### R006
+[R006]: #r006
+
+A website redirects to the `www` subdomain.
+The `www` subdomain is a CNAME to Akamai.
+Akamai first uses teh `edgekey.net` domain and then CNAMEs to `akamaiedge.net`, thus causing three A lookups (`www`, `edgekey`, `akamaiedge`) followed by two DNSKEY lookups (`edgekey`, `akamaiedge`).
+This is preceded by the typical A + DNSKEY for the main domain, which also explains why there is no DNSKEY for `www`.
+
+#### Example
+
+![Example for R006 case.](./figs/r006-www+akamai.svg)
+
+### R007
+[R007]: #r007
+
+An unreachable name server (SERVFAIL) causes many requests for the A record but never a DNSKEY.
+
+#### Example
+
+`iyqnxpkzfq.com` and `xcvlescqkwan.com`

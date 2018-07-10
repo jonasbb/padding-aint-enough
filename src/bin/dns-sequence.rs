@@ -582,7 +582,37 @@ where
         [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
             Some("R005 Two domains for website, second is CNAME.")
         }
-        _ => None,
+        [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
+            Some("R006 www redirect + Akamai")
+        }
+        [SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
+            Some("R006 www redirect + Akamai on 3rd-LVL domain without DNSSEC")
+        }
+        _ => {
+            let mut is_unreachable_domain = true;
+            {
+                // Unreachable domains have many requests of Size 1 but never a DNSKEY
+                let mut iter = sequence.as_elements().iter();
+                // Sequence looks like for Size and Gap
+                // S G S G S G S G S
+                match &*iter.take(2).collect::<Vec<_>>() {
+                    // This can never happen with the above pattern
+                    [] => is_unreachable_domain = false,
+                    // Sequence may not end on a Gap
+                    [SequenceElement::Gap(_)] => is_unreachable_domain = false,
+                    // this is the normal, good case
+                    [SequenceElement::Size(1), SequenceElement::Gap(_)] => {}
+                    // all other patterns, e.g., different Sizes do not match
+                    _ => is_unreachable_domain = false,
+                }
+            }
+
+            if is_unreachable_domain {
+                Some("R007 Unreachable Name Server")
+            } else {
+                None
+            }
+        }
     };
 
     let out = Out {
