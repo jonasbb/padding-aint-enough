@@ -22,6 +22,10 @@ extern crate serde_pickle;
 use chrono::Duration;
 use csv::{ReaderBuilder, Writer as CsvWriter, WriterBuilder};
 use encrypted_dns::{
+    common_sequence_classifications::{
+        R001, R002, R003, R004_SIZE1, R004_SIZE2, R004_SIZE3, R004_SIZE4, R004_SIZE5, R004_SIZE6,
+        R004_UNKNOWN, R005, R006, R006_3RD_LVL_DOM, R007,
+    },
     dnstap::Message_Type,
     protos::DnstapContent,
     sequences::{knn, split_training_test_data, Sequence, SequenceElement},
@@ -585,31 +589,29 @@ fn classify_sequence(sequence: &Sequence) -> Option<&'static str> {
         }
         [SequenceElement::Size(n)] => Some(match n {
             0 => unreachable!("Packets of size 0 may never occur."),
-            1 => "R004 Single packet of size 1.",
-            2 => "R004 Single packet of size 2.",
-            3 => "R004 Single packet of size 3.",
-            4 => "R004 Single packet of size 4.",
-            5 => "R004 Single packet of size 5.",
-            6 => "R004 Single packet of size 6.",
-            _ => "R004 A single packet of unknown size.",
+            1 => R004_SIZE1,
+            2 => R004_SIZE2,
+            3 => R004_SIZE3,
+            4 => R004_SIZE4,
+            5 => R004_SIZE5,
+            6 => R004_SIZE6,
+            _ => R004_UNKNOWN,
         }),
-        [SequenceElement::Size(1), SequenceElement::Size(2)] => {
-            Some("R001 Single Domain. A + DNSKEY")
-        }
+        [SequenceElement::Size(1), SequenceElement::Size(2)] => Some(R001),
         [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1)] => {
-            Some("R002 Single Domain with www redirect. A + DNSKEY + A (for www)")
+            Some(R002)
         }
         [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(2)] => {
-            Some("R003 Two domains for website. (A + DNSKEY) * 2")
+            Some(R003)
         }
         [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
-            Some("R005 Two domains for website, second is CNAME.")
+            Some(R005)
         }
         [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
-            Some("R006 www redirect + Akamai")
+            Some(R006)
         }
         [SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
-            Some("R006 www redirect + Akamai on 3rd-LVL domain without DNSSEC")
+            Some(R006_3RD_LVL_DOM)
         }
         _ => {
             let mut is_unreachable_domain = true;
@@ -637,7 +639,7 @@ fn classify_sequence(sequence: &Sequence) -> Option<&'static str> {
             }
 
             if is_unreachable_domain {
-                Some("R007 Unreachable Name Server")
+                Some(R007)
             } else {
                 None
             }

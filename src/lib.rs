@@ -35,7 +35,7 @@ pub fn process_dnstap<P: AsRef<Path>>(
     let path_str = path.to_string_lossy().to_string();
 
     let rdr = file_open_read(path)
-        .with_context(|_| format!("Opening input file '{}' failed", path.display(), ))?;
+        .with_context(|_| format!("Opening input file '{}' failed", path.display()))?;
     let fstrm = DecoderReader::with_content_type(rdr, "protobuf:dnstap.Dnstap".into());
 
     Ok(fstrm
@@ -155,4 +155,22 @@ where
         "Output vector only contains more than n elements."
     );
     res
+}
+
+pub mod common_sequence_classifications {
+    pub const R001: &str = "R001 Single Domain. A + DNSKEY";
+    pub const R002: &str = "R002 Single Domain with www redirect. A + DNSKEY + A (for www)";
+    pub const R003: &str = "R003 Two domains for website. (A + DNSKEY) * 2";
+    pub const R004_SIZE1: &str = "R004 Single packet of size 1.";
+    pub const R004_SIZE2: &str = "R004 Single packet of size 2.";
+    pub const R004_SIZE3: &str = "R004 Single packet of size 3.";
+    pub const R004_SIZE4: &str = "R004 Single packet of size 4.";
+    pub const R004_SIZE5: &str = "R004 Single packet of size 5.";
+    pub const R004_SIZE6: &str = "R004 Single packet of size 6.";
+    pub const R004_UNKNOWN: &str = "R004 A single packet of unknown size.";
+    pub const R005: &str = "R005 Two domains for website second is CNAME.";
+    pub const R006: &str = "R006 www redirect + Akamai";
+    pub const R006_3RD_LVL_DOM: &str =
+        "R006 www redirect + Akamai on 3rd-LVL domain without DNSSEC";
+    pub const R007: &str = "R007 Unreachable Name Server";
 }
