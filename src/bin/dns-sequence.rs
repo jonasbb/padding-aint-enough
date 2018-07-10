@@ -592,18 +592,24 @@ where
             let mut is_unreachable_domain = true;
             {
                 // Unreachable domains have many requests of Size 1 but never a DNSKEY
-                let mut iter = sequence.as_elements().iter();
+                let mut iter = sequence.as_elements().iter().fuse();
                 // Sequence looks like for Size and Gap
                 // S G S G S G S G S
-                match &*iter.take(2).collect::<Vec<_>>() {
-                    // This can never happen with the above pattern
-                    [] => is_unreachable_domain = false,
-                    // Sequence may not end on a Gap
-                    [SequenceElement::Gap(_)] => is_unreachable_domain = false,
-                    // this is the normal, good case
-                    [SequenceElement::Size(1), SequenceElement::Gap(_)] => {}
-                    // all other patterns, e.g., different Sizes do not match
-                    _ => is_unreachable_domain = false,
+                // we only need to loop until we find a counter proof
+                while is_unreachable_domain {
+                    match (iter.next(), iter.next()) {
+                        // This is the end of the sequence
+                        (Some(SequenceElement::Size(1)), None) => break,
+                        // this is the normal, good case
+                        (Some(SequenceElement::Size(1)), Some(SequenceElement::Gap(_))) => {}
+
+                        // This can never happen with the above pattern
+                        (None, None) => is_unreachable_domain = false,
+                        // Sequence may not end on a Gap
+                        (Some(SequenceElement::Gap(_)), None) => is_unreachable_domain = false,
+                        // all other patterns, e.g., different Sizes do not match
+                        _ => is_unreachable_domain = false,
+                    }
                 }
             }
 
