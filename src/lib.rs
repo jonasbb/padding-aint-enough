@@ -96,9 +96,13 @@ where
     I: IntoIterator<Item = T>,
     T: Ord,
 {
-    let mut heap = MinMaxHeap::with_capacity(n);
     let mut iter = iter.into_iter();
+    if n == 1 {
+        // simply take the largest value and return it
+        return iter.min().into_iter().collect();
+    }
 
+    let mut heap = MinMaxHeap::with_capacity(n);
     // fill the heap with n elements
     for _ in 0..n {
         match iter.next() {
@@ -125,9 +129,13 @@ where
     I: IntoIterator<Item = T>,
     T: Ord,
 {
-    let mut heap = MinMaxHeap::with_capacity(n);
     let mut iter = iter.into_iter();
+    if n == 1 {
+        // simply take the largest value and return it
+        return iter.max().into_iter().collect();
+    }
 
+    let mut heap = MinMaxHeap::with_capacity(n);
     // fill the heap with n elements
     for _ in 0..n {
         match iter.next() {
