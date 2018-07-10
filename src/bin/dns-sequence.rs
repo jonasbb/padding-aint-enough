@@ -545,6 +545,22 @@ where
         reason: Option<&'a str>,
     };
 
+    let reason = classify_sequence(sequence);
+
+    let out = Out {
+        id: sequence.id(),
+        k,
+        label,
+        class,
+        reason,
+    };
+
+    csv_writer
+        .serialize(&out)
+        .map_err(|err| format_err!("{}", err))
+}
+
+fn classify_sequence(sequence: &Sequence) -> Option<&'static str> {
     // Test if sequence only contains two responses of size 1 and then 2
     let packets: Vec<_> = sequence
         .as_elements()
@@ -559,7 +575,7 @@ where
         .cloned()
         .collect();
 
-    let reason = match &*packets {
+    match &*packets {
         [] => {
             error!(
                 "Empty sequence for ID {}. Should never occur",
@@ -626,17 +642,6 @@ where
                 None
             }
         }
-    };
-
-    let out = Out {
-        id: sequence.id(),
-        k,
-        label,
-        class,
-        reason,
-    };
-
-    csv_writer
-        .serialize(&out)
-        .map_err(|err| format_err!("{}", err))
+    }
 }
+
