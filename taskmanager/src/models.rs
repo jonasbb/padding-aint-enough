@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{Local, NaiveDateTime};
 use schema::tasks;
 
 #[derive(Identifiable, Insertable, Queryable, Debug, PartialEq, Eq)]
@@ -13,6 +13,24 @@ pub struct Task {
     pub restart_count: i32,
     pub last_modified: NaiveDateTime,
     pub associated_data: Option<String>,
+}
+
+impl Task {
+    pub fn advance(&mut self) {
+        self.state.advance();
+        self.last_modified = Local::now().naive_local();
+    }
+
+    pub fn restart(&mut self) {
+        self.state.restart();
+        self.last_modified = Local::now().naive_local();
+        self.restart_count += 1;
+    }
+
+    pub fn abort(&mut self) {
+        self.state.abort();
+        self.last_modified = Local::now().naive_local();
+    }
 }
 
 #[derive(Insertable, Debug, PartialEq, Eq)]
@@ -36,4 +54,29 @@ pub enum TaskState {
     CheckQualitySingle,
     CheckQualityDomain,
     Done,
+    Aborted,
+}
+
+impl TaskState {
+    fn advance(&mut self) {
+        use self::TaskState::*;
+
+        *self = match *self {
+            Created => SubmittedToVm,
+            SubmittedToVm => ResultsCollectable,
+            ResultsCollectable => CheckQualitySingle,
+            CheckQualitySingle => CheckQualityDomain,
+            CheckQualityDomain => Done,
+            Done => Done,
+            Aborted => Aborted,
+        }
+    }
+
+    fn restart(&mut self) {
+        *self = TaskState::Created;
+    }
+
+    fn abort(&mut self) {
+        *self = TaskState::Aborted;
+    }
 }
