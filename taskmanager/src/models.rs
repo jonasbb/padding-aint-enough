@@ -1,7 +1,7 @@
 use chrono::{Local, NaiveDateTime};
 use schema::tasks;
 
-#[derive(Identifiable, Insertable, Queryable, Debug, PartialEq, Eq)]
+#[derive(Identifiable, Insertable, Queryable, AsChangeset, Debug, PartialEq, Eq)]
 #[table_name = "tasks"]
 pub struct Task {
     pub id: i32,
