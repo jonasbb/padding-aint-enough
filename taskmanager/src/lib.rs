@@ -5,7 +5,7 @@ extern crate chrono;
 extern crate diesel;
 #[macro_use]
 extern crate diesel_derive_enum;
-// #[macro_use]
+#[macro_use]
 extern crate failure;
 extern crate misc_utils;
 extern crate serde;
@@ -18,20 +18,30 @@ use diesel::{prelude::*, sqlite::SqliteConnection};
 use failure::{Error, ResultExt};
 use misc_utils::fs::file_open_read;
 use std::{
+    fmt::{self, Debug},
     path::{Path, PathBuf},
-    sync::Mutex,
+    sync::{Arc, Mutex},
 };
 
 pub mod models;
 pub mod schema;
 
+#[derive(Clone)]
 pub struct TaskManager {
-    db_connection: Mutex<SqliteConnection>,
+    db_connection: Arc<Mutex<SqliteConnection>>,
+}
+
+impl Debug for TaskManager {
+    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+        f.debug_struct("TaskManager")
+            .field("db_connection", &"<SqliteConnection>")
+            .finish()
+    }
 }
 
 impl TaskManager {
     pub fn new(database: &str) -> Result<Self, Error> {
-        let db_connection = Mutex::new(SqliteConnection::establish(database)?);
+        let db_connection = Arc::new(Mutex::new(SqliteConnection::establish(database)?));
         Ok(Self { db_connection })
     }
 
@@ -93,7 +103,6 @@ impl TaskManager {
             // we only fetch one task, so this next is sufficient to retrieve all data
             let mut task = res.into_iter().next();
             if let Some(ref mut task) = &mut task {
-                eprintln!("{:?}", task);
                 task.advance();
                 task.associated_data =
                     Some(toml::to_string(&executor).context("Cannot serialize executor")?);
@@ -105,6 +114,67 @@ impl TaskManager {
             Ok(task)
         })
     }
+
+    pub fn finished_task_for_vm(
+        &self,
+        task: &mut models::Task,
+        path_on_vm: &Path,
+    ) -> Result<(), Error> {
+        if task.state != models::TaskState::SubmittedToVm {
+            bail!("To complete a VM task it must be in the SubmittedToVm state.")
+        }
+
+        // Update task state
+        task.advance();
+        let executor: Executor =
+            toml::from_str(&*task.associated_data.as_ref().ok_or_else(|| {
+                format_err!("Task in SubmittedToVm state must have associated data")
+            })?).context("Associated data must be Executor")?;
+        let new_data = ResultsCollectableData {
+            executor,
+            path_on_vm: path_on_vm.to_path_buf(),
+        };
+        task.associated_data = Some(
+            toml::to_string(&new_data).context("Failed to serialize a ResultsCollectableData")?,
+        );
+
+        let conn = self.db_connection.lock().unwrap();
+        conn.transaction::<(), _, _>(|| {
+            diesel::update(&*task)
+                .set(&*task)
+                .execute(&*conn)
+                .context("Cannot update task")?;
+            Ok(())
+        })
+    }
+
+    pub fn results_collectable(
+        &self,
+    ) -> Result<Vec<(models::Task, ResultsCollectableData)>, Error> {
+        use schema::tasks::dsl::{priority, state, tasks};
+
+        let conn = self.db_connection.lock().unwrap();
+        Ok(tasks
+            .filter(state.eq(models::TaskState::ResultsCollectable))
+            .order_by(priority.asc())
+            .load::<models::Task>(&*conn)
+            .context("Cannot retrieve tasks from database")?
+            .into_iter()
+            .map(|task| {
+                let data: ResultsCollectableData =
+                    toml::from_str(&*task.associated_data.as_ref().ok_or_else(|| {
+                        format_err!("Task in ResultsCollectable state must have associated data")
+                    })?).context("Associated data must be ResultsCollectableData")?;
+                Ok((task, data))
+            })
+            .collect::<Result<Vec<_>, Error>>()?)
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ResultsCollectableData {
+    pub path_on_vm: PathBuf,
+    pub executor: Executor,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -115,10 +185,10 @@ pub struct Config {
     pub executors: Vec<Executor>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Executor {
-    name: String,
-    sshconnect: Vec<String>,
+    pub name: String,
+    pub sshconnect: String,
 }
 
 impl Config {

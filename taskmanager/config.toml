@@ -1,0 +1,15 @@
+working_directory = "./tmp/"
+database = "./tasks.db"
+per_domain_datasets = 10
+
+[[executors]]
+name = "Ex1"
+sshconnect = ""
+
+[[executors]]
+name = "Ex2"
+sshconnect = ""
+
+[[executors]]
+name = "Ex3"
+sshconnect = ""
