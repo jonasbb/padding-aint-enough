@@ -1,8 +1,6 @@
-diff --git a/taskmanager/src/schema.rs b/taskmanager/src/schema.rs
-index b361418..a0f8e1d 100644
---- a/taskmanager/src/schema.rs
-+++ b/taskmanager/src/schema.rs
-@@ -38,13 +38,13 @@ table! {
+--- src/schema.rs	2018-07-17 16:59:07.448063456 +0200
++++ src/schema.rs.orig	2018-07-17 16:59:07.447063430 +0200
+@@ -73,13 +73,13 @@
          domain_counter -> Integer,
          /// The `state` column of the `tasks` table.
          ///
