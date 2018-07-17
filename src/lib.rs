@@ -22,14 +22,19 @@ pub mod sequences;
 
 use chrono::{DateTime, Duration, Utc};
 use dnstap::Message_Type;
-use failure::{Error, ResultExt};
+use failure::{Error, Fail, ResultExt};
 use framestream::DecoderReader;
 use min_max_heap::MinMaxHeap;
 use misc_utils::fs::file_open_read;
 pub use protos::dnstap;
 use protos::DnstapContent;
 use sequences::{Sequence, SequenceElement};
-use std::{collections::BTreeMap, convert::TryFrom, path::Path};
+use std::{
+    collections::BTreeMap,
+    convert::TryFrom,
+    fmt::{self, Display},
+    path::Path,
+};
 
 pub fn process_dnstap<P: AsRef<Path>>(
     path: P,
@@ -395,4 +400,34 @@ fn block_padding(size: u32, block_size: u32) -> u32 {
 
 enum Padding {
     Q128R468,
+}
+
+/// A short-lived wrapper for some `Fail` type that displays it and all its
+/// causes delimited by the string ": ".
+pub struct DisplayCauses<'a>(&'a Fail);
+
+impl<'a> Display for DisplayCauses<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        Display::fmt(&self.0, f)?;
+        let mut x: &Fail = self.0;
+        while let Some(cause) = x.cause() {
+            f.write_str(": ")?;
+            Display::fmt(&cause, f)?;
+            x = cause;
+        }
+        Ok(())
+    }
+}
+
+pub trait FailExt {
+    fn display_causes<'a>(&'a self) -> DisplayCauses<'a>;
+}
+
+impl<T> FailExt for T
+where
+    T: Fail,
+{
+    fn display_causes(&self) -> DisplayCauses {
+        DisplayCauses(self)
+    }
 }
