@@ -1,7 +1,7 @@
 #![feature(transpose_result)]
 
-extern crate chrono;
 extern crate csv;
+extern crate encrypted_dns;
 extern crate env_logger;
 #[macro_use]
 extern crate failure;
@@ -9,15 +9,13 @@ extern crate failure;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
-#[macro_use]
-extern crate structopt;
-extern crate encrypted_dns;
 extern crate misc_utils;
 extern crate rayon;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde_pickle;
+#[macro_use]
+extern crate structopt;
 
 use csv::{ReaderBuilder, Writer as CsvWriter, WriterBuilder};
 use encrypted_dns::{
