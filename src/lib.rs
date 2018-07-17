@@ -206,6 +206,9 @@ pub fn dnstap_to_sequence(dnstap_file: &Path) -> Result<Sequence, Error> {
         }
     });
 
+    // Place some sanity checks on the dnstap files
+    sanity_check_dnstap(&events)?;
+
     let mut unanswered_client_queries: BTreeMap<MatchKey, UnmatchedClientQuery> = BTreeMap::new();
     let mut matched = Vec::new();
 
@@ -332,6 +335,8 @@ pub fn dnstap_to_sequence(dnstap_file: &Path) -> Result<Sequence, Error> {
     // end time is the time when the response arrives, which is the most interesting field for the attacker
     matched.sort_by_key(|x| x.end);
 
+    sanity_check_matched_queries(&matched)?;
+
     let seq = convert_to_sequence(&matched, dnstap_file.to_string_lossy().to_string());
     Ok(seq.ok_or_else(|| format_err!("Sequence is empty"))?)
 }
@@ -430,4 +435,98 @@ where
     fn display_causes(&self) -> DisplayCauses {
         DisplayCauses(self)
     }
+}
+
+pub trait ErrorExt {
+    fn display_causes<'a>(&'a self) -> DisplayCauses<'a>;
+}
+
+impl ErrorExt for Error {
+    fn display_causes(&self) -> DisplayCauses {
+        DisplayCauses(self.cause())
+    }
+}
+
+fn sanity_check_dnstap(events: &[protos::Dnstap]) -> Result<(), Error> {
+    let mut client_query_start_count = 0;
+    let mut client_response_start_count = 0;
+    let mut client_query_end_count = 0;
+    let mut client_response_end_count = 0;
+
+    for ev in events {
+        match &ev.content {
+            DnstapContent::Message {
+                message_type: Message_Type::CLIENT_QUERY,
+                ref query_message,
+                ..
+            } => {
+                let (dnsmsg, _size) = query_message.as_ref().expect("Unbound always sets this");
+                let qname = dnsmsg.queries()[0].name().to_utf8();
+
+                match &*qname {
+                    "start.example." => client_query_start_count += 1,
+                    "end.example." => client_query_end_count += 1,
+                    _ => {}
+                }
+            }
+
+            DnstapContent::Message {
+                message_type: Message_Type::CLIENT_RESPONSE,
+                ref response_message,
+                ..
+            } => {
+                let (dnsmsg, _size) = response_message.as_ref().expect("Unbound always sets this");
+                let qname = dnsmsg.queries()[0].name().to_utf8();
+
+                match &*qname {
+                    "start.example." => client_response_start_count += 1,
+                    "end.example." => client_response_end_count += 1,
+                    _ => {}
+                }
+            }
+
+            _ => {}
+        }
+    }
+
+    if client_query_start_count == 0 {
+        bail!("Expected et least 1 CLIENT_QUERY for 'start.example.' but found none");
+    } else if client_query_end_count != 1 {
+        bail!(
+            "Unexpected number of CLIENT_QUERYs for 'end.example.': {}, expected 1",
+            client_query_end_count
+        );
+    } else if client_response_start_count != 1 {
+        bail!(
+            "Unexpected number of CLIENT_RESPONSEs for 'start.example.': {}, expected 1",
+            client_response_start_count
+        );
+    } else if client_response_end_count != 1 {
+        bail!(
+            "Unexpected number of CLIENT_RESPONSEs for 'end.example.': {}, expected 1",
+            client_response_end_count
+        );
+    }
+
+    Ok(())
+}
+
+fn sanity_check_matched_queries(matched: &[Query]) -> Result<(), Error> {
+    if matched.is_empty() {
+        bail!("No DNS query/response pairs could be matched.");
+    }
+
+    let mut found_resolver_query = false;
+
+    for query in matched {
+        if query.source == QuerySource::Forwarder && query.qtype == "A" {
+            found_resolver_query = true;
+            break;
+        }
+    }
+    if !found_resolver_query {
+        bail!("There must be at least one resolver query for type A.")
+    }
+
+    Ok(())
 }
