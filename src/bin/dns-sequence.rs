@@ -25,7 +25,7 @@ use encrypted_dns::{
     },
     dnstap_to_sequence,
     sequences::{knn, split_training_test_data, Sequence, SequenceElement},
-    take_largest,
+    take_largest, FailExt,
 };
 use failure::{Error, ResultExt};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
@@ -274,13 +274,16 @@ fn load_all_dnstap_files(
 
             let mut sequences: Vec<Sequence> = filenames
                 .into_iter()
-                .map(|dnstap_file| {
+                .filter_map(|dnstap_file| {
                     debug!("Processing dnstap file '{}'", dnstap_file.display());
-                    Ok(dnstap_to_sequence(&*dnstap_file).with_context(|_| {
+                    match dnstap_to_sequence(&*dnstap_file).with_context(|_| {
                         format!("Processing dnstap file '{}'", dnstap_file.display())
-                    })?)
+                    }) {
+                        Ok(seq) => Some(seq),
+                        Err(err) => {error!("{}", err.display_causes()); None},
+                    }
                 })
-                .collect::<Result<_, Error>>()?;
+                .collect();
 
             // TODO this is sooo ugly
             // Only retain 5 of the possibilities which have the highest number of diversity
