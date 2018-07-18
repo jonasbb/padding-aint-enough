@@ -247,17 +247,50 @@ impl TaskManager {
         self.update_single_task(&*conn, task)
     }
 
-    pub fn results_need_sanity_check_domain(&self) -> Result<Vec<models::Task>, Error> {
-        use schema::tasks::dsl::{aborted, priority, state, tasks};
+    pub fn results_need_sanity_check_domain(
+        &self,
+        iteration_count: u8,
+    ) -> Result<Vec<models::Task>, Error> {
+        use diesel::{dsl::sql_query, sql_types::Integer};
 
         let conn = self.db_connection.lock().unwrap();
-        Ok(tasks
-            .filter(state.eq(models::TaskState::CheckQualityDomain))
-            .filter(aborted.eq(false))
-            .order_by(priority.asc())
-            .select(TASKS_COLUMNS)
-            .load::<models::Task>(&*conn)
-            .context("Cannot retrieve tasks from database")?)
+        let tasks = conn.transaction::<Vec<models::Task>, Error, _>(|| {
+            Ok(sql_query(
+                r#"SELECT
+                t.id,
+                t.priority,
+                t.name,
+                t.domain,
+                t.domain_counter,
+                t.state,
+                t.restart_count,
+                t.last_modified,
+                t.associated_data
+            FROM (
+                SELECT domain
+                FROM tasks
+                WHERE state = "check_quality_domain"
+                    AND aborted = 0
+                GROUP BY domain
+                HAVING count(*) = ?
+                LIMIT 1
+            ) AS s
+            JOIN tasks t
+                ON s.domain = t.domain
+            ORDER BY
+                t.domain,
+                priority ASC
+            ;"#,
+            ).bind::<Integer, _>(iteration_count as i32)
+                .load::<models::Task>(&*conn)
+                .context("Cannot retrieve tasks from database")?)
+        })?;
+        assert_eq!(
+            tasks.len(),
+            iteration_count as usize,
+            "The number of tasks MUST match the iteration count."
+        );
+        Ok(tasks)
     }
 
     pub fn mark_results_checked_domain(&self, tasks: Vec<&mut models::Task>) -> Result<(), Error> {
