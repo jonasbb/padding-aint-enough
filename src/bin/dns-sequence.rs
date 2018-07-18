@@ -280,7 +280,7 @@ fn load_all_dnstap_files(
                         format!("Processing dnstap file '{}'", dnstap_file.display())
                     }) {
                         Ok(seq) => Some(seq),
-                        Err(err) => {error!("{}", err.display_causes()); None},
+                        Err(err) => {warn!("{}", err.display_causes()); None},
                     }
                 })
                 .collect();
