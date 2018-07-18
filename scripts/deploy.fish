@@ -4,6 +4,6 @@ set -l OUTDIR /mnt/data/vms/share/
 
 # Scripts working dir is the checkout directory of git
 
-cp --recursive scripts python $OUTDIR
+cp --recursive scripts $OUTDIR
 xsv select 2 ./alexa-top1m.????????T????.csv >$OUTDIR/alexa-top1m.txt
 

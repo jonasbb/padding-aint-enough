@@ -4,11 +4,18 @@
 
 pushd (dirname (status --current-filename))
 
-echo Flush
-./flush-unbound.fish
-echo Prefetch
-./prefetch-unbound.fish
+echo "Flush"
+# Prepare Unbound, flush+restart to empty cache
+sudo unbound-control flush_zone .
+sudo unbound-control flush_bogus
+sudo unbound-control flush_negative
+sudo unbound-control flush_infra all
+sudo systemctl restart unbound
+
+echo "Load cache file"
+cat ./cache.dump | sudo unbound-control load_cache
+
+sleep 1
 
 echo "start.example marker query"
-dig @127.0.0.1 start.example. >/dev/null 2>&1
-echo
+dig @127.0.0.1 +tries=1 start.example. >/dev/null 2>&1
