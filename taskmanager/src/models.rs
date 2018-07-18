@@ -5,6 +5,7 @@ use schema::{infos, tasks};
 
 #[allow(proc_macro_derive_resolution_fallback)]
 #[derive(Identifiable, Queryable, AsChangeset, Debug, PartialEq, Eq)]
+#[changeset_options(treat_none_as_null = "true")]
 #[table_name = "tasks"]
 /// A Queryable and Insertable Task for the database
 ///
