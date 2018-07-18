@@ -1,8 +1,15 @@
-use chrono::{Local, NaiveDateTime};
-use schema::tasks;
+#![allow(proc_macro_derive_resolution_fallback)]
 
-#[derive(Identifiable, Insertable, Queryable, AsChangeset, Debug, PartialEq, Eq)]
+use chrono::{Local, NaiveDateTime};
+use schema::{infos, tasks};
+
+#[allow(proc_macro_derive_resolution_fallback)]
+#[derive(Identifiable, Queryable, AsChangeset, Debug, PartialEq, Eq)]
 #[table_name = "tasks"]
+/// A Queryable and Insertable Task for the database
+///
+/// WARNING!!! This struct must never have the `aborted` member, otherwise we could end up
+/// overwriting the `aborted` flag in the database.
 pub struct Task {
     id: i32,
     priority: i32,
@@ -19,6 +26,11 @@ impl Task {
     #[inline]
     pub fn id(&self) -> i32 {
         self.id
+    }
+
+    #[inline]
+    pub fn name(&self) -> &str {
+        &*self.name
     }
 
     #[inline]
@@ -52,10 +64,25 @@ impl Task {
         self.restart_count += 1;
     }
 
-    pub(crate) fn abort(&mut self) {
+    pub(crate) fn abort<'a>(&mut self, reason: &'a str) -> TaskAbort<'a> {
         self.state.abort();
         self.last_modified = Local::now().naive_local();
+        TaskAbort {
+            id: self.id,
+            aborted: true,
+            last_modified: self.last_modified,
+            associated_data: reason,
+        }
     }
+}
+
+#[derive(Identifiable, AsChangeset, Debug, PartialEq, Eq)]
+#[table_name = "tasks"]
+pub struct TaskAbort<'a> {
+    id: i32,
+    aborted: bool,
+    last_modified: NaiveDateTime,
+    associated_data: &'a str,
 }
 
 #[derive(Insertable, Debug, PartialEq, Eq)]
@@ -77,7 +104,9 @@ pub enum TaskState {
     Created,
     /// [`Executor`] as associated data
     SubmittedToVm,
+    /// [`ResultsCollectableData`] as associated data
     ResultsCollectable,
+    /// No associated data
     CheckQualitySingle,
     CheckQualityDomain,
     /// No associtated data
@@ -108,4 +137,14 @@ impl TaskState {
     fn abort(&mut self) {
         *self = TaskState::Aborted;
     }
+}
+
+#[derive(Identifiable, Insertable, Associations, Debug, PartialEq, Eq)]
+#[belongs_to(Task)]
+#[table_name = "infos"]
+pub struct InfoInsert<'a> {
+    pub id: Option<i32>,
+    pub task_id: i32,
+    pub time: NaiveDateTime,
+    pub message: &'a str,
 }

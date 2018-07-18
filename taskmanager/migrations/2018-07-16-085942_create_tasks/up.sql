@@ -7,6 +7,7 @@ CREATE TABLE tasks (
     domain_counter INTEGER NOT NULL,
     state TEXT NOT NULL,
     restart_count INTEGER NOT NULL,
+    aborted INTEGER DEFAULT 0 NOT NULL,
     last_modified DATETIME NOT NULL,
     associated_data TEXT
 );
