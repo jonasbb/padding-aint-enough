@@ -1,15 +1,13 @@
-working_directory = "./tmp/"
-database = "./tasks.db"
+working_directory = "/mnt/data/Downloads/new-task-setup"
+database = "/mnt/data/Downloads/new-task-setup/tasks.db"
 per_domain_datasets = 10
 
 [[executors]]
-name = "Ex1"
-sshconnect = ""
+name = "fedora28chrome"
+sshconnect = "fedora28chrome"
+working_directory = "/home/jbushart/dnscaptures"
 
 [[executors]]
-name = "Ex2"
-sshconnect = ""
-
-[[executors]]
-name = "Ex3"
-sshconnect = ""
+name = "fedora28chrome2"
+sshconnect = "fedora28chrome2"
+working_directory = "/home/jbushart/dnscaptures"
