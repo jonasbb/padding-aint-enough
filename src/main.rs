@@ -53,7 +53,7 @@ lazy_static! {
     /// Global output directory for all generated files
     static ref OUTDIR: RwLock<PathBuf> = RwLock::new(PathBuf::new());
 
-    static ref PYTHON_DNS_TIMING: PathBuf = Path::new("./python/dns-timing-chart.py")
+    static ref PYTHON_DNS_TIMING: PathBuf = Path::new("./scripts/dns-timing-chart.py")
         .canonicalize()
         .expect("Canonicalizing a path should not fail.");
 }
