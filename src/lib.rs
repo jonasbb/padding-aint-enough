@@ -425,7 +425,7 @@ impl<'a> Display for DisplayCauses<'a> {
 }
 
 pub trait FailExt {
-    fn display_causes<'a>(&'a self) -> DisplayCauses<'a>;
+    fn display_causes(&self) -> DisplayCauses;
 }
 
 impl<T> FailExt for T
@@ -438,7 +438,7 @@ where
 }
 
 pub trait ErrorExt {
-    fn display_causes<'a>(&'a self) -> DisplayCauses<'a>;
+    fn display_causes(&self) -> DisplayCauses;
 }
 
 impl ErrorExt for Error {
