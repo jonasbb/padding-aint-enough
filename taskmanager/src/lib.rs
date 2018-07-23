@@ -81,16 +81,17 @@ impl TaskManager {
         })
     }
 
-    fn update_single_task(
-        &self,
-        conn: &SqliteConnection,
-        task: &models::Task,
-    ) -> Result<(), Error> {
+    fn update_tasks<'a, T>(&self, conn: &SqliteConnection, tasks: T) -> Result<(), Error>
+    where
+        T: IntoIterator<Item = &'a models::Task>,
+    {
         conn.transaction::<(), Error, _>(|| {
-            diesel::update(task)
-                .set(task)
-                .execute(conn)
-                .context("Cannot update task")?;
+            for task in tasks {
+                diesel::update(task)
+                    .set(task)
+                    .execute(conn)
+                    .context("Cannot update task")?;
+            }
             Ok(())
         })
     }
@@ -181,7 +182,7 @@ impl TaskManager {
         );
 
         let conn = self.db_connection.lock().unwrap();
-        self.update_single_task(&*conn, task)
+        self.update_tasks(&*conn, Some(&*task))
     }
 
     pub fn results_collectable(
@@ -218,7 +219,7 @@ impl TaskManager {
         task.associated_data = None;
 
         let conn = self.db_connection.lock().unwrap();
-        self.update_single_task(&*conn, task)
+        self.update_tasks(&*conn, Some(&*task))
     }
 
     pub fn results_need_sanity_check_single(&self) -> Result<Vec<models::Task>, Error> {
@@ -244,7 +245,7 @@ impl TaskManager {
         task.associated_data = None;
 
         let conn = self.db_connection.lock().unwrap();
-        self.update_single_task(&*conn, task)
+        self.update_tasks(&*conn, Some(&*task))
     }
 
     pub fn results_need_sanity_check_domain(
@@ -316,7 +317,7 @@ impl TaskManager {
             // The task is still allowed to be restarted
             let msg = format!("Restart task {} because {}", task.name(), reason);
             conn.transaction::<(), _, _>(|| {
-                self.update_single_task(&*conn, task)?;
+                self.update_tasks(&*conn, Some(&*task))?;
 
                 let row = models::InfoInsert {
                     id: None,
