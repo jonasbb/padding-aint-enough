@@ -270,7 +270,7 @@ impl TaskManager {
     pub fn results_need_sanity_check_domain(
         &self,
         iteration_count: u8,
-    ) -> Result<Vec<models::Task>, Error> {
+    ) -> Result<Option<Vec<models::Task>>, Error> {
         use diesel::{dsl::sql_query, sql_types::Integer};
 
         let conn = self.db_connection.lock().unwrap();
@@ -305,12 +305,17 @@ impl TaskManager {
                 .load::<models::Task>(&*conn)
                 .context("Cannot retrieve tasks from database")?)
         })?;
-        assert_eq!(
-            tasks.len(),
-            iteration_count as usize,
-            "The number of tasks MUST match the iteration count."
-        );
-        Ok(tasks)
+
+        if tasks.is_empty() {
+            Ok(None)
+        } else {
+            assert_eq!(
+                tasks.len(),
+                iteration_count as usize,
+                "The number of tasks MUST match the iteration count."
+            );
+            Ok(Some(tasks))
+        }
     }
 
     pub fn mark_results_checked_domain(&self, tasks: &mut Vec<models::Task>) -> Result<(), Error> {

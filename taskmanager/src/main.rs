@@ -473,7 +473,14 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
     loop {
         ensure_path_exists(&results_path)?;
 
-        let mut tasks = taskmgr.results_need_sanity_check_domain(config.per_domain_datasets)?;
+        let tasks = taskmgr.results_need_sanity_check_domain(config.per_domain_datasets)?;
+        if tasks.is_none() {
+            thread::sleep(Duration::new(60, 0));
+            continue;
+        }
+        // we just checked that tasks is not None
+        let mut tasks = tasks.unwrap();
+
         let sequences: Vec<_> = tasks
             .iter()
             .map(|task| {
