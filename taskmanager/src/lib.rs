@@ -367,6 +367,79 @@ impl TaskManager {
         }
     }
 
+    pub fn restart_tasks(
+        &self,
+        tasks: &mut [models::Task],
+        reason: &Display,
+    ) -> Result<(), Error> {
+        // check that all tasks belong to the same domain
+        for task in &*tasks {
+            assert_eq!(
+                tasks[0].domain(),
+                task.domain(),
+                "restart_tasks only works if all tasks belong to the same domain"
+            );
+        }
+
+        let conn = self.db_connection.lock().unwrap();
+        let mut abort_tasks = false;
+
+        for task in &mut *tasks {
+            task.restart();
+            task.associated_data = None;
+
+            if task.restart_count() >= 4 {
+                abort_tasks = true;
+            }
+        }
+
+        if !abort_tasks {
+            // The task is still allowed to be restarted
+            conn.transaction::<(), _, _>(|| {
+                self.update_tasks(&*conn, tasks.iter().map(|t| &*t))?;
+
+                for task in tasks {
+                    let msg = format!("Restart task {} because {}", task.name(), reason);
+                    let row = models::InfoInsert {
+                        id: None,
+                        task_id: task.id(),
+                        time: Local::now().naive_local(),
+                        message: &*msg,
+                    };
+                    diesel::insert_into(schema::infos::table)
+                        .values(&row)
+                        .execute(&*conn)
+                        .context("Error creating new task")?;
+                }
+                Ok(())
+            })
+        } else {
+            // We must abort all tasks for this domain
+            let msg = format!("Too many restarts for domain {}", tasks[0].domain());
+
+            conn.transaction::<(), _, _>(|| {
+                for task in tasks {
+                    let abort_task = task.abort(&msg);
+                    diesel::update(&abort_task)
+                        .set(&abort_task)
+                        .execute(&*conn)
+                        .context("Cannot update task")?;
+                    let row = models::InfoInsert {
+                        id: None,
+                        task_id: task.id(),
+                        time: Local::now().naive_local(),
+                        message: &*msg,
+                    };
+                    diesel::insert_into(schema::infos::table)
+                        .values(&row)
+                        .execute(&*conn)
+                        .context("Error creating new task")?;
+                }
+                Ok(())
+            })
+        }
+    }
+
     pub fn find_stale_tasks(&self) -> Result<Vec<models::Task>, Error> {
         unimplemented!()
     }
