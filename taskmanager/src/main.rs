@@ -41,6 +41,7 @@ use utils::*;
 
 lazy_static! {
     static ref DNSTAP_FILE_NAME: &'static Path = &Path::new("website-log.dnstap.xz");
+    static ref LOG_FILE: &'static Path = &Path::new("task.log.xz");
     static ref CHROME_LOG_FILE_NAME: &'static Path = &Path::new("website-log.json.xz");
 }
 
@@ -223,6 +224,12 @@ fn run_exec(cmd: SubCommand, config: Config) -> Result<(), Error> {
             handles.push(run_thread_restart(
                 move || result_sanity_checks(&taskmgr_, &config_),
                 Some("Sanity Check Single".to_string()),
+            ));
+            let taskmgr_ = taskmgr.clone();
+            let config_ = config.clone();
+            handles.push(run_thread_restart(
+                move || result_sanity_checks_domain(&taskmgr_, &config_),
+                Some("Sanity Check Domain".to_string()),
             ));
         }
 
@@ -443,3 +450,111 @@ where
     }
 }
 
+/// Check the VM results for consistency
+fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> {
+    let local_path = config.get_collected_results_path();
+    let results_path = config.get_results_path();
+
+    loop {
+        ensure_path_exists(&results_path)?;
+
+        let mut tasks = taskmgr.results_need_sanity_check_domain(config.per_domain_datasets)?;
+        let sequences: Vec<_> = tasks
+            .iter()
+            .map(|task| {
+                dnstap_to_sequence(&local_path.join(task.name()).join(&*DNSTAP_FILE_NAME))
+                    .expect("Loading a DNSTAP file cannot fail, as we checked that before.")
+            })
+            .collect();
+        let avg_distances: Vec<_> = sequences
+            .iter()
+            .enumerate()
+            .map(|(i, seq)| {
+                sequences
+                    .iter()
+                    .enumerate()
+                    .filter(|(j, _other_seq)| i != *j)
+                    .map(|(_j, other_seq)| seq.distance(&other_seq))
+                    .sum::<usize>() / (sequences.len() - 1)
+            })
+            .collect();
+
+        let avg_avg = avg_distances.iter().sum::<usize>() / avg_distances.len();
+
+        // if there is only a single bad value, only restart that
+        // if there are multiple bad values, restart whole domain
+
+        match avg_distances
+            .iter()
+            .filter(|dist| **dist > (avg_avg * config.max_allowed_dist_difference))
+            .count()
+        {
+            0 => {
+                //everything is fine, advance the tasks to next stage
+                for task in &*tasks {
+                    let outdir = results_path.join(task.domain());
+                    ensure_path_exists(&outdir)?;
+
+                    for (filename, new_file_ext) in &[
+                        (&*DNSTAP_FILE_NAME, "dnstap.xz"),
+                        (&*LOG_FILE, "log.xz"),
+                        (&*CHROME_LOG_FILE_NAME, "json.xz"),
+                    ] {
+                        let src = local_path.join(task.name()).join(filename);
+                        let dst = results_path.join(task.domain()).join(format!(
+                            "{}.{}",
+                            task.name(),
+                            new_file_ext
+                        ));
+                        fs::rename(&src, &dst).with_context(|_| {
+                            format!("Failed to move {} to {}", src.display(), dst.display())
+                        })?;
+                    }
+                }
+
+                taskmgr
+                    .mark_results_checked_domain(&mut tasks)
+                    .context("Failed to mark domain tasks as finished.")?;
+            }
+            1 => {
+                // restart the single bad task
+                let (dist, mut task) = avg_distances
+                    .iter()
+                    .zip(tasks.iter_mut())
+                    .find(|(dist, _task)| **dist > (avg_avg * config.max_allowed_dist_difference))
+                    .expect("There is exactly one task");
+                info!(
+                    "Restart task {} because of distance difference",
+                    task.name()
+                );
+                taskmgr
+                    .restart_task(
+                        &mut task,
+                        &format!(
+                            "The task's distance is {} while the average distance is only {}",
+                            dist, avg_avg
+                        ),
+                    )
+                    .context("Cannot restart single bad task")?;
+            }
+            n => {
+                // restart all tasks
+                info!(
+                    "Restart task of domain {} because of distance difference",
+                    tasks[0].domain()
+                );
+                taskmgr
+                    .restart_tasks(
+                        &mut *tasks,
+                        &format!(
+                            "{} out of {} differ by too much from the average distance",
+                            n, config.max_allowed_dist_difference
+                        ),
+                    )
+                    .context("Cannot restart bad domain")?;
+            }
+        }
+
+        thread::sleep(Duration::new(1, 0));
+    }
+}

@@ -294,17 +294,21 @@ impl TaskManager {
         Ok(tasks)
     }
 
-    pub fn mark_results_checked_domain(&self, tasks: Vec<&mut models::Task>) -> Result<(), Error> {
-        unimplemented!()
-        // if task.state != models::TaskState::CheckQualitySingle {
-        //     bail!("To check results they must be in the CheckQualitySingle state.")
-        // }
+    pub fn mark_results_checked_domain(&self, tasks: &mut Vec<models::Task>) -> Result<(), Error> {
+        for task in &*tasks {
+            if task.state != models::TaskState::CheckQualityDomain {
+                bail!("To check results they must be in the CheckQualityDomain state.")
+            }
+        }
 
-        // // Update task state
-        // task.advance();
-        // task.associated_data = None;
+        for mut task in &mut *tasks {
+            // Update task state
+            task.advance();
+            task.associated_data = None;
+        }
 
-        // self.update_single_task(task)
+        let conn = self.db_connection.lock().unwrap();
+        self.update_tasks(&*conn, &*tasks)
     }
 
     pub fn restart_task(&self, task: &mut models::Task, reason: &Display) -> Result<(), Error> {
