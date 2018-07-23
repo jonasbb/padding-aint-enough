@@ -2,6 +2,7 @@ use rayon::prelude::*;
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     collections::HashMap,
+    fmt::{self, Debug},
     mem,
 };
 use take_smallest;
@@ -119,7 +120,7 @@ impl PartialOrd for Sequence {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum SequenceElement {
     Size(u8),
     Gap(u8),
@@ -168,6 +169,17 @@ impl SequenceElement {
         }
 
         20
+    }
+}
+
+impl Debug for SequenceElement {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use SequenceElement::*;
+        let (l, v) = match self {
+            Size(v) => ("S", v),
+            Gap(v) => ("G", v),
+        };
+        write!(f, "{}{:>2}", l, v)
     }
 }
 
