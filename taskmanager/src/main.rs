@@ -17,6 +17,8 @@ extern crate serde;
 extern crate taskmanager;
 extern crate toml;
 
+mod utils;
+
 use encrypted_dns::{dnstap_to_sequence, ErrorExt};
 use failure::{Error, ResultExt};
 use misc_utils::fs::file_open_read;
@@ -25,16 +27,17 @@ use std::{
     ffi::{OsStr, OsString},
     fmt::{self, Debug},
     fs,
-    io::{self, BufRead, BufReader, Read},
+    io::{BufRead, BufReader, Read},
     panic::{self, RefUnwindSafe, UnwindSafe},
     path::{Path, PathBuf},
-    process::{Command, Stdio},
+    process::Command,
     sync::Arc,
     thread::{self, JoinHandle},
     time::Duration,
 };
 use structopt::StructOpt;
 use taskmanager::{models::Task, *};
+use utils::*;
 
 lazy_static! {
     static ref DNSTAP_FILE_NAME: &'static Path = &Path::new("website-log.dnstap.xz");
@@ -407,48 +410,6 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
     }
 }
 
-/// Ensure the given path exists and if not create it
-fn ensure_path_exists(path: &Path) -> io::Result<()> {
-    if !path.exists() {
-        fs::create_dir_all(path)?;
-    }
-    Ok(())
-}
-
-enum ScpDirection {
-    LocalToRemote,
-    RemoteToLocal,
-}
-
-/// Copy files between local and remote in both directions
-fn scp_file(
-    executor: &Executor,
-    direction: ScpDirection,
-    local_path: &Path,
-    remote_path: &Path,
-) -> Result<(), Error> {
-    let mut cmd = Command::new("scp");
-    cmd.arg("-pr");
-    let mut remote =
-        OsString::with_capacity(executor.name.len() + remote_path.as_os_str().len() + 4);
-    remote.push(&executor.name);
-    remote.push(":");
-    remote.push(remote_path);
-    match direction {
-        ScpDirection::LocalToRemote => cmd.args(&[local_path.as_os_str(), &*remote]),
-        ScpDirection::RemoteToLocal => cmd.args(&[&*remote, local_path.as_os_str()]),
-    };
-    let res = cmd
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .status()
-        .context("Could not start scp")?;
-    if !res.success() {
-        bail!("scp did not finish successfully")
-    }
-    Ok(())
-}
-
 /// Make sure all necessary files are copied to the VM
 fn init_vm(executor: &Executor, config: &Config) -> Result<(), Error> {
     let res = Command::new("ssh")
@@ -482,22 +443,3 @@ where
     }
 }
 
-/// Compress a file with xz
-fn xz(path: &Path) -> Result<(), Error> {
-    // skip already compressed files
-    if path.extension() == Some(OsStr::new("xz")) {
-        return Ok(());
-    }
-
-    let res = Command::new("xz")
-        .args(&["-9", "--force"])
-        .arg(path)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .status()
-        .context("Could not start xz")?;
-    if !res.success() {
-        bail!("xz did not finish successfully")
-    }
-    Ok(())
-}
