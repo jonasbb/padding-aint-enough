@@ -292,7 +292,7 @@ fn process_tasks_vm(taskmgr: &TaskManager, executor: &Executor) -> Result<(), Er
     loop {
         if let Some(mut task) = taskmgr.get_task_for_vm(executor)? {
             execute_or_restart_task(&mut task, taskmgr, |mut task| {
-                info!("Process task {}, step VM", task.id());
+                info!("Process task {} ({}), step VM", task.name(), task.id());
                 let script_path = executor
                     .working_directory
                     .join("scripts")
