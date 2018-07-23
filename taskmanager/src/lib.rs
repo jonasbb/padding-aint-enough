@@ -301,7 +301,7 @@ impl TaskManager {
                 t.domain,
                 priority ASC
             ;"#,
-            ).bind::<Integer, _>(iteration_count as i32)
+            ).bind::<Integer, _>(i32::from(iteration_count))
                 .load::<models::Task>(&*conn)
                 .context("Cannot retrieve tasks from database")?)
         })?;
