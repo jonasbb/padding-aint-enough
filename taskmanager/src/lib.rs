@@ -332,6 +332,17 @@ impl TaskManager {
         }
 
         let conn = self.db_connection.lock().unwrap();
+        let msg = format!("Finished domain {}", tasks[0].domain());
+        let row = models::InfoInsert {
+            id: None,
+            task_id: tasks[0].id(),
+            time: Local::now().naive_local(),
+            message: &*msg,
+        };
+        diesel::insert_into(schema::infos::table)
+            .values(&row)
+            .execute(&*conn)
+            .context("Error creating new info")?;
         self.update_tasks(&*conn, &*tasks)
     }
 
@@ -356,7 +367,7 @@ impl TaskManager {
                 diesel::insert_into(schema::infos::table)
                     .values(&row)
                     .execute(&*conn)
-                    .context("Error creating new task")?;
+                    .context("Error creating new info")?;
                 Ok(())
             })
         } else {
