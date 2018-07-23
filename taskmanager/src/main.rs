@@ -279,7 +279,7 @@ where
                 "Thread {} stopped, restart",
                 name.as_ref().map(|s| &**s).unwrap_or("<unknown>")
             );
-            thread::sleep(Duration::new(1, 0));
+            thread::sleep(Duration::new(10, 0));
         })
         .unwrap()
 }
@@ -404,7 +404,7 @@ fn copy_vm_results(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> 
                 taskmgr.mark_results_collected(&mut task)
             })?;
         }
-        thread::sleep(Duration::new(1, 0));
+        thread::sleep(Duration::new(10, 0));
     }
 }
 
@@ -427,7 +427,7 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 taskmgr.mark_results_checked_single(&mut task)
             })?;
         }
-        thread::sleep(Duration::new(1, 0));
+        thread::sleep(Duration::new(10, 0));
     }
 }
 
@@ -570,6 +570,6 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
             }
         }
 
-        thread::sleep(Duration::new(1, 0));
+        thread::sleep(Duration::new(10, 0));
     }
 }
