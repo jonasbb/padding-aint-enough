@@ -384,6 +384,7 @@ pub struct Config {
     pub database: PathBuf,
     pub per_domain_datasets: u8,
     pub executors: Vec<Executor>,
+    pub max_allowed_dist_difference: usize,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -408,6 +409,10 @@ impl Config {
 
     pub fn get_collected_results_path(&self) -> PathBuf {
         self.working_directory.join("unprocessed")
+    }
+
+    pub fn get_results_path(&self) -> PathBuf {
+        self.working_directory.join("processed")
     }
 
     pub fn get_scripts_dir(&self) -> PathBuf {

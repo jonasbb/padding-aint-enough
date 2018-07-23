@@ -1,6 +1,7 @@
 working_directory = "/mnt/data/Downloads/new-task-setup"
 database = "/mnt/data/Downloads/new-task-setup/tasks.db"
 per_domain_datasets = 10
+max_allowed_dist_difference = 3
 
 [[executors]]
 name = "fedora28chrome"
