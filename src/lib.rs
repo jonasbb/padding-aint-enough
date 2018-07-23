@@ -326,8 +326,10 @@ pub fn dnstap_to_sequence(dnstap_file: &Path) -> Result<Sequence, Error> {
     // cleanup some messages
     // filter out all the queries which are just noise
     matched.retain(|query| {
-        !(query.qtype == "NULL" && query.qname.starts_with("_ta"))
-            && query.qname != "fedoraproject.org."
+        // _ta queries are queries sent to the root servers to indicate which root DNSSEC key is trusted.
+        // fedoraproject.org are artifacts due to the use of Fedora for the VMs, e.g., update queries and captive portal detection
+        !(query.qtype == "NULL" && query.qname.starts_with("_ta")
+            || query.qname.ends_with("fedoraproject.org."))
     });
     for msg in unanswered_client_queries {
         debug!("Unanswered forwarder query: {:?}", msg);
