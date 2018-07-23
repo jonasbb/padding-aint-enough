@@ -578,7 +578,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                         &mut *tasks,
                         &format!(
                             "{} out of {} differ by too much from the average distance",
-                            n, config.max_allowed_dist_difference
+                            n, config.per_domain_datasets
                         ),
                     )
                     .context("Cannot restart bad domain")?;
