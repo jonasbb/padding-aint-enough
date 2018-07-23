@@ -5,8 +5,9 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 
 [workspace]
 members = [
+    "framestream",
+    "pylib",
     "taskmanager",
-    "framestream"
 ]
 
 [profile.release]

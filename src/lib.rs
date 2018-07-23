@@ -28,7 +28,8 @@ use min_max_heap::MinMaxHeap;
 use misc_utils::fs::file_open_read;
 pub use protos::dnstap;
 use protos::DnstapContent;
-use sequences::{Sequence, SequenceElement};
+pub use sequences::Sequence;
+use sequences::SequenceElement;
 use std::{
     collections::BTreeMap,
     convert::TryFrom,

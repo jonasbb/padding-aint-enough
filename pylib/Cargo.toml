@@ -1,0 +1,17 @@
+[package]
+name = "pylib"
+version = "0.1.0"
+authors = ["Jonas Bushart <jonas@bushart.org>"]
+
+[lib]
+name = "pylib"
+crate-type = [ "cdylib" ]
+
+[dependencies]
+encrypted-dns = { path = ".." }
+failure = "0.1.1"
+log = "0.4.3"
+
+[dependencies.pyo3]
+git = "https://github.com/PyO3/pyo3/"
+features = [ "extension-module", "python3" ]
