@@ -196,7 +196,7 @@ fn run_exec(cmd: SubCommand, config: Config) -> Result<(), Error> {
 
         let mut handles = Vec::new();
 
-        &config
+        config
             .executors
             .par_iter()
             .map(|executor| init_vm(executor, &config))
@@ -430,6 +430,7 @@ fn init_vm(executor: &Executor, config: &Config) -> Result<(), Error> {
     if !res.success() {
         bail!("Could not create working dir on VM {}", executor.name,)
     }
+    info!("Copy initial files to VM {}", executor.name);
     scp_file(
         executor,
         ScpDirection::LocalToRemote,
