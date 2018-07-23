@@ -1,5 +1,14 @@
 --- src/schema.rs	2018-07-17 16:59:07.448063456 +0200
 +++ src/schema.rs.orig	2018-07-17 16:59:07.447063430 +0200
+@@ -1,6 +1,8 @@
++#![allow(unused_imports)]
++
+ table! {
+     use diesel::sql_types::*;
+     use models::TaskStateMapping;
+
+     /// Representation of the `infos` table.
+     ///
 @@ -73,13 +73,13 @@
          domain_counter -> Integer,
          /// The `state` column of the `tasks` table.
