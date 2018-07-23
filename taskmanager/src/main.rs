@@ -517,12 +517,14 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                     let outdir = results_path.join(task.domain());
                     ensure_path_exists(&outdir)?;
 
+                    let old_task_dir = local_path.join(task.name());
+
                     for (filename, new_file_ext) in &[
                         (&*DNSTAP_FILE_NAME, "dnstap.xz"),
                         (&*LOG_FILE, "log.xz"),
                         (&*CHROME_LOG_FILE_NAME, "json.xz"),
                     ] {
-                        let src = local_path.join(task.name()).join(filename);
+                        let src = old_task_dir.join(filename);
                         let dst = results_path.join(task.domain()).join(format!(
                             "{}.{}",
                             task.name(),
@@ -532,6 +534,12 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                             format!("Failed to move {} to {}", src.display(), dst.display())
                         })?;
                     }
+                    fs::remove_dir(&old_task_dir).with_context(|_| {
+                        format!(
+                            "Could not remove old task directory {}",
+                            old_task_dir.display()
+                        )
+                    })?;
                 }
 
                 taskmgr
