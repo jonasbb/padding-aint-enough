@@ -13,7 +13,7 @@ extern crate serde;
 extern crate serde_derive;
 extern crate toml;
 
-use chrono::Local;
+use chrono::{Duration, Local};
 use diesel::{prelude::*, sqlite::SqliteConnection};
 use failure::{Error, ResultExt};
 use misc_utils::fs::file_open_read;
@@ -155,6 +155,25 @@ impl TaskManager {
                     .context("Cannot update task")?;
             }
             Ok(task)
+        })
+    }
+
+    /// Return all tasks which did not make any progress for a too long time
+    pub fn get_stale_tasks(&self) -> Result<Vec<models::Task>, Error> {
+        use schema::tasks::dsl::{aborted, last_modified, state, tasks};
+
+        let conn = self.db_connection.lock().unwrap();
+        conn.transaction::<Vec<models::Task>, _, _>(|| {
+            let res = tasks
+                .filter(state.ne(models::TaskState::Created))
+                .filter(state.ne(models::TaskState::Done))
+                .filter(state.ne(models::TaskState::Aborted))
+                .filter(aborted.eq(false))
+                .filter(last_modified.lt(Local::now().naive_local() - Duration::hours(2)))
+                .select(TASKS_COLUMNS)
+                .load::<models::Task>(&*conn)
+                .context("Cannot retrieve task from database")?;
+            Ok(res)
         })
     }
 
@@ -371,11 +390,7 @@ impl TaskManager {
         }
     }
 
-    pub fn restart_tasks(
-        &self,
-        tasks: &mut [models::Task],
-        reason: &Display,
-    ) -> Result<(), Error> {
+    pub fn restart_tasks(&self, tasks: &mut [models::Task], reason: &Display) -> Result<(), Error> {
         // check that all tasks belong to the same domain
         for task in &*tasks {
             assert_eq!(

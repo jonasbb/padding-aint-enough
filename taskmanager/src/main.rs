@@ -231,6 +231,11 @@ fn run_exec(cmd: SubCommand, config: Config) -> Result<(), Error> {
                 move || result_sanity_checks_domain(&taskmgr_, &config_),
                 Some("Sanity Check Domain".to_string()),
             ));
+            let taskmgr_ = taskmgr.clone();
+            handles.push(run_thread_restart(
+                move || cleanup_stale_tasks(&taskmgr_),
+                Some("Cleanup stale tasks".to_string()),
+            ));
         }
 
         for handle in handles {
@@ -334,9 +339,18 @@ fn process_tasks_vm(taskmgr: &TaskManager, executor: &Executor) -> Result<(), Er
 }
 
 /// Cleanup stale tasks by resetting them
-fn cleanup_stale_tasks(_taskmgr: &TaskManager) {
-    // TODO restart counter !!!
-    unimplemented!()
+fn cleanup_stale_tasks(taskmgr: &TaskManager) -> Result<(), Error> {
+    loop {
+        let tasks = taskmgr
+            .get_stale_tasks()
+            .context("Failed to get stale tasks")?;
+        for mut task in tasks {
+            taskmgr.restart_task(&mut task, &"Restart stale task")?;
+        }
+
+        // run every 30 minutes
+        thread::sleep(Duration::new(30 * 60, 0));
+    }
 }
 
 /// Copy the finished results from a VM to the global directory
