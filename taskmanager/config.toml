@@ -1,5 +1,6 @@
 working_directory = "/mnt/data/Downloads/new-task-setup"
-database = "/mnt/data/Downloads/new-task-setup/tasks.db"
+# database = "/mnt/data/Downloads/new-task-setup/tasks.db"
+database = "postgres://taskmanager@/taskmanager"
 per_domain_datasets = 10
 max_allowed_dist_difference = 3
 

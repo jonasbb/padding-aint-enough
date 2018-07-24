@@ -4,5 +4,4 @@
 [print_schema]
 file = "src/schema.rs"
 with_docs = true
-import_types = ["diesel::sql_types::*", "models::TaskStateMapping"]
-patch_file = "schema.patch"
+import_types = ["diesel::sql_types::*", "models::Task_state"]

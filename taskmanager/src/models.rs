@@ -1,6 +1,6 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 
-use chrono::{Local, NaiveDateTime};
+use chrono::{DateTime, Utc};
 use schema::{infos, tasks};
 
 #[allow(proc_macro_derive_resolution_fallback)]
@@ -19,7 +19,7 @@ pub struct Task {
     domain_counter: i32,
     pub(crate) state: TaskState,
     restart_count: i32,
-    last_modified: NaiveDateTime,
+    last_modified: DateTime<Utc>,
     pub(crate) associated_data: Option<String>,
 }
 
@@ -56,18 +56,18 @@ impl Task {
 
     pub(crate) fn advance(&mut self) {
         self.state.advance();
-        self.last_modified = Local::now().naive_local();
+        self.last_modified = Utc::now();
     }
 
     pub(crate) fn restart(&mut self) {
         self.state.restart();
-        self.last_modified = Local::now().naive_local();
+        self.last_modified = Utc::now();
         self.restart_count += 1;
     }
 
     pub(crate) fn abort<'a>(&mut self, reason: &'a str) -> TaskAbort<'a> {
         self.state.abort();
-        self.last_modified = Local::now().naive_local();
+        self.last_modified = Utc::now();
         TaskAbort {
             id: self.id,
             aborted: true,
@@ -82,7 +82,7 @@ impl Task {
 pub struct TaskAbort<'a> {
     id: i32,
     aborted: bool,
-    last_modified: NaiveDateTime,
+    last_modified: DateTime<Utc>,
     associated_data: &'a str,
 }
 
@@ -95,11 +95,13 @@ pub struct TaskInsert<'a> {
     pub domain_counter: i32,
     pub state: TaskState,
     pub restart_count: i32,
-    pub last_modified: NaiveDateTime,
+    pub last_modified: DateTime<Utc>,
     pub associated_data: Option<&'a str>,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, DbEnum)]
+#[PgType = "Task_State"]
+#[DieselType = "Task_state"]
 pub enum TaskState {
     /// No associated data
     Created,
@@ -146,6 +148,6 @@ impl TaskState {
 pub struct InfoInsert<'a> {
     pub id: Option<i32>,
     pub task_id: i32,
-    pub time: NaiveDateTime,
+    pub time: DateTime<Utc>,
     pub message: &'a str,
 }

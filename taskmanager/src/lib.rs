@@ -13,13 +13,14 @@ extern crate serde;
 extern crate serde_derive;
 extern crate toml;
 
-use chrono::{Duration, Local};
-use diesel::{prelude::*, sqlite::SqliteConnection};
+use chrono::{Duration, Utc};
+use diesel::prelude::*;
 use failure::{Error, ResultExt};
 use misc_utils::fs::file_open_read;
 use std::{
     fmt::{self, Debug, Display},
     path::{Path, PathBuf},
+    sync::{Arc, Mutex},
 };
 
 pub mod models;
@@ -50,44 +51,37 @@ const TASKS_COLUMNS: TasksColumnType = (
 
 #[derive(Clone)]
 pub struct TaskManager {
-    database: String,
+    db_connection: Arc<Mutex<PgConnection>>,
 }
 
 impl Debug for TaskManager {
     fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         f.debug_struct("TaskManager")
-            .field("db_connection", &"<SqliteConnection>")
+            .field("db_connection", &"<PgConnection>")
             .finish()
     }
 }
 
 impl TaskManager {
     pub fn new(database: &str) -> Result<Self, Error> {
-        SqliteConnection::establish(database).context("Cannot establish SQLite connection")?;
-        Ok(Self {
-            database: database.to_string(),
-        })
-    }
-
-    pub fn get_connection(&self) -> Result<SqliteConnection, Error> {
-        Ok(SqliteConnection::establish(&self.database)
-            .context("Cannot establish SQLite connection")?)
+        let db_connection = Arc::new(Mutex::new(PgConnection::establish(database)?));
+        Ok(Self { db_connection })
     }
 
     pub fn delete_all(&self) -> Result<(), Error> {
-        let conn = self.get_connection()?;
+        let conn = self.db_connection.lock().unwrap();
         conn.transaction::<(), _, _>(|| {
             diesel::delete(schema::tasks::table)
-                .execute(&conn)
+                .execute(&*conn)
                 .context("Trying to delete `tasks` table")?;
             diesel::delete(schema::infos::table)
-                .execute(&conn)
+                .execute(&*conn)
                 .context("Trying to delete `infos` table")?;
             Ok(())
         })
     }
 
-    fn update_tasks<'a, T>(&self, conn: &SqliteConnection, tasks: T) -> Result<(), Error>
+    fn update_tasks<'a, T>(&self, conn: &PgConnection, tasks: T) -> Result<(), Error>
     where
         T: IntoIterator<Item = &'a models::Task>,
     {
@@ -107,8 +101,8 @@ impl TaskManager {
         I: IntoIterator<Item = S>,
         S: AsRef<str>,
     {
-        let conn = self.get_connection()?;
-        conn.transaction::<(), _, _>(|| {
+        let conn = self.db_connection.lock().unwrap();
+        conn.transaction(|| {
             for (prio, domain) in domains.into_iter().enumerate() {
                 let prio = prio as i32;
                 let domain = domain.as_ref();
@@ -121,12 +115,12 @@ impl TaskManager {
                         domain_counter: i32::from(i),
                         state: models::TaskState::Created,
                         restart_count: 0,
-                        last_modified: Local::now().naive_local(),
+                        last_modified: Utc::now(),
                         associated_data: None,
                     };
                     diesel::insert_into(schema::tasks::table)
                         .values(&row)
-                        .execute(&conn)
+                        .execute(&*conn)
                         .context("Error creating new task")?;
                 }
             }
@@ -138,15 +132,15 @@ impl TaskManager {
     pub fn get_task_for_vm(&self, executor: &Executor) -> Result<Option<models::Task>, Error> {
         use schema::tasks::dsl::{aborted, priority, state, tasks};
 
-        let conn = self.get_connection()?;
-        conn.transaction::<Option<models::Task>, _, _>(|| {
+        let conn = self.db_connection.lock().unwrap();
+        conn.transaction(|| {
             let res = tasks
                 .filter(state.eq(models::TaskState::Created))
                 .filter(aborted.eq(false))
                 .order_by(priority.asc())
                 .limit(1)
                 .select(TASKS_COLUMNS)
-                .load::<models::Task>(&conn)
+                .load::<models::Task>(&*conn)
                 .context("Cannot retrieve task from database")?;
 
             // we only fetch one task, so this next is sufficient to retrieve all data
@@ -157,7 +151,7 @@ impl TaskManager {
                     Some(toml::to_string(&executor).context("Cannot serialize executor")?);
                 diesel::update(&*task)
                     .set(&*task)
-                    .execute(&conn)
+                    .execute(&*conn)
                     .context("Cannot update task")?;
             }
             Ok(task)
@@ -168,16 +162,16 @@ impl TaskManager {
     pub fn get_stale_tasks(&self) -> Result<Vec<models::Task>, Error> {
         use schema::tasks::dsl::{aborted, last_modified, state, tasks};
 
-        let conn = self.get_connection()?;
-        conn.transaction::<Vec<models::Task>, _, _>(|| {
+        let conn = self.db_connection.lock().unwrap();
+        conn.transaction(|| {
             let res = tasks
                 .filter(state.ne(models::TaskState::Created))
                 .filter(state.ne(models::TaskState::Done))
                 .filter(state.ne(models::TaskState::Aborted))
                 .filter(aborted.eq(false))
-                .filter(last_modified.lt(Local::now().naive_local() - Duration::hours(2)))
+                .filter(last_modified.lt(Utc::now() - Duration::hours(2)))
                 .select(TASKS_COLUMNS)
-                .load::<models::Task>(&conn)
+                .load::<models::Task>(&*conn)
                 .context("Cannot retrieve task from database")?;
             Ok(res)
         })
@@ -206,8 +200,8 @@ impl TaskManager {
             toml::to_string(&new_data).context("Failed to serialize a ResultsCollectableData")?,
         );
 
-        let conn = self.get_connection()?;
-        self.update_tasks(&conn, Some(&*task))
+        let conn = self.db_connection.lock().unwrap();
+        conn.transaction(|| self.update_tasks(&*conn, Some(&*task)))
     }
 
     pub fn results_collectable(
@@ -215,23 +209,27 @@ impl TaskManager {
     ) -> Result<Vec<(models::Task, ResultsCollectableData)>, Error> {
         use schema::tasks::dsl::{aborted, priority, state, tasks};
 
-        let conn = self.get_connection()?;
-        Ok(tasks
-            .filter(state.eq(models::TaskState::ResultsCollectable))
-            .filter(aborted.eq(false))
-            .order_by(priority.asc())
-            .select(TASKS_COLUMNS)
-            .load::<models::Task>(&conn)
-            .context("Cannot retrieve tasks from database")?
-            .into_iter()
-            .map(|task| {
-                let data: ResultsCollectableData =
-                    toml::from_str(&*task.associated_data.as_ref().ok_or_else(|| {
-                        format_err!("Task in ResultsCollectable state must have associated data")
-                    })?).context("Associated data must be ResultsCollectableData")?;
-                Ok((task, data))
-            })
-            .collect::<Result<Vec<_>, Error>>()?)
+        let conn = self.db_connection.lock().unwrap();
+        conn.transaction(|| {
+            Ok(tasks
+                .filter(state.eq(models::TaskState::ResultsCollectable))
+                .filter(aborted.eq(false))
+                .order_by(priority.asc())
+                .select(TASKS_COLUMNS)
+                .load::<models::Task>(&*conn)
+                .context("Cannot retrieve tasks from database")?
+                .into_iter()
+                .map(|task| {
+                    let data: ResultsCollectableData =
+                        toml::from_str(&*task.associated_data.as_ref().ok_or_else(|| {
+                            format_err!(
+                                "Task in ResultsCollectable state must have associated data"
+                            )
+                        })?).context("Associated data must be ResultsCollectableData")?;
+                    Ok((task, data))
+                })
+                .collect::<Result<Vec<_>, Error>>()?)
+        })
     }
 
     pub fn mark_results_collected(&self, task: &mut models::Task) -> Result<(), Error> {
@@ -243,21 +241,23 @@ impl TaskManager {
         task.advance();
         task.associated_data = None;
 
-        let conn = self.get_connection()?;
-        self.update_tasks(&conn, Some(&*task))
+        let conn = self.db_connection.lock().unwrap();
+        conn.transaction(|| self.update_tasks(&*conn, Some(&*task)))
     }
 
     pub fn results_need_sanity_check_single(&self) -> Result<Vec<models::Task>, Error> {
         use schema::tasks::dsl::{aborted, priority, state, tasks};
 
-        let conn = self.get_connection()?;
-        Ok(tasks
-            .filter(state.eq(models::TaskState::CheckQualitySingle))
-            .filter(aborted.eq(false))
-            .order_by(priority.asc())
-            .select(TASKS_COLUMNS)
-            .load::<models::Task>(&conn)
-            .context("Cannot retrieve tasks from database")?)
+        let conn = self.db_connection.lock().unwrap();
+        conn.transaction(|| {
+            Ok(tasks
+                .filter(state.eq(models::TaskState::CheckQualitySingle))
+                .filter(aborted.eq(false))
+                .order_by(priority.asc())
+                .select(TASKS_COLUMNS)
+                .load::<models::Task>(&*conn)
+                .context("Cannot retrieve tasks from database")?)
+        })
     }
 
     pub fn mark_results_checked_single(&self, task: &mut models::Task) -> Result<(), Error> {
@@ -269,17 +269,17 @@ impl TaskManager {
         task.advance();
         task.associated_data = None;
 
-        let conn = self.get_connection()?;
-        self.update_tasks(&conn, Some(&*task))
+        let conn = self.db_connection.lock().unwrap();
+        conn.transaction(|| self.update_tasks(&conn, Some(&*task)))
     }
 
     pub fn results_need_sanity_check_domain(
         &self,
         iteration_count: u8,
     ) -> Result<Option<Vec<models::Task>>, Error> {
-        use diesel::{dsl::sql_query, sql_types::Integer};
+        use diesel::{dsl::sql_query, sql_types::Int4};
 
-        let conn = self.get_connection()?;
+        let conn = self.db_connection.lock().unwrap();
         let tasks = conn.transaction::<Vec<models::Task>, Error, _>(|| {
             Ok(sql_query(
                 r#"SELECT
@@ -295,10 +295,10 @@ impl TaskManager {
             FROM (
                 SELECT domain
                 FROM tasks
-                WHERE state = "check_quality_domain"
-                    AND aborted = 0
+                WHERE state = 'check_quality_domain'
+                    AND aborted = false
                 GROUP BY domain
-                HAVING count(*) = ?
+                HAVING count(*) = $1
                 LIMIT 1
             ) AS s
             JOIN tasks t
@@ -307,8 +307,8 @@ impl TaskManager {
                 t.domain,
                 priority ASC
             ;"#,
-            ).bind::<Integer, _>(i32::from(iteration_count))
-                .load::<models::Task>(&conn)
+            ).bind::<Int4, _>(i32::from(iteration_count))
+                .load::<models::Task>(&*conn)
                 .context("Cannot retrieve tasks from database")?)
         })?;
 
@@ -337,41 +337,43 @@ impl TaskManager {
             task.associated_data = None;
         }
 
-        let conn = self.get_connection()?;
         let msg = format!("Finished domain {}", tasks[0].domain());
         let row = models::InfoInsert {
             id: None,
             task_id: tasks[0].id(),
-            time: Local::now().naive_local(),
+            time: Utc::now(),
             message: &*msg,
         };
-        diesel::insert_into(schema::infos::table)
-            .values(&row)
-            .execute(&conn)
-            .context("Error creating new info")?;
-        self.update_tasks(&conn, &*tasks)
+        let conn = self.db_connection.lock().unwrap();
+        conn.transaction(|| {
+            diesel::insert_into(schema::infos::table)
+                .values(&row)
+                .execute(&*conn)
+                .context("Error creating new info")?;
+            self.update_tasks(&conn, &*tasks)
+        })
     }
 
     pub fn restart_task(&self, task: &mut models::Task, reason: &Display) -> Result<(), Error> {
         task.restart();
         task.associated_data = None;
 
-        let conn = self.get_connection()?;
+        let conn = self.db_connection.lock().unwrap();
         if task.restart_count() < 4 {
             // The task is still allowed to be restarted
             let msg = format!("Restart task {} because {}", task.name(), reason);
-            conn.transaction::<(), _, _>(|| {
+            conn.transaction(|| {
                 self.update_tasks(&conn, Some(&*task))?;
 
                 let row = models::InfoInsert {
                     id: None,
                     task_id: task.id(),
-                    time: Local::now().naive_local(),
+                    time: Utc::now(),
                     message: &*msg,
                 };
                 diesel::insert_into(schema::infos::table)
                     .values(&row)
-                    .execute(&conn)
+                    .execute(&*conn)
                     .context("Error creating new info")?;
                 Ok(())
             })
@@ -381,29 +383,29 @@ impl TaskManager {
             // We must abort all tasks for this domain
             let msg = format!("Too many restarts for task {}, abort domain.", task.name());
 
-            conn.transaction::<(), _, _>(|| {
+            conn.transaction(|| {
                 // get all tasks for the same domain
                 let other_tasks = tasks
                     .filter(domain.eq(task.domain()))
                     .select(TASKS_COLUMNS)
-                    .load::<models::Task>(&conn)
+                    .load::<models::Task>(&*conn)
                     .context("Cannot retrieve task from database")?;
 
                 for mut other_task in other_tasks {
                     let abort_task = other_task.abort(&msg);
                     diesel::update(&abort_task)
                         .set(&abort_task)
-                        .execute(&conn)
+                        .execute(&*conn)
                         .context("Cannot update task")?;
                     let row = models::InfoInsert {
                         id: None,
                         task_id: other_task.id(),
-                        time: Local::now().naive_local(),
+                        time: Utc::now(),
                         message: &*msg,
                     };
                     diesel::insert_into(schema::infos::table)
                         .values(&row)
-                        .execute(&conn)
+                        .execute(&*conn)
                         .context("Error creating new task")?;
                 }
                 Ok(())
@@ -421,9 +423,7 @@ impl TaskManager {
             );
         }
 
-        let conn = self.get_connection()?;
         let mut abort_tasks = false;
-
         for task in &mut *tasks {
             task.restart();
             task.associated_data = None;
@@ -433,9 +433,10 @@ impl TaskManager {
             }
         }
 
+        let conn = self.db_connection.lock().unwrap();
         if !abort_tasks {
             // The task is still allowed to be restarted
-            conn.transaction::<(), _, _>(|| {
+            conn.transaction(|| {
                 self.update_tasks(&conn, tasks.iter().map(|t| &*t))?;
 
                 for task in tasks {
@@ -443,12 +444,12 @@ impl TaskManager {
                     let row = models::InfoInsert {
                         id: None,
                         task_id: task.id(),
-                        time: Local::now().naive_local(),
+                        time: Utc::now(),
                         message: &*msg,
                     };
                     diesel::insert_into(schema::infos::table)
                         .values(&row)
-                        .execute(&conn)
+                        .execute(&*conn)
                         .context("Error creating new task")?;
                 }
                 Ok(())
@@ -457,22 +458,22 @@ impl TaskManager {
             // We must abort all tasks for this domain
             let msg = format!("Too many restarts for domain {}", tasks[0].domain());
 
-            conn.transaction::<(), _, _>(|| {
+            conn.transaction(|| {
                 for task in tasks {
                     let abort_task = task.abort(&msg);
                     diesel::update(&abort_task)
                         .set(&abort_task)
-                        .execute(&conn)
+                        .execute(&*conn)
                         .context("Cannot update task")?;
                     let row = models::InfoInsert {
                         id: None,
                         task_id: task.id(),
-                        time: Local::now().naive_local(),
+                        time: Utc::now(),
                         message: &*msg,
                     };
                     diesel::insert_into(schema::infos::table)
                         .values(&row)
-                        .execute(&conn)
+                        .execute(&*conn)
                         .context("Error creating new task")?;
                 }
                 Ok(())
