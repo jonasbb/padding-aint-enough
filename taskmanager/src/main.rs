@@ -444,6 +444,19 @@ fn init_vm(executor: &Executor, config: &Config) -> Result<(), Error> {
     if !res.success() {
         bail!("Could not create working dir on VM {}", executor.name,)
     }
+    let _res = Command::new("ssh")
+        .arg(&executor.sshconnect)
+        .arg("--")
+        .args(&[
+            "killall",
+            "chrome",
+            ";",
+            "sudo",
+            "killall",
+            "fstrm_capture",
+        ])
+        .status()
+        .with_context(|_| format!("Could start killall commands on {}", executor.name,))?;
     info!("Copy initial files to VM {}", executor.name);
     scp_file(
         executor,
