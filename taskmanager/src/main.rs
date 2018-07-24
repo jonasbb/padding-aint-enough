@@ -273,7 +273,7 @@ where
         .spawn(move || loop {
             let res = panic::catch_unwind(&function);
             if let Ok(Err(err)) = res {
-                error!("{}", err);
+                error!("{}", err.display_causes());
             }
             error!(
                 "Thread {} stopped, restart",
@@ -459,6 +459,7 @@ where
 {
     let res = func(task);
     if let Err(err) = res {
+        warn!("{}", err.display_causes());
         taskmgr.restart_task(task, &err.display_causes())
     } else {
         Ok(())
