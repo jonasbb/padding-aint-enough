@@ -533,3 +533,35 @@ fn sanity_check_matched_queries(matched: &[Query]) -> Result<(), Error> {
 
     Ok(())
 }
+
+pub fn sequence_stats(
+    sequences_a: &[Sequence],
+    sequences_b: &[Sequence],
+) -> (Vec<usize>, Vec<usize>, usize, usize) {
+    let dists: Vec<Vec<usize>> = sequences_a
+        .iter()
+        .map(|seq| {
+            sequences_b
+                .iter()
+                .filter(|other_seq| seq != *other_seq)
+                .map(|other_seq| seq.distance(&other_seq))
+                .collect()
+        })
+        .collect();
+
+    let avg_distances: Vec<_> = dists
+        .iter()
+        .map(|dists2| dists2.iter().sum::<usize>() / dists2.len())
+        .collect();
+    let median_distances: Vec<_> = dists
+        .into_iter()
+        .map(|mut dists2| {
+            dists2.sort();
+            dists2[dists2.len() / 2]
+        })
+        .collect();
+    let avg_avg = avg_distances.iter().sum::<usize>() / avg_distances.len();
+    let avg_median = median_distances.iter().sum::<usize>() / median_distances.len();
+
+    (avg_distances, median_distances, avg_avg, avg_median)
+}
