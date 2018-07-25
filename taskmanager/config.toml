@@ -2,7 +2,8 @@ working_directory = "/mnt/data/Downloads/new-task-setup"
 # database = "/mnt/data/Downloads/new-task-setup/tasks.db"
 database = "postgres://taskmanager@/taskmanager"
 per_domain_datasets = 10
-max_allowed_dist_difference = 3
+max_allowed_dist_difference = 2.5
+max_allowed_dist_difference_abs = 300
 
 [[executors]]
 name = "fedora28chrome"

@@ -19,7 +19,7 @@ extern crate toml;
 
 mod utils;
 
-use encrypted_dns::{dnstap_to_sequence, ErrorExt};
+use encrypted_dns::{dnstap_to_sequence, sequence_stats, ErrorExt};
 use failure::{Error, ResultExt};
 use misc_utils::fs::file_open_read;
 use rayon::prelude::*;
@@ -502,30 +502,8 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                     .expect("Loading a DNSTAP file cannot fail, as we checked that before.")
             })
             .collect();
-        let avg_distances: Vec<_> = sequences
-            .iter()
-            .enumerate()
-            .map(|(i, seq)| {
-                sequences
-                    .iter()
-                    .enumerate()
-                    .filter(|(j, _other_seq)| i != *j)
-                    .map(|(_j, other_seq)| seq.distance(&other_seq))
-                    .sum::<usize>() / (sequences.len() - 1)
-            })
-            .collect();
 
-        let avg_avg = avg_distances.iter().sum::<usize>() / avg_distances.len();
-
-        // if there is only a single bad value, only restart that
-        // if there are multiple bad values, restart whole domain
-
-        match avg_distances
-            .iter()
-            .filter(|dist| **dist > (avg_avg * config.max_allowed_dist_difference))
-            .count()
-        {
-            0 => {
+        let mark_domain_good = |tasks: &mut Vec<models::Task>| -> Result<(), Error> {
                 //everything is fine, advance the tasks to next stage
                 for task in &*tasks {
                     let outdir = results_path.join(task.domain());
@@ -557,15 +535,44 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                 }
 
                 taskmgr
-                    .mark_results_checked_domain(&mut tasks)
+                .mark_results_checked_domain(tasks)
                     .context("Failed to mark domain tasks as finished.")?;
+            Ok(())
+        };
+
+        let (_, median_distances, _, avg_median) = sequence_stats(&sequences, &sequences);
+
+        let is_bad_dist = |dist| {
+            // absolute difference is too much
+            ((dist as isize) - (avg_median as isize)).abs() > config.max_allowed_dist_difference_abs as isize ||
+            // dist is at least X times larger than avg_avg
+            dist as f32 > (avg_median as f32 * config.max_allowed_dist_difference) ||
+            // dist is at least X time smaller than avg_avg
+            (dist as f32) < (avg_median as f32 / config.max_allowed_dist_difference)
+        };
+
+        // if there is only a single bad value, only restart that
+        // if there are multiple bad values, restart whole domain
+
+        if avg_median <= 10 {
+            mark_domain_good(&mut tasks)?;
+            continue;
+        }
+
+        match median_distances
+            .iter()
+            .filter(|dist| is_bad_dist(**dist))
+            .count()
+        {
+            0 => {
+                mark_domain_good(&mut tasks)?;
             }
             1 => {
                 // restart the single bad task
-                let (dist, mut task) = avg_distances
+                let (dist, mut task) = median_distances
                     .iter()
                     .zip(tasks.iter_mut())
-                    .find(|(dist, _task)| **dist > (avg_avg * config.max_allowed_dist_difference))
+                    .find(|(dist, _task)| is_bad_dist(**dist))
                     .expect("There is exactly one task");
                 info!(
                     "Restart task {} because of distance difference",
@@ -576,7 +583,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                         &mut task,
                         &format!(
                             "The task's distance is {} while the average distance is only {}",
-                            dist, avg_avg
+                            dist, avg_median
                         ),
                     )
                     .context("Cannot restart single bad task")?;

@@ -498,7 +498,8 @@ pub struct Config {
     pub database: PathBuf,
     pub per_domain_datasets: u8,
     pub executors: Vec<Executor>,
-    pub max_allowed_dist_difference: usize,
+    pub max_allowed_dist_difference: f32,
+    pub max_allowed_dist_difference_abs: usize,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
