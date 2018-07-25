@@ -10,7 +10,7 @@ extern crate rayon;
 #[macro_use]
 extern crate structopt;
 
-use encrypted_dns::{dnstap_to_sequence, sequences::Sequence, FailExt};
+use encrypted_dns::{dnstap_to_sequence, sequence_stats, sequences::Sequence, FailExt};
 use failure::{Error, ResultExt};
 use glob::glob;
 use rayon::prelude::*;
@@ -49,6 +49,8 @@ fn run() -> Result<(), Error> {
 
     info!("Start loading dnstap files...");
     let mut data = load_all_dnstap_files(&cli_args.dnstap_group)?;
+    // Remove empty groups as otherwise we get a divide by 0
+    data.retain(|group| !group.is_empty());
     data.iter_mut()
         .for_each(|group| group.sort_by(|a, b| a.id().cmp(&b.id())));
     info!("Done loading dnstap files.");
@@ -79,16 +81,24 @@ fn run() -> Result<(), Error> {
     }
 
     for (gid, group) in data.iter().enumerate() {
-        println!("Data for Group {}: Average distance to group", gid);
+        print!(
+            "{:width$}: ",
+            format!("Data for Group {}: Average/Median distance to group", gid),
+            width = id_len
+        );
+
+        for other_group in &data {
+            let (_, _, avg_avg, avg_median) = sequence_stats(group, other_group);
+            print!("{: >4}/{: >4} ", avg_avg, avg_median);
+        }
+        println!();
 
         for d in group {
             print!("{:width$}: ", d.id(), width = id_len);
             for other_group in &data {
-                let average_distance = other_group
-                    .iter()
-                    .map(|other_d| d.distance(other_d))
-                    .sum::<usize>() / other_group.len();
-                print!("{: >4} ", average_distance);
+                let (average_distance, median_distance, _, _) =
+                    sequence_stats(&[d.clone()], other_group);
+                print!("{: >4}/{: >4} ", average_distance[0], median_distance[0]);
             }
             println!();
         }
