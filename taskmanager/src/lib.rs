@@ -71,12 +71,12 @@ impl TaskManager {
     pub fn delete_all(&self) -> Result<(), Error> {
         let conn = self.db_connection.lock().unwrap();
         conn.transaction::<(), _, _>(|| {
-            diesel::delete(schema::tasks::table)
-                .execute(&*conn)
-                .context("Trying to delete `tasks` table")?;
             diesel::delete(schema::infos::table)
                 .execute(&*conn)
                 .context("Trying to delete `infos` table")?;
+            diesel::delete(schema::tasks::table)
+                .execute(&*conn)
+                .context("Trying to delete `tasks` table")?;
             Ok(())
         })
     }
