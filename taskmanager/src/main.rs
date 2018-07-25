@@ -447,14 +447,7 @@ fn init_vm(executor: &Executor, config: &Config) -> Result<(), Error> {
     let _res = Command::new("ssh")
         .arg(&executor.sshconnect)
         .arg("--")
-        .args(&[
-            "killall",
-            "chrome",
-            ";",
-            "sudo",
-            "killall",
-            "fstrm_capture",
-        ])
+        .args(&["killall", "chrome", ";", "sudo", "killall", "fstrm_capture"])
         .status()
         .with_context(|_| format!("Could start killall commands on {}", executor.name,))?;
     info!("Copy initial files to VM {}", executor.name);
@@ -504,39 +497,39 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
             .collect();
 
         let mark_domain_good = |tasks: &mut Vec<models::Task>| -> Result<(), Error> {
-                //everything is fine, advance the tasks to next stage
-                for task in &*tasks {
-                    let outdir = results_path.join(task.domain());
-                    ensure_path_exists(&outdir)?;
+            //everything is fine, advance the tasks to next stage
+            for task in &*tasks {
+                let outdir = results_path.join(task.domain());
+                ensure_path_exists(&outdir)?;
 
-                    let old_task_dir = local_path.join(task.name());
+                let old_task_dir = local_path.join(task.name());
 
-                    for (filename, new_file_ext) in &[
-                        (&*DNSTAP_FILE_NAME, "dnstap.xz"),
-                        (&*LOG_FILE, "log.xz"),
-                        (&*CHROME_LOG_FILE_NAME, "json.xz"),
-                    ] {
-                        let src = old_task_dir.join(filename);
-                        let dst = results_path.join(task.domain()).join(format!(
-                            "{}.{}",
-                            task.name(),
-                            new_file_ext
-                        ));
-                        fs::rename(&src, &dst).with_context(|_| {
-                            format!("Failed to move {} to {}", src.display(), dst.display())
-                        })?;
-                    }
-                    fs::remove_dir(&old_task_dir).with_context(|_| {
-                        format!(
-                            "Could not remove old task directory {}",
-                            old_task_dir.display()
-                        )
+                for (filename, new_file_ext) in &[
+                    (&*DNSTAP_FILE_NAME, "dnstap.xz"),
+                    (&*LOG_FILE, "log.xz"),
+                    (&*CHROME_LOG_FILE_NAME, "json.xz"),
+                ] {
+                    let src = old_task_dir.join(filename);
+                    let dst = results_path.join(task.domain()).join(format!(
+                        "{}.{}",
+                        task.name(),
+                        new_file_ext
+                    ));
+                    fs::rename(&src, &dst).with_context(|_| {
+                        format!("Failed to move {} to {}", src.display(), dst.display())
                     })?;
                 }
+                fs::remove_dir(&old_task_dir).with_context(|_| {
+                    format!(
+                        "Could not remove old task directory {}",
+                        old_task_dir.display()
+                    )
+                })?;
+            }
 
-                taskmgr
+            taskmgr
                 .mark_results_checked_domain(tasks)
-                    .context("Failed to mark domain tasks as finished.")?;
+                .context("Failed to mark domain tasks as finished.")?;
             Ok(())
         };
 
