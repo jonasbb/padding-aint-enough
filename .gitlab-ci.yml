@@ -28,7 +28,7 @@ test:cargo:
   - rustup default nightly
   script:
   - python3 --version
-  - pipenv install
+  - pipenv install --verbose
   - rustc --version && cargo --version      # Print version info for debugging
   - cargo build --all --verbose
   - cargo test --all --verbose
