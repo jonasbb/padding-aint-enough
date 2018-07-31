@@ -21,6 +21,8 @@ test:cargo:
   - apt-get -t testing -y install python3.6 python3-ipython python3-matplotlib python3-numpy
   - update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
   - update-alternatives --set python3 `which python3.6`
+  - python3 -m pip install pipenv
+  - pipenv install
   - rustup update nightly
   - rustup default nightly
   script:
@@ -28,7 +30,9 @@ test:cargo:
   - rustc --version && cargo --version      # Print version info for debugging
   - cargo build --all --verbose
   - cargo test --all --verbose
+  - # start pipenv virtual environment
+  - source $(pipenv --venv)/bin/activate
   - for f in ./test/data/*.json; do env RUST_BACKTRACE=1 RUST_LOG=encrypted_dns=trace cargo run --bin encrypted-dns -- "$f"; done
   - for f in ./test/data/*/*.json; do env RUST_BACKTRACE=1 RUST_LOG=encrypted_dns=trace cargo run --bin encrypted-dns -- "$f"; done
-  - python3 ./pylib/setup.py install --user
+  - pushd pylib && python3 ./setup.py install && popd
   - python3 -c "import pylib; help(pylib)"
