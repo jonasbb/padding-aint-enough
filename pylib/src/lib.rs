@@ -16,12 +16,11 @@ fn error2py(err: Error) -> PyErr {
     PyErr::new::<Exception, _>(format!("{}", err.display_causes()))
 }
 
-// Add bindings to the generated python module
-// N.B: names: "librust2py" must be the name of the `.so` or `.pyd` file
-/// This module is implemented in Rust.
-#[pymodinit(_pylib)]
-fn init_mod(_py: Python, m: &PyModule) -> PyResult<()> {
+// Function name is module name
+#[pymodinit]
+fn pylib(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PySequence>()?;
+    m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
     #[pyfn(m, "load_file")]
     fn load_file(py: Python, path: String) -> PyResult<Py<PySequence>> {

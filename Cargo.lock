@@ -766,23 +766,22 @@ dependencies = [
 
 [[package]]
 name = "pylib"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "encrypted-dns 0.1.0",
  "failure 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "pyo3 0.3.2 (git+https://github.com/PyO3/pyo3/)",
+ "pyo3 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "pyo3"
-version = "0.3.2"
-source = "git+https://github.com/PyO3/pyo3/#2627fa8a083616c031a3161a7517018de6149892"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.2.42 (registry+https://github.com/rust-lang/crates.io-index)",
  "mashup 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "pyo3cls 0.3.2 (git+https://github.com/PyO3/pyo3/)",
+ "pyo3cls 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "spin 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "version_check 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -790,8 +789,8 @@ dependencies = [
 
 [[package]]
 name = "pyo3-derive-backend"
-version = "0.3.2"
-source = "git+https://github.com/PyO3/pyo3/#2627fa8a083616c031a3161a7517018de6149892"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "log 0.4.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -801,11 +800,11 @@ dependencies = [
 
 [[package]]
 name = "pyo3cls"
-version = "0.3.2"
-source = "git+https://github.com/PyO3/pyo3/#2627fa8a083616c031a3161a7517018de6149892"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "proc-macro2 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "pyo3-derive-backend 0.3.2 (git+https://github.com/PyO3/pyo3/)",
+ "pyo3-derive-backend 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.6.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.14.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1552,9 +1551,9 @@ dependencies = [
 "checksum protobuf-codegen 2.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "3624c0feac7f512de21dbf8b574ae65c6573b1872d3878be951c0912eee4daca"
 "checksum protoc 2.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "8736a41d7c7e321913dd81067fbedf74d037f69999386eba07cc4dd1de7369f0"
 "checksum protoc-rust 2.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "25cba75872da640d0a9a78a9e0cf4b32c98b2f1b26c926aa384a2075ec522c37"
-"checksum pyo3 0.3.2 (git+https://github.com/PyO3/pyo3/)" = "<none>"
-"checksum pyo3-derive-backend 0.3.2 (git+https://github.com/PyO3/pyo3/)" = "<none>"
-"checksum pyo3cls 0.3.2 (git+https://github.com/PyO3/pyo3/)" = "<none>"
+"checksum pyo3 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9e733e6e55706b236b259511b40075c62885608fc578c8564bf3c33bf8f2ce84"
+"checksum pyo3-derive-backend 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f21fab56a323b1ddfc14334de29458c6ecc43b7bd142f1eafe20069f079df2fa"
+"checksum pyo3cls 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ac00892e83b1f429ee768c26a4832281967f857b78b9100e5812d899e6eee541"
 "checksum quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9274b940887ce9addde99c4eee6b5c44cc494b182b97e73dc8ffdcb3397fd3f0"
 "checksum quote 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)" = "7a6e920b65c65f10b2ae65c831a81a073a89edd28c7cce89475bff467ab4167a"
 "checksum quote 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9949cfe66888ffe1d53e6ec9d9f3b70714083854be20fd5e271b232a017401e8"

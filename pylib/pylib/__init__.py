@@ -1,3 +1,3 @@
-from ._pylib import Sequence, load_file
+from .pylib import Sequence, __version__, load_file
 
-__all__ = ["Sequence", "load_file"]
+__all__ = ["Sequence", "__version__", "load_file"]

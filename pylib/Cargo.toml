@@ -1,6 +1,6 @@
 [package]
 name = "pylib"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Jonas Bushart <jonas@bushart.org>"]
 
 [lib]
@@ -13,5 +13,5 @@ failure = "0.1.1"
 log = "0.4.3"
 
 [dependencies.pyo3]
-git = "https://github.com/PyO3/pyo3/"
+version = "0.4.0"
 features = [ "extension-module", "python3" ]
