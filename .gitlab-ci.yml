@@ -18,10 +18,10 @@ test:cargo:
   - echo "deb http://ftp.de.debian.org/debian testing main" >> /etc/apt/sources.list
   - apt-get update
   - apt-get install -y protobuf-compiler
-  - apt-get -t testing -y install python3.6 python3-ipython python3-matplotlib python3-numpy
+  - apt-get -t testing -y install python3.6 python3-ipython python3-matplotlib python3-numpy python3-pip
   - update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
   - update-alternatives --set python3 `which python3.6`
-  - pip3 install pipenv
+  - python3 -m pip install pipenv
   - pipenv install
   - rustup update nightly
   - rustup default nightly
