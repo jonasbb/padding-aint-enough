@@ -9,8 +9,10 @@ cache:
 variables:
   RUST_BACKTRACE: "1"
   GIT_DEPTH: "3"
-  CARGO_HOME: $CI_PROJECT_DIR/cargo
-  MPLBACKEND: Agg
+  CARGO_HOME: "$CI_PROJECT_DIR/cargo"
+  MPLBACKEND: "Agg"
+  LC_ALL: "C.UTF-8"
+  LANG: "C.UTF-8"
 
 # Use cargo to test the project
 test:cargo:
