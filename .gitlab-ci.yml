@@ -30,3 +30,5 @@ test:cargo:
   - cargo test --all --verbose
   - for f in ./test/data/*.json; do env RUST_BACKTRACE=1 RUST_LOG=encrypted_dns=trace cargo run --bin encrypted-dns -- "$f"; done
   - for f in ./test/data/*/*.json; do env RUST_BACKTRACE=1 RUST_LOG=encrypted_dns=trace cargo run --bin encrypted-dns -- "$f"; done
+  - python3 ./pylib/setup.py install --user
+  - python3 -c "import pylib; help(pylib)"
