@@ -30,8 +30,8 @@ def main() -> None:
                 dists[i, j] = -1
 
     Z = linkage(dists, method="ward", optimal_ordering=True)
-    fig = plt.figure(figsize=(25, 10))
-    dn = dendrogram(
+    _fig = plt.figure(figsize=(25, 10))
+    _dn = dendrogram(
         Z,
         labels=labels(seqs),
         orientation="left",

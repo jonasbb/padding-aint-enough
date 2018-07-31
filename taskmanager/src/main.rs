@@ -1,5 +1,4 @@
 #![allow(proc_macro_derive_resolution_fallback)]
-#![allow(dead_code)]
 
 extern crate encrypted_dns;
 extern crate env_logger;
@@ -36,8 +35,8 @@ use std::{
     time::Duration,
 };
 use structopt::StructOpt;
-use taskmanager::{models::Task, *};
-use utils::*;
+use taskmanager::{models::Task, Config, Executor, TaskManager};
+use utils::{ensure_path_exists, scp_file, xz, ScpDirection};
 
 lazy_static! {
     static ref DNSTAP_FILE_NAME: &'static Path = &Path::new("website-log.dnstap.xz");
@@ -280,8 +279,7 @@ where
                 name.as_ref().map(|s| &**s).unwrap_or("<unknown>")
             );
             thread::sleep(Duration::new(10, 0));
-        })
-        .unwrap()
+        }).unwrap()
 }
 
 /// Perform the execution of a task in a VM
@@ -357,7 +355,8 @@ fn cleanup_stale_tasks(taskmgr: &TaskManager) -> Result<(), Error> {
 fn copy_vm_results(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> {
     let local_path = config.get_collected_results_path();
     loop {
-        ensure_path_exists(&local_path).context("Cannot create local path for collected results")?;
+        ensure_path_exists(&local_path)
+            .context("Cannot create local path for collected results")?;
         let tasks = taskmgr.results_collectable()?;
         for (mut task, data) in tasks {
             execute_or_restart_task(&mut task, taskmgr, |mut task| {
@@ -493,10 +492,9 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
             .map(|task| {
                 dnstap_to_sequence(&local_path.join(task.name()).join(&*DNSTAP_FILE_NAME))
                     .expect("Loading a DNSTAP file cannot fail, as we checked that before.")
-            })
-            .collect();
+            }).collect();
 
-        let mark_domain_good = |tasks: &mut Vec<models::Task>| -> Result<(), Error> {
+        let mark_domain_good = |tasks: &mut Vec<Task>| -> Result<(), Error> {
             //everything is fine, advance the tasks to next stage
             for task in &*tasks {
                 let outdir = results_path.join(task.domain());
@@ -578,8 +576,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                             "The task's distance is {} while the average distance is only {}",
                             dist, avg_median
                         ),
-                    )
-                    .context("Cannot restart single bad task")?;
+                    ).context("Cannot restart single bad task")?;
             }
             n => {
                 // restart all tasks
@@ -594,8 +591,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                             "{} out of {} differ by too much from the average distance",
                             n, config.per_domain_datasets
                         ),
-                    )
-                    .context("Cannot restart bad domain")?;
+                    ).context("Cannot restart bad domain")?;
             }
         }
 

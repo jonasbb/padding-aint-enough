@@ -3,8 +3,6 @@
 
 extern crate encrypted_dns;
 extern crate failure;
-#[macro_use]
-extern crate log;
 extern crate pyo3;
 
 use encrypted_dns::{dnstap_to_sequence, ErrorExt, Sequence};
@@ -31,6 +29,7 @@ fn pylib(_py: Python, m: &PyModule) -> PyResult<()> {
     Ok(())
 }
 
+/// Represents a sequence of DNS packets as measured on the wire
 #[pyclass(name=Sequence)]
 pub struct PySequence {
     sequence: Sequence,
@@ -45,10 +44,12 @@ impl PySequence {
 
 #[pymethods]
 impl PySequence {
+    /// Returns a unique identifier for this sequence
     pub fn id(&self) -> PyResult<String> {
         Ok(self.sequence.id().to_string())
     }
 
+    /// Calculate the distance between two sequences
     pub fn distance(&self, other: &PySequence) -> PyResult<usize> {
         Ok(self.sequence.distance(&other.sequence))
     }
