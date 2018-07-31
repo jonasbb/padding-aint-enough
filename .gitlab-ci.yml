@@ -30,9 +30,11 @@ test:cargo:
   - rustc --version && cargo --version      # Print version info for debugging
   - cargo build --all --verbose
   - cargo test --all --verbose
-  - # start pipenv virtual environment
+  # start pipenv virtual environment
   - source $(pipenv --venv)/bin/activate
+  # This rust program calls some python scripts
   - for f in ./test/data/*.json; do env RUST_BACKTRACE=1 RUST_LOG=encrypted_dns=trace cargo run --bin encrypted-dns -- "$f"; done
   - for f in ./test/data/*/*.json; do env RUST_BACKTRACE=1 RUST_LOG=encrypted_dns=trace cargo run --bin encrypted-dns -- "$f"; done
+  # Test pylib build
   - pushd pylib && python3 ./setup.py install && popd
   - python3 -c "import pylib; help(pylib)"
