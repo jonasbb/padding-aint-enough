@@ -446,7 +446,7 @@ pub trait ErrorExt {
 
 impl ErrorExt for Error {
     fn display_causes(&self) -> DisplayCauses {
-        DisplayCauses(self.cause())
+        DisplayCauses(self.as_fail())
     }
 }
 

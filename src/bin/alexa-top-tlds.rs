@@ -43,7 +43,7 @@ fn main() {
         let mut out = stderr.lock();
         // cannot handle a write error here, we are already in the outermost layer
         let _ = writeln!(out, "An error occured:");
-        for fail in err.causes() {
+        for fail in err.iter_chain() {
             let _ = writeln!(out, "  {}", fail);
         }
         let _ = writeln!(out, "{}", err.backtrace());
