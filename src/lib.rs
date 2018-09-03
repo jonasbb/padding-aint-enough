@@ -493,7 +493,7 @@ fn sanity_check_dnstap(events: &[protos::Dnstap]) -> Result<(), Error> {
     }
 
     if client_query_start_count == 0 {
-        bail!("Expected et least 1 CLIENT_QUERY for 'start.example.' but found none");
+        bail!("Expected at least 1 CLIENT_QUERY for 'start.example.' but found none");
     } else if client_query_end_count != 1 {
         bail!(
             "Unexpected number of CLIENT_QUERYs for 'end.example.': {}, expected 1",
