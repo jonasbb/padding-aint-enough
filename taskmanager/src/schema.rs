@@ -1,3 +1,5 @@
+#![allow(proc_macro_derive_resolution_fallback, unused_imports)]
+
 table! {
     use diesel::sql_types::*;
     use models::Task_state;

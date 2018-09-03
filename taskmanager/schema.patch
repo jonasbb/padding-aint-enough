@@ -1,0 +1,13 @@
+diff --git a/taskmanager/src/schema.rs b/taskmanager/src/schema.rs
+index 5e8c8b2..e24f74a 100644
+--- a/taskmanager/src/schema.rs
++++ b/taskmanager/src/schema.rs
+@@ -1,6 +1,8 @@
++#![allow(proc_macro_derive_resolution_fallback, unused_imports)]
++
+ table! {
+     use diesel::sql_types::*;
+     use models::Task_state;
+ 
+     /// Representation of the `infos` table.
+     ///
