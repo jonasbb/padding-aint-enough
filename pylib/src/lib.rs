@@ -1,4 +1,4 @@
-#![feature(specialization, use_extern_macros)]
+#![feature(specialization)]
 #![cfg_attr(feature = "cargo-clippy", allow(clippy))]
 
 extern crate encrypted_dns;
