@@ -161,8 +161,9 @@ impl DnstapContent {
         let response_message = if from.has_response_message() {
             let buf = from.take_response_message();
             Some((
-                DnsMessage::from_vec(&*buf)
-                    .map_err(|err| format_err!("Processing the response message failed: {}", err))?,
+                DnsMessage::from_vec(&*buf).map_err(|err| {
+                    format_err!("Processing the response message failed: {}", err)
+                })?,
                 buf.len(),
             ))
         } else {

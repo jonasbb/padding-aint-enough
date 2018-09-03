@@ -121,11 +121,11 @@ impl DepGraph {
                                 let mut deps =
                                     traverse_stack(stack_trace, find_script_deps, HashSet::new())
                                         .with_context(|_| {
-                                            format!(
+                                        format!(
                                             "Handling script (failed to) parse event, Script ID {}",
                                             script_id
                                         )
-                                        })?;
+                                    })?;
                                 script_id_cache.borrow_mut().insert(script_id.clone(), deps);
                             }
                         } else if url == "" {
@@ -241,51 +241,49 @@ impl DepGraph {
             // Uses the URL to lookup the node with for this URL
             // If this fails, it uses the script ID to lookup all the URL this script ID depends on
             // Adds all the found URLs as dependencies to the node.
-            let add_dependencies_to_node = |node: NodeIndex,
-                                            url: &str,
-                                            script_id: Option<&str>|
-             -> Result<(), Error> {
-                let nodes_cache = nodes_cache.borrow();
-                let mut graph = graph.borrow_mut();
+            let add_dependencies_to_node =
+                |node: NodeIndex, url: &str, script_id: Option<&str>| -> Result<(), Error> {
+                    let nodes_cache = nodes_cache.borrow();
+                    let mut graph = graph.borrow_mut();
 
-                // skip invalid URLs, such as about:blank
-                if should_ignore_url(url) {
-                    return Ok(());
-                }
+                    // skip invalid URLs, such as about:blank
+                    if should_ignore_url(url) {
+                        return Ok(());
+                    }
 
-                // convert a single URL to a NodeIndex
-                let url2node = |url: &str| -> Result<NodeIndex, Error> {
-                    nodes_cache
-                        .get(url)
-                        .cloned()
-                        .ok_or_else(|| format_err!("Could not find URL '{}' in cache", url))
+                    // convert a single URL to a NodeIndex
+                    let url2node = |url: &str| -> Result<NodeIndex, Error> {
+                        nodes_cache
+                            .get(url)
+                            .cloned()
+                            .ok_or_else(|| format_err!("Could not find URL '{}' in cache", url))
+                    };
+
+                    if let Ok(dep) = url2node(url) {
+                        // if URL succeeds, then everything is fine
+                        graph.update_edge(node, dep, ());
+                    } else if let Some(script_id) = script_id {
+                        // Lookup all the dependend URLs for the script
+                        // Convert them into NodeIndex (via node_cache)
+                        // Add them all as dependencies
+                        find_script_deps(script_id)
+                            .with_context(|_| format!("Failed to lookup script ID {}", script_id))?
+                            .into_iter()
+                            .map(|url| url2node(&*url))
+                            .collect::<Result<Vec<_>, Error>>()
+                            .context("Failed to convert a URL dependency of a script to a node.")?
+                            .into_iter()
+                            .for_each(|dep| {
+                                graph.update_edge(node, dep, ());
+                            });
+                    } else {
+                        warn!(
+                            "Could not find URL '{}' in cache and script ID is missing",
+                            url
+                        )
+                    }
+                    Ok(())
                 };
-
-                if let Ok(dep) = url2node(url) {
-                    // if URL succeeds, then everything is fine
-                    graph.update_edge(node, dep, ());
-                } else if let Some(script_id) = script_id {
-                    // Lookup all the dependend URLs for the script
-                    // Convert them into NodeIndex (via node_cache)
-                    // Add them all as dependencies
-                    find_script_deps(script_id)
-                        .with_context(|_| format!("Failed to lookup script ID {}", script_id))?
-                        .into_iter()
-                        .map(|url| url2node(&*url))
-                        .collect::<Result<Vec<_>, Error>>()
-                        .context("Failed to convert a URL dependency of a script to a node.")?
-                        .into_iter()
-                        .for_each(|dep| {
-                            graph.update_edge(node, dep, ());
-                        });
-                } else {
-                    warn!(
-                        "Could not find URL '{}' in cache and script ID is missing",
-                        url
-                    )
-                }
-                Ok(())
-            };
 
             /// Traverse the stackframe of an initiator and add all the occuring scripts as dependencies
             fn traverse_stack<ADTN>(
@@ -676,8 +674,7 @@ impl DepGraph {
                             .node_weight(neigh)
                             .unwrap()
                             .normalized_domain_name
-                    })
-                    .collect();
+                    }).collect();
                 deps.sort();
                 info!("    Dependency Set {} ({})", i + 1, deps.len());
                 for dep in deps {
@@ -778,7 +775,7 @@ mod test {
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
         ).context("Failed to process all messages from chrome")
-            .expect("A graph must be buildable from the data.");
+        .expect("A graph must be buildable from the data.");
 
         test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
     }
@@ -820,7 +817,7 @@ mod test {
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
         ).context("Failed to process all messages from chrome")
-            .expect("A graph must be buildable from the data.");
+        .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
 
         test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
@@ -856,7 +853,7 @@ mod test {
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
         ).context("Failed to process all messages from chrome")
-            .expect("A graph must be buildable from the data.");
+        .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
         depgraph.remove_depends_on_same_domain();
 
@@ -893,7 +890,7 @@ mod test {
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
         ).context("Failed to process all messages from chrome")
-            .expect("A graph must be buildable from the data.");
+        .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
         depgraph.remove_dependency_subset();
 
@@ -930,7 +927,7 @@ mod test {
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
         ).context("Failed to process all messages from chrome")
-            .expect("A graph must be buildable from the data.");
+        .expect("A graph must be buildable from the data.");
         depgraph.simplify_nodes();
 
         test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
@@ -961,7 +958,7 @@ mod test {
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
         ).context("Failed to process all messages from chrome")
-            .expect("A graph must be buildable from the data.");
+        .expect("A graph must be buildable from the data.");
         depgraph.simplify_graph();
 
         test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());

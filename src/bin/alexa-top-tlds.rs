@@ -7,8 +7,8 @@ extern crate failure;
 #[macro_use]
 extern crate log;
 extern crate misc_utils;
-extern crate structopt;
 extern crate serde;
+extern crate structopt;
 #[macro_use]
 extern crate serde_derive;
 
@@ -80,10 +80,10 @@ fn run() -> Result<(), Error> {
                         .next()
                         .expect("The domain is never empty, thus one substring always exists."),
                     ".",
-                ].join("")
+                ]
+                    .join("")
             })
-        })
-        .collect::<Result<BTreeSet<String>, _>>()
+        }).collect::<Result<BTreeSet<String>, _>>()
         .context("Failed to process Alexa top x list");
     let out = io::stdout();
     let mut stdout = out.lock();

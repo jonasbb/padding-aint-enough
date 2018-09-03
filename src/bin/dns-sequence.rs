@@ -237,8 +237,7 @@ fn load_all_dnstap_files(
                     }
                 })
             }).transpose()
-        })
-        .collect::<Result<_, _>>()?;
+        }).collect::<Result<_, _>>()?;
 
     // Pairs of Label with Data (the Sequences)
     let data: Vec<(String, Vec<Sequence>)> = directories
@@ -350,8 +349,7 @@ fn classify_sequence(sequence: &Sequence) -> Option<&'static str> {
             } else {
                 false
             }
-        })
-        .cloned()
+        }).cloned()
         .collect();
 
     match &*packets {

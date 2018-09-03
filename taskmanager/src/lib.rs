@@ -227,8 +227,7 @@ impl TaskManager {
                             )
                         })?).context("Associated data must be ResultsCollectableData")?;
                     Ok((task, data))
-                })
-                .collect::<Result<Vec<_>, Error>>()?)
+                }).collect::<Result<Vec<_>, Error>>()?)
         })
     }
 
@@ -308,8 +307,8 @@ impl TaskManager {
                 priority ASC
             ;"#,
             ).bind::<Int4, _>(i32::from(iteration_count))
-                .load::<models::Task>(&*conn)
-                .context("Cannot retrieve tasks from database")?)
+            .load::<models::Task>(&*conn)
+            .context("Cannot retrieve tasks from database")?)
         })?;
 
         if tasks.is_empty() {

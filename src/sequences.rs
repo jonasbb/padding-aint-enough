@@ -27,8 +27,7 @@ impl Sequence {
             .filter_map(|x| match x {
                 SequenceElement::Size(n) => Some(*n as usize),
                 _ => None,
-            })
-            .sum()
+            }).sum()
     }
 
     pub fn distance(&self, other: &Self) -> usize {
@@ -54,8 +53,7 @@ impl Sequence {
             .map(|c| {
                 cost += c;
                 cost
-            })
-            .collect();
+            }).collect();
         let mut current_row = vec![0usize; other.0.len() + 1];
         assert_eq!(
             previous_row.len(),

@@ -7,11 +7,11 @@ extern crate env_logger;
 extern crate failure;
 #[macro_use]
 extern crate log;
-extern crate structopt;
 extern crate misc_utils;
 extern crate petgraph;
 extern crate petgraph_graphml;
 extern crate serde;
+extern crate structopt;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
@@ -321,12 +321,11 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
 
         if !matched.is_empty() {
             let fname = get_output_dir().join("dns.pickle");
-            let mut wtr =
-                file_open_write(
-                    &fname,
-                    WriteOptions::default()
-                        .set_open_options(OpenOptions::new().create(true).truncate(true)),
-                ).with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
+            let mut wtr = file_open_write(
+                &fname,
+                WriteOptions::default()
+                    .set_open_options(OpenOptions::new().create(true).truncate(true)),
+            ).with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
             serde_pickle::to_writer(&mut wtr, &matched, true)?;
         }
     }
@@ -377,8 +376,7 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
             }
             // Ignore all other messages
             _ => None,
-        })
-        .collect();
+        }).collect();
 
     // protect against failed network requests. Sometimes this might end up empty, in which case we do not want to plot anything
     let fname = get_output_dir().join(DNS_TIMING);
@@ -392,9 +390,7 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     let mut wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    ).with_context(|_| {
-        format!("Opening input file '{}' failed", &fname.display(),)
-    })?;
+    ).with_context(|_| format!("Opening input file '{}' failed", &fname.display(),))?;
     serde_pickle::to_writer(&mut wtr, &timings, true)?;
     // we need to close the writer to flush everything
     drop(wtr);
@@ -405,8 +401,7 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
                 .join(DNS_TIMING)
                 .canonicalize()?
                 .to_string_lossy(),
-        )
-        .current_dir(get_output_dir())
+        ).current_dir(get_output_dir())
         .status()
         .context("Could not start Python process")?;
 
@@ -454,9 +449,7 @@ fn export_as_pickle(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     let mut wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    ).with_context(|_| {
-        format!("Opening output file '{}' failed", &fname.display(),)
-    })?;
+    ).with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
     serde_pickle::to_writer(&mut wtr, graph, true)?;
 
     Ok(())

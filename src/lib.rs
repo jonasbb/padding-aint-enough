@@ -62,8 +62,7 @@ pub fn process_dnstap<P: AsRef<Path>>(
                     Ok(None)
                 }
             }
-        })
-        .filter_map(|x| x.transpose()))
+        }).filter_map(|x| x.transpose()))
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
@@ -214,45 +213,43 @@ pub fn dnstap_to_sequence(dnstap_file: &Path) -> Result<Sequence, Error> {
     let mut matched = Vec::new();
 
     for ev in events
-            .into_iter()
-                // search for the CLIENT_RESPONE `start.example.` message as the end of the prefetching events
-            .skip_while(|ev| {
-                let DnstapContent::Message {
-                    message_type,
-                    ref response_message,
-                    ..
-                } = ev.content;
-                if message_type == Message_Type::CLIENT_RESPONSE {
-                    let (dnsmsg, _size) =
-                        response_message.as_ref().expect("Unbound always sets this");
-                    let qname = dnsmsg.queries()[0].name().to_utf8();
-                    if qname == "start.example." {
-                        return false;
-                    }
+        .into_iter()
+        // search for the CLIENT_RESPONE `start.example.` message as the end of the prefetching events
+        .skip_while(|ev| {
+            let DnstapContent::Message {
+                message_type,
+                ref response_message,
+                ..
+            } = ev.content;
+            if message_type == Message_Type::CLIENT_RESPONSE {
+                let (dnsmsg, _size) = response_message.as_ref().expect("Unbound always sets this");
+                let qname = dnsmsg.queries()[0].name().to_utf8();
+                if qname == "start.example." {
+                    return false;
                 }
-                true
-            })
-            // the skip while returns the CLIENT_RESPONSE with `start.example.`
-            // We want to remove this as well, so skip over the first element here
-            .skip(1)
-            // Only process messages until the end message is found in form of the first (thus CLIENT_QUERY)
-            // message forr domain `end.example.`
-            .take_while(|ev| {
-                let DnstapContent::Message {
-                    message_type,
-                    ref query_message,
-                    ..
-                } = ev.content;
-                if message_type == Message_Type::CLIENT_QUERY {
-                    let (dnsmsg, _size) =
-                        query_message.as_ref().expect("Unbound always sets this");
-                    let qname = dnsmsg.queries()[0].name().to_utf8();
-                    if qname == "end.example." {
-                        return false;
-                    }
+            }
+            true
+        })
+        // the skip while returns the CLIENT_RESPONSE with `start.example.`
+        // We want to remove this as well, so skip over the first element here
+        .skip(1)
+        // Only process messages until the end message is found in form of the first (thus CLIENT_QUERY)
+        // message forr domain `end.example.`
+        .take_while(|ev| {
+            let DnstapContent::Message {
+                message_type,
+                ref query_message,
+                ..
+            } = ev.content;
+            if message_type == Message_Type::CLIENT_QUERY {
+                let (dnsmsg, _size) = query_message.as_ref().expect("Unbound always sets this");
+                let qname = dnsmsg.queries()[0].name().to_utf8();
+                if qname == "end.example." {
+                    return false;
                 }
-                true
-            }) {
+            }
+            true
+        }) {
         let DnstapContent::Message {
             message_type,
             query_message,
@@ -366,8 +363,7 @@ fn convert_to_sequence(data: &[Query], identifier: String) -> Option<Sequence> {
 
                 let size = pad_size(d.response_size, false, Padding::Q128R468);
                 gap.into_iter().chain(Some(size))
-            })
-            .collect(),
+            }).collect(),
         identifier,
     ))
 }
@@ -546,8 +542,7 @@ pub fn sequence_stats(
                 .filter(|other_seq| seq != *other_seq)
                 .map(|other_seq| seq.distance(&other_seq))
                 .collect()
-        })
-        .collect();
+        }).collect();
 
     let avg_distances: Vec<_> = dists
         .iter()
@@ -558,8 +553,7 @@ pub fn sequence_stats(
         .map(|mut dists2| {
             dists2.sort();
             dists2[dists2.len() / 2]
-        })
-        .collect();
+        }).collect();
     let avg_avg = avg_distances.iter().sum::<usize>() / avg_distances.len();
     let avg_median = median_distances.iter().sum::<usize>() / median_distances.len();
 

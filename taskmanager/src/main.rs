@@ -11,8 +11,8 @@ extern crate lazy_static;
 extern crate log;
 extern crate misc_utils;
 extern crate rayon;
-extern crate structopt;
 extern crate serde;
+extern crate structopt;
 extern crate taskmanager;
 extern crate toml;
 
