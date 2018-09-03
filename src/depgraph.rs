@@ -670,7 +670,6 @@ impl DepGraph {
                 let mut deps: Vec<_> = self
                     .graph
                     .neighbors(*node)
-                    .into_iter()
                     .map(|neigh| {
                         &self
                             .graph

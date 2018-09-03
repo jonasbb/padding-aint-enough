@@ -1,5 +1,8 @@
 #![feature(specialization)]
-#![cfg_attr(feature = "cargo-clippy", allow(clippy))]
+#![cfg_attr(
+    feature = "cargo-clippy",
+    allow(renamed_and_removed_lints, clippy)
+)]
 
 extern crate encrypted_dns;
 extern crate failure;

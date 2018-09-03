@@ -69,7 +69,6 @@ fn run() -> Result<(), Error> {
 
     let tlds: Result<BTreeSet<String>, _> = rdr
         .deserialize()
-        .into_iter()
         .take(cli_args.limit as usize)
         .map(|record: Result<CsvLine, _>| {
             record.map(|r| {

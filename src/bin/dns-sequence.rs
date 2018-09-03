@@ -226,7 +226,6 @@ fn load_all_dnstap_files(
     // Get a list of directories
     // Each directory corresponds to a label
     let directories: Vec<PathBuf> = fs::read_dir(base_dir)?
-        .into_iter()
         .flat_map(|x| {
             x.and_then(|entry| {
                 // Result<Option<PathBuf>>
@@ -252,7 +251,6 @@ fn load_all_dnstap_files(
                 .to_string();
 
             let mut filenames: Vec<PathBuf> = fs::read_dir(&dir)?
-                .into_iter()
                 .flat_map(|x| {
                     x.and_then(|entry| {
                         // Result<Option<PathBuf>>

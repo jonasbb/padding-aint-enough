@@ -1,4 +1,5 @@
 #![allow(proc_macro_derive_resolution_fallback)]
+#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 
 extern crate encrypted_dns;
 extern crate env_logger;

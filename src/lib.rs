@@ -1,6 +1,7 @@
 #![feature(nll)]
 #![feature(transpose_result)]
 #![feature(try_from)]
+#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 
 extern crate chrono;
 #[macro_use]
@@ -48,7 +49,6 @@ pub fn process_dnstap<P: AsRef<Path>>(
     let fstrm = DecoderReader::with_content_type(rdr, "protobuf:dnstap.Dnstap".into());
 
     Ok(fstrm
-        .into_iter()
         .map(move |msg| -> Result<Option<protos::Dnstap>, Error> {
             let raw_dnstap = protobuf::parse_from_bytes::<dnstap::Dnstap>(&msg?)
                 .context("Parsing protobuf failed.")?;

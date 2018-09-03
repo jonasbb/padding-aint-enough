@@ -117,7 +117,6 @@ where
             let pattern = pattern.as_ref();
             Ok(glob(pattern)
                 .context("Invalid pattern")?
-                .into_iter()
                 .map(|path| -> Result<_, Error> {
                     let path = path?;
                     if path.is_file() && path.to_string_lossy().contains(".dnstap") {
