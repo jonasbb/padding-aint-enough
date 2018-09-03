@@ -10,7 +10,6 @@ extern crate lazy_static;
 extern crate log;
 extern crate misc_utils;
 extern crate rayon;
-#[macro_use]
 extern crate structopt;
 extern crate serde;
 extern crate taskmanager;

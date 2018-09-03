@@ -7,7 +7,6 @@ extern crate glob;
 #[macro_use]
 extern crate log;
 extern crate rayon;
-#[macro_use]
 extern crate structopt;
 
 use encrypted_dns::{dnstap_to_sequence, sequence_stats, sequences::Sequence, FailExt};

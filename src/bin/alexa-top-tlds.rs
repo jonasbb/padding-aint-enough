@@ -7,7 +7,6 @@ extern crate failure;
 #[macro_use]
 extern crate log;
 extern crate misc_utils;
-#[macro_use]
 extern crate structopt;
 extern crate serde;
 #[macro_use]

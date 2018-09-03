@@ -6,7 +6,6 @@ extern crate env_logger;
 extern crate failure;
 #[macro_use]
 extern crate log;
-#[macro_use]
 extern crate structopt;
 extern crate misc_utils;
 extern crate petgraph;
