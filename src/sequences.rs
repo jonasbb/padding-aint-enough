@@ -1,3 +1,4 @@
+use minmax::{Max, Min};
 use rayon::prelude::*;
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
@@ -271,11 +272,14 @@ mod test_edit_dist {
     }
 }
 
+/// Find the k-nearest-neighbours in trainings_data for each element in validation_data
+///
+/// Returns a label for each entry in validation_data together with the minimal and maximal distance seen.
 pub fn knn(
     trainings_data: &[(String, Vec<Sequence>)],
     validation_data: &[Sequence],
     k: u8,
-) -> Vec<String> {
+) -> Vec<(String, Min<usize>, Max<usize>)> {
     assert!(k > 0, "kNN needs a k with k > 0");
 
     validation_data
@@ -283,9 +287,14 @@ pub fn knn(
         .map(|vsample| {
             let distances = take_smallest(
                 trainings_data
-                .into_iter()
-                // iterate over all elements of the trainings data
-                .flat_map(|(label, tsample)| tsample.iter().map(move |s| ClassifierData {label, distance:vsample.distance(s)})),
+                    .into_iter()
+                    // iterate over all elements of the trainings data
+                    .flat_map(|(label, tsample)| {
+                        tsample.iter().map(move |s| ClassifierData {
+                            label,
+                            distance: vsample.distance(s),
+                        })
+                    }),
                 // collect the k smallest distances
                 k as usize,
             );
@@ -293,52 +302,51 @@ pub fn knn(
             // k == 1 is easy, just take the one with smallest distance
             if k == 1 {
                 if !distances.is_empty() {
-                    return distances[0].label.to_string();
+                    return (
+                        distances[0].label.to_string(),
+                        Min::with_initial(distances[0].distance),
+                        Max::with_initial(distances[0].distance),
+                    );
                 } else {
                     panic!("Not enough trainings data");
                 }
             }
 
-            let mut most_common_label: HashMap<String, usize> = HashMap::new();
+            let mut most_common_label: HashMap<String, (usize, Min<usize>, Max<usize>)> =
+                HashMap::new();
             // let mut distance = 0;
             for class in distances {
-                *most_common_label
-                    .entry(class.label.to_string())
-                    .or_insert(0) += 1;
+                let entry = most_common_label.entry(class.label.to_string()).or_insert((
+                    0,
+                    Min::default(),
+                    Max::default(),
+                ));
+                entry.0 += 1;
+                entry.1.update(class.distance);
+                entry.2.update(class.distance);
             }
-            // // additionally to the first k entries also collect all entries with equal cost/distance than the highest one so far
-            // while let Some(class) = distances.pop() {
-            //     if class.0.distance <= distance {
-            //         *most_common_label
-            //             .entry(class.0.label.to_string())
-            //             .or_insert(0) += 1;
-            //     } else {
-            //         // the entries are sorted by distance in increasing order
-            //         // so as soon as the first one doesn't match anymore, the others
-            //         // won't match either
-            //         break;
-            //     }
-            // }
-            let mut labels = most_common_label
-                .iter()
-                .fold(
-                    (0, Vec::with_capacity(5)),
-                    |(mut count, mut labels), (other_label, &other_count)| {
-                        if other_count > count {
-                            labels.clear();
-                            labels.push(&**other_label);
-                            count = other_count;
-                        } else if other_count == count {
-                            labels.push(&**other_label);
-                        }
-                        (count, labels)
-                    },
-                )
-                .1;
+
+            let (_count, min_dist, max_dist, mut labels) = most_common_label.iter().fold(
+                (0, Min::default(), Max::default(), Vec::with_capacity(5)),
+                |(mut count, mut min_dist, mut max_dist, mut labels),
+                 (other_label, &(other_count, other_min_dist, other_max_dist))| {
+                    if other_count > count {
+                        labels.clear();
+                        labels.push(&**other_label);
+                        count = other_count;
+                        min_dist = other_min_dist;
+                        max_dist = other_max_dist;
+                    } else if other_count == count {
+                        labels.push(&**other_label);
+                        min_dist.combine(other_min_dist);
+                        max_dist.combine(other_max_dist);
+                    }
+                    (count, min_dist, max_dist, labels)
+                },
+            );
             labels.sort();
-            labels.join(" - ")
-        })
-        .collect()
+            (labels.join(" - "), min_dist, max_dist)
+        }).collect()
 }
 
 #[cfg_attr(feature = "cargo-clippy", allow(type_complexity))]
@@ -416,9 +424,18 @@ fn test_knn() {
     ];
     let validation_data = vec![Sequence::new(vec![Size(1)], "".into())];
 
-    assert_eq!(vec!["B"], knn(&*trainings_data, &*validation_data, 1));
-    assert_eq!(vec!["B"], knn(&*trainings_data, &*validation_data, 2));
-    assert_eq!(vec!["B"], knn(&*trainings_data, &*validation_data, 3));
+    assert_eq!(
+        vec![("B".to_string(), Min::with_initial(0), Max::with_initial(0))],
+        knn(&*trainings_data, &*validation_data, 1)
+    );
+    assert_eq!(
+        vec![("B".to_string(), Min::with_initial(0), Max::with_initial(13))],
+        knn(&*trainings_data, &*validation_data, 2)
+    );
+    assert_eq!(
+        vec![("B".to_string(), Min::with_initial(0), Max::with_initial(13))],
+        knn(&*trainings_data, &*validation_data, 3)
+    );
 }
 
 #[test]
@@ -436,7 +453,24 @@ fn test_knn_tie() {
     ];
     let validation_data = vec![Sequence::new(vec![Size(1)], "".into())];
 
-    assert_eq!(vec!["B"], knn(&*trainings_data, &*validation_data, 1));
-    assert_eq!(vec!["A - B"], knn(&*trainings_data, &*validation_data, 2));
-    assert_eq!(vec!["A - B"], knn(&*trainings_data, &*validation_data, 3));
+    assert_eq!(
+        vec![("B".to_string(), Min::with_initial(0), Max::with_initial(0))],
+        knn(&*trainings_data, &*validation_data, 1)
+    );
+    assert_eq!(
+        vec![(
+            "A - B".to_string(),
+            Min::with_initial(0),
+            Max::with_initial(70)
+        )],
+        knn(&*trainings_data, &*validation_data, 2)
+    );
+    assert_eq!(
+        vec![(
+            "A - B".to_string(),
+            Min::with_initial(0),
+            Max::with_initial(70)
+        )],
+        knn(&*trainings_data, &*validation_data, 3)
+    );
 }

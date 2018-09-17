@@ -14,6 +14,8 @@ extern crate rayon;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate minmax;
+extern crate serde_with;
 extern crate structopt;
 
 use csv::{ReaderBuilder, Writer as CsvWriter, WriterBuilder};
@@ -27,6 +29,7 @@ use encrypted_dns::{
     take_largest, FailExt,
 };
 use failure::{Error, ResultExt};
+use minmax::{Max, Min};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use rayon::prelude::*;
 use std::{
@@ -81,7 +84,7 @@ fn run() -> Result<(), Error> {
     // Controls how many folds there are
     let at_most_sequences_per_label = 5;
     // Controls the maximum k for knn
-    let most_k = 1;
+    let most_k = 5;
 
     let writer: Box<Write> = cli_args
         .misclassifications
@@ -120,22 +123,32 @@ fn run() -> Result<(), Error> {
                 .into_iter()
                 .zip(&test_labels)
                 .zip(&test_data)
-                .fold((0, 0), |(mut corr, mut und), ((class, label), sequence)| {
-                    if class == *label {
-                        corr += 1;
-                    } else if log_misclassification(&mut mis_writer, k, &sequence, &label, &class)
-                        .is_err()
-                    {
-                        error!(
-                            "Cannot log misclassification for sequence: {}",
-                            sequence.id()
-                        );
-                    }
-                    if class.contains(&*label) {
-                        und += 1;
-                    }
-                    (corr, und)
-                });
+                .fold(
+                    (0, 0),
+                    |(mut corr, mut und), (((class, min_dist, max_dist), label), sequence)| {
+                        if class == *label {
+                            corr += 1;
+                        } else if log_misclassification(
+                            &mut mis_writer,
+                            k,
+                            &sequence,
+                            &label,
+                            &class,
+                            min_dist,
+                            max_dist,
+                        ).is_err()
+                        {
+                            error!(
+                                "Cannot log misclassification for sequence: {}",
+                                sequence.id()
+                            );
+                        }
+                        if class.contains(&*label) {
+                            und += 1;
+                        }
+                        (corr, und)
+                    },
+                );
             info!(
                 "Fold: {} k: {} - {} / {} correct (In list of choices: {})",
                 fold,
@@ -263,8 +276,7 @@ fn load_all_dnstap_files(
                             }
                         })
                     }).transpose()
-                })
-                .collect::<Result<_, _>>()?;
+                }).collect::<Result<_, _>>()?;
             // sort filenames for predictable results
             filenames.sort();
 
@@ -276,10 +288,12 @@ fn load_all_dnstap_files(
                         format!("Processing dnstap file '{}'", dnstap_file.display())
                     }) {
                         Ok(seq) => Some(seq),
-                        Err(err) => {warn!("{}", err.display_causes()); None},
+                        Err(err) => {
+                            warn!("{}", err.display_causes());
+                            None
+                        }
                     }
-                })
-                .collect();
+                }).collect();
 
             // TODO this is sooo ugly
             // Only retain 5 of the possibilities which have the highest number of diversity
@@ -310,6 +324,8 @@ fn log_misclassification<W>(
     sequence: &Sequence,
     label: &str,
     class: &str,
+    min_dist: Min<usize>,
+    max_dist: Max<usize>,
 ) -> Result<(), Error>
 where
     W: Write,
@@ -319,6 +335,10 @@ where
         id: &'a str,
         k: usize,
         label: &'a str,
+        #[serde(with = "serde_with::rust::display_fromstr")]
+        min_dist: Min<usize>,
+        #[serde(with = "serde_with::rust::display_fromstr")]
+        max_dist: Max<usize>,
         class: &'a str,
         reason: Option<&'a str>,
     };
@@ -329,6 +349,8 @@ where
         id: sequence.id(),
         k,
         label,
+        min_dist,
+        max_dist,
         class,
         reason,
     };
