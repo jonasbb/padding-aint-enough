@@ -67,4 +67,15 @@ impl<'p> PyObjectProtocol<'p> for PySequence {
     fn __repr__(&self) -> PyResult<String> {
         Ok(format!("{:?}", self.sequence))
     }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        Ok(match op {
+            CompareOp::Eq => self.sequence == other.sequence,
+            CompareOp::Ge => self.sequence >= other.sequence,
+            CompareOp::Gt => self.sequence > other.sequence,
+            CompareOp::Le => self.sequence <= other.sequence,
+            CompareOp::Lt => self.sequence < other.sequence,
+            CompareOp::Ne => self.sequence != other.sequence,
+        })
+    }
 }
