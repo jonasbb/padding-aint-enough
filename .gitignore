@@ -1,7 +1,7 @@
 *.pickle
 *.graphml
 *.generated
-
+cluster*.svg
 src/protos
 
 # Created by https://www.gitignore.io/api/python,rust
