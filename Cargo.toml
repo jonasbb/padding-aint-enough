@@ -6,6 +6,7 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 [workspace]
 members = [
     "framestream",
+    "minmax",
     "pylib",
     "taskmanager",
 ]
@@ -26,6 +27,7 @@ glob = "0.2.11"
 lazy_static = "1.0.1"
 log = "0.4.1"
 min-max-heap = "1.2.0"
+minmax = { path = "./minmax" }
 misc_utils = "2.0.0"
 num-traits = "0.2.4"
 petgraph = { version = "0.4.13", features = [ "serde-1" ] }
