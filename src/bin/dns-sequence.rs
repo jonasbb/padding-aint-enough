@@ -82,7 +82,7 @@ fn run() -> Result<(), Error> {
     let cli_args = CliArgs::from_args();
 
     // Controls how many folds there are
-    let at_most_sequences_per_label = 5;
+    let at_most_sequences_per_label = 10;
     // Controls the maximum k for knn
     let most_k = 5;
 
