@@ -7,6 +7,7 @@ extern crate env_logger;
 extern crate failure;
 #[macro_use]
 extern crate log;
+extern crate minmax;
 extern crate misc_utils;
 extern crate petgraph;
 extern crate petgraph_graphml;
@@ -33,12 +34,12 @@ use encrypted_dns::{
     dnstap::Message_Type, protos::DnstapContent, MatchKey, Query, QuerySource, UnmatchedClientQuery,
 };
 use failure::{Error, ResultExt};
+use minmax::Min;
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
 use std::{
     borrow::Cow,
-    cmp,
     collections::BTreeMap,
     convert::TryFrom,
     fs::{create_dir_all, remove_dir_all, OpenOptions},
@@ -455,10 +456,11 @@ fn export_as_pickle(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     Ok(())
 }
 
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
 pub struct RequestInfo {
     normalized_domain_name: String,
-    earliest_wall_time: Option<DateTime<Utc>>,
+    #[serde(with = "serde_with::rust::display_fromstr")]
+    earliest_wall_time: Min<DateTime<Utc>>,
     requests: Vec<IndividualRequest>,
 }
 
@@ -468,12 +470,7 @@ impl RequestInfo {
         assert_eq!(self.normalized_domain_name, other.normalized_domain_name);
 
         self.requests.extend(other.requests.iter().cloned());
-        self.earliest_wall_time = match (self.earliest_wall_time, other.earliest_wall_time) {
-            (None, None) => None,
-            (Some(s), None) => Some(s),
-            (None, Some(o)) => Some(o),
-            (Some(s), Some(o)) => Some(cmp::min(s, o)),
-        };
+        self.earliest_wall_time.combine(other.earliest_wall_time);
     }
 
     pub fn graphml_support(&self) -> Vec<(Cow<'static, str>, Cow<str>)> {
@@ -481,10 +478,7 @@ impl RequestInfo {
             ("domain_name".into(), (&*self.normalized_domain_name).into()),
             (
                 "earliest_wall_time".into(),
-                self.earliest_wall_time
-                    .map(|v| v.to_string())
-                    .unwrap_or_else(|| "".to_string())
-                    .into(),
+                self.earliest_wall_time.to_string().into(),
             ),
             (
                 "request_ids".into(),
@@ -517,10 +511,7 @@ impl RequestInfo {
                 "domain+time".into(),
                 format!(
                     "{}\n{}",
-                    self.normalized_domain_name,
-                    self.earliest_wall_time
-                        .map(|v| v.to_string())
-                        .unwrap_or_else(|| "".to_string())
+                    self.normalized_domain_name, self.earliest_wall_time,
                 ).into(),
             ),
         ]
@@ -537,7 +528,7 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
             } => {
                 Ok(RequestInfo {
                     normalized_domain_name: url_to_domain(&url)?,
-                    earliest_wall_time: None,
+                    earliest_wall_time: Min::default(),
                     requests: vec![],
                 })
             }
@@ -548,7 +539,7 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
                 let ind_req = IndividualRequest::try_from(from)?;
                 Ok(RequestInfo{
                     normalized_domain_name: url_to_domain(url)?,
-                    earliest_wall_time: ind_req.wall_time,
+                    earliest_wall_time: ind_req.wall_time.map(|v| v.into()).unwrap_or_default(),
                     requests: vec![ind_req],
                 })
            },
@@ -559,7 +550,7 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
                 let ind_req = IndividualRequest::try_from(from)?;
                 Ok(RequestInfo{
                     normalized_domain_name: url_to_domain(url)?,
-                    earliest_wall_time: ind_req.wall_time,
+                    earliest_wall_time: ind_req.wall_time.map(|v| v.into()).unwrap_or_default(),
                     requests: vec![ind_req],
                 })
            },

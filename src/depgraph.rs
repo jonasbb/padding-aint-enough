@@ -2,6 +2,7 @@ use chrome::{
     ChromeDebuggerMessage, Initiator, RedirectResponse, Request, StackTrace, TargetInfo, TargetType,
 };
 use failure::{Error, ResultExt};
+use minmax::Min;
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
 use should_ignore_url;
 use std::{
@@ -12,7 +13,7 @@ use std::{
 use GraphExt;
 use RequestInfo;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct DepGraph {
     graph: Graph<RequestInfo, (), Directed>,
 }
@@ -163,7 +164,7 @@ impl DepGraph {
             graph.add_node(RequestInfo {
                 normalized_domain_name: "other".into(),
                 requests: Vec::new(),
-                earliest_wall_time: None,
+                earliest_wall_time: Min::default(),
             })
         });
 
