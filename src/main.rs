@@ -470,7 +470,7 @@ impl RequestInfo {
         assert_eq!(self.normalized_domain_name, other.normalized_domain_name);
 
         self.requests.extend(other.requests.iter().cloned());
-        self.earliest_wall_time.combine(other.earliest_wall_time);
+        self.earliest_wall_time.update(other.earliest_wall_time);
     }
 
     pub fn graphml_support(&self) -> Vec<(Cow<'static, str>, Cow<str>)> {

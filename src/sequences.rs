@@ -338,8 +338,8 @@ pub fn knn(
                         max_dist = other_max_dist;
                     } else if other_count == count {
                         labels.push(&**other_label);
-                        min_dist.combine(other_min_dist);
-                        max_dist.combine(other_max_dist);
+                        min_dist.update(other_min_dist);
+                        max_dist.update(other_max_dist);
                     }
                     (count, min_dist, max_dist, labels)
                 },
