@@ -8,7 +8,7 @@ fn test_basic_encoding() {
         BufWriter::new(Vec::new()),
         Some("test-content-type".to_owned()),
     );
-    enc.write(b"test-content").unwrap();
+    enc.write_all(b"test-content").unwrap();
     let enc = enc.finish().unwrap();
     let out = enc.into_inner().unwrap();
     let expected: [u8; 65] = [
