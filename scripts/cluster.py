@@ -25,10 +25,10 @@ def main() -> None:
 
     for (threshold, method) in [
         (2000, "single"),
-        (3000, "average"),
-        (3000, "weighted"),
-        (3000, "centroid"),
-        (3000, "median"),
+        # (3000, "average"),
+        # (3000, "weighted"),
+        # (3000, "centroid"),
+        # (3000, "median"),
         (6000, "ward"),
     ]:
         Z = linkage(dists, method=method, optimal_ordering=True)
