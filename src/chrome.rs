@@ -93,6 +93,11 @@ pub enum ChromeDebuggerMessage {
     TargetTargetDestroyed {},
     #[serde(rename = "Target.attachedToTarget", rename_all = "camelCase")]
     TargetAttachedToTarget {},
+    #[serde(
+        rename = "Target.detachedFromTarget",
+        rename_all = "camelCase"
+    )]
+    TargetDetachedFromTarget {},
 
     // Everything Debugger
     #[serde(rename = "Debugger.scriptParsed", rename_all = "camelCase")]
@@ -199,6 +204,7 @@ pub enum TargetType {
     ServiceWorker,
     Worker,
     Browser,
+    Other,
 }
 
 pub mod duration_millis_opt {
