@@ -9,13 +9,14 @@ extern crate failure;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
+extern crate minmax;
 extern crate misc_utils;
 extern crate rayon;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate minmax;
 extern crate serde_with;
+extern crate string_cache;
 extern crate structopt;
 
 use csv::{ReaderBuilder, Writer as CsvWriter, WriterBuilder};
@@ -25,7 +26,7 @@ use encrypted_dns::{
         R004_UNKNOWN, R005, R006, R006_3RD_LVL_DOM, R007,
     },
     dnstap_to_sequence,
-    sequences::{knn, split_training_test_data, Sequence, SequenceElement},
+    sequences::{knn, split_training_test_data, LabelledSequences, Sequence, SequenceElement},
     take_largest, FailExt,
 };
 use failure::{Error, ResultExt};
@@ -33,12 +34,15 @@ use minmax::{Max, Min};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use rayon::prelude::*;
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, HashMap},
+    fmt::{self, Display},
     fs,
+    hash::Hash,
     io::{stdout, Write},
     path::{Path, PathBuf},
     sync::{Arc, RwLock},
 };
+use string_cache::DefaultAtom as Atom;
 use structopt::StructOpt;
 
 lazy_static! {
@@ -58,6 +62,146 @@ struct CliArgs {
     confusion_domains: Vec<PathBuf>,
     #[structopt(long = "misclassifications", parse(from_os_str))]
     misclassifications: Option<PathBuf>,
+}
+
+#[derive(Debug)]
+struct StatsCollector<S: Eq + Hash = Atom> {
+    data: HashMap<u8, StatsInternal<S>>,
+}
+
+impl<S: Eq + Hash> StatsCollector<S> {
+    fn new() -> Self {
+        Self {
+            data: HashMap::new(),
+        }
+    }
+
+    fn update(
+        &mut self,
+        k: u8,
+        true_domain: S,
+        mapped_domain: S,
+        result: ClassificationResult,
+        known_problems: Option<S>,
+    ) where
+        S: Clone,
+    {
+        let k_stats = self.data.entry(k).or_default();
+        k_stats
+            .true_domain
+            .entry(true_domain)
+            .or_default()
+            .update(result, known_problems.clone());
+        k_stats
+            .mapped_domain
+            .entry(mapped_domain)
+            .or_default()
+            .update(result, known_problems.clone());
+        k_stats.global.update(result, known_problems);
+    }
+}
+
+impl<S> Display for StatsCollector<S>
+where
+    S: Display + Eq + Hash,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut keys: Vec<_> = self.data.keys().collect();
+        keys.sort();
+
+        for k in keys {
+            // key must exist, because we just got it from the HashMap
+            let k_stats = self.data.get(k).unwrap();
+            writeln!(f, "knn with k={}:", k)?;
+            writeln!(f, "Global:");
+            writeln!(f, "{}", k_stats.global);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+struct StatsInternal<S: Eq + Hash = Atom> {
+    true_domain: HashMap<S, StatsCounter<S>>,
+    mapped_domain: HashMap<S, StatsCounter<S>>,
+    global: StatsCounter<S>,
+}
+
+impl<S: Eq + Hash> Default for StatsInternal<S> {
+    fn default() -> Self {
+        Self {
+            true_domain: HashMap::default(),
+            mapped_domain: HashMap::default(),
+            global: StatsCounter::default(),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct StatsCounter<S: Eq + Hash = Atom> {
+    /// Counts pairs of `ClassificationResult` and if it is known problematic (bool).
+    results: HashMap<(ClassificationResult, bool), usize>,
+    /// Counts the problematic reasons
+    reasons: HashMap<S, usize>,
+}
+
+impl<S> Display for StatsCounter<S>
+where
+    S: Display + Eq + Hash,
+{
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "{:>12}, {:>5}:", "Success?", "Errs?")?;
+        for key in &[
+            (ClassificationResult::Correct, false),
+            (ClassificationResult::Correct, true),
+            (ClassificationResult::Undetermined, false),
+            (ClassificationResult::Undetermined, true),
+            (ClassificationResult::Wrong, false),
+            (ClassificationResult::Wrong, true),
+        ] {
+            let count = self.results.get(key).cloned().unwrap_or_default();
+            writeln!(f, "{:>12}, {:>5}: {:>10}", key.0.to_string(), key.1, count)?;
+        }
+        Ok(())
+    }
+}
+
+impl<S: Eq + Hash> Default for StatsCounter<S> {
+    fn default() -> Self {
+        Self {
+            results: HashMap::default(),
+            reasons: HashMap::default(),
+        }
+    }
+}
+
+impl<S: Eq + Hash> StatsCounter<S> {
+    fn update(&mut self, result: ClassificationResult, known_problems: Option<S>) {
+        *self
+            .results
+            .entry((result, known_problems.is_some()))
+            .or_default() += 1;
+        if let Some(reason) = known_problems {
+            *self.reasons.entry(reason).or_default() += 1;
+        }
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+enum ClassificationResult {
+    Correct,
+    Undetermined,
+    Wrong,
+}
+
+impl Display for ClassificationResult {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ClassificationResult::Correct => write!(f, "Correct"),
+            ClassificationResult::Undetermined => write!(f, "Undetermined"),
+            ClassificationResult::Wrong => write!(f, "Wrong"),
+        }
+    }
 }
 
 fn main() {
@@ -100,7 +244,9 @@ fn run() -> Result<(), Error> {
     let data = load_all_dnstap_files(&cli_args.base_dir, at_most_sequences_per_label)?;
     info!("Done loading dnstap files.");
 
-    let mut res = vec![(0, 0, 0); most_k];
+    // Collect the stats during the execution and print them at the end
+    let mut stats = StatsCollector::new();
+
     for fold in 0..at_most_sequences_per_label {
         info!("Testing for fold {}", fold);
         info!("Start splitting trainings and test data...");
@@ -108,10 +254,10 @@ fn run() -> Result<(), Error> {
         let len = test.len();
         let (test_labels, test_data) = test.into_iter().fold(
             (Vec::with_capacity(len), Vec::with_capacity(len)),
-            |(mut labels, mut data), elem| {
-                labels.push(elem.0);
-                data.push(elem.1);
-                (labels, data)
+            |(mut test_labels, mut data), elem| {
+                test_labels.push((elem.true_domain, elem.mapped_domain));
+                data.push(elem.sequence);
+                (test_labels, data)
             },
         );
         info!("Done splitting trainings and test data.");
@@ -119,20 +265,36 @@ fn run() -> Result<(), Error> {
         for k in (1..=most_k).step_by(2) {
             let classification = knn(&*training_data, &*test_data, k as u8);
             assert_eq!(classification.len(), test_labels.len());
-            let (correct, undecided) = classification
+            classification
                 .into_iter()
                 .zip(&test_labels)
                 .zip(&test_data)
-                .fold(
-                    (0, 0),
-                    |(mut corr, mut und), (((class, min_dist, max_dist), label), sequence)| {
-                        if class == *label {
-                            corr += 1;
-                        } else if log_misclassification(
+                .for_each(
+                    |(
+                        ((ref class, min_dist, max_dist), (true_domain, mapped_domain)),
+                        sequence,
+                    )| {
+                        let class_res = if **class == *mapped_domain {
+                            ClassificationResult::Correct
+                        } else if class.contains(&**mapped_domain) {
+                            ClassificationResult::Undetermined
+                        } else {
+                            ClassificationResult::Wrong
+                        };
+                        let known_problems = classify_sequence(sequence).map(Atom::from);
+                        stats.update(
+                            k as u8,
+                            true_domain.clone(),
+                            mapped_domain.clone(),
+                            class_res,
+                            known_problems,
+                        );
+
+                        if class_res != ClassificationResult::Correct && log_misclassification(
                             &mut mis_writer,
                             k,
                             &sequence,
-                            &label,
+                            &mapped_domain,
                             &class,
                             min_dist,
                             max_dist,
@@ -143,40 +305,13 @@ fn run() -> Result<(), Error> {
                                 sequence.id()
                             );
                         }
-                        if class.contains(&*label) {
-                            und += 1;
-                        }
-                        (corr, und)
                     },
                 );
-            info!(
-                "Fold: {} k: {} - {} / {} correct (In list of choices: {})",
-                fold,
-                k,
-                correct,
-                test_labels.len(),
-                undecided
-            );
-            // update stats
-            res[k - 1].0 += correct;
-            res[k - 1].1 += undecided;
-            res[k - 1].2 += test_labels.len();
         }
     }
 
-    // print final results
-    for (k, (correct, undecided, total)) in res.iter().enumerate() {
-        println!(
-            r"Results for k={k}:
-Correct: {}/{total}
-Multiple Options: {}/{total}
-",
-            correct,
-            undecided,
-            k = k + 1,
-            total = total
-        )
-    }
+    // TODO print final stats
+    println!("{}", stats);
 
     Ok(())
 }
@@ -233,7 +368,7 @@ fn make_check_confusion_domains() -> impl Fn(&str) -> String {
 fn load_all_dnstap_files(
     base_dir: &Path,
     at_most_sequences_per_label: usize,
-) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
+) -> Result<Vec<LabelledSequences>, Error> {
     let check_confusion_domains = make_check_confusion_domains();
 
     // Get a list of directories
@@ -253,7 +388,7 @@ fn load_all_dnstap_files(
         }).collect::<Result<_, _>>()?;
 
     // Pairs of Label with Data (the Sequences)
-    let data: Vec<(String, Vec<Sequence>)> = directories
+    let data: Vec<LabelledSequences> = directories
         .into_par_iter()
         .map(|dir| {
             let label = dir
@@ -306,8 +441,12 @@ fn load_all_dnstap_files(
                 warn!("Directory contains no data: {}", dir.display());
                 Ok(None)
             } else {
-                let label = check_confusion_domains(&label);
-                Ok(Some((label, sequences)))
+                let mapped_label = check_confusion_domains(&label);
+                Ok(Some(LabelledSequences {
+                    true_domain: label.into(),
+                    mapped_domain: mapped_label.into(),
+                    sequences,
+                }))
             }
         })
         // Remove all the empty directories from the previous step
