@@ -12,13 +12,15 @@ extern crate log;
 extern crate min_max_heap;
 extern crate minmax;
 extern crate misc_utils;
+extern crate protobuf;
+extern crate rayon;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate protobuf;
-extern crate rayon;
+extern crate serde_with;
 extern crate trust_dns;
 
+pub mod chrome;
 pub mod protos;
 pub mod sequences;
 
