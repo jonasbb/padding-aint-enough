@@ -80,6 +80,11 @@ pub enum ChromeDebuggerMessage {
         rename_all = "camelCase"
     )]
     NetworkWebSocketFrameSent { request_id: String },
+    #[serde(
+        rename = "Network.eventSourceMessageReceived",
+        rename_all = "camelCase"
+    )]
+    NetworkEventSourceMessageReceived { request_id: String },
 
     // Everything Target
     #[serde(rename = "Target.targetCreated", rename_all = "camelCase")]
@@ -115,6 +120,8 @@ pub enum ChromeDebuggerMessage {
         url: String,
         stack_trace: Option<StackTrace>,
     },
+    #[serde(rename = "Debugger.paused", rename_all = "camelCase")]
+    DebuggerPaused {},
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
