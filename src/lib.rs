@@ -18,6 +18,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_with;
+extern crate string_cache;
 extern crate trust_dns;
 
 pub mod chrome;
@@ -32,8 +33,8 @@ use min_max_heap::MinMaxHeap;
 use misc_utils::fs::file_open_read;
 pub use protos::dnstap;
 use protos::DnstapContent;
-pub use sequences::Sequence;
 use sequences::SequenceElement;
+pub use sequences::{LabelledSequences, Sequence};
 use std::{
     collections::BTreeMap,
     convert::TryFrom,

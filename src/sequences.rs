@@ -3,9 +3,10 @@ use rayon::prelude::*;
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     collections::HashMap,
-    fmt::{self, Debug},
+    fmt::{self, Debug, Display},
     mem,
 };
+use string_cache::DefaultAtom as Atom;
 use take_smallest;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -182,6 +183,18 @@ impl Debug for SequenceElement {
     }
 }
 
+pub struct LabelledSequence<S = Atom> {
+    pub true_domain: S,
+    pub mapped_domain: S,
+    pub sequence: Sequence,
+}
+
+pub struct LabelledSequences<S = Atom> {
+    pub true_domain: S,
+    pub mapped_domain: S,
+    pub sequences: Vec<Sequence>,
+}
+
 #[cfg(test)]
 mod test_edit_dist {
     use super::{
@@ -275,11 +288,14 @@ mod test_edit_dist {
 /// Find the k-nearest-neighbours in trainings_data for each element in validation_data
 ///
 /// Returns a label for each entry in validation_data together with the minimal and maximal distance seen.
-pub fn knn(
-    trainings_data: &[(String, Vec<Sequence>)],
+pub fn knn<S>(
+    trainings_data: &[LabelledSequences<S>],
     validation_data: &[Sequence],
     k: u8,
-) -> Vec<(String, Min<usize>, Max<usize>)> {
+) -> Vec<(String, Min<usize>, Max<usize>)>
+where
+    S: Clone + Display + Sync,
+{
     assert!(k > 0, "kNN needs a k with k > 0");
 
     validation_data
@@ -289,9 +305,9 @@ pub fn knn(
                 trainings_data
                     .into_iter()
                     // iterate over all elements of the trainings data
-                    .flat_map(|(label, tsample)| {
-                        tsample.iter().map(move |s| ClassifierData {
-                            label,
+                    .flat_map(|tlseq| {
+                        tlseq.sequences.iter().map(move |s| ClassifierData {
+                            label: &tlseq.mapped_domain,
                             distance: vsample.distance(s),
                         })
                     }),
@@ -350,26 +366,42 @@ pub fn knn(
 }
 
 #[cfg_attr(feature = "cargo-clippy", allow(type_complexity))]
-pub fn split_training_test_data(
-    data: &[(String, Vec<Sequence>)],
+pub fn split_training_test_data<S>(
+    data: &[LabelledSequences<S>],
     fold: u8,
-) -> (Vec<(String, Vec<Sequence>)>, Vec<(String, Sequence)>) {
+) -> (Vec<LabelledSequences<S>>, Vec<LabelledSequence<S>>)
+where
+    S: Clone + Display,
+{
     debug!("Start splitting trainings and test data");
-    let mut training = Vec::with_capacity(data.len());
+    let mut training: Vec<LabelledSequences<S>> = Vec::with_capacity(data.len());
     let mut test = Vec::with_capacity(data.len());
 
-    for (label, elements) in data {
-        if elements.is_empty() {
-            error!("{} has no data", label);
+    for LabelledSequences {
+        true_domain,
+        mapped_domain,
+        sequences,
+    } in data
+    {
+        if sequences.is_empty() {
+            error!("{} has no data", &true_domain);
         }
 
-        let mut trainings = elements.clone();
-        let element = trainings.remove(fold as usize % elements.len());
+        let mut trainings = sequences.clone();
+        let test_sequence = trainings.remove(fold as usize % sequences.len());
 
-        training.push((label.to_string(), trainings));
+        training.push(LabelledSequences {
+            true_domain: true_domain.clone(),
+            mapped_domain: mapped_domain.clone(),
+            sequences: trainings,
+        });
         // only take each test element once, if it belongs to exactly that fold
-        if (fold as usize) < elements.len() {
-            test.push((label.to_string(), element));
+        if (fold as usize) < sequences.len() {
+            test.push(LabelledSequence {
+                true_domain: true_domain.clone(),
+                mapped_domain: mapped_domain.clone(),
+                sequence: test_sequence,
+            });
         }
     }
 
@@ -378,26 +410,29 @@ pub fn split_training_test_data(
 }
 
 #[derive(Debug)]
-struct ClassifierData<'a> {
-    label: &'a str,
+struct ClassifierData<'a, S>
+where
+    S: 'a,
+{
+    label: &'a S,
     distance: usize,
 }
 
-impl<'a> PartialEq for ClassifierData<'a> {
+impl<'a, S> PartialEq for ClassifierData<'a, S> {
     fn eq(&self, other: &Self) -> bool {
         self.distance == other.distance
     }
 }
 
-impl<'a> Eq for ClassifierData<'a> {}
+impl<'a, S> Eq for ClassifierData<'a, S> {}
 
-impl<'a> PartialOrd for ClassifierData<'a> {
+impl<'a, S> PartialOrd for ClassifierData<'a, S> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(&other))
     }
 }
 
-impl<'a> Ord for ClassifierData<'a> {
+impl<'a, S> Ord for ClassifierData<'a, S> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.distance.cmp(&other.distance)
     }
