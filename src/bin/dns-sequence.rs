@@ -112,10 +112,9 @@ where
 
         for k in keys {
             // key must exist, because we just got it from the HashMap
-            let k_stats = self.data.get(k).unwrap();
+            let k_stats = &self.data[k];
             writeln!(f, "knn with k={}:", k)?;
-            writeln!(f, "Global:");
-            writeln!(f, "{}", k_stats.global);
+            writeln!(f, "{}", k_stats.global)?;
         }
         Ok(())
     }
@@ -151,17 +150,21 @@ where
     S: Display + Eq + Hash,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "{:>12}, {:>5}:", "Success?", "Errs?")?;
-        for key in &[
-            (ClassificationResult::Correct, false),
-            (ClassificationResult::Correct, true),
-            (ClassificationResult::Undetermined, false),
-            (ClassificationResult::Undetermined, true),
-            (ClassificationResult::Wrong, false),
-            (ClassificationResult::Wrong, true),
+        writeln!(f, "{:>12}: {:>10}/{:>10}", "Success?", "", "Known Prob")?;
+        for &res in &[
+            (ClassificationResult::Correct),
+            (ClassificationResult::Undetermined),
+            (ClassificationResult::Wrong),
         ] {
-            let count = self.results.get(key).cloned().unwrap_or_default();
-            writeln!(f, "{:>12}, {:>5}: {:>10}", key.0.to_string(), key.1, count)?;
+            let wo_problems_count = self.results.get(&(res, false)).cloned().unwrap_or_default();
+            let with_problems_count = self.results.get(&(res, true)).cloned().unwrap_or_default();
+            writeln!(
+                f,
+                "{:>12}: {:>10}/{:>10}",
+                res.to_string(),
+                wo_problems_count,
+                with_problems_count
+            )?;
         }
         Ok(())
     }
