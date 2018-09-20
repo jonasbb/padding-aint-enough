@@ -36,7 +36,7 @@ use rayon::prelude::*;
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{self, Display},
-    fs,
+    fs::{self, OpenOptions},
     hash::Hash,
     io::{stdout, Write},
     path::{Path, PathBuf},
@@ -232,8 +232,13 @@ fn run() -> Result<(), Error> {
 
     let writer: Box<Write> = cli_args
         .misclassifications
-        .map(|path| file_open_write(path, WriteOptions::new()))
-        .unwrap_or_else(|| Ok(Box::new(stdout())))
+        .map(|path| {
+            file_open_write(
+                path,
+                WriteOptions::new()
+                    .set_open_options(OpenOptions::new().create(true).truncate(true)),
+            )
+        }).unwrap_or_else(|| Ok(Box::new(stdout())))
         .context("Cannot open writer for misclassifications.")?;
     let mut mis_writer = WriterBuilder::new().has_headers(true).from_writer(writer);
 
