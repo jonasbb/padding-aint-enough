@@ -103,6 +103,11 @@ pub enum ChromeDebuggerMessage {
         rename_all = "camelCase"
     )]
     TargetDetachedFromTarget {},
+    #[serde(
+        rename = "Target.receivedMessageFromTarget",
+        rename_all = "camelCase"
+    )]
+    TargetReceivedMessageFromTarget {},
 
     // Everything Debugger
     #[serde(rename = "Debugger.scriptParsed", rename_all = "camelCase")]
