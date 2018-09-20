@@ -1,4 +1,5 @@
 #![feature(transpose_result)]
+#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 
 extern crate csv;
 extern crate encrypted_dns;
@@ -292,7 +293,7 @@ fn run() -> Result<(), Error> {
                             true_domain.clone(),
                             mapped_domain.clone(),
                             class_res,
-                            known_problems,
+                            known_problems.clone(),
                         );
 
                         if class_res != ClassificationResult::Correct && log_misclassification(
@@ -303,6 +304,7 @@ fn run() -> Result<(), Error> {
                             &class,
                             min_dist,
                             max_dist,
+                            known_problems.as_ref().map(|x| &**x),
                         ).is_err()
                         {
                             error!(
@@ -462,6 +464,7 @@ fn load_all_dnstap_files(
     Ok(data)
 }
 
+#[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
 fn log_misclassification<W>(
     csv_writer: &mut CsvWriter<W>,
     k: usize,
@@ -470,6 +473,7 @@ fn log_misclassification<W>(
     class: &str,
     min_dist: Min<usize>,
     max_dist: Max<usize>,
+    reason: Option<&str>,
 ) -> Result<(), Error>
 where
     W: Write,
@@ -486,8 +490,6 @@ where
         class: &'a str,
         reason: Option<&'a str>,
     };
-
-    let reason = classify_sequence(sequence);
 
     let out = Out {
         id: sequence.id(),
