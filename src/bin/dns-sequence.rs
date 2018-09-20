@@ -34,6 +34,7 @@ use failure::{Error, ResultExt};
 use minmax::{Max, Min};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use rayon::prelude::*;
+use serde::Serialize;
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{self, Display},
@@ -63,6 +64,8 @@ struct CliArgs {
     confusion_domains: Vec<PathBuf>,
     #[structopt(long = "misclassifications", parse(from_os_str))]
     misclassifications: Option<PathBuf>,
+    #[structopt(long = "statistics", parse(from_os_str))]
+    statistics: Option<PathBuf>,
 }
 
 #[derive(Debug)]
@@ -99,6 +102,78 @@ impl<S: Eq + Hash> StatsCollector<S> {
             .or_default()
             .update(result, known_problems.clone());
         k_stats.global.update(result, known_problems);
+    }
+
+    fn dump_stats_to_file<P: AsRef<Path>>(&self, path: P) -> Result<(), Error>
+    where
+        S: Serialize,
+    {
+        let wtr = file_open_write(
+            path.as_ref(),
+            WriteOptions::new().set_open_options(OpenOptions::new().create(true).truncate(true)),
+        ).context("Cannot open writer for statistics.")?;
+        let mut writer = WriterBuilder::new().has_headers(true).from_writer(wtr);
+
+        #[derive(Serialize)]
+        struct Out<'a, S> {
+            k: u8,
+            label: &'a S,
+            corr: usize,
+            corr_w_reason: usize,
+            und: usize,
+            und_w_reason: usize,
+            wrong: usize,
+            wrong_w_reason: usize,
+            reasons: usize,
+        };
+
+        let mut ks: Vec<_> = self.data.keys().collect();
+        ks.sort();
+        for &k in ks {
+            for (domain, stats) in &self.data[&k].true_domain {
+                let out = Out {
+                    k,
+                    label: domain,
+                    corr: stats
+                        .results
+                        .get(&(ClassificationResult::Correct, false))
+                        .cloned()
+                        .unwrap_or_default(),
+                    corr_w_reason: stats
+                        .results
+                        .get(&(ClassificationResult::Correct, true))
+                        .cloned()
+                        .unwrap_or_default(),
+                    und: stats
+                        .results
+                        .get(&(ClassificationResult::Undetermined, false))
+                        .cloned()
+                        .unwrap_or_default(),
+                    und_w_reason: stats
+                        .results
+                        .get(&(ClassificationResult::Undetermined, true))
+                        .cloned()
+                        .unwrap_or_default(),
+                    wrong: stats
+                        .results
+                        .get(&(ClassificationResult::Wrong, false))
+                        .cloned()
+                        .unwrap_or_default(),
+                    wrong_w_reason: stats
+                        .results
+                        .get(&(ClassificationResult::Wrong, true))
+                        .cloned()
+                        .unwrap_or_default(),
+                    reasons: stats.reasons.iter().map(|(_reason, count)| count).sum(),
+                };
+
+                writer
+                    .serialize(&out)
+                    .map_err(|err| format_err!("{}", err))?;
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -322,6 +397,9 @@ fn run() -> Result<(), Error> {
 
     // TODO print final stats
     println!("{}", stats);
+    if let Some(path) = &cli_args.statistics {
+        stats.dump_stats_to_file(path)?;
+    }
 
     Ok(())
 }
