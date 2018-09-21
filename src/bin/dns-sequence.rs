@@ -16,6 +16,7 @@ extern crate rayon;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate plot;
 extern crate serde_with;
 extern crate string_cache;
 extern crate structopt;
@@ -173,6 +174,86 @@ impl<S: Eq + Hash> StatsCollector<S> {
             }
         }
 
+        Ok(())
+    }
+
+    fn plot(&self, output: impl AsRef<Path>) -> Result<(), Error>
+    where
+        S: Ord,
+    {
+        let size = self.data[&1].true_domain.len();
+        let mut corr = Vec::with_capacity(size);
+        let mut corr_w_reason = Vec::with_capacity(size);
+        let mut und = Vec::with_capacity(size);
+        let mut und_w_reason = Vec::with_capacity(size);
+        let mut wrong = Vec::with_capacity(size);
+        let mut wrong_w_reason = Vec::with_capacity(size);
+
+        // TODO sort the values
+        let mut data: Vec<_> = self.data[&1].true_domain.iter().collect();
+        data.sort_by_key(|x| x.0);
+        for (_domain, stats) in data {
+            corr.push(
+                stats
+                    .results
+                    .get(&(ClassificationResult::Correct, false))
+                    .cloned()
+                    .unwrap_or_default() as f64
+                    + 0.1,
+            );
+            corr_w_reason.push(
+                stats
+                    .results
+                    .get(&(ClassificationResult::Correct, true))
+                    .cloned()
+                    .unwrap_or_default() as f64
+                    + 0.1,
+            );
+            und.push(
+                stats
+                    .results
+                    .get(&(ClassificationResult::Undetermined, false))
+                    .cloned()
+                    .unwrap_or_default() as f64
+                    + 0.1,
+            );
+            und_w_reason.push(
+                stats
+                    .results
+                    .get(&(ClassificationResult::Undetermined, true))
+                    .cloned()
+                    .unwrap_or_default() as f64
+                    + 0.1,
+            );
+            wrong.push(
+                stats
+                    .results
+                    .get(&(ClassificationResult::Wrong, false))
+                    .cloned()
+                    .unwrap_or_default() as f64
+                    + 0.1,
+            );
+            wrong_w_reason.push(
+                stats
+                    .results
+                    .get(&(ClassificationResult::Wrong, true))
+                    .cloned()
+                    .unwrap_or_default() as f64
+                    + 0.1,
+            );
+        }
+
+        plot::percentage_stacked_area_chart(
+            &[
+                ("Correct", corr),
+                ("Correct (wR)", corr_w_reason),
+                ("Undetermined", und),
+                ("Undetermined (wR)", und_w_reason),
+                ("Wrong", wrong),
+                ("Wrong (wR)", wrong_w_reason),
+            ],
+            output.as_ref(),
+        )?;
         Ok(())
     }
 }
@@ -399,6 +480,7 @@ fn run() -> Result<(), Error> {
     println!("{}", stats);
     if let Some(path) = &cli_args.statistics {
         stats.dump_stats_to_file(path)?;
+        stats.plot(&path.with_extension("k1.png"))?;
     }
 
     Ok(())
