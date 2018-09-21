@@ -26,7 +26,6 @@ test:cargo:
   - python3 -m pip install pipenv
   - rustup update nightly
   - rustup default nightly
-  - git clone "https://github.com/jonasbb/minmax.git" minmax
   script:
   - python3 --version
   - pipenv install --dev --verbose
