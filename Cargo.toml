@@ -7,6 +7,7 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 members = [
     "framestream",
     "minmax",
+    "plot",
     "pylib",
     "taskmanager",
 ]
@@ -32,6 +33,7 @@ misc_utils = "2.0.0"
 num-traits = "0.2.4"
 petgraph = { version = "0.4.13", features = [ "serde-1" ] }
 petgraph-graphml = "1.0.0"
+plot = { path = "./plot" }
 protobuf = "2.0.2"
 rayon = "1.0.1"
 serde = "1.0.49"

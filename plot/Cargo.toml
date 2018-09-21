@@ -1,0 +1,10 @@
+[package]
+name = "plot"
+version = "0.1.0"
+authors = ["Jonas Bushart <jonas@bushart.org>"]
+edition = "2018"
+
+[dependencies]
+failure = "0.1.2"
+serde-pickle = "0.4.1"
+tempfile = "3.0.4"
