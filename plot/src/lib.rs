@@ -34,8 +34,11 @@ pub fn percentage_stacked_area_chart(
         .stderr(Stdio::piped())
         .spawn()?;
 
-    let stdin = child.stdin.as_mut().expect("Failed to open stdin");
-    stdin.write_all(include_str!("./percentage_stacked_area_chart.py").as_bytes())?;
+    // FIXME remove after NLL
+    {
+        let stdin = child.stdin.as_mut().expect("Failed to open stdin");
+        stdin.write_all(include_bytes!("./percentage_stacked_area_chart.py"))?;
+    }
     let output = child.wait_with_output().expect("Python3 did not start");
 
     if !output.status.success() {
