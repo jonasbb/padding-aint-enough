@@ -442,20 +442,22 @@ impl<'a, S> Ord for ClassifierData<'a, S> {
 fn test_knn() {
     use self::SequenceElement::*;
     let trainings_data = vec![
-        (
-            "A".into(),
-            vec![Sequence(
+        LabelledSequences {
+            true_domain: "A",
+            mapped_domain: "A",
+            sequences: vec![Sequence(
                 vec![Size(1), Gap(2), Size(1), Size(2), Size(1)],
                 "".into(),
             )],
-        ),
-        (
-            "B".into(),
-            vec![
+        },
+        LabelledSequences {
+            true_domain: "B",
+            mapped_domain: "B",
+            sequences: vec![
                 Sequence(vec![Size(1)], "".into()),
                 Sequence(vec![Size(2)], "".into()),
             ],
-        ),
+        },
     ];
     let validation_data = vec![Sequence::new(vec![Size(1)], "".into())];
 
@@ -477,14 +479,19 @@ fn test_knn() {
 fn test_knn_tie() {
     use self::SequenceElement::*;
     let trainings_data = vec![
-        (
-            "A".into(),
-            vec![Sequence(
+        LabelledSequences {
+            true_domain: "A",
+            mapped_domain: "A",
+            sequences: vec![Sequence(
                 vec![Size(1), Gap(2), Size(1), Size(2), Size(1)],
                 "".into(),
             )],
-        ),
-        ("B".into(), vec![Sequence(vec![Size(1)], "".into())]),
+        },
+        LabelledSequences {
+            true_domain: "B",
+            mapped_domain: "B",
+            sequences: vec![Sequence(vec![Size(1)], "".into())],
+        },
     ];
     let validation_data = vec![Sequence::new(vec![Size(1)], "".into())];
 
