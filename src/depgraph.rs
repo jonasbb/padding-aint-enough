@@ -2,7 +2,7 @@ use chrome::{
     ChromeDebuggerMessage, Initiator, RedirectResponse, Request, StackTrace, TargetInfo, TargetType,
 };
 use failure::{Error, ResultExt};
-use minmax::Min;
+use misc_utils::Min;
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
 use should_ignore_url;
 use std::{

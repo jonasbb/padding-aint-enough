@@ -10,7 +10,6 @@ extern crate framestream;
 #[macro_use]
 extern crate log;
 extern crate min_max_heap;
-extern crate minmax;
 extern crate misc_utils;
 extern crate protobuf;
 extern crate rayon;

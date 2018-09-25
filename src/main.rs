@@ -7,7 +7,6 @@ extern crate env_logger;
 extern crate failure;
 #[macro_use]
 extern crate log;
-extern crate minmax;
 extern crate misc_utils;
 extern crate petgraph;
 extern crate petgraph_graphml;
@@ -34,8 +33,10 @@ use encrypted_dns::{
     dnstap::Message_Type, protos::DnstapContent, MatchKey, Query, QuerySource, UnmatchedClientQuery,
 };
 use failure::{Error, ResultExt};
-use minmax::Min;
-use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
+use misc_utils::{
+    fs::{file_open_read, file_open_write, WriteOptions},
+    Min,
+};
 use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
 use std::{

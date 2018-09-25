@@ -10,7 +10,6 @@ extern crate failure;
 extern crate lazy_static;
 #[macro_use]
 extern crate log;
-extern crate minmax;
 extern crate misc_utils;
 extern crate rayon;
 extern crate serde;
@@ -32,8 +31,10 @@ use encrypted_dns::{
     take_largest, FailExt,
 };
 use failure::{Error, ResultExt};
-use minmax::{Max, Min};
-use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
+use misc_utils::{
+    fs::{file_open_read, file_open_write, WriteOptions},
+    Max, Min,
+};
 use rayon::prelude::*;
 use serde::Serialize;
 use std::{

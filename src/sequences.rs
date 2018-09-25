@@ -1,4 +1,4 @@
-use minmax::{Max, Min};
+use misc_utils::{Max, Min};
 use rayon::prelude::*;
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
