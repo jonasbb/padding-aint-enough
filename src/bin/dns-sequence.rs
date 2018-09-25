@@ -303,21 +303,7 @@ impl<S: Eq + Hash> StatsCollector<S> {
                                 .unwrap_or(0);
                         counts[corrects] += 1;
                     });
-                let mut accu = 0;
-                // convert the counts per "correctness level" into accumulative counts
-                counts = counts
-                    .into_iter()
-                    // go from 10 to 0
-                    .rev()
-                    // sum them like
-                    // 10; 10 + 9; 10 + 9 + 8; etc.
-                    .map(|count| {
-                        accu += count;
-                        accu
-                    })
-                    // revert them again to go from 0 to 10
-                    .rev()
-                    .collect();
+                counts = reverse_cum_sum(&counts);
                 (k, counts)
             }).collect()
     }
@@ -935,4 +921,44 @@ fn test_classify_sequence_r007() {
     );
 
     assert_ne!(classify_sequence(&sequence), Some(R007));
+}
+
+/// Calculate the reverse cumulitive sum
+///
+/// The input `counts` is a slice which specifies how often the value `i` occured, where `i` is
+/// the vector index. The result is a new vector with the reverse cumulitive sum like:misc_utils
+///
+/// `sum(0..n), sum(1..n), sum(2..n), ..., sum(n-1..n)`
+///
+/// where `n` is the number of elements in the input slice
+#[must_use]
+fn reverse_cum_sum(counts: &[usize]) -> Vec<usize> {
+    let mut accu = 0;
+    // convert the counts per "correctness level" into accumulative counts
+    let mut tmp: Vec<_> = counts
+        .iter()
+        // go from 10 to 0
+        .rev()
+        // sum them like
+        // 10; 10 + 9; 10 + 9 + 8; etc.
+        .map(|&count| {
+            accu += count;
+            accu
+        }).collect();
+    // revert them again to go from 0 to 10
+    tmp.reverse();
+    tmp
+}
+
+#[test]
+fn test_reverse_cum_sum() {
+    assert_eq!(Vec::<usize>::new(), reverse_cum_sum(&[]));
+    assert_eq!(vec![1], reverse_cum_sum(&[1]));
+    assert_eq!(vec![1, 1], reverse_cum_sum(&[0, 1]));
+    assert_eq!(vec![1, 0], reverse_cum_sum(&[1, 0]));
+    assert_eq!(vec![1, 1, 0], reverse_cum_sum(&[0, 1, 0]));
+    assert_eq!(
+        vec![10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+        reverse_cum_sum(&[1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+    );
 }
