@@ -16,6 +16,8 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate plot;
+#[macro_use]
+extern crate prettytable;
 extern crate serde_with;
 extern crate string_cache;
 extern crate structopt;
@@ -35,6 +37,10 @@ use misc_utils::{
     fs::{file_open_read, file_open_write, WriteOptions},
     Max, Min,
 };
+use prettytable::{
+    format::{FormatBuilder, LinePosition, LineSeparator, TableFormat},
+    Table,
+};
 use rayon::prelude::*;
 use serde::Serialize;
 use std::{
@@ -52,6 +58,20 @@ use structopt::StructOpt;
 lazy_static! {
     static ref CONFUSION_DOMAINS: RwLock<Arc<BTreeMap<String, String>>> =
         RwLock::new(Arc::new(BTreeMap::new()));
+
+    /// A line separator made of light unicode table elements
+    static ref UNICODE_LIGHT_SEP: LineSeparator = LineSeparator::new('─', '┼', '├', '┤');
+    /// A line separator made of heavy unicode table elements
+    static ref UNICODE_HEAVY_SEP: LineSeparator = LineSeparator::new('━', '┿', '┝', '┥');
+    /// A line separator made of double unicode table elements
+    static ref UNICODE_DOUBLE_SEP: LineSeparator = LineSeparator::new('═', '╪', '╞', '╡');
+
+    static ref FORMAT_NO_BORDER_UNICODE: TableFormat = FormatBuilder::new()
+        .padding(1, 1)
+        // .separator(LinePosition::Intern, *UNICODE_LIGHT_SEP)
+        .separator(LinePosition::Title, *UNICODE_DOUBLE_SEP)
+        .column_separator('│')
+        .build();
 }
 
 #[derive(StructOpt, Debug)]
@@ -257,6 +277,50 @@ impl<S: Eq + Hash> StatsCollector<S> {
         )?;
         Ok(())
     }
+
+    /// Count the number of domains with at least x correctly labelled domains, where x is the array index
+    fn count_correct(&self) -> HashMap<u8, Vec<usize>> {
+        self.data
+            .iter()
+            .map(|(&k, stats)| {
+                // Count how many domains have x correctly labelled domains
+                // x will be used as index into the vector
+                // needs to store values from 0 to 10 (inclusive)
+                let mut counts = vec![0; 11];
+                stats
+                    .true_domain
+                    .iter()
+                    .for_each(|(_domain, internal_stats)| {
+                        let corrects = internal_stats
+                            .results
+                            .get(&(ClassificationResult::Correct, false))
+                            .cloned()
+                            .unwrap_or(0)
+                            + internal_stats
+                                .results
+                                .get(&(ClassificationResult::Correct, true))
+                                .cloned()
+                                .unwrap_or(0);
+                        counts[corrects] += 1;
+                    });
+                let mut accu = 0;
+                // convert the counts per "correctness level" into accumulative counts
+                counts = counts
+                    .into_iter()
+                    // go from 10 to 0
+                    .rev()
+                    // sum them like
+                    // 10; 10 + 9; 10 + 9 + 8; etc.
+                    .map(|count| {
+                        accu += count;
+                        accu
+                    })
+                    // revert them again to go from 0 to 10
+                    .rev()
+                    .collect();
+                (k, counts)
+            }).collect()
+    }
 }
 
 impl<S> Display for StatsCollector<S>
@@ -264,14 +328,31 @@ where
     S: Display + Eq + Hash,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        use prettytable::{row::Row, Table};
+
         let mut keys: Vec<_> = self.data.keys().collect();
+        let count_corrects = self.count_correct();
         keys.sort();
 
+        let mut first = true;
         for k in keys {
+            if !first {
+                write!(f, "\n\n");
+            }
+            first = false;
+
             // key must exist, because we just got it from the HashMap
             let k_stats = &self.data[k];
             writeln!(f, "knn with k={}:", k)?;
-            writeln!(f, "{}", k_stats.global)?;
+            k_stats.global.fmt(f)?;
+
+            writeln!(f, "\n#Domains with x correctly labelled traces:");
+            let header = Row::new((0..=10).map(|c| cell!(bc->c)).collect());
+            let counts = Row::new(count_corrects[k].iter().map(|c| cell!(r->c)).collect());
+            let mut table = Table::init(vec![counts]);
+            table.set_titles(header);
+            table.set_format(*FORMAT_NO_BORDER_UNICODE);
+            table.fmt(f)?;
         }
         Ok(())
     }
@@ -307,7 +388,8 @@ where
     S: Display + Eq + Hash,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f, "{:>12}: {:>10}/{:>10}", "Success?", "", "Known Prob")?;
+        let mut rows = Vec::with_capacity(4);
+        // build table rows
         for &res in &[
             (ClassificationResult::Correct),
             (ClassificationResult::Undetermined),
@@ -315,14 +397,13 @@ where
         ] {
             let wo_problems_count = self.results.get(&(res, false)).cloned().unwrap_or_default();
             let with_problems_count = self.results.get(&(res, true)).cloned().unwrap_or_default();
-            writeln!(
-                f,
-                "{:>12}: {:>10}/{:>10}",
-                res.to_string(),
-                wo_problems_count,
-                with_problems_count
-            )?;
+            rows.push(row!(l->res, r->wo_problems_count, r->with_problems_count));
         }
+
+        let mut table = Table::init(rows);
+        table.set_titles(row!(bc->"Success", bc->"#", bc->"#With Prob."));
+        table.set_format(*FORMAT_NO_BORDER_UNICODE);
+        table.fmt(f)?;
         Ok(())
     }
 }
