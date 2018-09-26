@@ -1,15 +1,35 @@
-#[macro_use]
+#![feature(specialization)]
+
 extern crate failure;
-extern crate serde_pickle;
+extern crate pyo3;
+#[cfg(test)]
 extern crate tempfile;
 
 use failure::Error;
-use std::{
-    io::Write,
-    path::Path,
-    process::{Command, Stdio},
-};
-use tempfile::NamedTempFile;
+use pyo3::prelude::*;
+use std::{collections::HashMap, path::Path};
+
+fn pyerr_to_error(py: Python, pyerr: &PyErr) -> Error {
+    let err: String = pyerr
+        .into_object(py)
+        .call_method0(py, "__repr__")
+        .and_then(|obj| obj.extract(py))
+        .unwrap();
+    let mut traceback: Option<Vec<String>> = None;
+    if let Some(ref tb) = pyerr.ptraceback {
+        let traceback_mod = py.import("traceback").unwrap();
+        traceback = traceback_mod
+            .call1("format_tb", (tb,))
+            .and_then(|obj| obj.extract::<Vec<String>>())
+            .ok();
+    }
+
+    let msg: Vec<String> = Some(err)
+        .into_iter()
+        .chain(traceback.unwrap_or_else(|| vec![]))
+        .collect();
+    failure::err_msg(msg.join("\n"))
+}
 
 /// Plot a Percentage Stacked Area Chart
 ///
@@ -17,41 +37,68 @@ use tempfile::NamedTempFile;
 pub fn percentage_stacked_area_chart(
     data: &[(impl AsRef<str>, impl AsRef<[f64]>)],
     output: impl AsRef<Path>,
+    config: HashMap<&str, &dyn ToPyObject>,
 ) -> Result<(), Error> {
-    let mut file = NamedTempFile::new()?;
-    // Convert the data into &str and &[f64]
+    let python_code = include_str!("./percentage_stacked_area_chart.py");
     let data: Vec<_> = data
         .iter()
         .map(|(label, value)| (label.as_ref(), value.as_ref()))
         .collect();
-    serde_pickle::to_writer(&mut file, &data, true).unwrap();
 
-    let mut child = Command::new("python3")
-        .arg("-")
-        .arg(file.path())
-        .arg(output.as_ref())
-        .stdin(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-
-    // FIXME remove after NLL
-    {
-        let stdin = child.stdin.as_mut().expect("Failed to open stdin");
-        stdin.write_all(include_bytes!("./percentage_stacked_area_chart.py"))?;
+    let gil = Python::acquire_gil();
+    let py = gil.python();
+    let locals = PyDict::new(py);
+    locals
+        .set_item("rawdata", data)
+        .map_err(|pyerr| pyerr_to_error(py, &pyerr))?;
+    locals
+        .set_item("rawimgpath", output.as_ref().to_string_lossy())
+        .map_err(|pyerr| pyerr_to_error(py, &pyerr))?;
+    if !config.is_empty() {
+        locals
+            .set_item("config", config)
+            .map_err(|pyerr| pyerr_to_error(py, &pyerr))?;
     }
-    let output = child.wait_with_output().expect("Python3 did not start");
+    py.run(python_code, None, Some(&locals))
+        .map_err(|pyerr| pyerr_to_error(py, &pyerr))?;
 
-    if !output.status.success() {
-        bail!(
-            "Plotting failed with error message: '{}'",
-            String::from_utf8_lossy(&output.stderr)
-        );
-    }
     Ok(())
 }
 
+// If errors like `main thread is not in main loop` occur you must specify the matplotlib backend
+// to be something thread-safe, like `Agg`.
+// Create the file `~/.config/matplotlib/matplotlibrc` and write
+// ```
+// backend: Agg
+// ```
+
+// #[test]
+// fn test_percentage_stacked_area_chart() {
+//     use tempfile::NamedTempFile;
+
+//     let data = vec![("A", vec![1., 4., 6., 8.]), ("B", vec![9., 8., 6., 4.])];
+//     let file = NamedTempFile::new().unwrap();
+//     let res = percentage_stacked_area_chart(&data, file.path(), HashMap::new());
+//     // Cleanup temp file
+//     drop(file);
+//     if let Err(err) = res {
+//         panic!("{:#}", err);
+//     }
+// }
+
 #[test]
-fn test_percentage_stacked_area_chart() {
+fn test_percentage_stacked_area_chart_with_colors() {
+    use tempfile::NamedTempFile;
+
     let data = vec![("A", vec![1., 4., 6., 8.]), ("B", vec![9., 8., 6., 4.])];
-    percentage_stacked_area_chart(&data, "/dev/null").unwrap();
+    let file = NamedTempFile::new().unwrap();
+    let colors = &["#ff0000", "#00ff00"] as &[&str];
+    let mut config = HashMap::new();
+    config.insert("colors", &colors as &ToPyObject);
+    let res = percentage_stacked_area_chart(&data, file.path(), config);
+    // leanup temp file
+    drop(file);
+    if let Err(err) = res {
+        panic!("{:#}", err);
+    }
 }

@@ -6,5 +6,7 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 
 [dependencies]
 failure = "0.1.2"
-serde-pickle = "0.4.1"
+pyo3 = { version = "0.4.1", features = [ "python3" ] }
+
+[dev-dependencies]
 tempfile = "3.0.4"

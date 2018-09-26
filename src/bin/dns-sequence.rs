@@ -55,6 +55,10 @@ use std::{
 use string_cache::DefaultAtom as Atom;
 use structopt::StructOpt;
 
+const COLORS: &[&str] = &[
+    "#349e35", "#98dd8b", "#df802e", "#feba7c", "#d33134", "#fe9897",
+];
+
 lazy_static! {
     static ref CONFUSION_DOMAINS: RwLock<Arc<BTreeMap<String, String>>> =
         RwLock::new(Arc::new(BTreeMap::new()));
@@ -202,79 +206,83 @@ impl<S: Eq + Hash> StatsCollector<S> {
     where
         S: Ord,
     {
-        let size = self.data[&1].true_domain.len();
-        let mut corr = Vec::with_capacity(size);
-        let mut corr_w_reason = Vec::with_capacity(size);
-        let mut und = Vec::with_capacity(size);
-        let mut und_w_reason = Vec::with_capacity(size);
-        let mut wrong = Vec::with_capacity(size);
-        let mut wrong_w_reason = Vec::with_capacity(size);
+        for k in self.data.keys() {
+            let size = self.data[k].true_domain.len();
+            let mut corr = Vec::with_capacity(size);
+            let mut corr_w_reason = Vec::with_capacity(size);
+            let mut und = Vec::with_capacity(size);
+            let mut und_w_reason = Vec::with_capacity(size);
+            let mut wrong = Vec::with_capacity(size);
+            let mut wrong_w_reason = Vec::with_capacity(size);
 
-        // TODO sort the values
-        let mut data: Vec<_> = self.data[&1].true_domain.iter().collect();
-        data.sort_by_key(|x| x.0);
-        for (_domain, stats) in data {
-            corr.push(
-                stats
-                    .results
-                    .get(&(ClassificationResult::Correct, false))
-                    .cloned()
-                    .unwrap_or_default() as f64
-                    + 0.1,
-            );
-            corr_w_reason.push(
-                stats
-                    .results
-                    .get(&(ClassificationResult::Correct, true))
-                    .cloned()
-                    .unwrap_or_default() as f64
-                    + 0.1,
-            );
-            und.push(
-                stats
-                    .results
-                    .get(&(ClassificationResult::Undetermined, false))
-                    .cloned()
-                    .unwrap_or_default() as f64
-                    + 0.1,
-            );
-            und_w_reason.push(
-                stats
-                    .results
-                    .get(&(ClassificationResult::Undetermined, true))
-                    .cloned()
-                    .unwrap_or_default() as f64
-                    + 0.1,
-            );
-            wrong.push(
-                stats
-                    .results
-                    .get(&(ClassificationResult::Wrong, false))
-                    .cloned()
-                    .unwrap_or_default() as f64
-                    + 0.1,
-            );
-            wrong_w_reason.push(
-                stats
-                    .results
-                    .get(&(ClassificationResult::Wrong, true))
-                    .cloned()
-                    .unwrap_or_default() as f64
-                    + 0.1,
-            );
+            let mut data: Vec<_> = self.data[&1].true_domain.iter().collect();
+            data.sort_by_key(|x| x.0);
+            for (_domain, stats) in data {
+                corr.push(
+                    stats
+                        .results
+                        .get(&(ClassificationResult::Correct, false))
+                        .cloned()
+                        .unwrap_or_default() as f64
+                        + 0.1,
+                );
+                corr_w_reason.push(
+                    stats
+                        .results
+                        .get(&(ClassificationResult::Correct, true))
+                        .cloned()
+                        .unwrap_or_default() as f64
+                        + 0.1,
+                );
+                und.push(
+                    stats
+                        .results
+                        .get(&(ClassificationResult::Undetermined, false))
+                        .cloned()
+                        .unwrap_or_default() as f64
+                        + 0.1,
+                );
+                und_w_reason.push(
+                    stats
+                        .results
+                        .get(&(ClassificationResult::Undetermined, true))
+                        .cloned()
+                        .unwrap_or_default() as f64
+                        + 0.1,
+                );
+                wrong.push(
+                    stats
+                        .results
+                        .get(&(ClassificationResult::Wrong, false))
+                        .cloned()
+                        .unwrap_or_default() as f64
+                        + 0.1,
+                );
+                wrong_w_reason.push(
+                    stats
+                        .results
+                        .get(&(ClassificationResult::Wrong, true))
+                        .cloned()
+                        .unwrap_or_default() as f64
+                        + 0.1,
+                );
+            }
+
+            let mut config = HashMap::new();
+            config.insert("colors", &COLORS as &_);
+            plot::percentage_stacked_area_chart(
+                &[
+                    ("Correct", corr),
+                    ("Correct (wR)", corr_w_reason),
+                    ("Undetermined", und),
+                    ("Undetermined (wR)", und_w_reason),
+                    ("Wrong", wrong),
+                    ("Wrong (wR)", wrong_w_reason),
+                ],
+                output.as_ref().with_extension(format!("k{}.svg", k)),
+                config,
+            )?;
         }
-
-        plot::percentage_stacked_area_chart(
-            &[
-                ("Correct", corr),
-                ("Correct (wR)", corr_w_reason),
-                ("Undetermined", und),
-                ("Undetermined (wR)", und_w_reason),
-                ("Wrong", wrong),
-                ("Wrong (wR)", wrong_w_reason),
-            ],
-            output.as_ref(),
-        )?;
         Ok(())
     }
 
@@ -383,11 +391,21 @@ where
         ] {
             let wo_problems_count = self.results.get(&(res, false)).cloned().unwrap_or_default();
             let with_problems_count = self.results.get(&(res, true)).cloned().unwrap_or_default();
-            rows.push(row!(l->res, r->wo_problems_count, r->with_problems_count));
+            rows.push(row!(
+                l->res,
+                r->wo_problems_count,
+                r->with_problems_count,
+                r->wo_problems_count + with_problems_count,
+            ));
         }
 
         let mut table = Table::init(rows);
-        table.set_titles(row!(bc->"Success", bc->"#", bc->"#With Prob."));
+        table.set_titles(row!(
+            bc->"Success",
+            bc->"#",
+            bc->"#With Prob.",
+            bc->"Total",
+        ));
         table.set_format(*FORMAT_NO_BORDER_UNICODE);
         table.fmt(f)?;
         Ok(())
@@ -456,7 +474,7 @@ fn run() -> Result<(), Error> {
     // Controls how many folds there are
     let at_most_sequences_per_label = 10;
     // Controls the maximum k for knn
-    let most_k = 5;
+    let most_k = 3;
 
     let writer: Box<Write> = cli_args
         .misclassifications
@@ -548,7 +566,8 @@ fn run() -> Result<(), Error> {
     println!("{}", stats);
     if let Some(path) = &cli_args.statistics {
         stats.dump_stats_to_file(path)?;
-        stats.plot(&path.with_extension("k1.png"))?;
+        // the file extension will be overwritten later
+        stats.plot(&path.with_extension("placeholder"))?;
     }
 
     Ok(())
