@@ -147,12 +147,54 @@ pub struct RedirectResponse {
     pub timing: Timing,
 }
 
+/// Specifies a reason, why a network request happened
+///
+/// The variant `Initiator::Script` has different kinds in itself.
+///
+/// This is the typical case of XHR (XmlHttpRequests), which are caused by some JS code and
+/// therefore have a stacktrace of where the XHR was caused.
+///
+/// ```json
+/// {
+///     "type": "script",
+///     "stack": {
+///         "callFrames": [
+///             {
+///                 "functionName": "Pe",
+///                 "scriptId": "86",
+///                 "url": "https://pagead2.googlesyndication.com/pagead/js/r20180917/r20180604/show_ads_impl.js",
+///                 "lineNumber": 0,
+///                 "columnNumber": 28644
+///             }
+///         ]
+///     }
+/// }
+/// ```
+///
+/// This is the loading of a JS module. It looks similar to the parser case, because they are similar.
+/// Just in this case the parser is parsing JS.
+///
+/// ```json
+/// {
+///     "type": "script",
+///     "url": "http://example.com/",
+///     "lineNumber": 2
+/// }
+///
+
 #[serde(tag = "type", rename_all = "lowercase")]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub enum Initiator {
     Other {},
     Parser { url: String },
-    Script { stack: StackTrace },
+    Script(InitiatorScript),
+}
+
+#[serde(untagged)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub enum InitiatorScript {
+    Stack { stack: StackTrace },
+    JsModule { url: String },
 }
 
 #[serde(rename_all = "camelCase")]
@@ -217,6 +259,7 @@ pub enum TargetType {
     Worker,
     Browser,
     Other,
+    Webview,
 }
 
 pub mod duration_millis_opt {

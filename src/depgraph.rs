@@ -1,5 +1,6 @@
 use chrome::{
-    ChromeDebuggerMessage, Initiator, RedirectResponse, Request, StackTrace, TargetInfo, TargetType,
+    ChromeDebuggerMessage, Initiator, InitiatorScript, RedirectResponse, Request, StackTrace,
+    TargetInfo, TargetType,
 };
 use failure::{Error, ResultExt};
 use misc_utils::Min;
@@ -370,7 +371,12 @@ impl DepGraph {
                                     format!("Handling parser, ID {}", request_id)
                                 })?;
                             }
-                            Initiator::Script { ref stack } => {
+                            Initiator::Script(InitiatorScript::JsModule { ref url }) => {
+                                add_dependencies_to_node(node, url, None).with_context(|_| {
+                                    format!("Handling JS module, ID {}", request_id)
+                                })?;
+                            }
+                            Initiator::Script(InitiatorScript::Stack { ref stack }) => {
                                 traverse_stack(node, stack, add_dependencies_to_node)
                                     .with_context(|_| {
                                         format!("Handling script, ID {}", request_id)
@@ -399,7 +405,12 @@ impl DepGraph {
                                     format!("Handling parser, ID {}", request_id)
                                 })?;
                             }
-                            Initiator::Script { ref stack } => {
+                            Initiator::Script(InitiatorScript::JsModule { ref url }) => {
+                                add_dependencies_to_node(node, url, None).with_context(|_| {
+                                    format!("Handling JS module, ID {}", request_id)
+                                })?;
+                            }
+                            Initiator::Script(InitiatorScript::Stack { ref stack }) => {
                                 traverse_stack(node, stack, add_dependencies_to_node)
                                     .with_context(|_| {
                                         format!("Handling script, ID {}", request_id)
