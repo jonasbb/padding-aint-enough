@@ -6,6 +6,7 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 [workspace]
 members = [
     "chrome",
+    "dnstap",
     "framestream",
     "plot",
     "pylib",
@@ -22,6 +23,7 @@ debug = true
 chrome = { path = "./chrome" }
 chrono = { version = "0.4.2", features = [ "serde" ] }
 csv = "1.0.0"
+dnstap = { path = "./dnstap" }
 env_logger = "0.5.10"
 failure = "0.1.1"
 framestream = { path = "./framestream" }
@@ -44,7 +46,6 @@ serde-pickle = "0.4.1"
 string_cache = "0.7.3"
 structopt = "0.2.8"
 toml = "0.4.6"
-trust-dns = "0.14.0"
 url = "1.7.0"
 
 [dependencies.serde_with]

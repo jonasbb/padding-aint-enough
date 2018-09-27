@@ -17,20 +17,20 @@ extern crate rayon;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate dnstap as _dnstap;
 extern crate serde_with;
 extern crate string_cache;
-extern crate trust_dns;
 
-pub mod protos;
 pub mod sequences;
 
+pub use _dnstap::protos::{self, dnstap};
+use _dnstap::sanity_check_dnstap;
 use chrono::{DateTime, Duration, Utc};
 use dnstap::Message_Type;
 use failure::{Error, Fail, ResultExt};
 use framestream::DecoderReader;
 use min_max_heap::MinMaxHeap;
 use misc_utils::fs::file_open_read;
-pub use protos::dnstap;
 use protos::DnstapContent;
 use sequences::SequenceElement;
 pub use sequences::{LabelledSequences, Sequence};
@@ -448,70 +448,6 @@ impl ErrorExt for Error {
     fn display_causes(&self) -> DisplayCauses {
         DisplayCauses(self.as_fail())
     }
-}
-
-fn sanity_check_dnstap(events: &[protos::Dnstap]) -> Result<(), Error> {
-    let mut client_query_start_count = 0;
-    let mut client_response_start_count = 0;
-    let mut client_query_end_count = 0;
-    let mut client_response_end_count = 0;
-
-    for ev in events {
-        match &ev.content {
-            DnstapContent::Message {
-                message_type: Message_Type::CLIENT_QUERY,
-                ref query_message,
-                ..
-            } => {
-                let (dnsmsg, _size) = query_message.as_ref().expect("Unbound always sets this");
-                let qname = dnsmsg.queries()[0].name().to_utf8();
-
-                match &*qname {
-                    "start.example." => client_query_start_count += 1,
-                    "end.example." => client_query_end_count += 1,
-                    _ => {}
-                }
-            }
-
-            DnstapContent::Message {
-                message_type: Message_Type::CLIENT_RESPONSE,
-                ref response_message,
-                ..
-            } => {
-                let (dnsmsg, _size) = response_message.as_ref().expect("Unbound always sets this");
-                let qname = dnsmsg.queries()[0].name().to_utf8();
-
-                match &*qname {
-                    "start.example." => client_response_start_count += 1,
-                    "end.example." => client_response_end_count += 1,
-                    _ => {}
-                }
-            }
-
-            _ => {}
-        }
-    }
-
-    if client_query_start_count == 0 {
-        bail!("Expected at least 1 CLIENT_QUERY for 'start.example.' but found none");
-    } else if client_query_end_count != 1 {
-        bail!(
-            "Unexpected number of CLIENT_QUERYs for 'end.example.': {}, expected 1",
-            client_query_end_count
-        );
-    } else if client_response_start_count != 1 {
-        bail!(
-            "Unexpected number of CLIENT_RESPONSEs for 'start.example.': {}, expected 1",
-            client_response_start_count
-        );
-    } else if client_response_end_count != 1 {
-        bail!(
-            "Unexpected number of CLIENT_RESPONSEs for 'end.example.': {}, expected 1",
-            client_response_end_count
-        );
-    }
-
-    Ok(())
 }
 
 fn sanity_check_matched_queries(matched: &[Query]) -> Result<(), Error> {
