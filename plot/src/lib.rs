@@ -34,10 +34,10 @@ fn pyerr_to_error(py: Python, pyerr: &PyErr) -> Error {
 /// Plot a Percentage Stacked Area Chart
 ///
 /// https://python-graph-gallery.com/255-percentage-stacked-area-chart/
-pub fn percentage_stacked_area_chart(
+pub fn percentage_stacked_area_chart<S: ::std::hash::BuildHasher>(
     data: &[(impl AsRef<str>, impl AsRef<[f64]>)],
     output: impl AsRef<Path>,
-    config: HashMap<&str, &dyn ToPyObject>,
+    config: HashMap<&str, &dyn ToPyObject, S>,
 ) -> Result<(), Error> {
     let python_code = include_str!("./percentage_stacked_area_chart.py");
     let data: Vec<_> = data
