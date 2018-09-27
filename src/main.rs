@@ -1,6 +1,7 @@
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 #![feature(try_from)]
 
+extern crate chrome;
 extern crate chrono;
 extern crate env_logger;
 #[macro_use]
@@ -23,7 +24,6 @@ extern crate serde_pickle;
 extern crate serde_with;
 extern crate url;
 
-mod chrome;
 mod depgraph;
 
 use chrome::*;

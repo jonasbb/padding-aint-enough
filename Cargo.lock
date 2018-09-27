@@ -115,6 +115,15 @@ version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "chrome"
+version = "0.1.0"
+dependencies = [
+ "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.79 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_with 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -302,6 +311,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "encrypted-dns"
 version = "0.1.0"
 dependencies = [
+ "chrome 0.1.0",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "csv 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "env_logger 0.5.13 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1092,6 +1102,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "serde"
 version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "serde_derive 1.0.79 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "serde-pickle"

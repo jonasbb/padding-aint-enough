@@ -3,6 +3,7 @@
 #![feature(try_from)]
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 
+pub extern crate chrome;
 extern crate chrono;
 #[macro_use]
 extern crate failure;
@@ -20,7 +21,6 @@ extern crate serde_with;
 extern crate string_cache;
 extern crate trust_dns;
 
-pub mod chrome;
 pub mod protos;
 pub mod sequences;
 
