@@ -11,6 +11,7 @@ extern crate lazy_static;
 extern crate log;
 extern crate misc_utils;
 extern crate rayon;
+extern crate sequences;
 extern crate serde;
 extern crate structopt;
 extern crate taskmanager;
@@ -18,10 +19,11 @@ extern crate toml;
 
 mod utils;
 
-use encrypted_dns::{dnstap_to_sequence, sequence_stats, ErrorExt};
+use encrypted_dns::{dnstap_to_sequence, ErrorExt};
 use failure::{Error, ResultExt};
 use misc_utils::fs::file_open_read;
 use rayon::prelude::*;
+use sequences::sequence_stats;
 use std::{
     ffi::{OsStr, OsString},
     fmt::{self, Debug},

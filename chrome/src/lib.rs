@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
+
 extern crate chrono;
 #[macro_use]
 extern crate serde;

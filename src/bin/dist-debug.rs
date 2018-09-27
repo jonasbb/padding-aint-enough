@@ -7,12 +7,14 @@ extern crate glob;
 #[macro_use]
 extern crate log;
 extern crate rayon;
+extern crate sequences;
 extern crate structopt;
 
-use encrypted_dns::{dnstap_to_sequence, sequence_stats, sequences::Sequence, FailExt};
+use encrypted_dns::{dnstap_to_sequence, FailExt};
 use failure::{Error, ResultExt};
 use glob::glob;
 use rayon::prelude::*;
+use sequences::{sequence_stats, Sequence};
 use std::path::PathBuf;
 use structopt::StructOpt;
 

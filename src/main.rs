@@ -3,6 +3,7 @@
 
 extern crate chrome;
 extern crate chrono;
+extern crate dnstap;
 extern crate env_logger;
 #[macro_use]
 extern crate failure;
@@ -18,7 +19,7 @@ extern crate serde_derive;
 #[macro_use]
 extern crate lazy_static;
 extern crate encrypted_dns;
-extern crate num_traits;
+extern crate sequences;
 extern crate serde_json;
 extern crate serde_pickle;
 extern crate serde_with;
@@ -26,12 +27,10 @@ extern crate url;
 
 mod depgraph;
 
-use chrome::*;
+use chrome::{ChromeDebuggerMessage, RedirectResponse, Request, Response, TargetInfo, Timing};
 use chrono::{DateTime, Utc};
 use depgraph::DepGraph;
-use encrypted_dns::{
-    dnstap::Message_Type, protos::DnstapContent, MatchKey, Query, QuerySource, UnmatchedClientQuery,
-};
+use encrypted_dns::{dnstap::Message_Type, protos::DnstapContent};
 use failure::{Error, ResultExt};
 use misc_utils::{
     fs::{file_open_read, file_open_write, WriteOptions},
@@ -39,6 +38,7 @@ use misc_utils::{
 };
 use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
+use sequences::{MatchKey, Query, QuerySource, UnmatchedClientQuery};
 use std::{
     borrow::Cow,
     collections::BTreeMap,
@@ -144,7 +144,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
     if dnstap_file.exists() {
         info!("Found dnstap file.");
         let mut events: Vec<encrypted_dns::protos::Dnstap> =
-            encrypted_dns::process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
+            dnstap::process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
 
         // the dnstap events can be out of order, so sort them by timestamp
         // always take the later timestamp if there are multiple
@@ -168,7 +168,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
 
         for ev in events
             .into_iter()
-                // search for the CLIENT_RESPONE `start.example.` message as the end of the prefetching events
+            // search for the CLIENT_RESPONE `start.example.` message as the end of the prefetching events
             .skip_while(|ev| {
                 let DnstapContent::Message {
                     message_type,
@@ -197,8 +197,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                     ..
                 } = ev.content;
                 if message_type == Message_Type::CLIENT_QUERY {
-                    let (dnsmsg, _size) =
-                        query_message.as_ref().expect("Unbound always sets this");
+                    let (dnsmsg, _size) = query_message.as_ref().expect("Unbound always sets this");
                     let qname = dnsmsg.queries()[0].name().to_utf8();
                     if qname == "end.example." {
                         return false;
@@ -426,10 +425,6 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     let graph = depgraph.as_graph();
     export_as_graphml(graph)?;
     export_as_pickle(graph)?;
-
-    // for domain in  depgraph.get_domain_names(){
-    //     println!("{}", domain);
-    // }
 
     Ok(())
 }

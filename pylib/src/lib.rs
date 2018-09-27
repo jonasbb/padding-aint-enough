@@ -7,10 +7,12 @@
 extern crate encrypted_dns;
 extern crate failure;
 extern crate pyo3;
+extern crate sequences;
 
-use encrypted_dns::{dnstap_to_sequence, ErrorExt, Sequence};
+use encrypted_dns::{dnstap_to_sequence, ErrorExt};
 use failure::Error;
 use pyo3::{exc::Exception, prelude::*};
+use sequences::Sequence;
 use std::path::Path;
 
 fn error2py(err: Error) -> PyErr {

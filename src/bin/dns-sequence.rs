@@ -29,7 +29,7 @@ use encrypted_dns::{
         R004_UNKNOWN, R005, R006, R006_3RD_LVL_DOM, R007,
     },
     dnstap_to_sequence,
-    sequences::{knn, split_training_test_data, LabelledSequences, Sequence, SequenceElement},
+    sequences::{knn, LabelledSequences, Sequence, SequenceElement},
     take_largest, FailExt,
 };
 use failure::{Error, ResultExt};
@@ -501,7 +501,7 @@ fn run() -> Result<(), Error> {
     for fold in 0..at_most_sequences_per_label {
         info!("Testing for fold {}", fold);
         info!("Start splitting trainings and test data...");
-        let (training_data, test) = split_training_test_data(&*data, fold as u8);
+        let (training_data, test) = knn::split_training_test_data(&*data, fold as u8);
         let len = test.len();
         let (test_labels, test_data) = test.into_iter().fold(
             (Vec::with_capacity(len), Vec::with_capacity(len)),
@@ -514,7 +514,7 @@ fn run() -> Result<(), Error> {
         info!("Done splitting trainings and test data.");
 
         for k in (1..=most_k).step_by(2) {
-            let classification = knn(&*training_data, &*test_data, k as u8);
+            let classification = knn::knn(&*training_data, &*test_data, k as u8);
             assert_eq!(classification.len(), test_labels.len());
             classification
                 .into_iter()

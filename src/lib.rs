@@ -1,139 +1,28 @@
-#![feature(nll)]
-#![feature(transpose_result)]
-#![feature(try_from)]
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 
 pub extern crate chrome;
 extern crate chrono;
 #[macro_use]
 extern crate failure;
-extern crate framestream;
 #[macro_use]
 extern crate log;
-extern crate min_max_heap;
-extern crate misc_utils;
-extern crate protobuf;
-extern crate rayon;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 extern crate dnstap as _dnstap;
-extern crate serde_with;
-extern crate string_cache;
-
-pub mod sequences;
+extern crate min_max_heap;
+pub extern crate sequences;
 
 pub use _dnstap::protos::{self, dnstap};
-use _dnstap::sanity_check_dnstap;
-use chrono::{DateTime, Duration, Utc};
+use _dnstap::{process_dnstap, sanity_check_dnstap};
+use chrono::Duration;
 use dnstap::Message_Type;
-use failure::{Error, Fail, ResultExt};
-use framestream::DecoderReader;
+use failure::{Error, Fail};
 use min_max_heap::MinMaxHeap;
-use misc_utils::fs::file_open_read;
 use protos::DnstapContent;
-use sequences::SequenceElement;
-pub use sequences::{LabelledSequences, Sequence};
+use sequences::{MatchKey, Query, QuerySource, Sequence, SequenceElement, UnmatchedClientQuery};
 use std::{
     collections::BTreeMap,
-    convert::TryFrom,
     fmt::{self, Display},
     path::Path,
 };
-
-pub fn process_dnstap<P: AsRef<Path>>(
-    path: P,
-) -> Result<impl Iterator<Item = Result<protos::Dnstap, Error>>, Error> {
-    let path = path.as_ref();
-    let path_str = path.to_string_lossy().to_string();
-
-    let rdr = file_open_read(path)
-        .with_context(|_| format!("Opening input file '{}' failed", path.display()))?;
-    let fstrm = DecoderReader::with_content_type(rdr, "protobuf:dnstap.Dnstap".into());
-
-    Ok(fstrm
-        .map(move |msg| -> Result<Option<protos::Dnstap>, Error> {
-            let raw_dnstap = protobuf::parse_from_bytes::<dnstap::Dnstap>(&msg?)
-                .context("Parsing protobuf failed.")?;
-            match protos::Dnstap::try_from(raw_dnstap) {
-                Ok(dnstap) => Ok(Some(dnstap)),
-                Err(err) => {
-                    warn!(
-                        "Skipping DNS event due to conversion errror in file '{}': {}",
-                        path_str, err
-                    );
-                    Ok(None)
-                }
-            }
-        }).filter_map(|x| x.transpose()))
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
-pub struct Query {
-    pub source: QuerySource,
-    pub qname: String,
-    pub qtype: String,
-    pub start: DateTime<Utc>,
-    pub end: DateTime<Utc>,
-    pub query_size: u32,
-    pub response_size: u32,
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
-pub enum QuerySource {
-    Client,
-    Forwarder,
-    ForwarderLostQuery,
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-pub struct MatchKey {
-    pub qname: String,
-    pub qtype: String,
-    pub id: u16,
-    pub port: u16,
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-pub struct UnmatchedClientQuery {
-    pub qname: String,
-    pub qtype: String,
-    pub start: DateTime<Utc>,
-    pub size: u32,
-}
-
-pub fn take_smallest<I, T>(iter: I, n: usize) -> Vec<T>
-where
-    I: IntoIterator<Item = T>,
-    T: Ord,
-{
-    let mut iter = iter.into_iter();
-    if n == 1 {
-        // simply take the largest value and return it
-        return iter.min().into_iter().collect();
-    }
-
-    let mut heap = MinMaxHeap::with_capacity(n);
-    // fill the heap with n elements
-    for _ in 0..n {
-        match iter.next() {
-            Some(v) => heap.push(v),
-            None => break,
-        }
-    }
-
-    // replace exisiting elements keeping the heap size
-    for v in iter {
-        heap.push_pop_max(v);
-    }
-
-    let res = heap.into_vec_asc();
-    assert!(
-        res.len() <= n,
-        "Output vector only contains more than n elements."
-    );
-    res
-}
 
 pub fn take_largest<I, T>(iter: I, n: usize) -> Vec<T>
 where
@@ -468,34 +357,4 @@ fn sanity_check_matched_queries(matched: &[Query]) -> Result<(), Error> {
     }
 
     Ok(())
-}
-
-pub fn sequence_stats(
-    sequences_a: &[Sequence],
-    sequences_b: &[Sequence],
-) -> (Vec<usize>, Vec<usize>, usize, usize) {
-    let dists: Vec<Vec<usize>> = sequences_a
-        .iter()
-        .map(|seq| {
-            sequences_b
-                .iter()
-                .filter(|other_seq| seq != *other_seq)
-                .map(|other_seq| seq.distance(&other_seq))
-                .collect()
-        }).collect();
-
-    let avg_distances: Vec<_> = dists
-        .iter()
-        .map(|dists2| dists2.iter().sum::<usize>() / dists2.len())
-        .collect();
-    let median_distances: Vec<_> = dists
-        .into_iter()
-        .map(|mut dists2| {
-            dists2.sort();
-            dists2[dists2.len() / 2]
-        }).collect();
-    let avg_avg = avg_distances.iter().sum::<usize>() / avg_distances.len();
-    let avg_median = median_distances.iter().sum::<usize>() / median_distances.len();
-
-    (avg_distances, median_distances, avg_avg, avg_median)
 }

@@ -1,17 +1,54 @@
+#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
+
+#![feature(transpose_result)]
 #![feature(try_from)]
 
 extern crate chrono;
 #[macro_use]
 extern crate failure;
+extern crate framestream;
+#[macro_use]
+extern crate log;
+extern crate misc_utils;
 extern crate protobuf;
 extern crate trust_dns;
 
 pub mod protos;
 
 use dnstap::Message_Type;
-use failure::Error;
+use failure::{Error, ResultExt};
+use framestream::DecoderReader;
+use misc_utils::fs::file_open_read;
 pub use protos::dnstap;
 use protos::DnstapContent;
+use std::{convert::TryFrom, path::Path};
+
+pub fn process_dnstap<P: AsRef<Path>>(
+    path: P,
+) -> Result<impl Iterator<Item = Result<protos::Dnstap, Error>>, Error> {
+    let path = path.as_ref();
+    let path_str = path.to_string_lossy().to_string();
+
+    let rdr = file_open_read(path)
+        .with_context(|_| format!("Opening input file '{}' failed", path.display()))?;
+    let fstrm = DecoderReader::with_content_type(rdr, "protobuf:dnstap.Dnstap".into());
+
+    Ok(fstrm
+        .map(move |msg| -> Result<Option<protos::Dnstap>, Error> {
+            let raw_dnstap = protobuf::parse_from_bytes::<dnstap::Dnstap>(&msg?)
+                .context("Parsing protobuf failed.")?;
+            match protos::Dnstap::try_from(raw_dnstap) {
+                Ok(dnstap) => Ok(Some(dnstap)),
+                Err(err) => {
+                    warn!(
+                        "Skipping DNS event due to conversion errror in file '{}': {}",
+                        path_str, err
+                    );
+                    Ok(None)
+                }
+            }
+        }).filter_map(|x| x.transpose()))
+}
 
 pub fn sanity_check_dnstap(events: &[protos::Dnstap]) -> Result<(), Error> {
     let mut client_query_start_count = 0;

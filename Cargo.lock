@@ -303,6 +303,9 @@ version = "0.1.0"
 dependencies = [
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "framestream 0.1.2",
+ "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf 2.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "trust-dns 0.14.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -327,20 +330,18 @@ dependencies = [
  "dnstap 0.1.0",
  "env_logger 0.5.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "framestream 0.1.2",
  "glob 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "min-max-heap 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "misc_utils 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "petgraph 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "petgraph-graphml 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "plot 0.1.0",
  "prettytable-rs 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "protobuf 2.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "protoc-rust 2.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sequences 0.1.0",
  "serde 1.0.79 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde-pickle 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.79 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -348,7 +349,6 @@ dependencies = [
  "serde_with 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "string_cache 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "toml 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -905,6 +905,7 @@ dependencies = [
  "encrypted-dns 0.1.0",
  "failure 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "pyo3 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sequences 0.1.0",
 ]
 
 [[package]]
@@ -1107,6 +1108,20 @@ dependencies = [
 name = "semver-parser"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "sequences"
+version = "0.1.0"
+dependencies = [
+ "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "dnstap 0.1.0",
+ "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "min-max-heap 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rayon 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.79 (registry+https://github.com/rust-lang/crates.io-index)",
+ "string_cache 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "serde"
@@ -1324,6 +1339,7 @@ dependencies = [
  "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "misc_utils 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sequences 0.1.0",
  "serde 1.0.79 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.79 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
