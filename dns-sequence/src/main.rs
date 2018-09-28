@@ -16,6 +16,7 @@ extern crate plot;
 #[macro_use]
 extern crate prettytable;
 extern crate rayon;
+extern crate sequences;
 #[macro_use]
 extern crate serde;
 #[cfg(not(plot))]
@@ -30,9 +31,7 @@ use encrypted_dns::{
         R001, R002, R003, R004_SIZE1, R004_SIZE2, R004_SIZE3, R004_SIZE4, R004_SIZE5, R004_SIZE6,
         R004_UNKNOWN, R005, R006, R006_3RD_LVL_DOM, R007,
     },
-    dnstap_to_sequence,
-    sequences::{knn, LabelledSequences, Sequence, SequenceElement},
-    take_largest, FailExt,
+    dnstap_to_sequence, take_largest, FailExt,
 };
 use failure::{Error, ResultExt};
 use misc_utils::{
@@ -44,6 +43,7 @@ use prettytable::{
     Table,
 };
 use rayon::prelude::*;
+use sequences::{knn, LabelledSequences, Sequence, SequenceElement};
 use serde::Serialize;
 use std::{
     collections::{BTreeMap, HashMap},

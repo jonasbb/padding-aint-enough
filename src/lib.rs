@@ -8,7 +8,7 @@ extern crate failure;
 #[macro_use]
 extern crate log;
 extern crate min_max_heap;
-pub extern crate sequences;
+extern crate sequences;
 
 pub use _dnstap::protos::{self, dnstap};
 use _dnstap::{process_dnstap, sanity_check_dnstap};

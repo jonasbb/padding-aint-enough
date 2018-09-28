@@ -19,6 +19,7 @@ serde-pickle = "0.4.1"
 serde_with = "0.2.2"
 string_cache = "0.7.3"
 structopt = "0.2.10"
+sequences = { path = "../sequences/" }
 
 [features]
 default = []

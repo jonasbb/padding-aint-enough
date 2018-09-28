@@ -311,6 +311,7 @@ dependencies = [
  "plot 0.1.0",
  "prettytable-rs 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sequences 0.1.0",
  "serde 1.0.79 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde-pickle 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_with 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
