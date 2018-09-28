@@ -11,7 +11,7 @@ extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate misc_utils;
-#[cfg(plot)]
+#[cfg(feature = "plot")]
 extern crate plot;
 #[macro_use]
 extern crate prettytable;
@@ -19,7 +19,7 @@ extern crate rayon;
 extern crate sequences;
 #[macro_use]
 extern crate serde;
-#[cfg(not(plot))]
+#[cfg(not(feature = "plot"))]
 extern crate serde_pickle;
 extern crate serde_with;
 extern crate string_cache;
@@ -83,7 +83,7 @@ lazy_static! {
 /// Fake implementation of the plot feature such that this binary can be build without python dependencies
 ///
 /// Instead of plotting this simply pickles the input data, such
-#[cfg(not(plot))]
+#[cfg(not(feature = "plot"))]
 mod plot {
     use super::{file_open_write, serde_pickle, Error, HashMap, OpenOptions, Path, WriteOptions};
 
