@@ -245,7 +245,7 @@ impl<S: Eq + Hash> StatsCollector<S> {
             let mut wrong = Vec::with_capacity(size);
             let mut wrong_w_reason = Vec::with_capacity(size);
 
-            let mut data: Vec<_> = self.data[&1].true_domain.iter().collect();
+            let mut data: Vec<_> = self.data[k].true_domain.iter().collect();
             data.sort_by_key(|x| x.0);
             for (_domain, stats) in data {
                 corr.push(
