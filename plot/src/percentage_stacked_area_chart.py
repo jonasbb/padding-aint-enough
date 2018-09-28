@@ -19,6 +19,13 @@ if False:  # pylint: disable=W0125
     rawdata: t.List[t.Tuple[str, t.List[float]]] = list()
     rawimgpath: str = ""
 
+if "__file__" in globals():
+    # being run as freestanding script
+    import sys
+    import pickle
+    rawdata, config = pickle.load(open(sys.argv[1], "rb"))
+    rawimgpath = sys.argv[1] + ".svg"
+
 imgpath = Path(rawimgpath)
 
 # convert to dict but keep order
