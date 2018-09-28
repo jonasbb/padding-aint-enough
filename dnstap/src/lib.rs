@@ -1,5 +1,4 @@
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-
 #![feature(transpose_result)]
 #![feature(try_from)]
 
@@ -11,7 +10,7 @@ extern crate framestream;
 extern crate log;
 extern crate misc_utils;
 extern crate protobuf;
-extern crate trust_dns;
+extern crate trust_dns_proto;
 
 pub mod protos;
 

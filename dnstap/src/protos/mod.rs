@@ -6,7 +6,9 @@ use std::{
     convert::TryFrom,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
 };
-use trust_dns::{op::Message as DnsMessage, rr::Name as DnsName, serialize::binary::BinDecodable};
+use trust_dns_proto::{
+    op::Message as DnsMessage, rr::Name as DnsName, serialize::binary::BinDecodable,
+};
 
 #[derive(Clone, Debug)]
 pub struct Dnstap {
