@@ -7,6 +7,7 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 members = [
     "chrome",
     "dnstap",
+    "dns-sequence",
     "framestream",
     "plot",
     "pylib",
@@ -34,8 +35,6 @@ min-max-heap = "1.2.0"
 misc_utils = "2.1.0"
 petgraph = { version = "0.4.13", features = [ "serde-1" ] }
 petgraph-graphml = "1.0.0"
-plot = { path = "./plot" }
-prettytable-rs = { version = "0.7.0", default-features = false }
 rayon = "1.0.1"
 sequences = { path = "./sequences" }
 serde = "1.0.49"
@@ -44,7 +43,6 @@ serde_json = "1.0.31"
 serde-pickle = "0.4.1"
 structopt = "0.2.8"
 url = "1.7.0"
-string_cache = "0.7.3"
 
 [dependencies.serde_with]
 version = "0.2.0"

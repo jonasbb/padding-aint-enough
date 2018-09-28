@@ -2,11 +2,11 @@
 
 pub extern crate chrome;
 extern crate chrono;
+extern crate dnstap as _dnstap;
 #[macro_use]
 extern crate failure;
 #[macro_use]
 extern crate log;
-extern crate dnstap as _dnstap;
 extern crate min_max_heap;
 pub extern crate sequences;
 

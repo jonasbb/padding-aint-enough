@@ -298,6 +298,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "dns-sequence"
+version = "0.1.0"
+dependencies = [
+ "csv 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "encrypted-dns 0.1.0",
+ "env_logger 0.5.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plot 0.1.0",
+ "prettytable-rs 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rayon 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.79 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde-pickle 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_with 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "string_cache 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "structopt 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "dnstap"
 version = "0.1.0"
 dependencies = [
@@ -337,8 +358,6 @@ dependencies = [
  "misc_utils 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "petgraph 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "petgraph-graphml 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "plot 0.1.0",
- "prettytable-rs 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "protoc-rust 2.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sequences 0.1.0",
@@ -347,7 +366,6 @@ dependencies = [
  "serde_derive 1.0.79 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.31 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_with 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "string_cache 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "structopt 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "url 1.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

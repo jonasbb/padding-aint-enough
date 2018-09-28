@@ -11,13 +11,15 @@ extern crate lazy_static;
 #[macro_use]
 extern crate log;
 extern crate misc_utils;
-extern crate rayon;
-extern crate serde;
-#[macro_use]
-extern crate serde_derive;
+#[cfg(plot)]
 extern crate plot;
 #[macro_use]
 extern crate prettytable;
+extern crate rayon;
+#[macro_use]
+extern crate serde;
+#[cfg(not(plot))]
+extern crate serde_pickle;
 extern crate serde_with;
 extern crate string_cache;
 extern crate structopt;
@@ -76,6 +78,34 @@ lazy_static! {
         .separator(LinePosition::Title, *UNICODE_DOUBLE_SEP)
         .column_separator('│')
         .build();
+}
+
+/// Fake implementation of the plot feature such that this binary can be build without python dependencies
+///
+/// Instead of plotting this simply pickles the input data, such
+#[cfg(not(plot))]
+mod plot {
+    use super::{file_open_write, serde_pickle, Error, HashMap, OpenOptions, Path, WriteOptions};
+
+    pub fn percentage_stacked_area_chart<S: ::std::hash::BuildHasher>(
+        data: &[(impl AsRef<str>, impl AsRef<[f64]>)],
+        output: impl AsRef<Path>,
+        config: HashMap<&str, &[&str], S>,
+    ) -> Result<(), Error> {
+        info!("Pickle plotting data");
+        let path = output.as_ref().with_extension("pickle");
+
+        let mut wtr = file_open_write(
+            &path,
+            WriteOptions::new().set_open_options(OpenOptions::new().create(true).truncate(true)),
+        )?;
+        let data: Vec<(&str, &[f64])> = data
+            .iter()
+            .map(|(label, value)| (label.as_ref(), value.as_ref()))
+            .collect();
+        serde_pickle::to_writer(&mut wtr, &(data, config), true)?;
+        Ok(())
+    }
 }
 
 #[derive(StructOpt, Debug)]

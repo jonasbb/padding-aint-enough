@@ -1,0 +1,24 @@
+[package]
+name = "dns-sequence"
+version = "0.1.0"
+authors = ["Jonas Bushart <jonas@bushart.org>"]
+
+[dependencies]
+csv = "1.0.1"
+encrypted-dns = { path = "../" }
+env_logger = "0.5.13"
+failure = "0.1.2"
+lazy_static = "1.1.0"
+log = "0.4.5"
+misc_utils = "2.1.0"
+rayon = "1.0.2"
+plot = { path = "../plot", optional = true }
+prettytable-rs = { version = "0.7.0", default-features = false }
+serde = { version = "1.0.79", features = [ "derive" ] }
+serde-pickle = "0.4.1"
+serde_with = "0.2.2"
+string_cache = "0.7.3"
+structopt = "0.2.10"
+
+[features]
+default = []
