@@ -73,6 +73,8 @@ pub mod common_sequence_classifications {
     pub const R006_3RD_LVL_DOM: &str =
         "R006 www redirect + Akamai on 3rd-LVL domain without DNSSEC";
     pub const R007: &str = "R007 Unreachable Name Server";
+    pub const R008: &str =
+        "R008 Domain did not load properly and Chrome performed a Google search on the error page.";
 }
 
 /// Load a dnstap file and generate a Sequence from it

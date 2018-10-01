@@ -29,7 +29,7 @@ use csv::{ReaderBuilder, Writer as CsvWriter, WriterBuilder};
 use encrypted_dns::{
     common_sequence_classifications::{
         R001, R002, R003, R004_SIZE1, R004_SIZE2, R004_SIZE3, R004_SIZE4, R004_SIZE5, R004_SIZE6,
-        R004_UNKNOWN, R005, R006, R006_3RD_LVL_DOM, R007,
+        R004_UNKNOWN, R005, R006, R006_3RD_LVL_DOM, R007, R008,
     },
     dnstap_to_sequence, take_largest, FailExt,
 };
@@ -46,24 +46,21 @@ use rayon::prelude::*;
 use sequences::{knn, LabelledSequences, Sequence, SequenceElement};
 use serde::Serialize;
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{HashMap, HashSet},
     fmt::{self, Display},
     fs::{self, OpenOptions},
     hash::Hash,
-    io::{stdout, Write},
+    io::{stdout, BufRead, BufReader, Write},
     path::{Path, PathBuf},
     sync::{Arc, RwLock},
 };
 use string_cache::DefaultAtom as Atom;
 use structopt::StructOpt;
 
-const COLORS: &[&str] = &[
-    "#349e35", "#98dd8b", "#df802e", "#feba7c", "#d33134", "#fe9897",
-];
-
 lazy_static! {
-    static ref CONFUSION_DOMAINS: RwLock<Arc<BTreeMap<String, String>>> =
-        RwLock::new(Arc::new(BTreeMap::new()));
+    static ref CONFUSION_DOMAINS: RwLock<Arc<HashMap<Atom, Atom>>> =
+        RwLock::new(Arc::default());
+    static ref LOADING_FAILED: RwLock<Arc<HashSet<Atom>>> = RwLock::new(Arc::default());
 
     /// A line separator made of light unicode table elements
     static ref UNICODE_LIGHT_SEP: LineSeparator = LineSeparator::new('─', '┼', '├', '┤');
@@ -114,12 +111,21 @@ mod plot {
     raw(setting = "structopt::clap::AppSettings::ColoredHelp")
 )]
 struct CliArgs {
+    /// Base directory containing per domain a folder which contains the dnstap files
     #[structopt(parse(from_os_str))]
     base_dir: PathBuf,
+    /// Some domains are known similar. Specify a CSV file renaming the "original" domain to some other identifier.
+    /// This option can be applied multiple times. It is not permitted to have conflicting entries to the same domain.
     #[structopt(short = "d", long = "confusion_domains", parse(from_os_str))]
     confusion_domains: Vec<PathBuf>,
+    /// List of file names which did not load properly.
+    /// Also see the `website-failed` tool.
+    #[structopt(long = "loading_failed", parse(from_os_str))]
+    loading_failed: Option<PathBuf>,
+    /// Path to dump a CSV file containing all the wrongly classified data
     #[structopt(long = "misclassifications", parse(from_os_str))]
     misclassifications: Option<PathBuf>,
+    /// Path for the resulting CSV-statistics file and plot/pickle-files
     #[structopt(long = "statistics", parse(from_os_str))]
     statistics: Option<PathBuf>,
 }
@@ -510,6 +516,7 @@ fn run() -> Result<(), Error> {
 
     let writer: Box<Write> = cli_args
         .misclassifications
+        .as_ref()
         .map(|path| {
             file_open_write(
                 path,
@@ -521,12 +528,37 @@ fn run() -> Result<(), Error> {
         .context("Cannot open writer for misclassifications.")?;
     let mut mis_writer = WriterBuilder::new().has_headers(true).from_writer(writer);
 
+    let (res1, res2) = rayon::join(
+        || {
     info!("Start loading confusion domains...");
-    prepare_confusion_domains(&cli_args.confusion_domains)?;
+            let res = prepare_confusion_domains(&cli_args.confusion_domains);
     info!("Done loading confusion domains.");
+            res
+        },
+        || {
+            if let Some(ref path) = &cli_args.loading_failed {
+                info!("Start loading of failed domains...");
+                let res = prepare_failed_domains(path);
+                info!("Done loading of failed domains.");
+                res
+            } else {
+                Ok(())
+            }
+        },
+    );
+    res1?;
+    res2?;
+
     info!("Start loading dnstap files...");
     let data = load_all_dnstap_files(&cli_args.base_dir, at_most_sequences_per_label)?;
     info!("Done loading dnstap files.");
+    {
+        // delete non-permanent memory
+        let mut lock = CONFUSION_DOMAINS
+            .write()
+            .expect("CONFUSION_DOMAINS should still be accessible");
+        *lock = Arc::default();
+    }
 
     // Collect the stats during the execution and print them at the end
     let mut stats = StatsCollector::new();
@@ -614,11 +646,11 @@ where
 {
     #[derive(Debug, Deserialize)]
     struct Record {
-        domain: String,
-        is_similar_to: String,
+        domain: Atom,
+        is_similar_to: Atom,
     };
 
-    let mut conf_domains = BTreeMap::new();
+    let mut conf_domains = HashMap::default();
 
     for path in data {
         let path = path.as_ref();
@@ -628,8 +660,7 @@ where
         );
         for record in reader.deserialize() {
             let record: Record = record?;
-            let existing =
-                conf_domains.insert(record.domain.to_string(), record.is_similar_to.to_string());
+            let existing = conf_domains.insert(record.domain.clone(), record.is_similar_to.clone());
             if let Some(existing) = existing {
                 if existing != record.is_similar_to {
                     error!("Duplicate confusion mappings for domain '{}' but with different targets: 1) '{}' 2) '{}", record.domain, existing, record.is_similar_to);
@@ -644,15 +675,45 @@ where
     Ok(())
 }
 
-fn make_check_confusion_domains() -> impl Fn(&str) -> String {
+fn prepare_failed_domains(path: impl AsRef<Path>) -> Result<(), Error> {
+    let rdr = BufReader::new(file_open_read(path.as_ref()).with_context(|_| {
+        format!(
+            "Opening failed domains file '{}' failed",
+            path.as_ref().display()
+        )
+    })?);
+
+    let mut failed_domains = HashSet::default();
+    for line in rdr.lines() {
+        let line = line.context("Failed to read from failed domains file")?;
+        let file_name: Atom = Path::new(&line)
+            .file_name()
+            .map(|file_name| Atom::from(file_name.to_string_lossy()))
+            .ok_or_else(|| {
+                format_err!(
+                    "This line does not specify a path with a file name '{:?}'",
+                    line
+                )
+            })?;
+        failed_domains.insert(file_name);
+    }
+    let mut lock = LOADING_FAILED
+        .write()
+        .expect("LOADING_FAILED must be writeable here");
+    *lock = Arc::new(failed_domains);
+
+    Ok(())
+}
+
+fn make_check_confusion_domains() -> impl Fn(&Atom) -> Atom {
     let lock = CONFUSION_DOMAINS.read().unwrap();
     let conf_domains: Arc<_> = lock.clone();
-    move |domain: &str| -> String {
+    move |domain: &Atom| -> Atom {
         let mut curr = domain;
         while let Some(other) = conf_domains.get(curr) {
             curr = other;
         }
-        curr.to_string()
+        curr.into()
     }
 }
 
@@ -688,7 +749,7 @@ fn load_all_dnstap_files(
                 .file_name()
                 .expect("Each directory has a name")
                 .to_string_lossy()
-                .to_string();
+                .into();
 
             let mut filenames: Vec<PathBuf> = fs::read_dir(&dir)?
                 .flat_map(|x| {
@@ -739,8 +800,8 @@ fn load_all_dnstap_files(
             } else {
                 let mapped_label = check_confusion_domains(&label);
                 Ok(Some(LabelledSequences {
-                    true_domain: label.into(),
-                    mapped_domain: mapped_label.into(),
+                    true_domain: label,
+                    mapped_domain: mapped_label,
                     sequences,
                 }))
             }
@@ -796,6 +857,22 @@ where
 }
 
 fn classify_sequence(sequence: &Sequence) -> Option<&'static str> {
+    {
+        let lock = LOADING_FAILED
+            .read()
+            .expect("Reading LOADING_FAILED must always work");
+        if Some(true) == Path::new(sequence.id())
+            // extract file name from id
+            .file_name()
+            // convert to `Atom`
+            .map(|file_name| Atom::from(file_name.to_string_lossy()))
+            // see if this is a known bad id
+            .map(|file_atom| lock.contains(&file_atom))
+        {
+            return Some(R008);
+        }
+    }
+
     // Test if sequence only contains two responses of size 1 and then 2
     let packets: Vec<_> = sequence
         .as_elements()
