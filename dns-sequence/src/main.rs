@@ -352,7 +352,7 @@ where
     S: Display + Eq + Hash,
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use prettytable::{row::Row, Table};
+        use prettytable::Row;
 
         let mut keys: Vec<_> = self.data.keys().collect();
         let count_corrects = self.count_correct();
