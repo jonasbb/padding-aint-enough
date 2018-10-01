@@ -167,7 +167,8 @@ impl<S: Eq + Hash> StatsCollector<S> {
         let wtr = file_open_write(
             path.as_ref(),
             WriteOptions::new().set_open_options(OpenOptions::new().create(true).truncate(true)),
-        ).context("Cannot open writer for statistics.")?;
+        )
+        .context("Cannot open writer for statistics.")?;
         let mut writer = WriterBuilder::new().has_headers(true).from_writer(wtr);
 
         #[derive(Serialize)]
@@ -343,7 +344,8 @@ impl<S: Eq + Hash> StatsCollector<S> {
                     });
                 counts = reverse_cum_sum(&counts);
                 (k, counts)
-            }).collect()
+            })
+            .collect()
     }
 }
 
@@ -514,7 +516,8 @@ fn run() -> Result<(), Error> {
                 WriteOptions::new()
                     .set_open_options(OpenOptions::new().create(true).truncate(true)),
             )
-        }).unwrap_or_else(|| Ok(Box::new(stdout())))
+        })
+        .unwrap_or_else(|| Ok(Box::new(stdout())))
         .context("Cannot open writer for misclassifications.")?;
     let mut mis_writer = WriterBuilder::new().has_headers(true).from_writer(writer);
 
@@ -580,7 +583,8 @@ fn run() -> Result<(), Error> {
                             min_dist,
                             max_dist,
                             known_problems.as_ref().map(|x| &**x),
-                        ).is_err()
+                        )
+                        .is_err()
                         {
                             error!(
                                 "Cannot log misclassification for sequence: {}",
@@ -671,8 +675,10 @@ fn load_all_dnstap_files(
                         None
                     }
                 })
-            }).transpose()
-        }).collect::<Result<_, _>>()?;
+            })
+            .transpose()
+        })
+        .collect::<Result<_, _>>()?;
 
     // Pairs of Label with Data (the Sequences)
     let data: Vec<LabelledSequences> = directories
@@ -697,8 +703,10 @@ fn load_all_dnstap_files(
                                 None
                             }
                         })
-                    }).transpose()
-                }).collect::<Result<_, _>>()?;
+                    })
+                    .transpose()
+                })
+                .collect::<Result<_, _>>()?;
             // sort filenames for predictable results
             filenames.sort();
 
@@ -715,7 +723,8 @@ fn load_all_dnstap_files(
                             None
                         }
                     }
-                }).collect();
+                })
+                .collect();
 
             // TODO this is sooo ugly
             // Only retain 5 of the possibilities which have the highest number of diversity
@@ -797,7 +806,8 @@ fn classify_sequence(sequence: &Sequence) -> Option<&'static str> {
             } else {
                 false
             }
-        }).cloned()
+        })
+        .cloned()
         .collect();
 
     match &*packets {
@@ -993,7 +1003,8 @@ fn reverse_cum_sum(counts: &[usize]) -> Vec<usize> {
         .map(|&count| {
             accu += count;
             accu
-        }).collect();
+        })
+        .collect();
     // revert them again to go from 0 to 10
     tmp.reverse();
     tmp

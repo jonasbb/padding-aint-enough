@@ -43,7 +43,8 @@ impl Sequence {
             .filter_map(|x| match x {
                 SequenceElement::Size(n) => Some(*n as usize),
                 _ => None,
-            }).sum()
+            })
+            .sum()
     }
 
     pub fn distance(&self, other: &Self) -> usize {
@@ -69,7 +70,8 @@ impl Sequence {
             .map(|c| {
                 cost += c;
                 cost
-            }).collect();
+            })
+            .collect();
         let mut current_row = vec![0usize; other.0.len() + 1];
         debug_assert_eq!(
             previous_row.len(),
@@ -224,7 +226,8 @@ pub fn sequence_stats(
                 .filter(|other_seq| seq != *other_seq)
                 .map(|other_seq| seq.distance(&other_seq))
                 .collect()
-        }).collect();
+        })
+        .collect();
 
     let avg_distances: Vec<_> = dists
         .iter()
@@ -235,7 +238,8 @@ pub fn sequence_stats(
         .map(|mut dists2| {
             dists2.sort();
             dists2[dists2.len() / 2]
-        }).collect();
+        })
+        .collect();
     let avg_avg = avg_distances.iter().sum::<usize>() / avg_distances.len();
     let avg_median = median_distances.iter().sum::<usize>() / median_distances.len();
 

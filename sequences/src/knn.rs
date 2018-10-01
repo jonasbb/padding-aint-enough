@@ -79,7 +79,8 @@ where
             );
             labels.sort();
             (labels.join(" - "), min_dist, max_dist)
-        }).collect()
+        })
+        .collect()
 }
 
 #[cfg_attr(feature = "cargo-clippy", allow(type_complexity))]

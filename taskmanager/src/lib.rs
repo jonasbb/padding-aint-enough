@@ -191,7 +191,8 @@ impl TaskManager {
         let executor: Executor =
             toml::from_str(&*task.associated_data.as_ref().ok_or_else(|| {
                 format_err!("Task in SubmittedToVm state must have associated data")
-            })?).context("Associated data must be Executor")?;
+            })?)
+            .context("Associated data must be Executor")?;
         let new_data = ResultsCollectableData {
             executor,
             path_on_vm: path_on_vm.to_path_buf(),
@@ -225,9 +226,11 @@ impl TaskManager {
                             format_err!(
                                 "Task in ResultsCollectable state must have associated data"
                             )
-                        })?).context("Associated data must be ResultsCollectableData")?;
+                        })?)
+                        .context("Associated data must be ResultsCollectableData")?;
                     Ok((task, data))
-                }).collect::<Result<Vec<_>, Error>>()?)
+                })
+                .collect::<Result<Vec<_>, Error>>()?)
         })
     }
 
@@ -306,7 +309,8 @@ impl TaskManager {
                 t.domain,
                 priority ASC
             ;"#,
-            ).bind::<Int4, _>(i32::from(iteration_count))
+            )
+            .bind::<Int4, _>(i32::from(iteration_count))
             .load::<models::Task>(&*conn)
             .context("Cannot retrieve tasks from database")?)
         })?;

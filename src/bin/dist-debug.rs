@@ -126,9 +126,11 @@ where
                     } else {
                         Ok(None)
                     }
-                }).filter_map(|x| x.transpose())
+                })
+                .filter_map(|x| x.transpose())
                 .collect::<Result<_, _>>()?)
-        }).collect::<Result<_, Error>>()?;
+        })
+        .collect::<Result<_, Error>>()?;
 
     // Pairs of Label with Data (the Sequences)
     Ok(files
@@ -147,6 +149,8 @@ where
                             None
                         }
                     }
-                }).collect()
-        }).collect())
+                })
+                .collect()
+        })
+        .collect())
 }

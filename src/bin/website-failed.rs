@@ -53,7 +53,8 @@ fn run() -> Result<(), Error> {
                 .unwrap()
                 .filter_map(Result::ok)
                 .collect::<Vec<_>>()
-        }).map(|path| -> Result<(PathBuf, bool), Error> {
+        })
+        .map(|path| -> Result<(PathBuf, bool), Error> {
             // open file and parse it
             let rdr = file_open_read(&path)
                 .with_context(|_| format!("Failed to read {}", path.display()))?;
@@ -73,7 +74,8 @@ fn run() -> Result<(), Error> {
                     }
                 }),
             ))
-        }).map(|res| match res {
+        })
+        .map(|res| match res {
             Ok((path, is_error)) => {
                 if is_error {
                     println!("{}", path.display());
@@ -84,7 +86,8 @@ fn run() -> Result<(), Error> {
                 eprintln!("{}", err.display_causes());
                 true
             }
-        }).reduce(|| false, |accu, is_error| accu || is_error);
+        })
+        .reduce(|| false, |accu, is_error| accu || is_error);
 
     if encountered_error {
         std::process::exit(1)

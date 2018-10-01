@@ -686,7 +686,8 @@ impl DepGraph {
                             .node_weight(neigh)
                             .unwrap()
                             .normalized_domain_name
-                    }).collect();
+                    })
+                    .collect();
                 deps.sort();
                 info!("    Dependency Set {} ({})", i + 1, deps.len());
                 for dep in deps {
@@ -786,7 +787,8 @@ mod test {
         let depgraph = DepGraph::new(
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
-        ).context("Failed to process all messages from chrome")
+        )
+        .context("Failed to process all messages from chrome")
         .expect("A graph must be buildable from the data.");
 
         test_graphs_are_isomorph(&expected_graph, depgraph.as_graph());
@@ -828,7 +830,8 @@ mod test {
         let mut depgraph = DepGraph::new(
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
-        ).context("Failed to process all messages from chrome")
+        )
+        .context("Failed to process all messages from chrome")
         .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
 
@@ -864,7 +867,8 @@ mod test {
         let mut depgraph = DepGraph::new(
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
-        ).context("Failed to process all messages from chrome")
+        )
+        .context("Failed to process all messages from chrome")
         .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
         depgraph.remove_depends_on_same_domain();
@@ -901,7 +905,8 @@ mod test {
         let mut depgraph = DepGraph::new(
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
-        ).context("Failed to process all messages from chrome")
+        )
+        .context("Failed to process all messages from chrome")
         .expect("A graph must be buildable from the data.");
         depgraph.remove_self_loops();
         depgraph.remove_dependency_subset();
@@ -938,7 +943,8 @@ mod test {
         let mut depgraph = DepGraph::new(
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
-        ).context("Failed to process all messages from chrome")
+        )
+        .context("Failed to process all messages from chrome")
         .expect("A graph must be buildable from the data.");
         depgraph.simplify_nodes();
 
@@ -969,7 +975,8 @@ mod test {
         let mut depgraph = DepGraph::new(
             &get_messages("./test/data/minimal-webpage-2018-05-08.json")
                 .expect("Parsing the file must succeed."),
-        ).context("Failed to process all messages from chrome")
+        )
+        .context("Failed to process all messages from chrome")
         .expect("A graph must be buildable from the data.");
         depgraph.simplify_graph();
 

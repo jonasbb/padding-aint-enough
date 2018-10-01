@@ -256,7 +256,8 @@ fn convert_to_sequence(data: &[Query], identifier: String) -> Option<Sequence> {
 
                 let size = pad_size(d.response_size, false, Padding::Q128R468);
                 gap.into_iter().chain(Some(size))
-            }).collect(),
+            })
+            .collect(),
         identifier,
     ))
 }

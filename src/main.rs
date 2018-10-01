@@ -326,7 +326,8 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                 &fname,
                 WriteOptions::default()
                     .set_open_options(OpenOptions::new().create(true).truncate(true)),
-            ).with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
+            )
+            .with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
             serde_pickle::to_writer(&mut wtr, &matched, true)?;
         }
     }
@@ -377,7 +378,8 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
             }
             // Ignore all other messages
             _ => None,
-        }).collect();
+        })
+        .collect();
 
     // protect against failed network requests. Sometimes this might end up empty, in which case we do not want to plot anything
     let fname = get_output_dir().join(DNS_TIMING);
@@ -391,7 +393,8 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     let mut wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    ).with_context(|_| format!("Opening input file '{}' failed", &fname.display(),))?;
+    )
+    .with_context(|_| format!("Opening input file '{}' failed", &fname.display(),))?;
     serde_pickle::to_writer(&mut wtr, &timings, true)?;
     // we need to close the writer to flush everything
     drop(wtr);
@@ -402,7 +405,8 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
                 .join(DNS_TIMING)
                 .canonicalize()?
                 .to_string_lossy(),
-        ).current_dir(get_output_dir())
+        )
+        .current_dir(get_output_dir())
         .status()
         .context("Could not start Python process")?;
 
@@ -435,7 +439,8 @@ fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     let wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    ).with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
+    )
+    .with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
     graphml.to_writer(wtr)?;
 
     Ok(())
@@ -446,7 +451,8 @@ fn export_as_pickle(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     let mut wtr = file_open_write(
         &fname,
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    ).with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
+    )
+    .with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
     serde_pickle::to_writer(&mut wtr, graph, true)?;
 
     Ok(())
@@ -484,14 +490,16 @@ impl RequestInfo {
                         .iter()
                         .map(|r| &r.request_id)
                         .collect::<Vec<_>>()
-                ).into(),
+                )
+                .into(),
             ),
             (
                 "urls".into(),
                 format!(
                     "{:#?}",
                     self.requests.iter().map(|r| &r.url).collect::<Vec<_>>()
-                ).into(),
+                )
+                .into(),
             ),
             (
                 "wall_times".into(),
@@ -501,14 +509,16 @@ impl RequestInfo {
                         .iter()
                         .map(|r| &r.wall_time)
                         .collect::<Vec<_>>()
-                ).into(),
+                )
+                .into(),
             ),
             (
                 "domain+time".into(),
                 format!(
                     "{}\n{}",
                     self.normalized_domain_name, self.earliest_wall_time,
-                ).into(),
+                )
+                .into(),
             ),
         ]
     }

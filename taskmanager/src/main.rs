@@ -281,7 +281,8 @@ where
                 name.as_ref().map(|s| &**s).unwrap_or("<unknown>")
             );
             thread::sleep(Duration::new(10, 0));
-        }).unwrap()
+        })
+        .unwrap()
 }
 
 /// Perform the execution of a task in a VM
@@ -494,7 +495,8 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
             .map(|task| {
                 dnstap_to_sequence(&local_path.join(task.name()).join(&*DNSTAP_FILE_NAME))
                     .expect("Loading a DNSTAP file cannot fail, as we checked that before.")
-            }).collect();
+            })
+            .collect();
 
         let mark_domain_good = |tasks: &mut Vec<Task>| -> Result<(), Error> {
             //everything is fine, advance the tasks to next stage
@@ -578,7 +580,8 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                             "The task's distance is {} while the average distance is only {}",
                             dist, avg_median
                         ),
-                    ).context("Cannot restart single bad task")?;
+                    )
+                    .context("Cannot restart single bad task")?;
             }
             n => {
                 // restart all tasks
@@ -593,7 +596,8 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                             "{} out of {} differ by too much from the average distance",
                             n, config.per_domain_datasets
                         ),
-                    ).context("Cannot restart bad domain")?;
+                    )
+                    .context("Cannot restart bad domain")?;
             }
         }
 

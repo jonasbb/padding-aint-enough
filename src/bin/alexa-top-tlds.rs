@@ -83,7 +83,8 @@ fn run() -> Result<(), Error> {
                 ]
                     .join("")
             })
-        }).collect::<Result<BTreeSet<String>, _>>()
+        })
+        .collect::<Result<BTreeSet<String>, _>>()
         .context("Failed to process Alexa top x list");
     let out = io::stdout();
     let mut stdout = out.lock();

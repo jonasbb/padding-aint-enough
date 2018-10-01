@@ -46,7 +46,8 @@ pub fn process_dnstap<P: AsRef<Path>>(
                     Ok(None)
                 }
             }
-        }).filter_map(|x| x.transpose()))
+        })
+        .filter_map(|x| x.transpose()))
 }
 
 pub fn sanity_check_dnstap(events: &[protos::Dnstap]) -> Result<(), Error> {
