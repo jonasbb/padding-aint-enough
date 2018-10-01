@@ -85,26 +85,27 @@ impl DepGraph {
                         url,
                         stack_trace,
                     } => {
-                        fn traverse_stack<FSD>(
-                            stack: &StackTrace,
+                        fn traverse_stack<FSD, S>(
+                            stack: &StackTrace<S>,
                             find_script_deps: FSD,
                             mut url_deps_accu: HashSet<String>,
                         ) -> Result<HashSet<String>, Error>
                         where
                             FSD: Fn(&str) -> Result<HashSet<String>, Error>,
+                            S: AsRef<str>,
                         {
                             for frame in &stack.call_frames {
-                                if frame.url == "" {
-                                    let deps =
-                                        find_script_deps(&*frame.script_id).with_context(|_| {
+                                if frame.url.as_ref() == "" {
+                                    let deps = find_script_deps(frame.script_id.as_ref())
+                                        .with_context(|_| {
                                             format!(
                                                 "Cannot get script dependencies for script ID {}",
-                                                frame.script_id,
+                                                frame.script_id.as_ref(),
                                             )
                                         })?;
                                     url_deps_accu.extend(deps);
                                 } else {
-                                    url_deps_accu.insert(frame.url.clone());
+                                    url_deps_accu.insert(frame.url.as_ref().to_string());
                                 }
                             }
                             if let Some(parent) = &stack.parent {
@@ -288,16 +289,21 @@ impl DepGraph {
                 };
 
             /// Traverse the stackframe of an initiator and add all the occuring scripts as dependencies
-            fn traverse_stack<ADTN>(
+            fn traverse_stack<ADTN, S>(
                 node: NodeIndex,
-                stack: &StackTrace,
+                stack: &StackTrace<S>,
                 add_dependencies_to_node: ADTN,
             ) -> Result<(), Error>
             where
                 ADTN: Fn(NodeIndex, &str, Option<&str>) -> Result<(), Error>,
+                S: AsRef<str>,
             {
                 for frame in &stack.call_frames {
-                    add_dependencies_to_node(node, &*frame.url, Some(&*frame.script_id))?;
+                    add_dependencies_to_node(
+                        node,
+                        frame.url.as_ref(),
+                        Some(frame.script_id.as_ref()),
+                    )?;
                 }
                 if let Some(parent) = &stack.parent {
                     traverse_stack(node, parent, add_dependencies_to_node)?;

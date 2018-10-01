@@ -11,7 +11,7 @@ use serde_with::chrono::datetime_utc_ts_seconds_from_any;
 #[cfg_attr(feature = "cargo-clippy", allow(large_enum_variant))]
 #[serde(tag = "method", content = "params")]
 #[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
-pub enum ChromeDebuggerMessage {
+pub enum ChromeDebuggerMessage<S = String> {
     // Everything Network
     #[serde(
         rename = "Network.requestWillBeSent",
@@ -19,11 +19,11 @@ pub enum ChromeDebuggerMessage {
     )]
     NetworkRequestWillBeSent {
         #[serde(rename = "documentURL")]
-        document_url: String,
-        request_id: String,
-        request: Request,
-        initiator: Initiator,
-        redirect_response: Option<RedirectResponse>,
+        document_url: S,
+        request_id: S,
+        request: Request<S>,
+        initiator: Initiator<S>,
+        redirect_response: Option<RedirectResponse<S>>,
         #[serde(deserialize_with = "datetime_utc_ts_seconds_from_any::deserialize")]
         wall_time: DateTime<Utc>,
     },
@@ -31,67 +31,67 @@ pub enum ChromeDebuggerMessage {
         rename = "Network.requestServedFromCache",
         rename_all = "camelCase"
     )]
-    NetworkRequestServedFromCache { request_id: String },
+    NetworkRequestServedFromCache { request_id: S },
     #[serde(
         rename = "Network.responseReceived",
         rename_all = "camelCase"
     )]
     NetworkResponseReceived {
-        request_id: String,
-        response: Response,
+        request_id: S,
+        response: Response<S>,
     },
     #[serde(
         rename = "Network.resourceChangedPriority",
         rename_all = "camelCase"
     )]
-    NetworkResourceChangedPriority { request_id: String },
+    NetworkResourceChangedPriority { request_id: S },
     #[serde(rename = "Network.loadingFailed", rename_all = "camelCase")]
-    NetworkLoadingFailed { request_id: String },
+    NetworkLoadingFailed { request_id: S },
     #[serde(rename = "Network.dataReceived", rename_all = "camelCase")]
-    NetworkDataReceived { request_id: String },
+    NetworkDataReceived { request_id: S },
     #[serde(rename = "Network.loadingFinished", rename_all = "camelCase")]
-    NetworkLoadingFinished { request_id: String },
+    NetworkLoadingFinished { request_id: S },
     #[serde(
         rename = "Network.webSocketCreated",
         rename_all = "camelCase"
     )]
     NetworkWebSocketCreated {
-        request_id: String,
-        url: String,
-        initiator: Initiator,
+        request_id: S,
+        url: S,
+        initiator: Initiator<S>,
     },
     #[serde(rename = "Network.webSocketClosed", rename_all = "camelCase")]
-    NetworkWebSocketClosed { request_id: String },
+    NetworkWebSocketClosed { request_id: S },
     #[serde(
         rename = "Network.webSocketWillSendHandshakeRequest",
         rename_all = "camelCase"
     )]
-    NetworkWebSocketWillSendHandshakeRequest { request_id: String },
+    NetworkWebSocketWillSendHandshakeRequest { request_id: S },
     #[serde(
         rename = "Network.webSocketHandshakeResponseReceived",
         rename_all = "camelCase"
     )]
-    NetworkWebSocketHandshakeResponseReceived { request_id: String },
+    NetworkWebSocketHandshakeResponseReceived { request_id: S },
     #[serde(
         rename = "Network.webSocketFrameError",
         rename_all = "camelCase"
     )]
-    NetworkWebSocketFrameError { request_id: String },
+    NetworkWebSocketFrameError { request_id: S },
     #[serde(
         rename = "Network.webSocketFrameReceived",
         rename_all = "camelCase"
     )]
-    NetworkWebSocketFrameReceived { request_id: String },
+    NetworkWebSocketFrameReceived { request_id: S },
     #[serde(
         rename = "Network.webSocketFrameSent",
         rename_all = "camelCase"
     )]
-    NetworkWebSocketFrameSent { request_id: String },
+    NetworkWebSocketFrameSent { request_id: S },
     #[serde(
         rename = "Network.eventSourceMessageReceived",
         rename_all = "camelCase"
     )]
-    NetworkEventSourceMessageReceived { request_id: String },
+    NetworkEventSourceMessageReceived { request_id: S },
 
     // Everything Target
     #[serde(rename = "Target.targetCreated", rename_all = "camelCase")]
@@ -100,7 +100,7 @@ pub enum ChromeDebuggerMessage {
         rename = "Target.targetInfoChanged",
         rename_all = "camelCase"
     )]
-    TargetTargetInfoChanged { target_info: TargetInfo },
+    TargetTargetInfoChanged { target_info: TargetInfo<S> },
     #[serde(rename = "Target.targetDestroyed", rename_all = "camelCase")]
     TargetTargetDestroyed {},
     #[serde(rename = "Target.attachedToTarget", rename_all = "camelCase")]
@@ -119,38 +119,38 @@ pub enum ChromeDebuggerMessage {
     // Everything Debugger
     #[serde(rename = "Debugger.scriptParsed", rename_all = "camelCase")]
     DebuggerScriptParsed {
-        script_id: String,
-        url: String,
-        stack_trace: Option<StackTrace>,
+        script_id: S,
+        url: S,
+        stack_trace: Option<StackTrace<S>>,
     },
     #[serde(
         rename = "Debugger.scriptFailedToParse",
         rename_all = "camelCase"
     )]
     DebuggerScriptFailedToParse {
-        script_id: String,
-        url: String,
-        stack_trace: Option<StackTrace>,
+        script_id: S,
+        url: S,
+        stack_trace: Option<StackTrace<S>>,
     },
     #[serde(rename = "Debugger.paused", rename_all = "camelCase")]
     DebuggerPaused {},
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub struct Request {
-    pub url: String,
-    pub headers: Headers,
+pub struct Request<S> {
+    pub url: S,
+    pub headers: Headers<S>,
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub struct Headers {
+pub struct Headers<S> {
     #[serde(rename = "Referer")]
-    pub referer: Option<String>,
+    pub referer: Option<S>,
 }
 
 #[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
-pub struct RedirectResponse {
-    pub url: String,
+pub struct RedirectResponse<S> {
+    pub url: S,
     pub timing: Timing,
 }
 
@@ -191,37 +191,37 @@ pub struct RedirectResponse {
 
 #[serde(tag = "type", rename_all = "lowercase")]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub enum Initiator {
+pub enum Initiator<S> {
     Other {},
-    Parser { url: String },
-    Script(InitiatorScript),
+    Parser { url: S },
+    Script(InitiatorScript<S>),
 }
 
 #[serde(untagged)]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub enum InitiatorScript {
-    Stack { stack: StackTrace },
-    JsModule { url: String },
+pub enum InitiatorScript<S> {
+    Stack { stack: StackTrace<S> },
+    JsModule { url: S },
 }
 
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub struct StackTrace {
-    pub call_frames: Vec<CallFrame>,
-    pub parent: Option<Box<StackTrace>>,
+pub struct StackTrace<S> {
+    pub call_frames: Vec<CallFrame<S>>,
+    pub parent: Option<Box<StackTrace<S>>>,
 }
 
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub struct CallFrame {
-    pub url: String,
-    pub script_id: String,
+pub struct CallFrame<S> {
+    pub url: S,
+    pub script_id: S,
 }
 
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
-pub struct Response {
-    pub url: String,
+pub struct Response<S> {
+    pub url: S,
     pub timing: Option<Timing>,
 }
 
@@ -250,8 +250,8 @@ pub struct Timing {
 
 #[serde(rename_all = "camelCase")]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Serialize, Deserialize)]
-pub struct TargetInfo {
-    pub url: String,
+pub struct TargetInfo<S> {
+    pub url: S,
     #[serde(rename = "type")]
     pub target_type: TargetType,
 }
