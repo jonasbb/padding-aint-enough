@@ -71,7 +71,7 @@ impl Sequence {
                 cost
             }).collect();
         let mut current_row = vec![0usize; other.0.len() + 1];
-        assert_eq!(
+        debug_assert_eq!(
             previous_row.len(),
             current_row.len(),
             "Row length must be equal"
@@ -143,12 +143,15 @@ pub enum SequenceElement {
 impl SequenceElement {
     fn insert_cost(self) -> usize {
         use self::SequenceElement::*;
+
+        debug_assert_ne!(self, Size(0), "Sequence contains a Size(0) elements");
+
         match self {
-            Size(0) => {
-                // A size 0 packet should never occur
-                error!("Sequence contains a Size(0) elements");
-                usize::max_value()
-            }
+            // Size(0) => {
+            //     // A size 0 packet should never occur
+            //     error!("Sequence contains a Size(0) elements");
+            //     usize::max_value()
+            // }
             Size(_) => 20,
             Gap(g) => g as usize * 5,
         }
