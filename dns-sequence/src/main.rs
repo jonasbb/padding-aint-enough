@@ -193,8 +193,10 @@ fn run() -> Result<(), Error> {
         info!("Done splitting trainings and test data.");
 
         for k in (1..=most_k).step_by(2) {
+            info!("Start classification for k={}...", k);
             let classification = knn::knn(&*training_data, &*test_data, k as u8);
             assert_eq!(classification.len(), test_labels.len());
+            info!("Done classification for k={}, start evaluation...", k);
             classification
                 .into_iter()
                 .zip(&test_labels)
@@ -239,6 +241,7 @@ fn run() -> Result<(), Error> {
                         }
                     },
                 );
+            info!("Done evaluation for k={}", k);
         }
     }
 
