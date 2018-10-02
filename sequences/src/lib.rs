@@ -81,18 +81,19 @@ impl Sequence {
         for (i, elem1) in self.0.iter().enumerate() {
             current_row.clear();
             // TODO give different costs for different elements
-            current_row.push(previous_row[0].saturating_add(elem1.delete_cost()));
+            current_row.push(previous_row[0] + elem1.delete_cost());
 
             for (j, &elem2) in other.0.iter().enumerate() {
-                let insertions = previous_row[j + 1].saturating_add(elem1.insert_cost());
-                let deletions = current_row[j].saturating_add(elem2.delete_cost());
-                let substitutions = previous_row[j].saturating_add(elem1.substitute_cost(elem2));
+                let insertions = previous_row[j + 1] + elem1.insert_cost();
+                let deletions = current_row[j] + elem2.delete_cost();
+                let substitutions = previous_row[j] + elem1.substitute_cost(elem2);
                 let swapping =
                     if i > 0 && j > 0 && self.0[i] == other.0[j - 1] && self.0[i - 1] == other.0[j]
                     {
-                        prev_prev_row[j - 1].saturating_add(elem1.swap_cost(elem2))
+                        prev_prev_row[j - 1] + elem1.swap_cost(elem2)
                     } else {
-                        usize::max_value()
+                        // generate a large value but not so large, that an overflow might happen while performing some addition
+                        usize::max_value() / 4
                     };
                 let cost = insertions.min(deletions).min(substitutions).min(swapping);
                 current_row.push(cost);
