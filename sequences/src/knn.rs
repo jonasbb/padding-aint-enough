@@ -128,12 +128,12 @@ where
 }
 
 #[derive(Debug)]
-struct ClassifierData<'a, S>
+pub(crate) struct ClassifierData<'a, S>
 where
     S: 'a,
 {
     label: &'a S,
-    distance: usize,
+    pub distance: usize,
 }
 
 impl<'a, S> PartialEq for ClassifierData<'a, S> {

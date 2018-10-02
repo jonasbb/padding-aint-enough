@@ -3,7 +3,6 @@
 extern crate chrono;
 #[macro_use]
 extern crate log;
-extern crate min_max_heap;
 extern crate misc_utils;
 extern crate rayon;
 #[macro_use]
