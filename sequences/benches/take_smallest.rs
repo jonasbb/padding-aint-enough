@@ -201,6 +201,10 @@ where
         if v < res[n - 1] {
             res[n - 1] = v;
             res.sort();
+            // found enough 0-distance cases that all cases are best
+            if res[n - 1].distance == 0 {
+                return res;
+            }
         }
     }
 
@@ -251,11 +255,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         let take_smallest_new_no_heap = Fun::new("New No heap", |b, k| {
             b.iter_with_setup(make_data, |iter| take_smallest_new_no_heap(iter, *k))
         });
-        vec![
-            smallest_baseline,
-            smallest_new,
-            take_smallest_new_no_heap,
-        ]
+        vec![smallest_baseline, smallest_new, take_smallest_new_no_heap]
     };
 
     c.bench_functions("k=1", mkfun(), 1);
