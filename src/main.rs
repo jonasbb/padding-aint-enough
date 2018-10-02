@@ -94,13 +94,6 @@ fn run() -> Result<(), Error> {
     env_logger::init();
     let cli_args = CliArgs::from_args();
 
-    let rdr = file_open_read(&cli_args.webpage_log).with_context(|_| {
-        format!(
-            "Opening input file '{}' failed",
-            cli_args.webpage_log.display(),
-        )
-    })?;
-
     // Setup output dir, but only if input file exists
     let outdir = cli_args.webpage_log.with_extension("generated");
     // Create directory and delete old versions
@@ -123,12 +116,27 @@ fn run() -> Result<(), Error> {
     process_dnstap(&*dnstap_file)
         .with_context(|_| format!("Processing dnstap file '{}'", dnstap_file.display()))?;
 
-    let messages: Vec<ChromeDebuggerMessage> = serde_json::from_reader(rdr).with_context(|_| {
+    // choose a large enough buffer for all purposes, as this is a single run binary the size does not matter
+    let mut content = String::with_capacity(1024 * 1024 * 50);
+    let mut rdr = file_open_read(&cli_args.webpage_log).with_context(|_| {
         format!(
-            "Error while deserializing '{}'",
-            cli_args.webpage_log.display()
+            "Opening input file '{}' failed",
+            cli_args.webpage_log.display(),
         )
     })?;
+    rdr.read_to_string(&mut content).with_context(|_| {
+        format!(
+            "Reading input file '{}' failed",
+            cli_args.webpage_log.display(),
+        )
+    })?;
+    let messages: Vec<ChromeDebuggerMessage> =
+        serde_json::from_str(&content).with_context(|_| {
+            format!(
+                "Error while deserializing '{}'",
+                cli_args.webpage_log.display()
+            )
+        })?;
     process_messages(&messages).with_context(|_| {
         format!(
             "Processing chrome debugger log '{}'",

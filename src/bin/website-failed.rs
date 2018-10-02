@@ -56,9 +56,12 @@ fn run() -> Result<(), Error> {
         })
         .map(|path| -> Result<(PathBuf, bool), Error> {
             // open file and parse it
-            let rdr = file_open_read(&path)
+            let mut rdr = file_open_read(&path)
                 .with_context(|_| format!("Failed to read {}", path.display()))?;
-            let msgs: Vec<ChromeDebuggerMessage> = serde_json::from_reader(rdr)
+            let mut content = String::new();
+            rdr.read_to_string(&mut content)
+                .with_context(|_| format!("Error while reading '{}'", path.display()))?;
+            let msgs: Vec<ChromeDebuggerMessage<&str>> = serde_json::from_str(&content)
                 .with_context(|_| format!("Error while deserializing '{}'", path.display()))?;
             Ok((
                 path,
