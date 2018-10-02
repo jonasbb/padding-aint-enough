@@ -63,20 +63,7 @@ fn run() -> Result<(), Error> {
                 .with_context(|_| format!("Error while reading '{}'", path.display()))?;
             let msgs: Vec<ChromeDebuggerMessage<&str>> = serde_json::from_str(&content)
                 .with_context(|_| format!("Error while deserializing '{}'", path.display()))?;
-            Ok((
-                path,
-                // test if there is a chrome error page
-                msgs.into_iter().any(|msg| {
-                    if let ChromeDebuggerMessage::NetworkRequestWillBeSent {
-                        document_url, ..
-                    } = msg
-                    {
-                        document_url == "chrome-error://chromewebdata/"
-                    } else {
-                        false
-                    }
-                }),
-            ))
+            Ok((path, is_problematic_case(&msgs)))
         })
         .map(|res| match res {
             Ok((path, is_error)) => {
@@ -97,4 +84,43 @@ fn run() -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+fn is_problematic_case<S>(msgs: &[ChromeDebuggerMessage<S>]) -> bool
+where
+    S: AsRef<str>,
+{
+    // test if there is a chrome error page
+    let contains_chrome_error = msgs.iter().any(|msg| {
+        if let ChromeDebuggerMessage::NetworkRequestWillBeSent { document_url, .. } = msg {
+            document_url.as_ref() == "chrome-error://chromewebdata/"
+        } else {
+            false
+        }
+    });
+    if contains_chrome_error {
+        return true;
+    }
+
+    // Ensure at least one network request has succeeded.
+    let contains_response_received = msgs.iter().any(|msg| {
+        if let ChromeDebuggerMessage::NetworkResponseReceived { .. } = msg {
+            true
+        } else {
+            false
+        }
+    });
+    let contains_data_received = msgs.iter().any(|msg| {
+        if let ChromeDebuggerMessage::NetworkDataReceived { .. } = msg {
+            true
+        } else {
+            false
+        }
+    });
+    if !(contains_response_received && contains_data_received) {
+        return true;
+    }
+
+    // default case is `false`, meaning the data is good
+    false
 }
