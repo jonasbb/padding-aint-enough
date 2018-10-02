@@ -55,8 +55,7 @@ use string_cache::DefaultAtom as Atom;
 use structopt::StructOpt;
 
 lazy_static! {
-    static ref CONFUSION_DOMAINS: RwLock<Arc<HashMap<Atom, Atom>>> =
-        RwLock::new(Arc::default());
+    static ref CONFUSION_DOMAINS: RwLock<Arc<HashMap<Atom, Atom>>> = RwLock::new(Arc::default());
     static ref LOADING_FAILED: RwLock<Arc<HashSet<Atom>>> = RwLock::new(Arc::default());
 }
 
@@ -83,6 +82,9 @@ struct CliArgs {
     /// Path for the resulting CSV-statistics file and plot/pickle-files
     #[structopt(long = "statistics", parse(from_os_str))]
     statistics: Option<PathBuf>,
+    /// The largest `k` to be used for knn. Only odd numbers are tested.
+    #[structopt(short = "k", default_value = "3")]
+    k: usize,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -125,8 +127,6 @@ fn run() -> Result<(), Error> {
 
     // Controls how many folds there are
     let at_most_sequences_per_label = 10;
-    // Controls the maximum k for knn
-    let most_k = 3;
 
     let writer: Box<Write> = cli_args
         .misclassifications
@@ -192,7 +192,7 @@ fn run() -> Result<(), Error> {
         );
         info!("Done splitting trainings and test data.");
 
-        for k in (1..=most_k).step_by(2) {
+        for k in (1..=(cli_args.k)).step_by(2) {
             info!("Start classification for k={}...", k);
             let classification = knn::knn(&*training_data, &*test_data, k as u8);
             assert_eq!(classification.len(), test_labels.len());
