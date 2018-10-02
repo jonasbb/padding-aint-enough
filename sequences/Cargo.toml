@@ -3,6 +3,10 @@ name = "sequences"
 version = "0.1.0"
 authors = ["Jonas Bushart <jonas@bushart.org>"]
 
+[[bench]]
+name = "take_smallest"
+harness = false
+
 [dependencies]
 chrono = { version = "0.4.6", features = [ "serde" ] }
 dnstap = { path = "../dnstap" }
@@ -12,3 +16,7 @@ misc_utils = "2.1.0"
 rayon = "1.0.2"
 serde = { version = "1.0.79", features = [ "derive" ] }
 string_cache = "0.7.3"
+
+[dev-dependencies]
+criterion = "0.2.5"
+min-max-heap = "1.2.0"
