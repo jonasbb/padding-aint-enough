@@ -30,7 +30,7 @@ use csv::{ReaderBuilder, Writer as CsvWriter, WriterBuilder};
 use encrypted_dns::{
     common_sequence_classifications::{
         R001, R002, R003, R004_SIZE1, R004_SIZE2, R004_SIZE3, R004_SIZE4, R004_SIZE5, R004_SIZE6,
-        R004_UNKNOWN, R005, R006, R006_3RD_LVL_DOM, R007, R008,
+        R004_UNKNOWN, R005, R006, R006_3RD_LVL_DOM, R007, R008, R009,
     },
     dnstap_to_sequence, take_largest, FailExt,
 };
@@ -44,10 +44,10 @@ use sequences::{knn, LabelledSequences, Sequence, SequenceElement};
 use serde::Serialize;
 use stats::StatsCollector;
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     fmt::{self, Display},
     fs::{self, OpenOptions},
-    io::{stdout, BufRead, BufReader, Write},
+    io::{stdout, BufReader, Write},
     path::{Path, PathBuf},
     sync::{Arc, RwLock},
 };
@@ -55,8 +55,8 @@ use string_cache::DefaultAtom as Atom;
 use structopt::StructOpt;
 
 lazy_static! {
-    static ref CONFUSION_DOMAINS: RwLock<Arc<HashMap<Atom, Atom>>> = RwLock::new(Arc::default());
-    static ref LOADING_FAILED: RwLock<Arc<HashSet<Atom>>> = RwLock::new(Arc::default());
+    static ref CONFUSION_DOMAINS: RwLock<Arc<HashMap<Atom, Atom>>> = RwLock::default();
+    static ref LOADING_FAILED: RwLock<Arc<HashMap<Atom, &'static str>>> = RwLock::default();
 }
 
 #[derive(StructOpt, Debug)]
@@ -293,26 +293,42 @@ where
 }
 
 fn prepare_failed_domains(path: impl AsRef<Path>) -> Result<(), Error> {
+    #[derive(Debug, Deserialize)]
+    struct Record {
+        file: PathBuf,
+        reason: String,
+    }
+
     let rdr = BufReader::new(file_open_read(path.as_ref()).with_context(|_| {
         format!(
             "Opening failed domains file '{}' failed",
             path.as_ref().display()
         )
     })?);
+    let mut rdr = ReaderBuilder::new().has_headers(true).from_reader(rdr);
 
-    let mut failed_domains = HashSet::default();
-    for line in rdr.lines() {
-        let line = line.context("Failed to read from failed domains file")?;
-        let file_name: Atom = Path::new(&line)
+    let mut failed_domains = HashMap::default();
+
+    for record in rdr.deserialize() {
+        let record: Record = record.context("Failed to read from failed domains file")?;
+        let file_name: Atom = (&record.file)
             .file_name()
-            .map(|file_name| Atom::from(file_name.to_string_lossy()))
+            .map(|file_name| Atom::from(file_name.to_string_lossy().replace(".json", ".dnstap")))
             .ok_or_else(|| {
                 format_err!(
-                    "This line does not specify a path with a file name '{:?}'",
-                    line
+                    "This line does not specify a path with a file name '{}'",
+                    record.file.display()
                 )
             })?;
-        failed_domains.insert(file_name);
+
+        let reason = if record.reason == R008 {
+            R008
+        } else if record.reason == R009 {
+            R009
+        } else {
+            bail!("Found unknown reason: {}", record.reason)
+        };
+        failed_domains.insert(file_name, reason);
     }
     let mut lock = LOADING_FAILED
         .write()
@@ -478,15 +494,15 @@ fn classify_sequence(sequence: &Sequence) -> Option<&'static str> {
         let lock = LOADING_FAILED
             .read()
             .expect("Reading LOADING_FAILED must always work");
-        if Some(true) == Path::new(sequence.id())
+        if let Some(Some(reason)) = Path::new(sequence.id())
             // extract file name from id
             .file_name()
             // convert to `Atom`
             .map(|file_name| Atom::from(file_name.to_string_lossy()))
             // see if this is a known bad id
-            .map(|file_atom| lock.contains(&file_atom))
+            .map(|file_atom| lock.get(&file_atom))
         {
-            return Some(R008);
+            return Some(reason);
         }
     }
 
