@@ -75,6 +75,7 @@ pub mod common_sequence_classifications {
     pub const R007: &str = "R007 Unreachable Name Server";
     pub const R008: &str =
         "R008 Domain did not load properly and Chrome performed a Google search on the error page.";
+    pub const R009: &str = "R009 No network response received.";
 }
 
 /// Load a dnstap file and generate a Sequence from it

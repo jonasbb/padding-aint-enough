@@ -1,19 +1,33 @@
+extern crate csv;
 extern crate encrypted_dns;
 extern crate env_logger;
 extern crate failure;
 extern crate glob;
 extern crate misc_utils;
 extern crate rayon;
+#[macro_use]
+extern crate serde;
 extern crate serde_json;
 extern crate structopt;
 
-use encrypted_dns::{chrome::ChromeDebuggerMessage, ErrorExt};
+use csv::WriterBuilder;
+use encrypted_dns::{
+    chrome::ChromeDebuggerMessage,
+    common_sequence_classifications::{R008, R009},
+    ErrorExt,
+};
 use failure::{Error, ResultExt};
 use glob::glob;
 use misc_utils::fs::file_open_read;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
-use std::path::PathBuf;
+use std::{io, path::PathBuf};
 use structopt::StructOpt;
+
+#[derive(Debug, Serialize)]
+struct Record {
+    file: PathBuf,
+    reason: &'static str,
+}
 
 #[derive(StructOpt, Debug)]
 #[structopt(
@@ -45,39 +59,51 @@ fn run() -> Result<(), Error> {
     env_logger::init();
     let cli_args = CliArgs::from_args();
 
-    let encountered_error: bool = cli_args
-        .files_to_check
-        .par_iter()
-        .flat_map(|pattern| {
-            glob(pattern)
-                .unwrap()
-                .filter_map(Result::ok)
-                .collect::<Vec<_>>()
-        })
-        .map(|path| -> Result<(PathBuf, bool), Error> {
-            // open file and parse it
-            let mut rdr = file_open_read(&path)
-                .with_context(|_| format!("Failed to read {}", path.display()))?;
-            let mut content = String::new();
-            rdr.read_to_string(&mut content)
-                .with_context(|_| format!("Error while reading '{}'", path.display()))?;
-            let msgs: Vec<ChromeDebuggerMessage<&str>> = serde_json::from_str(&content)
-                .with_context(|_| format!("Error while deserializing '{}'", path.display()))?;
-            Ok((path, is_problematic_case(&msgs)))
-        })
-        .map(|res| match res {
-            Ok((path, is_error)) => {
-                if is_error {
-                    println!("{}", path.display());
+    let encountered_error: bool;
+    let stdout = io::stdout();
+    {
+        let mut writer = WriterBuilder::new()
+            .has_headers(true)
+            .from_writer(stdout.lock());
+
+        encountered_error = cli_args
+            .files_to_check
+            .par_iter()
+            .flat_map(|pattern| {
+                glob(pattern)
+                    .unwrap()
+                    .filter_map(Result::ok)
+                    .collect::<Vec<_>>()
+            })
+            .map(|path| -> Result<(PathBuf, Option<&'static str>), Error> {
+                // open file and parse it
+                let mut rdr = file_open_read(&path)
+                    .with_context(|_| format!("Failed to read {}", path.display()))?;
+                let mut content = String::new();
+                rdr.read_to_string(&mut content)
+                    .with_context(|_| format!("Error while reading '{}'", path.display()))?;
+                let msgs: Vec<ChromeDebuggerMessage> = serde_json::from_str(&content)
+                    .with_context(|_| format!("Error while deserializing '{}'", path.display()))?;
+                Ok((path, is_problematic_case(&msgs)))
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .map(|res| match res {
+                Ok((path, Some(error))) => writer
+                    .serialize(Record {
+                        file: path,
+                        reason: error,
+                    })
+                    .is_err(),
+                Err(err) => {
+                    eprintln!("{}", err.display_causes());
+                    true
                 }
-                is_error
-            }
-            Err(err) => {
-                eprintln!("{}", err.display_causes());
-                true
-            }
-        })
-        .reduce(|| false, |accu, is_error| accu || is_error);
+                _ => false,
+            })
+            .any(|is_error| is_error);
+        writer.flush().context("Flushing writer failed")?;
+    }
 
     if encountered_error {
         std::process::exit(1)
@@ -86,7 +112,7 @@ fn run() -> Result<(), Error> {
     Ok(())
 }
 
-fn is_problematic_case<S>(msgs: &[ChromeDebuggerMessage<S>]) -> bool
+fn is_problematic_case<S>(msgs: &[ChromeDebuggerMessage<S>]) -> Option<&'static str>
 where
     S: AsRef<str>,
 {
@@ -99,7 +125,7 @@ where
         }
     });
     if contains_chrome_error {
-        return true;
+        return Some(R008);
     }
 
     // Ensure at least one network request has succeeded.
@@ -118,9 +144,9 @@ where
         }
     });
     if !(contains_response_received && contains_data_received) {
-        return true;
+        return Some(R009);
     }
 
     // default case is `false`, meaning the data is good
-    false
+    None
 }
