@@ -277,10 +277,14 @@ where
         );
         for record in reader.deserialize() {
             let record: Record = record?;
+            // skip comment lines
+            if record.domain.starts_with('#') {
+                continue;
+            }
             let existing = conf_domains.insert(record.domain.clone(), record.is_similar_to.clone());
             if let Some(existing) = existing {
                 if existing != record.is_similar_to {
-                    error!("Duplicate confusion mappings for domain '{}' but with different targets: 1) '{}' 2) '{}", record.domain, existing, record.is_similar_to);
+                    error!("Duplicate confusion mappings for domain '{}' but with different targets: 1) '{}' 2) '{}'", record.domain, existing, record.is_similar_to);
                 }
             }
         }

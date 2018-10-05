@@ -92,7 +92,7 @@ files.wordpress.com,wordpress.com
 glassdoor.ca,"Glassdoor"
 glassdoor.co.in,"Glassdoor"
 glassdoor.co.uk,"Glassdoor"
-glassdoor.com,"Glassdoor"
+#glassdoor.com,"Glassdoor"
 glassdoor.de,"Glassdoor"
 google.ae,"Google Inc."
 google.al,"Google Inc."
@@ -329,7 +329,7 @@ shopee.vn,"Shopee"
 skyscanner.ae,"Skyscanner"
 skyscanner.ch,"Skyscanner"
 skyscanner.co.in,"Skyscanner"
-skyscanner.com,"Skyscanner"
+#skyscanner.com,"Skyscanner"
 skyscanner.com.au,"Skyscanner"
 skyscanner.com.tr,"Skyscanner"
 skyscanner.de,"Skyscanner"
@@ -363,4 +363,4 @@ tripadvisor.ru,"Tripadvisor"
 videodownloadconverter.com,fromdoctopdf.com
 www.livejasmin.com,livejasmin.com
 yelp.ca,"Yelp"
-yelp.com,"Yelp",
+yelp.com,"Yelp"
