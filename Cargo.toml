@@ -62,7 +62,7 @@ serde = "1.0.49"
 serde_derive = "1.0.49"
 serde_json = "1.0.31"
 serde-pickle = "0.4.1"
-structopt = "0.2.8"
+structopt = "0.2.11"
 url = "1.7.0"
 
 [dependencies.serde_with]
