@@ -2,6 +2,8 @@
 
 extern crate chrono;
 #[macro_use]
+extern crate lazy_static;
+#[macro_use]
 extern crate log;
 extern crate misc_utils;
 extern crate rayon;
@@ -13,14 +15,49 @@ pub mod knn;
 mod utils;
 
 use chrono::{DateTime, Utc};
+use common_sequence_classifications::*;
 use misc_utils::{Max, Min};
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     collections::HashMap,
     fmt::{self, Debug, Display},
     mem,
+    path::Path,
+    sync::{Arc, RwLock},
 };
 use string_cache::DefaultAtom as Atom;
+
+lazy_static! {
+    static ref LOADING_FAILED: RwLock<Arc<HashMap<Atom, &'static str>>> = RwLock::default();
+}
+
+#[cfg_attr(feature = "cargo-clippy", allow(implicit_hasher))]
+pub fn replace_loading_failed(new_data: HashMap<Atom, &'static str>) {
+    *LOADING_FAILED
+        .write()
+        .expect("Writing to LOADING_FAILED should always work") = Arc::new(new_data);
+}
+
+pub mod common_sequence_classifications {
+    pub const R001: &str = "R001 Single Domain. A + DNSKEY";
+    pub const R002: &str = "R002 Single Domain with www redirect. A + DNSKEY + A (for www)";
+    pub const R003: &str = "R003 Two domains for website. (A + DNSKEY) * 2";
+    pub const R004_SIZE1: &str = "R004 Single packet of size 1.";
+    pub const R004_SIZE2: &str = "R004 Single packet of size 2.";
+    pub const R004_SIZE3: &str = "R004 Single packet of size 3.";
+    pub const R004_SIZE4: &str = "R004 Single packet of size 4.";
+    pub const R004_SIZE5: &str = "R004 Single packet of size 5.";
+    pub const R004_SIZE6: &str = "R004 Single packet of size 6.";
+    pub const R004_UNKNOWN: &str = "R004 A single packet of unknown size.";
+    pub const R005: &str = "R005 Two domains for website second is CNAME.";
+    pub const R006: &str = "R006 www redirect + Akamai";
+    pub const R006_3RD_LVL_DOM: &str =
+        "R006 www redirect + Akamai on 3rd-LVL domain without DNSSEC";
+    pub const R007: &str = "R007 Unreachable Name Server";
+    pub const R008: &str =
+        "R008 Domain did not load properly and Chrome performed a Google search on the error page.";
+    pub const R009: &str = "R009 No network response received.";
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sequence(Vec<SequenceElement>, String);
@@ -110,6 +147,105 @@ impl Sequence {
 
     pub fn as_elements(&self) -> &[SequenceElement] {
         &self.0
+    }
+
+    pub fn classify(&self) -> Option<&'static str> {
+        {
+            let lock = LOADING_FAILED
+                .read()
+                .expect("Reading LOADING_FAILED must always work");
+            if let Some(Some(reason)) = Path::new(self.id())
+                // extract file name from id
+                .file_name()
+                // convert to `Atom`
+                .map(|file_name| Atom::from(file_name.to_string_lossy()))
+                // see if this is a known bad id
+                .map(|file_atom| lock.get(&file_atom))
+            {
+                return Some(reason);
+            }
+        }
+
+        // Test if sequence only contains two responses of size 1 and then 2
+        let packets: Vec<_> = self
+            .as_elements()
+            .iter()
+            .filter(|elem| {
+                if let SequenceElement::Size(_) = elem {
+                    true
+                } else {
+                    false
+                }
+            })
+            .cloned()
+            .collect();
+
+        match &*packets {
+            [] => {
+                error!(
+                    "Empty sequence for ID {}. Should never occur",
+                    self.id()
+                );
+                None
+            }
+            [SequenceElement::Size(n)] => Some(match n {
+                0 => unreachable!("Packets of size 0 may never occur."),
+                1 => R004_SIZE1,
+                2 => R004_SIZE2,
+                3 => R004_SIZE3,
+                4 => R004_SIZE4,
+                5 => R004_SIZE5,
+                6 => R004_SIZE6,
+                _ => R004_UNKNOWN,
+            }),
+            [SequenceElement::Size(1), SequenceElement::Size(2)] => Some(R001),
+            [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1)] => {
+                Some(R002)
+            }
+            [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(2)] => {
+                Some(R003)
+            }
+            [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
+                Some(R005)
+            }
+            [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
+                Some(R006)
+            }
+            [SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
+                Some(R006_3RD_LVL_DOM)
+            }
+            _ => {
+                let mut is_unreachable_domain = true;
+                {
+                    // Unreachable domains have many requests of Size 1 but never a DNSKEY
+                    let mut iter = self.as_elements().iter().fuse();
+                    // Sequence looks like for Size and Gap
+                    // S G S G S G S G S
+                    // we only need to loop until we find a counter proof
+                    while is_unreachable_domain {
+                        match (iter.next(), iter.next()) {
+                            // This is the end of the sequence
+                            (Some(SequenceElement::Size(1)), None) => break,
+                            // this is the normal, good case
+                            (Some(SequenceElement::Size(1)), Some(SequenceElement::Gap(_))) => {}
+
+                            // This can never happen with the above pattern
+                            (None, None) => is_unreachable_domain = false,
+                            // Sequence may not end on a Gap
+                            (Some(SequenceElement::Gap(_)), None) => is_unreachable_domain = false,
+                            // all other patterns, e.g., different Sizes do not match
+                            _ => is_unreachable_domain = false,
+                        }
+                    }
+                }
+
+                if is_unreachable_domain {
+                    Some(R007)
+                } else {
+                    None
+                }
+            }
+        }
     }
 }
 

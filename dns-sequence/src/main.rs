@@ -27,20 +27,16 @@ extern crate structopt;
 mod stats;
 
 use csv::{ReaderBuilder, Writer as CsvWriter, WriterBuilder};
-use encrypted_dns::{
-    common_sequence_classifications::{
-        R001, R002, R003, R004_SIZE1, R004_SIZE2, R004_SIZE3, R004_SIZE4, R004_SIZE5, R004_SIZE6,
-        R004_UNKNOWN, R005, R006, R006_3RD_LVL_DOM, R007, R008, R009,
-    },
-    dnstap_to_sequence, take_largest, FailExt,
-};
+use encrypted_dns::{dnstap_to_sequence, take_largest, FailExt};
 use failure::{Error, ResultExt};
 use misc_utils::{
     fs::{file_open_read, file_open_write, WriteOptions},
     Max, Min,
 };
 use rayon::prelude::*;
-use sequences::{knn, LabelledSequences, Sequence, SequenceElement};
+use sequences::{
+    common_sequence_classifications::*, knn, replace_loading_failed, LabelledSequences, Sequence,
+};
 use serde::Serialize;
 use stats::StatsCollector;
 use std::{
@@ -56,7 +52,6 @@ use structopt::StructOpt;
 
 lazy_static! {
     static ref CONFUSION_DOMAINS: RwLock<Arc<HashMap<Atom, Atom>>> = RwLock::default();
-    static ref LOADING_FAILED: RwLock<Arc<HashMap<Atom, &'static str>>> = RwLock::default();
 }
 
 #[derive(StructOpt, Debug)]
@@ -213,7 +208,7 @@ fn run() -> Result<(), Error> {
                         } else {
                             ClassificationResult::Wrong
                         };
-                        let known_problems = classify_sequence(sequence).map(Atom::from);
+                        let known_problems = sequence.classify().map(Atom::from);
                         stats.update(
                             k as u8,
                             true_domain.clone(),
@@ -334,11 +329,8 @@ fn prepare_failed_domains(path: impl AsRef<Path>) -> Result<(), Error> {
         };
         failed_domains.insert(file_name, reason);
     }
-    let mut lock = LOADING_FAILED
-        .write()
-        .expect("LOADING_FAILED must be writeable here");
-    *lock = Arc::new(failed_domains);
 
+    replace_loading_failed(failed_domains);
     Ok(())
 }
 
@@ -491,209 +483,6 @@ where
     csv_writer
         .serialize(&out)
         .map_err(|err| format_err!("{}", err))
-}
-
-fn classify_sequence(sequence: &Sequence) -> Option<&'static str> {
-    {
-        let lock = LOADING_FAILED
-            .read()
-            .expect("Reading LOADING_FAILED must always work");
-        if let Some(Some(reason)) = Path::new(sequence.id())
-            // extract file name from id
-            .file_name()
-            // convert to `Atom`
-            .map(|file_name| Atom::from(file_name.to_string_lossy()))
-            // see if this is a known bad id
-            .map(|file_atom| lock.get(&file_atom))
-        {
-            return Some(reason);
-        }
-    }
-
-    // Test if sequence only contains two responses of size 1 and then 2
-    let packets: Vec<_> = sequence
-        .as_elements()
-        .iter()
-        .filter(|elem| {
-            if let SequenceElement::Size(_) = elem {
-                true
-            } else {
-                false
-            }
-        })
-        .cloned()
-        .collect();
-
-    match &*packets {
-        [] => {
-            error!(
-                "Empty sequence for ID {}. Should never occur",
-                sequence.id()
-            );
-            None
-        }
-        [SequenceElement::Size(n)] => Some(match n {
-            0 => unreachable!("Packets of size 0 may never occur."),
-            1 => R004_SIZE1,
-            2 => R004_SIZE2,
-            3 => R004_SIZE3,
-            4 => R004_SIZE4,
-            5 => R004_SIZE5,
-            6 => R004_SIZE6,
-            _ => R004_UNKNOWN,
-        }),
-        [SequenceElement::Size(1), SequenceElement::Size(2)] => Some(R001),
-        [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1)] => {
-            Some(R002)
-        }
-        [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(2)] => {
-            Some(R003)
-        }
-        [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
-            Some(R005)
-        }
-        [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
-            Some(R006)
-        }
-        [SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
-            Some(R006_3RD_LVL_DOM)
-        }
-        _ => {
-            let mut is_unreachable_domain = true;
-            {
-                // Unreachable domains have many requests of Size 1 but never a DNSKEY
-                let mut iter = sequence.as_elements().iter().fuse();
-                // Sequence looks like for Size and Gap
-                // S G S G S G S G S
-                // we only need to loop until we find a counter proof
-                while is_unreachable_domain {
-                    match (iter.next(), iter.next()) {
-                        // This is the end of the sequence
-                        (Some(SequenceElement::Size(1)), None) => break,
-                        // this is the normal, good case
-                        (Some(SequenceElement::Size(1)), Some(SequenceElement::Gap(_))) => {}
-
-                        // This can never happen with the above pattern
-                        (None, None) => is_unreachable_domain = false,
-                        // Sequence may not end on a Gap
-                        (Some(SequenceElement::Gap(_)), None) => is_unreachable_domain = false,
-                        // all other patterns, e.g., different Sizes do not match
-                        _ => is_unreachable_domain = false,
-                    }
-                }
-            }
-
-            if is_unreachable_domain {
-                Some(R007)
-            } else {
-                None
-            }
-        }
-    }
-}
-
-#[test]
-fn test_classify_sequence_r001() {
-    use SequenceElement::{Gap, Size};
-
-    let sequence = Sequence::new(vec![Size(1), Size(2)], "".to_string());
-    assert_eq!(classify_sequence(&sequence), Some(R001));
-
-    let sequence = Sequence::new(vec![Size(1), Gap(3), Size(2)], "".to_string());
-    assert_eq!(classify_sequence(&sequence), Some(R001));
-
-    let sequence = Sequence::new(vec![Size(1), Gap(10), Size(2)], "".to_string());
-    assert_eq!(classify_sequence(&sequence), Some(R001));
-
-    let sequence = Sequence::new(vec![Gap(9), Size(1), Size(2), Gap(12)], "".to_string());
-    assert_eq!(classify_sequence(&sequence), Some(R001));
-
-    let sequence = Sequence::new(
-        vec![Gap(9), Size(1), Gap(5), Size(2), Gap(12)],
-        "".to_string(),
-    );
-    assert_eq!(classify_sequence(&sequence), Some(R001));
-}
-
-#[test]
-fn test_classify_sequence_r002() {
-    use SequenceElement::{Gap, Size};
-
-    let sequence = Sequence::new(vec![Size(1), Size(2), Size(1)], "".to_string());
-    assert_eq!(classify_sequence(&sequence), Some(R002));
-
-    let sequence = Sequence::new(vec![Size(1), Gap(3), Size(2), Size(1)], "".to_string());
-    assert_eq!(classify_sequence(&sequence), Some(R002));
-
-    let sequence = Sequence::new(
-        vec![Size(1), Gap(5), Size(2), Gap(10), Size(1)],
-        "".to_string(),
-    );
-    assert_eq!(classify_sequence(&sequence), Some(R002));
-
-    let sequence = Sequence::new(
-        vec![Gap(2), Size(1), Gap(15), Size(2), Gap(2), Size(1), Gap(3)],
-        "".to_string(),
-    );
-    assert_eq!(classify_sequence(&sequence), Some(R002));
-
-    // These must fail
-
-    let sequence = Sequence::new(vec![Size(1), Size(1), Size(1)], "".to_string());
-    assert_ne!(classify_sequence(&sequence), Some(R002));
-
-    let sequence = Sequence::new(vec![Size(1), Size(1), Size(2)], "".to_string());
-    assert_ne!(classify_sequence(&sequence), Some(R002));
-
-    let sequence = Sequence::new(vec![Size(2), Size(1), Size(1)], "".to_string());
-    assert_ne!(classify_sequence(&sequence), Some(R002));
-}
-
-#[test]
-fn test_classify_sequence_r007() {
-    use SequenceElement::{Gap, Size};
-
-    let sequence = Sequence::new(vec![Size(1), Gap(3), Size(1)], "".to_string());
-    assert_eq!(classify_sequence(&sequence), Some(R007));
-
-    let sequence = Sequence::new(
-        vec![Size(1), Gap(3), Size(1), Gap(3), Size(1), Gap(3), Size(1)],
-        "".to_string(),
-    );
-    assert_eq!(classify_sequence(&sequence), Some(R007));
-
-    // These must fail
-
-    let sequence = Sequence::new(
-        vec![
-            Size(1),
-            Gap(2),
-            Size(2),
-            Gap(9),
-            Size(1),
-            Gap(2),
-            Size(1),
-            Gap(9),
-            Size(1),
-            Gap(2),
-            Size(1),
-            Gap(1),
-            Size(1),
-            Gap(2),
-            Size(1),
-            Gap(8),
-            Size(1),
-            Gap(2),
-            Size(1),
-            Gap(2),
-            Size(2),
-            Gap(2),
-            Size(2),
-        ],
-        "".to_string(),
-    );
-
-    assert_ne!(classify_sequence(&sequence), Some(R007));
 }
 
 /// Calculate the reverse cumulitive sum

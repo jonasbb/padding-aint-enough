@@ -5,21 +5,19 @@ extern crate failure;
 extern crate glob;
 extern crate misc_utils;
 extern crate rayon;
+extern crate sequences;
 #[macro_use]
 extern crate serde;
 extern crate serde_json;
 extern crate structopt;
 
 use csv::WriterBuilder;
-use encrypted_dns::{
-    chrome::ChromeDebuggerMessage,
-    common_sequence_classifications::{R008, R009},
-    ErrorExt,
-};
+use encrypted_dns::{chrome::ChromeDebuggerMessage, ErrorExt};
 use failure::{Error, ResultExt};
 use glob::glob;
 use misc_utils::fs::file_open_read;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
+use sequences::common_sequence_classifications::*;
 use std::{io, path::PathBuf};
 use structopt::StructOpt;
 

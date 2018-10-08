@@ -58,6 +58,11 @@ impl PySequence {
     pub fn distance(&self, other: &PySequence) -> PyResult<usize> {
         Ok(self.sequence.distance(&other.sequence))
     }
+
+    /// Try to classify the sequence, if it belongs to one of a couple of common categories
+    pub fn classify(&self) -> PyResult<Option<&'static str>> {
+        Ok(self.sequence.classify())
+    }
 }
 
 #[pyproto]
