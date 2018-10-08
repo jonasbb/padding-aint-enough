@@ -30,7 +30,10 @@ mod depgraph;
 use chrome::{ChromeDebuggerMessage, RedirectResponse, Request, Response, TargetInfo, Timing};
 use chrono::{DateTime, Utc};
 use depgraph::DepGraph;
-use encrypted_dns::{dnstap::Message_Type, protos::DnstapContent};
+use dnstap::{
+    dnstap::Message_Type,
+    protos::{Dnstap, DnstapContent},
+};
 use failure::{Error, ResultExt};
 use misc_utils::{
     fs::{file_open_read, file_open_write, WriteOptions},
@@ -151,7 +154,7 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
     // process dnstap if available
     if dnstap_file.exists() {
         info!("Found dnstap file.");
-        let mut events: Vec<encrypted_dns::protos::Dnstap> =
+        let mut events: Vec<Dnstap> =
             dnstap::process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
 
         // the dnstap events can be out of order, so sort them by timestamp

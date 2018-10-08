@@ -19,11 +19,11 @@ extern crate toml;
 
 mod utils;
 
-use encrypted_dns::{dnstap_to_sequence, ErrorExt};
+use encrypted_dns::ErrorExt;
 use failure::{Error, ResultExt};
 use misc_utils::fs::file_open_read;
 use rayon::prelude::*;
-use sequences::sequence_stats;
+use sequences::{sequence_stats, Sequence};
 use std::{
     ffi::{OsStr, OsString},
     fmt::{self, Debug},
@@ -419,7 +419,7 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
         for mut task in tasks {
             execute_or_restart_task(&mut task, taskmgr, |mut task| {
                 // if a file is loadable, it passes all easy sanity checks
-                dnstap_to_sequence(&local_path.join(task.name()).join(&*DNSTAP_FILE_NAME))
+                Sequence::from_path(&local_path.join(task.name()).join(&*DNSTAP_FILE_NAME))
                     .with_context(|_| {
                         format!(
                             "The task {} generated invalid data and gets restarted.",
@@ -493,7 +493,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
         let sequences: Vec<_> = tasks
             .iter()
             .map(|task| {
-                dnstap_to_sequence(&local_path.join(task.name()).join(&*DNSTAP_FILE_NAME))
+                Sequence::from_path(&local_path.join(task.name()).join(&*DNSTAP_FILE_NAME))
                     .expect("Loading a DNSTAP file cannot fail, as we checked that before.")
             })
             .collect();

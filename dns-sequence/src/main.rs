@@ -27,7 +27,7 @@ extern crate structopt;
 mod stats;
 
 use csv::{ReaderBuilder, Writer as CsvWriter, WriterBuilder};
-use encrypted_dns::{dnstap_to_sequence, take_largest, FailExt};
+use encrypted_dns::{take_largest, FailExt};
 use failure::{Error, ResultExt};
 use misc_utils::{
     fs::{file_open_read, file_open_write, WriteOptions},
@@ -404,7 +404,7 @@ fn load_all_dnstap_files(
                 .into_iter()
                 .filter_map(|dnstap_file| {
                     debug!("Processing dnstap file '{}'", dnstap_file.display());
-                    match dnstap_to_sequence(&*dnstap_file).with_context(|_| {
+                    match Sequence::from_path(&*dnstap_file).with_context(|_| {
                         format!("Processing dnstap file '{}'", dnstap_file.display())
                     }) {
                         Ok(seq) => Some(seq),

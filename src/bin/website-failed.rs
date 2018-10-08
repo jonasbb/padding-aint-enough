@@ -1,3 +1,4 @@
+extern crate chrome;
 extern crate csv;
 extern crate encrypted_dns;
 extern crate env_logger;
@@ -11,8 +12,9 @@ extern crate serde;
 extern crate serde_json;
 extern crate structopt;
 
+use chrome::ChromeDebuggerMessage;
 use csv::WriterBuilder;
-use encrypted_dns::{chrome::ChromeDebuggerMessage, ErrorExt};
+use encrypted_dns::ErrorExt;
 use failure::{Error, ResultExt};
 use glob::glob;
 use misc_utils::fs::file_open_read;

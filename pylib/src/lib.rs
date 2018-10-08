@@ -9,7 +9,7 @@ extern crate failure;
 extern crate pyo3;
 extern crate sequences;
 
-use encrypted_dns::{dnstap_to_sequence, ErrorExt};
+use encrypted_dns::ErrorExt;
 use failure::Error;
 use pyo3::{exc::Exception, prelude::*};
 use sequences::Sequence;
@@ -27,7 +27,7 @@ fn pylib(_py: Python, m: &PyModule) -> PyResult<()> {
 
     #[pyfn(m, "load_file")]
     fn load_file(py: Python, path: String) -> PyResult<Py<PySequence>> {
-        let seq = dnstap_to_sequence(Path::new(&path)).map_err(error2py)?;
+        let seq = Sequence::from_path(Path::new(&path)).map_err(error2py)?;
         py.init(|token| PySequence::new(seq, token))
     }
 

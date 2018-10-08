@@ -1,6 +1,9 @@
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 
 extern crate chrono;
+extern crate dnstap;
+#[macro_use]
+extern crate failure;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
@@ -12,10 +15,12 @@ extern crate serde;
 extern crate string_cache;
 
 pub mod knn;
+mod load_sequence;
 mod utils;
 
 use chrono::{DateTime, Utc};
 use common_sequence_classifications::*;
+use failure::Error;
 use misc_utils::{Max, Min};
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
@@ -67,12 +72,14 @@ impl Sequence {
         Sequence(sequence, identifier)
     }
 
+    pub fn from_path(path: &Path) -> Result<Sequence, Error> {
+        load_sequence::dnstap_to_sequence(path)
+    }
+
     pub fn id(&self) -> &str {
         &*self.1
     }
-}
 
-impl Sequence {
     pub fn complexity(&self) -> usize {
         self.0
             .iter()
@@ -182,10 +189,7 @@ impl Sequence {
 
         match &*packets {
             [] => {
-                error!(
-                    "Empty sequence for ID {}. Should never occur",
-                    self.id()
-                );
+                error!("Empty sequence for ID {}. Should never occur", self.id());
                 None
             }
             [SequenceElement::Size(n)] => Some(match n {

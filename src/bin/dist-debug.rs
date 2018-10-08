@@ -10,7 +10,7 @@ extern crate rayon;
 extern crate sequences;
 extern crate structopt;
 
-use encrypted_dns::{dnstap_to_sequence, FailExt};
+use encrypted_dns::FailExt;
 use failure::{Error, ResultExt};
 use glob::glob;
 use rayon::prelude::*;
@@ -140,7 +140,7 @@ where
                 .into_par_iter()
                 .filter_map(|dnstap_file| {
                     debug!("Processing dnstap file '{}'", dnstap_file.display());
-                    match dnstap_to_sequence(&*dnstap_file).with_context(|_| {
+                    match Sequence::from_path(&*dnstap_file).with_context(|_| {
                         format!("Processing dnstap file '{}'", dnstap_file.display())
                     }) {
                         Ok(seq) => Some(seq),
