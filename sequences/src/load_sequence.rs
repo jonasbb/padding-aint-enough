@@ -1,12 +1,12 @@
 use super::{MatchKey, Query, QuerySource, Sequence, SequenceElement, UnmatchedClientQuery};
+use chrono::Duration;
 use dnstap::{
     dnstap::Message_Type,
     process_dnstap,
     protos::{self, DnstapContent},
     sanity_check_dnstap,
 };
-use chrono::Duration;
-use failure::{Error};
+use failure::Error;
 use std::{collections::BTreeMap, path::Path};
 
 enum Padding {
@@ -252,4 +252,13 @@ fn block_padding(size: u32, block_size: u32) -> u32 {
     } else {
         size / block_size * block_size + block_size
     }
+}
+
+#[test]
+fn test_block_padding() {
+    assert_eq!(0, block_padding(0, 128));
+    assert_eq!(128, block_padding(1, 128));
+    assert_eq!(128, block_padding(127, 128));
+    assert_eq!(128, block_padding(128, 128));
+    assert_eq!(128 * 2, block_padding(129, 128));
 }

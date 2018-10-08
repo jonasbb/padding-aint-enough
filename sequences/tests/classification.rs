@@ -61,7 +61,7 @@ fn test_classify_sequence_r002() {
 
 #[test]
 fn test_classify_sequence_r004() {
-    use SequenceElement::{Gap, Size};
+    use SequenceElement::Size;
 
     let sequence = Sequence::new(vec![Size(1)], "".to_string());
     assert_eq!(sequence.classify(), Some(R004_SIZE1));
