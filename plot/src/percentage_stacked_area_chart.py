@@ -1,8 +1,11 @@
 import typing as t
 from collections import OrderedDict
+from copy import copy
+from itertools import cycle
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 # We need to reset the state of matplotlib between executions of this script
@@ -23,6 +26,7 @@ if "__file__" in globals():
     # being run as freestanding script
     import sys
     import pickle
+
     rawdata, config = pickle.load(open(sys.argv[1], "rb"))
     rawimgpath = sys.argv[1] + ".svg"
 
@@ -38,16 +42,39 @@ global data_perc  # pylint: disable=W0604
 # We need to transform the data from raw data to percentage (fraction)
 data_perc = data.divide(data.sum(axis=1), axis=0)
 
+# # Make the plot
+# # This plot uses filled lines, where each entry is only a single point, thus the curves are
+# # always diagonal
+# kwargs = dict()
+# if "colors" in config:
+#     kwargs["colors"] = config["colors"]
+# plt.gca().stackplot(
+#     range(1, len(next(iter(plotdata.values()))) + 1),
+#     *[data_perc[label] for label in plotdata.keys()],
+#     labels=list(plotdata.keys()),
+#     **kwargs
+# )
+
+# Make the plot
+# This plot simulates a stacked bar plot, but is more efficient to draw
 kwargs = dict()
 if "colors" in config:
-    kwargs["colors"] = config["colors"]
-# Make the plot
-plt.gca().stackplot(
-    range(1, len(next(iter(plotdata.values()))) + 1),
-    *[data_perc[label] for label in plotdata.keys()],
-    labels=list(plotdata.keys()),
-    **kwargs
-)
+    colors = cycle(config["colors"])
+else:
+    colors = cycle([None])
+size = len(next(iter(plotdata.values())))
+line = np.zeros(size)
+# for (label, color) in reversed(list(zip(plotdata.keys(), colors))):
+for (label, color) in zip(plotdata.keys(), colors):
+    if color:
+        kwargs["color"] = color
+
+    before = copy(line)
+    line += data_perc[label]
+    plt.fill_between(
+        range(1, size + 1), line, before, step="pre", label=label, linewidth=0, **kwargs
+    )
+
 fig = plt.gcf()
 fig.set_size_inches(12, 6)
 # remove any margins around the figure
