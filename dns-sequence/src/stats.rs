@@ -395,6 +395,20 @@ mod plot {
         output: impl AsRef<Path>,
         config: HashMap<&str, &[&str], S>,
     ) -> Result<(), Error> {
+        // The pickle data will have the following shape:
+        // t.Tuple[
+        //     # This is the data to plot. They will be plottet in order
+        //     t.List[t.Tuple[
+        //         str,  # part of the legend
+        //         t.List[float]  # the data
+        //     ]],
+        //     # Additional configuration parameters
+        //     t.Dict[
+        //         str,
+        //         t.List[str]
+        //     ]
+        // ]
+
         info!("Pickle plotting data");
         let path = output.as_ref().with_extension("pickle");
 
