@@ -91,6 +91,9 @@ plt.margins(0, 0)
 plt.gca().legend(loc="upper left", bbox_to_anchor=(1, 1), borderaxespad=1)
 plt.title("100% stacked area chart")
 
+if "xticks" in config:
+    plt.xticks([x + 0.5 for x in range(1, size)], config["xticks"], rotation="vertical")
+
 # support being called with a filename without any extension
 # In order to really use the filename (and not append an extension), we need to specify
 # a format
