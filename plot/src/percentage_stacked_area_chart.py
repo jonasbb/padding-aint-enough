@@ -34,6 +34,8 @@ imgpath = Path(rawimgpath)
 
 # convert to dict but keep order
 plotdata = OrderedDict(rawdata)
+for value in plotdata.values():
+    value.append(1)
 # Make data
 data = pd.DataFrame(plotdata)
 
@@ -72,7 +74,13 @@ for (label, color) in zip(plotdata.keys(), colors):
     before = copy(line)
     line += data_perc[label]
     plt.fill_between(
-        range(1, size + 1), line, before, step="pre", label=label, linewidth=0, **kwargs
+        range(1, size + 1),
+        line,
+        before,
+        step="post",
+        label=label,
+        linewidth=0,
+        **kwargs
     )
 
 fig = plt.gcf()
