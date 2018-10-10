@@ -21,11 +21,10 @@ mod utils;
 use chrono::{DateTime, Utc};
 use common_sequence_classifications::*;
 use failure::Error;
-use misc_utils::{Max, Min};
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     collections::HashMap,
-    fmt::{self, Debug, Display},
+    fmt::{self, Debug},
     mem,
     path::Path,
     sync::{Arc, RwLock},
@@ -316,9 +315,9 @@ impl SequenceElement {
         use self::SequenceElement::*;
         match (self, other) {
             // 2/3rds cost of insert
-            (Size(_), Size(_)) => self.insert_cost().saturating_add(other.delete_cost()) / 3,
+            (Size(_), Size(_)) => (self.insert_cost() + other.delete_cost()) / 3,
             (Gap(g1), Gap(g2)) => (g1.max(g2) - g1.min(g2)) as usize * 2,
-            (a, b) => a.delete_cost().saturating_add(b.insert_cost()),
+            (a, b) => a.delete_cost() + b.insert_cost(),
         }
     }
 

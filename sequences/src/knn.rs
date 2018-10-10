@@ -1,5 +1,11 @@
-use super::*;
+use super::{LabelledSequence, LabelledSequences, Sequence};
+use misc_utils::{Max, Min};
 use rayon::prelude::*;
+use std::{
+    cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
+    collections::HashMap,
+    fmt::Display,
+};
 use utils::take_smallest;
 
 /// Find the k-nearest-neighbours in trainings_data for each element in validation_data
@@ -158,7 +164,7 @@ impl<'a, S> Ord for ClassifierData<'a, S> {
 
 #[test]
 fn test_knn() {
-    use self::SequenceElement::*;
+    use crate::SequenceElement::*;
     let trainings_data = vec![
         LabelledSequences {
             true_domain: "A",
@@ -195,7 +201,7 @@ fn test_knn() {
 
 #[test]
 fn test_knn_tie() {
-    use self::SequenceElement::*;
+    use crate::SequenceElement::*;
     let trainings_data = vec![
         LabelledSequences {
             true_domain: "A",
