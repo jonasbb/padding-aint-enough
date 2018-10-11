@@ -1,8 +1,9 @@
 use knn::ClassifierData;
 
-pub(crate) fn take_smallest<'a, I, S>(iter: I, n: usize) -> Vec<ClassifierData<'a, S>>
+pub(crate) fn take_smallest<'a, I, F, S>(iter: I, n: usize) -> Vec<ClassifierData<'a, S>>
 where
-    I: IntoIterator<Item = ClassifierData<'a, S>>,
+    I: IntoIterator<Item = F>,
+    F: Fn(usize) -> ClassifierData<'a, S>,
 {
     let mut iter = iter.into_iter();
     if n == 1 {
@@ -12,13 +13,15 @@ where
         if best.is_none() {
             return vec![];
         }
-        let mut best = best.unwrap();
+        let mut best = best.unwrap()(usize::max_value());
         // The first element could already be a best match
         if best.distance == 0 {
             return vec![best];
         }
 
         for elem in iter {
+            // convert to ClassifierData with max distance
+            let elem = elem(best.distance);
             if elem < best {
                 // found a better element, so replace the current best
                 best = elem;
@@ -35,7 +38,7 @@ where
 
     let mut res = Vec::with_capacity(n);
     // fill the vector with n elements
-    res.extend((&mut iter).take(n));
+    res.extend((&mut iter).take(n).map(|f| f(usize::max_value())));
     res.sort();
 
     // the iterator is already exhausted, so we can stop early
@@ -46,6 +49,8 @@ where
 
     // replace exisiting elements keeping the heap size
     for v in iter {
+        // convert to ClassifierData with max distance
+        let v = v(res[n - 1].distance);
         // compare with worst element so far
         if v < res[n - 1] {
             res[n - 1] = v;
