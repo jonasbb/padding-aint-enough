@@ -1,4 +1,5 @@
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
+#![feature(nll)]
 
 extern crate chrono;
 extern crate dnstap;
@@ -12,6 +13,7 @@ extern crate misc_utils;
 extern crate rayon;
 #[macro_use]
 extern crate serde;
+extern crate serde_with;
 extern crate string_cache;
 
 pub mod knn;

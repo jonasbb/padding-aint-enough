@@ -8,6 +8,7 @@ use prettytable::{
     row, Table,
 };
 use reverse_cum_sum;
+use sequences::knn::ClassificationResultQuality;
 use serde::Serialize;
 use std::{
     collections::HashMap,
@@ -17,8 +18,8 @@ use std::{
     path::Path,
 };
 use string_cache::DefaultAtom as Atom;
-use ClassificationResult;
 
+// TODO needs update for new, longer quality list
 const COLORS: &[&str] = &[
     "#349e35", "#98dd8b", "#df802e", "#feba7c", "#d33134", "#fe9897",
 ];
@@ -46,8 +47,8 @@ pub(crate) struct StatsCollector<S: Eq + Hash = Atom> {
 
 #[derive(Debug)]
 struct StatsCounter<S: Eq + Hash = Atom> {
-    /// Counts pairs of `ClassificationResult` and if it is known problematic (bool).
-    results: HashMap<(ClassificationResult, bool), usize>,
+    /// Counts pairs of `ClassificationResultQuality` and if it is known problematic (bool).
+    results: HashMap<(ClassificationResultQuality, bool), usize>,
     /// Counts the problematic reasons
     reasons: HashMap<S, usize>,
 }
@@ -71,7 +72,7 @@ impl<S: Eq + Hash> StatsCollector<S> {
         k: u8,
         true_domain: S,
         mapped_domain: S,
-        result: ClassificationResult,
+        result: ClassificationResultQuality,
         known_problems: Option<S>,
     ) where
         S: Clone,
@@ -105,12 +106,18 @@ impl<S: Eq + Hash> StatsCollector<S> {
         struct Out<'a, S> {
             k: u8,
             label: &'a S,
-            corr: usize,
-            corr_w_reason: usize,
-            und: usize,
-            und_w_reason: usize,
             wrong: usize,
             wrong_w_reason: usize,
+            contains: usize,
+            contains_w_reason: usize,
+            plurality_and_dist: usize,
+            plurality_and_dist_w_reason: usize,
+            plurality: usize,
+            plurality_w_reason: usize,
+            majority: usize,
+            majority_w_reason: usize,
+            exact: usize,
+            exact_w_reason: usize,
             reasons: usize,
         };
 
@@ -121,34 +128,64 @@ impl<S: Eq + Hash> StatsCollector<S> {
                 let out = Out {
                     k,
                     label: domain,
-                    corr: stats
-                        .results
-                        .get(&(ClassificationResult::Correct, false))
-                        .cloned()
-                        .unwrap_or_default(),
-                    corr_w_reason: stats
-                        .results
-                        .get(&(ClassificationResult::Correct, true))
-                        .cloned()
-                        .unwrap_or_default(),
-                    und: stats
-                        .results
-                        .get(&(ClassificationResult::Undetermined, false))
-                        .cloned()
-                        .unwrap_or_default(),
-                    und_w_reason: stats
-                        .results
-                        .get(&(ClassificationResult::Undetermined, true))
-                        .cloned()
-                        .unwrap_or_default(),
                     wrong: stats
                         .results
-                        .get(&(ClassificationResult::Wrong, false))
+                        .get(&(ClassificationResultQuality::Wrong, false))
                         .cloned()
                         .unwrap_or_default(),
                     wrong_w_reason: stats
                         .results
-                        .get(&(ClassificationResult::Wrong, true))
+                        .get(&(ClassificationResultQuality::Wrong, true))
+                        .cloned()
+                        .unwrap_or_default(),
+                    contains: stats
+                        .results
+                        .get(&(ClassificationResultQuality::Contains, false))
+                        .cloned()
+                        .unwrap_or_default(),
+                    contains_w_reason: stats
+                        .results
+                        .get(&(ClassificationResultQuality::Contains, true))
+                        .cloned()
+                        .unwrap_or_default(),
+                    plurality_and_dist: stats
+                        .results
+                        .get(&(ClassificationResultQuality::PluralityThenMinDist, false))
+                        .cloned()
+                        .unwrap_or_default(),
+                    plurality_and_dist_w_reason: stats
+                        .results
+                        .get(&(ClassificationResultQuality::PluralityThenMinDist, true))
+                        .cloned()
+                        .unwrap_or_default(),
+                    plurality: stats
+                        .results
+                        .get(&(ClassificationResultQuality::Plurality, false))
+                        .cloned()
+                        .unwrap_or_default(),
+                    plurality_w_reason: stats
+                        .results
+                        .get(&(ClassificationResultQuality::Plurality, true))
+                        .cloned()
+                        .unwrap_or_default(),
+                    majority: stats
+                        .results
+                        .get(&(ClassificationResultQuality::Majority, false))
+                        .cloned()
+                        .unwrap_or_default(),
+                    majority_w_reason: stats
+                        .results
+                        .get(&(ClassificationResultQuality::Majority, true))
+                        .cloned()
+                        .unwrap_or_default(),
+                    exact: stats
+                        .results
+                        .get(&(ClassificationResultQuality::Exact, false))
+                        .cloned()
+                        .unwrap_or_default(),
+                    exact_w_reason: stats
+                        .results
+                        .get(&(ClassificationResultQuality::Exact, true))
                         .cloned()
                         .unwrap_or_default(),
                     reasons: stats.reasons.iter().map(|(_reason, count)| count).sum(),
@@ -168,78 +205,44 @@ impl<S: Eq + Hash> StatsCollector<S> {
         S: Ord,
     {
         for k in self.data.keys() {
-            let size = self.data[k].true_domain.len();
-            let mut corr = Vec::with_capacity(size);
-            let mut corr_w_reason = Vec::with_capacity(size);
-            let mut und = Vec::with_capacity(size);
-            let mut und_w_reason = Vec::with_capacity(size);
-            let mut wrong = Vec::with_capacity(size);
-            let mut wrong_w_reason = Vec::with_capacity(size);
+            let mut plot_data: HashMap<(ClassificationResultQuality, bool), Vec<f64>> =
+                HashMap::default();
 
             let mut data: Vec<_> = self.data[k].true_domain.iter().collect();
             data.sort_by_key(|x| x.0);
             for (_domain, stats) in data {
-                corr.push(
-                    stats
-                        .results
-                        .get(&(ClassificationResult::Correct, false))
-                        .cloned()
-                        .unwrap_or_default() as f64
-                        + 0.1,
-                );
-                corr_w_reason.push(
-                    stats
-                        .results
-                        .get(&(ClassificationResult::Correct, true))
-                        .cloned()
-                        .unwrap_or_default() as f64
-                        + 0.1,
-                );
-                und.push(
-                    stats
-                        .results
-                        .get(&(ClassificationResult::Undetermined, false))
-                        .cloned()
-                        .unwrap_or_default() as f64
-                        + 0.1,
-                );
-                und_w_reason.push(
-                    stats
-                        .results
-                        .get(&(ClassificationResult::Undetermined, true))
-                        .cloned()
-                        .unwrap_or_default() as f64
-                        + 0.1,
-                );
-                wrong.push(
-                    stats
-                        .results
-                        .get(&(ClassificationResult::Wrong, false))
-                        .cloned()
-                        .unwrap_or_default() as f64
-                        + 0.1,
-                );
-                wrong_w_reason.push(
-                    stats
-                        .results
-                        .get(&(ClassificationResult::Wrong, true))
-                        .cloned()
-                        .unwrap_or_default() as f64
-                        + 0.1,
-                );
+                for quality in ClassificationResultQuality::iter_variants() {
+                    for &with_problems in &[false, true] {
+                        let mut entry = plot_data.entry((quality, with_problems)).or_default();
+                        entry.push(
+                            stats
+                                .results
+                                .get(&(quality, with_problems))
+                                .cloned()
+                                .unwrap_or_default() as f64
+                                + 0.1,
+                        );
+                    }
+                }
             }
+
+            let tmp: Vec<(String, Vec<f64>)> = ClassificationResultQuality::iter_variants()
+                .rev()
+                .zip([false, true].iter())
+                .map(|(quality, &with_problems)| {
+                    let mut label = quality.to_string();
+                    if with_problems {
+                        label.push_str(" (wR)");
+                    }
+                    let datapoints = plot_data.remove(&(quality, with_problems)).unwrap();
+                    (label, datapoints)
+                })
+                .collect();
 
             let mut config = HashMap::new();
             config.insert("colors", &COLORS as &_);
             plot::percentage_stacked_area_chart(
-                &[
-                    ("Correct", corr),
-                    ("Correct (wR)", corr_w_reason),
-                    ("Undetermined", und),
-                    ("Undetermined (wR)", und_w_reason),
-                    ("Wrong", wrong),
-                    ("Wrong (wR)", wrong_w_reason),
-                ],
+                &tmp,
                 output.as_ref().with_extension(format!("k{}.svg", k)),
                 config,
             )?;
@@ -248,32 +251,43 @@ impl<S: Eq + Hash> StatsCollector<S> {
     }
 
     /// Count the number of domains with at least x correctly labelled domains, where x is the array index
-    fn count_correct(&self) -> HashMap<u8, Vec<usize>> {
+    fn count_correct(&self) -> HashMap<u8, HashMap<ClassificationResultQuality, Vec<usize>>> {
         self.data
             .iter()
             .map(|(&k, stats)| {
-                // Count how many domains have x correctly labelled domains
-                // x will be used as index into the vector
-                // needs to store values from 0 to 10 (inclusive)
-                let mut counts = vec![0; 11];
-                stats
-                    .true_domain
-                    .iter()
-                    .for_each(|(_domain, internal_stats)| {
-                        let corrects = internal_stats
-                            .results
-                            .get(&(ClassificationResult::Correct, false))
-                            .cloned()
-                            .unwrap_or(0)
-                            + internal_stats
-                                .results
-                                .get(&(ClassificationResult::Correct, true))
-                                .cloned()
-                                .unwrap_or(0);
-                        counts[corrects] += 1;
-                    });
-                counts = reverse_cum_sum(&counts);
-                (k, counts)
+                let res: HashMap<ClassificationResultQuality, Vec<_>> =
+                    ClassificationResultQuality::iter_variants()
+                        .map(|quality| {
+                            // Count how many domains have x domains with a classification result of quality
+                            // `quality` or higher.
+                            // x will be used as index into the vector
+                            // needs to store values from 0 to 10 (inclusive)
+                            let mut counts = vec![0; 11];
+                            stats
+                                .true_domain
+                                .iter()
+                                .for_each(|(_domain, internal_stats)| {
+                                    let mut corrects = 0;
+                                    for higher_q in ClassificationResultQuality::iter_variants()
+                                        .filter(|&other_q| other_q >= quality)
+                                    {
+                                        corrects += internal_stats
+                                            .results
+                                            .get(&(higher_q, false))
+                                            .cloned()
+                                            .unwrap_or(0)
+                                            + internal_stats
+                                                .results
+                                                .get(&(higher_q, true))
+                                                .cloned()
+                                                .unwrap_or(0);
+                                    }
+                                    counts[corrects] += 1;
+                                });
+                            (quality, counts)
+                        })
+                        .collect();
+                (k, res)
             })
             .collect()
     }
@@ -302,10 +316,35 @@ where
             writeln!(f, "knn with k={}:", k)?;
             k_stats.global.fmt(f)?;
 
-            writeln!(f, "\n#Domains with x correctly labelled traces:");
-            let header = Row::new((0..=10).map(|c| cell!(bc->c)).collect());
-            let counts = Row::new(count_corrects[k].iter().map(|c| cell!(r->c)).collect());
-            let mut table = Table::init(vec![counts]);
+            writeln!(
+                f,
+                "\n#Domains with at least x classification results of quality or higher:"
+            );
+            let header = Row::new(
+                Some(cell!(bc->"Method"))
+                    .into_iter()
+                    .chain((0..=10).map(|c| cell!(bc->c)))
+                    .collect(),
+            );
+            let tmp = &count_corrects[k];
+
+            // For each quality level, we want to count the number of classifications with equal or better quality
+            let counts: Vec<_> = ClassificationResultQuality::iter_variants()
+                // skip the `wrong` quality, as this does not match the semantics of the rest
+                .skip(1)
+                .map(|quality| {
+                    let mut num_class = tmp[&quality].clone();
+
+                    num_class = reverse_cum_sum(&num_class);
+                    Row::new(
+                        Some(cell!(l->quality))
+                            .into_iter()
+                            .chain(num_class.into_iter().map(|c| cell!(r->c)))
+                            .collect(),
+                    )
+                })
+                .collect();
+            let mut table = Table::init(counts);
             table.set_titles(header);
             table.set_format(*FORMAT_NO_BORDER_UNICODE);
             table.fmt(f)?;
@@ -331,11 +370,7 @@ where
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let mut rows = Vec::with_capacity(4);
         // build table rows
-        for &res in &[
-            (ClassificationResult::Correct),
-            (ClassificationResult::Undetermined),
-            (ClassificationResult::Wrong),
-        ] {
+        for res in ClassificationResultQuality::iter_variants().rev() {
             let wo_problems_count = self.results.get(&(res, false)).cloned().unwrap_or_default();
             let with_problems_count = self.results.get(&(res, true)).cloned().unwrap_or_default();
             rows.push(row!(
@@ -348,7 +383,7 @@ where
 
         let mut table = Table::init(rows);
         table.set_titles(row!(
-            bc->"Success",
+            bc->"Quality",
             bc->"#",
             bc->"#With Prob.",
             bc->"Total",
@@ -369,7 +404,7 @@ impl<S: Eq + Hash> Default for StatsCounter<S> {
 }
 
 impl<S: Eq + Hash> StatsCounter<S> {
-    fn update(&mut self, result: ClassificationResult, known_problems: Option<S>) {
+    fn update(&mut self, result: ClassificationResultQuality, known_problems: Option<S>) {
         *self
             .results
             .entry((result, known_problems.is_some()))

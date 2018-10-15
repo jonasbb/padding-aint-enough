@@ -2,10 +2,15 @@
 
 extern crate failure;
 extern crate min_max_heap;
+extern crate serde_json;
 
 use failure::{Error, Fail};
 use min_max_heap::MinMaxHeap;
-use std::fmt::{self, Display};
+use serde_json::ser::Formatter;
+use std::{
+    fmt::{self, Display},
+    io,
+};
 
 pub fn take_largest<I, T>(iter: I, n: usize) -> Vec<T>
 where
@@ -77,5 +82,41 @@ pub trait ErrorExt {
 impl ErrorExt for Error {
     fn display_causes(&self) -> DisplayCauses {
         DisplayCauses(self.as_fail())
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct JsonlFormatter {
+    nesting_level: usize,
+}
+
+impl JsonlFormatter {
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl Formatter for JsonlFormatter {
+    #[inline]
+    fn begin_object<W: ?Sized>(&mut self, writer: &mut W) -> io::Result<()>
+    where
+        W: io::Write,
+    {
+        self.nesting_level += 1;
+        writer.write_all(b"{")
+    }
+
+    #[inline]
+    fn end_object<W: ?Sized>(&mut self, writer: &mut W) -> io::Result<()>
+    where
+        W: io::Write,
+    {
+        self.nesting_level -= 1;
+        writer.write_all(b"}")?;
+
+        if self.nesting_level == 0 {
+            writer.write_all(b"\n")?;
+        }
+        Ok(())
     }
 }

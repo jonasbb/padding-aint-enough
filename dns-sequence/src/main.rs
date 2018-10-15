@@ -18,6 +18,7 @@ extern crate rayon;
 extern crate sequences;
 #[macro_use]
 extern crate serde;
+extern crate serde_json;
 #[cfg(not(feature = "plot"))]
 extern crate serde_pickle;
 extern crate serde_with;
@@ -26,22 +27,21 @@ extern crate structopt;
 
 mod stats;
 
-use csv::{ReaderBuilder, Writer as CsvWriter, WriterBuilder};
-use encrypted_dns::{take_largest, FailExt};
+use csv::ReaderBuilder;
+use encrypted_dns::{take_largest, FailExt, JsonlFormatter};
 use failure::{Error, ResultExt};
-use misc_utils::{
-    fs::{file_open_read, file_open_write, WriteOptions},
-    Max, Min,
-};
+use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use rayon::prelude::*;
 use sequences::{
-    common_sequence_classifications::*, knn, replace_loading_failed, LabelledSequences, Sequence,
+    common_sequence_classifications::*,
+    knn::{self, ClassificationResult, ClassificationResultQuality},
+    replace_loading_failed, LabelledSequences, Sequence,
 };
 use serde::Serialize;
+use serde_json::Serializer as JsonSerializer;
 use stats::StatsCollector;
 use std::{
     collections::HashMap,
-    fmt::{self, Display},
     fs::{self, OpenOptions},
     io::{stdout, BufReader, Write},
     path::{Path, PathBuf},
@@ -82,23 +82,6 @@ struct CliArgs {
     k: usize,
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-enum ClassificationResult {
-    Correct,
-    Undetermined,
-    Wrong,
-}
-
-impl Display for ClassificationResult {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ClassificationResult::Correct => write!(f, "Correct"),
-            ClassificationResult::Undetermined => write!(f, "Undetermined"),
-            ClassificationResult::Wrong => write!(f, "Wrong"),
-        }
-    }
-}
-
 fn main() {
     use std::io::{self, Write};
 
@@ -135,7 +118,7 @@ fn run() -> Result<(), Error> {
         })
         .unwrap_or_else(|| Ok(Box::new(stdout())))
         .context("Cannot open writer for misclassifications.")?;
-    let mut mis_writer = WriterBuilder::new().has_headers(true).from_writer(writer);
+    let mut mis_writer = JsonSerializer::with_formatter(writer, JsonlFormatter::new());
 
     let (res1, res2) = rayon::join(
         || {
@@ -193,49 +176,38 @@ fn run() -> Result<(), Error> {
             assert_eq!(classification.len(), test_labels.len());
             info!("Done classification for k={}, start evaluation...", k);
             classification
-                .into_iter()
+                .iter()
                 .zip(&test_labels)
                 .zip(&test_data)
-                .for_each(
-                    |(
-                        ((ref class, min_dist, max_dist), (true_domain, mapped_domain)),
-                        sequence,
-                    )| {
-                        let class_res = if **class == *mapped_domain {
-                            ClassificationResult::Correct
-                        } else if class.contains(&**mapped_domain) {
-                            ClassificationResult::Undetermined
-                        } else {
-                            ClassificationResult::Wrong
-                        };
-                        let known_problems = sequence.classify().map(Atom::from);
-                        stats.update(
-                            k as u8,
-                            true_domain.clone(),
-                            mapped_domain.clone(),
-                            class_res,
-                            known_problems.clone(),
-                        );
+                .for_each(|((class_result, (true_domain, mapped_domain)), sequence)| {
+                    let result_quality = class_result.determine_quality(&*mapped_domain);
+                    let known_problems = sequence.classify().map(Atom::from);
 
-                        if class_res != ClassificationResult::Correct && log_misclassification(
+                    stats.update(
+                        k as u8,
+                        true_domain.clone(),
+                        mapped_domain.clone(),
+                        result_quality,
+                        known_problems.clone(),
+                    );
+
+                    if result_quality != ClassificationResultQuality::Exact
+                        && log_misclassification(
                             &mut mis_writer,
                             k,
                             &sequence,
                             &mapped_domain,
-                            &class,
-                            min_dist,
-                            max_dist,
+                            &class_result,
                             known_problems.as_ref().map(|x| &**x),
                         )
                         .is_err()
-                        {
-                            error!(
-                                "Cannot log misclassification for sequence: {}",
-                                sequence.id()
-                            );
-                        }
-                    },
-                );
+                    {
+                        error!(
+                            "Cannot log misclassification for sequence: {}",
+                            sequence.id()
+                        );
+                    }
+                });
             info!("Done evaluation for k={}", k);
         }
     }
@@ -443,30 +415,26 @@ fn load_all_dnstap_files(
     Ok(data)
 }
 
+// TODO this cannot work with CSV, change to json?
 #[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
-fn log_misclassification<W>(
-    csv_writer: &mut CsvWriter<W>,
+fn log_misclassification<W, FMT>(
+    writer: &mut JsonSerializer<W, FMT>,
     k: usize,
     sequence: &Sequence,
     label: &str,
-    class: &str,
-    min_dist: Min<usize>,
-    max_dist: Max<usize>,
+    class_result: &ClassificationResult,
     reason: Option<&str>,
 ) -> Result<(), Error>
 where
     W: Write,
+    FMT: serde_json::ser::Formatter,
 {
     #[derive(Serialize)]
     struct Out<'a> {
         id: &'a str,
         k: usize,
         label: &'a str,
-        #[serde(with = "serde_with::rust::display_fromstr")]
-        min_dist: Min<usize>,
-        #[serde(with = "serde_with::rust::display_fromstr")]
-        max_dist: Max<usize>,
-        class: &'a str,
+        class_result: &'a ClassificationResult,
         reason: Option<&'a str>,
     };
 
@@ -474,15 +442,11 @@ where
         id: sequence.id(),
         k,
         label,
-        min_dist,
-        max_dist,
-        class,
+        class_result,
         reason,
     };
 
-    csv_writer
-        .serialize(&out)
-        .map_err(|err| format_err!("{}", err))
+    out.serialize(writer).map_err(|err| format_err!("{}", err))
 }
 
 /// Calculate the reverse cumulitive sum
