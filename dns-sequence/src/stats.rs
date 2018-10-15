@@ -19,9 +19,9 @@ use std::{
 };
 use string_cache::DefaultAtom as Atom;
 
-// TODO needs update for new, longer quality list
 const COLORS: &[&str] = &[
-    "#349e35", "#98dd8b", "#df802e", "#feba7c", "#d33134", "#fe9897",
+    "#2ca02c", "#98df8a", "#bcbd22", "#dbdb8d", "#1f77b4", "#aec7e8", "#ff7f0e", "#ffbb78",
+    "#9467bd", "#c5b0d5", "#d62728", "#ff9896",
 ];
 
 lazy_static! {
@@ -226,16 +226,18 @@ impl<S: Eq + Hash> StatsCollector<S> {
                 }
             }
 
-            let tmp: Vec<(String, Vec<f64>)> = ClassificationResultQuality::iter_variants()
+            let plot_data = &plot_data;
+            let tmp: Vec<(String, &Vec<f64>)> = ClassificationResultQuality::iter_variants()
                 .rev()
-                .zip([false, true].iter())
-                .map(|(quality, &with_problems)| {
-                    let mut label = quality.to_string();
-                    if with_problems {
-                        label.push_str(" (wR)");
-                    }
-                    let datapoints = plot_data.remove(&(quality, with_problems)).unwrap();
-                    (label, datapoints)
+                .flat_map(|quality| {
+                    [false, true].iter().cloned().map(move |with_problems| {
+                        let mut label = quality.to_string();
+                        if with_problems {
+                            label.push_str(" (wR)");
+                        }
+                        let datapoints = &plot_data[&(quality, with_problems)];
+                        (label, datapoints)
+                    })
                 })
                 .collect();
 
