@@ -18,7 +18,7 @@ serde = { version = "1.0.79", features = [ "derive" ] }
 serde-pickle = "0.4.1"
 serde_with = "0.2.2"
 string_cache = "0.7.3"
-structopt = "0.2.11"
+structopt = "0.2.12"
 sequences = { path = "../sequences/" }
 
 [features]
