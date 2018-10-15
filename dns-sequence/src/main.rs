@@ -28,7 +28,7 @@ extern crate structopt;
 mod stats;
 
 use csv::ReaderBuilder;
-use encrypted_dns::{take_largest, FailExt, JsonlFormatter};
+use encrypted_dns::{FailExt, JsonlFormatter};
 use failure::{Error, ResultExt};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use rayon::prelude::*;
@@ -103,9 +103,6 @@ fn run() -> Result<(), Error> {
     env_logger::init();
     let cli_args = CliArgs::from_args();
 
-    // Controls how many folds there are
-    let at_most_sequences_per_label = 10;
-
     let writer: Box<Write> = cli_args
         .misclassifications
         .as_ref()
@@ -142,7 +139,7 @@ fn run() -> Result<(), Error> {
     res2?;
 
     info!("Start loading dnstap files...");
-    let data = load_all_dnstap_files(&cli_args.base_dir, at_most_sequences_per_label)?;
+    let data = load_all_dnstap_files(&cli_args.base_dir)?;
     info!("Done loading dnstap files.");
     {
         // delete non-permanent memory
@@ -155,7 +152,7 @@ fn run() -> Result<(), Error> {
     // Collect the stats during the execution and print them at the end
     let mut stats = StatsCollector::new();
 
-    for fold in 0..at_most_sequences_per_label {
+    for fold in 0..10 {
         info!("Testing for fold {}", fold);
         info!("Start splitting trainings and test data...");
         let (training_data, test) = knn::split_training_test_data(&*data, fold as u8);
@@ -318,10 +315,7 @@ fn make_check_confusion_domains() -> impl Fn(&Atom) -> Atom {
     }
 }
 
-fn load_all_dnstap_files(
-    base_dir: &Path,
-    at_most_sequences_per_label: usize,
-) -> Result<Vec<LabelledSequences>, Error> {
+fn load_all_dnstap_files(base_dir: &Path) -> Result<Vec<LabelledSequences>, Error> {
     let check_confusion_domains = make_check_confusion_domains();
 
     // Get a list of directories
@@ -372,7 +366,7 @@ fn load_all_dnstap_files(
             // sort filenames for predictable results
             filenames.sort();
 
-            let mut sequences: Vec<Sequence> = filenames
+            let sequences: Vec<Sequence> = filenames
                 .into_iter()
                 .filter_map(|dnstap_file| {
                     debug!("Processing dnstap file '{}'", dnstap_file.display());
@@ -387,11 +381,6 @@ fn load_all_dnstap_files(
                     }
                 })
                 .collect();
-
-            // TODO this is sooo ugly
-            // Only retain 5 of the possibilities which have the highest number of diversity
-            // Sequences are sorted by complexity
-            sequences = take_largest(sequences, at_most_sequences_per_label);
 
             // Some directories do not contain data, e.g., because the site didn't exists
             // Skip all directories with 0 results
@@ -415,7 +404,6 @@ fn load_all_dnstap_files(
     Ok(data)
 }
 
-// TODO this cannot work with CSV, change to json?
 #[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
 fn log_misclassification<W, FMT>(
     writer: &mut JsonSerializer<W, FMT>,
