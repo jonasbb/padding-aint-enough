@@ -140,7 +140,7 @@ fn run() -> Result<(), Error> {
 
     info!("Start loading dnstap files...");
     let data = load_all_dnstap_files(&cli_args.base_dir)?;
-    info!("Done loading dnstap files.");
+    info!("Done loading dnstap files. Found {} domains.", data.len());
     {
         // delete non-permanent memory
         let mut lock = CONFUSION_DOMAINS
@@ -325,7 +325,9 @@ fn load_all_dnstap_files(base_dir: &Path) -> Result<Vec<LabelledSequences>, Erro
             x.and_then(|entry| {
                 // Result<Option<PathBuf>>
                 entry.file_type().map(|ft| {
-                    if ft.is_dir() {
+                    if ft.is_dir()
+                        || (ft.is_symlink() && fs::metadata(&entry.path()).ok()?.is_dir())
+                    {
                         Some(entry.path())
                     } else {
                         None
