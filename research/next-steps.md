@@ -14,7 +14,8 @@
     2. [Different Clients](#different-clients)
     3. [Impact of larger Datasets](#impact-of-larger-datasets)
     4. [With or Without DNSSEC](#with-or-without-dnssec)
-    5. [TBD](#tbd)
+    5. [Other Machine Learning / Classifications](#other-machine-learning--classifications)
+    6. [TBD](#tbd)
 6. [Limitations / Assumptions](#limitations--assumptions)
 
 ## Current State
@@ -149,6 +150,11 @@ There are different modes, how an upstream resolver can be used.
 If the TRR approach is taken, no DNSSEC related queries should be visible and the only DNSSEC related responses should be `NSEC(3)` (if at all).
 With the Local approach lots of DNSSEC related queries occur, for the different `DS`, `DNSKEY`, `NSEC3PARAMS` and many DNSSEC related responses like `RRSIG` and `NSEC(3)`.
 
+### Other Machine Learning / Classifications
+
+Implemented so far is a Damerau–Levenshtein distance with custom costs.
+Other distance algorithms and maybe even ML could be applied.
+
 ### TBD
 
 Create measure of impact.
@@ -160,6 +166,9 @@ Given a trace, how large is the k for k-anonymity.
 
 * The cache is empty except for the TLD's in the resolver.
     If either the browser or DNS cache contains the required data, then no outgoing request will be seeen.
+    * We can retest with certain things cached. Which things to cache?
 * The client finishes loading the page.
 * There are no concurrent DNS requests.
 * SNI is not encrypted (pending draft for ESNI), so curious ISP has other options.
+* What about DoH? It uses port 443, which makes it harder to detect. The IP/domain can also be hidden, if we assume the DNS resolver in CDN scenario.
+* Extracting the DNS packet size, if it is larger than the MTU.
