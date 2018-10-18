@@ -66,6 +66,9 @@ pub mod common_sequence_classifications {
     pub const R009: &str = "R009 No network response received.";
 }
 
+//                         S1, S2, S3, S4, S5, S6, G?
+pub type OneHotEncoding = (u8, u8, u8, u8, u8, u8, u8);
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sequence(Vec<SequenceElement>, String);
 
@@ -90,6 +93,14 @@ impl Sequence {
                 _ => None,
             })
             .sum()
+    }
+
+    pub fn to_one_hot_encoding(&self) -> Vec<OneHotEncoding> {
+        self.0
+            .iter()
+            .cloned()
+            .map(SequenceElement::to_one_hot_encoding)
+            .collect()
     }
 
     pub fn distance(&self, other: &Self) -> usize {
@@ -352,6 +363,21 @@ impl SequenceElement {
         }
 
         20
+    }
+
+    fn to_one_hot_encoding(self) -> OneHotEncoding {
+        use self::SequenceElement::*;
+        match self {
+            Size(0) => unreachable!(),
+            Size(1) => (1, 0, 0, 0, 0, 0, 0),
+            Size(2) => (0, 1, 0, 0, 0, 0, 0),
+            Size(3) => (0, 0, 1, 0, 0, 0, 0),
+            Size(4) => (0, 0, 0, 1, 0, 0, 0),
+            Size(5) => (0, 0, 0, 0, 1, 0, 0),
+            Size(6) => (0, 0, 0, 0, 0, 1, 0),
+            Gap(g) => (0, 0, 0, 0, 0, 0, g),
+            _ => unimplemented!(),
+        }
     }
 }
 

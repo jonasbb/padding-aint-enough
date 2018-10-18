@@ -9,6 +9,7 @@ extern crate failure;
 extern crate pyo3;
 extern crate sequences;
 
+use sequences::OneHotEncoding;
 use encrypted_dns::ErrorExt;
 use failure::Error;
 use pyo3::{exc::Exception, prelude::*};
@@ -62,6 +63,10 @@ impl PySequence {
     /// Try to classify the sequence, if it belongs to one of a couple of common categories
     pub fn classify(&self) -> PyResult<Option<&'static str>> {
         Ok(self.sequence.classify())
+    }
+
+    pub fn to_one_hot_encoding(&self) -> PyResult<Vec<OneHotEncoding>> {
+        Ok(self.sequence.to_one_hot_encoding())
     }
 }
 
