@@ -3,6 +3,7 @@
 *.generated
 cluster*.svg
 src/protos
+tensorboardlogs
 
 # Created by https://www.gitignore.io/api/python,rust
 
