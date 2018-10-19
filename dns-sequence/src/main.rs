@@ -78,7 +78,7 @@ struct CliArgs {
     #[structopt(long = "statistics", parse(from_os_str))]
     statistics: Option<PathBuf>,
     /// The largest `k` to be used for knn. Only odd numbers are tested.
-    #[structopt(short = "k", default_value = "3")]
+    #[structopt(short = "k", default_value = "1")]
     k: usize,
 }
 
