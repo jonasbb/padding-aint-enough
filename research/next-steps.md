@@ -15,8 +15,10 @@
     3. [Impact of larger Datasets](#impact-of-larger-datasets)
     4. [With or Without DNSSEC](#with-or-without-dnssec)
     5. [Other Machine Learning / Classifications](#other-machine-learning--classifications)
+        1. [RNN](#rnn)
     6. [TBD](#tbd)
-6. [Limitations / Assumptions](#limitations--assumptions)
+6. [Countermeasures](#countermeasures)
+7. [Limitations / Assumptions](#limitations--assumptions)
 
 ## Current State
 
@@ -155,12 +157,26 @@ With the Local approach lots of DNSSEC related queries occur, for the different 
 Implemented so far is a Damerau–Levenshtein distance with custom costs.
 Other distance algorithms and maybe even ML could be applied.
 
+#### RNN
+
+We can use one hot encoding to encode the different packet and gap sizes.
+The sequences can then be padded to the longest sequence.
+The longest sequence is around nine times larger than the average sequence for the no DNSSEC dataset.
+
 ### TBD
 
 Create measure of impact.
 How likely is an impact on privacy.
 
 Given a trace, how large is the k for k-anonymity.
+
+## Countermeasures
+
+* Different padding options?
+* Differential Privacy?
+    * Add noisy requests
+    * Add bogus RRsets into responses
+* Make trace look like other trace
 
 ## Limitations / Assumptions
 
