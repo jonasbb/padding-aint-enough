@@ -16,6 +16,7 @@ members = [
     "pylib",
     "sequences",
     "taskmanager",
+    "third-party-resources",
 ]
 
 [profile.dev]

@@ -1502,6 +1502,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "third-party-resources"
+version = "0.1.0"
+dependencies = [
+ "csv 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "dnstap 0.1.0",
+ "env_logger 0.5.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "failure 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazy_static 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rayon 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.80 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.32 (registry+https://github.com/rust-lang/crates.io-index)",
+ "structopt 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "structopt-derive 0.2.12 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "thread-scoped"
 version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
