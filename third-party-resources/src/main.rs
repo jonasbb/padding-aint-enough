@@ -1,5 +1,15 @@
 #![feature(transpose_result)]
 
+extern crate csv;
+extern crate dnstap;
+extern crate failure;
+extern crate lazy_static;
+extern crate log;
+extern crate misc_utils;
+extern crate rayon;
+extern crate serde;
+extern crate structopt;
+
 use csv::ReaderBuilder;
 use dnstap::{
     dnstap::Message_Type,
