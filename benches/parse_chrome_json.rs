@@ -1,12 +1,11 @@
 extern crate chrome;
-#[macro_use]
 extern crate criterion;
 extern crate failure;
 extern crate misc_utils;
 extern crate serde_json;
 
 use chrome::ChromeDebuggerMessage;
-use criterion::Criterion;
+use criterion::{criterion_group, criterion_main, Criterion};
 use failure::{Error, ResultExt};
 use misc_utils::fs::file_open_read;
 use std::{

@@ -4,17 +4,16 @@
 extern crate csv;
 extern crate env_logger;
 extern crate failure;
-#[macro_use]
 extern crate log;
 extern crate misc_utils;
 extern crate serde;
 extern crate structopt;
-#[macro_use]
-extern crate serde_derive;
 
 use csv::ReaderBuilder;
 use failure::{Error, ResultExt};
+use log::info;
 use misc_utils::fs::file_open_read;
+use serde::Deserialize;
 use std::{
     collections::BTreeSet,
     io::{self, Write},

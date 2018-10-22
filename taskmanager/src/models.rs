@@ -1,9 +1,9 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 
 use chrono::{DateTime, Utc};
+use diesel_derive_enum::DbEnum;
 use schema::{infos, tasks};
 
-#[allow(proc_macro_derive_resolution_fallback)]
 #[derive(Identifiable, Queryable, AsChangeset, QueryableByName, Debug, PartialEq, Eq)]
 #[changeset_options(treat_none_as_null = "true")]
 #[table_name = "tasks"]

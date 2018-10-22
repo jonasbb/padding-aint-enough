@@ -15,7 +15,6 @@ log = "0.4.3"
 misc_utils = "2.0.0"
 rayon = "1.0.1"
 sequences = { path = "../sequences" }
-serde = "1.0.70"
-serde_derive = "1.0.70"
+serde = { version = "1.0.70", features = [ "derive" ] }
 structopt = "0.2.12"
 toml = "0.4.8"

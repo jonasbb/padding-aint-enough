@@ -1,6 +1,6 @@
 //! This module contains different utility functions, such as command invocations
 
-use failure::{Error, ResultExt};
+use failure::{bail, Error, ResultExt};
 use std::{
     ffi::{OsStr, OsString},
     fs, io,

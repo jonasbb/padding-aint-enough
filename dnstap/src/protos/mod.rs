@@ -1,7 +1,7 @@
 pub mod dnstap;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
-use failure::Error;
+use failure::{bail, format_err, Error};
 use std::{
     convert::TryFrom,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},

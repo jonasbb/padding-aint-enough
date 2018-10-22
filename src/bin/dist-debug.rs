@@ -4,7 +4,6 @@ extern crate encrypted_dns;
 extern crate env_logger;
 extern crate failure;
 extern crate glob;
-#[macro_use]
 extern crate log;
 extern crate rayon;
 extern crate sequences;
@@ -13,6 +12,7 @@ extern crate structopt;
 use encrypted_dns::FailExt;
 use failure::{Error, ResultExt};
 use glob::glob;
+use log::{debug, info, warn};
 use rayon::prelude::*;
 use sequences::{sequence_stats, Sequence};
 use std::path::PathBuf;

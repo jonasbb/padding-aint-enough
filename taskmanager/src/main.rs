@@ -1,13 +1,9 @@
-#![allow(proc_macro_derive_resolution_fallback)]
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 
 extern crate encrypted_dns;
 extern crate env_logger;
-#[macro_use]
 extern crate failure;
-#[macro_use]
 extern crate lazy_static;
-#[macro_use]
 extern crate log;
 extern crate misc_utils;
 extern crate rayon;
@@ -20,7 +16,9 @@ extern crate toml;
 mod utils;
 
 use encrypted_dns::ErrorExt;
-use failure::{Error, ResultExt};
+use failure::{bail, Error, ResultExt};
+use lazy_static::lazy_static;
+use log::{debug, error, info, warn};
 use misc_utils::fs::file_open_read;
 use rayon::prelude::*;
 use sequences::{sequence_stats, Sequence};

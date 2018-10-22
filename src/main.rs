@@ -4,25 +4,20 @@
 extern crate chrome;
 extern crate chrono;
 extern crate dnstap;
+extern crate encrypted_dns;
 extern crate env_logger;
-#[macro_use]
 extern crate failure;
-#[macro_use]
+extern crate lazy_static;
 extern crate log;
 extern crate misc_utils;
 extern crate petgraph;
 extern crate petgraph_graphml;
-extern crate serde;
-extern crate structopt;
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate lazy_static;
-extern crate encrypted_dns;
 extern crate sequences;
+extern crate serde;
 extern crate serde_json;
 extern crate serde_pickle;
 extern crate serde_with;
+extern crate structopt;
 extern crate url;
 
 mod depgraph;
@@ -34,7 +29,9 @@ use dnstap::{
     dnstap::Message_Type,
     protos::{Dnstap, DnstapContent},
 };
-use failure::{Error, ResultExt};
+use failure::{bail, format_err, Error, ResultExt};
+use lazy_static::lazy_static;
+use log::{debug, info, warn};
 use misc_utils::{
     fs::{file_open_read, file_open_write, WriteOptions},
     Min,
@@ -42,6 +39,7 @@ use misc_utils::{
 use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
 use sequences::{MatchKey, Query, QuerySource, UnmatchedClientQuery};
+use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
     collections::BTreeMap,

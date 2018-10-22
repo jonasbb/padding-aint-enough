@@ -1,11 +1,11 @@
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 
 extern crate chrono;
-#[macro_use]
 extern crate serde;
 extern crate serde_with;
 
 use chrono::{DateTime, Duration, Utc};
+use serde::{Deserialize, Serialize};
 use serde_with::chrono::datetime_utc_ts_seconds_from_any;
 
 #[cfg_attr(feature = "cargo-clippy", allow(large_enum_variant))]

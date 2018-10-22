@@ -1,8 +1,7 @@
-#[macro_use]
 extern crate criterion;
 extern crate min_max_heap;
 
-use criterion::{Criterion, Fun};
+use criterion::{criterion_group, criterion_main, Criterion, Fun};
 use min_max_heap::MinMaxHeap;
 use std::cmp::Ordering;
 

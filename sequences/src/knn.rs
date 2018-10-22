@@ -1,4 +1,6 @@
+use serde::Serialize;
 use super::{LabelledSequence, LabelledSequences, Sequence};
+use log::{debug, error};
 use misc_utils::{Max, Min};
 use rayon::prelude::*;
 use std::{

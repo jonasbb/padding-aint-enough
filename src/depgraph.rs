@@ -2,9 +2,11 @@ use chrome::{
     ChromeDebuggerMessage, Initiator, InitiatorScript, RedirectResponse, Request, StackTrace,
     TargetInfo, TargetType,
 };
-use failure::{Error, ResultExt};
+use failure::{bail, format_err, Error, ResultExt};
+use log::{debug, error, info, trace, warn};
 use misc_utils::Min;
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
+use serde::Serialize;
 use should_ignore_url;
 use std::{
     cell::RefCell,

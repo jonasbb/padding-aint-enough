@@ -3,20 +3,17 @@
 extern crate chrono;
 #[macro_use]
 extern crate diesel;
-#[macro_use]
 extern crate diesel_derive_enum;
-#[macro_use]
 extern crate failure;
 extern crate misc_utils;
 extern crate serde;
-#[macro_use]
-extern crate serde_derive;
 extern crate toml;
 
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
-use failure::{Error, ResultExt};
+use failure::{bail, format_err, Error, ResultExt};
 use misc_utils::fs::file_open_read;
+use serde::{Deserialize, Serialize};
 use std::{
     fmt::{self, Debug, Display},
     path::{Path, PathBuf},

@@ -3,15 +3,11 @@
 
 extern crate chrono;
 extern crate dnstap;
-#[macro_use]
 extern crate failure;
-#[macro_use]
 extern crate lazy_static;
-#[macro_use]
 extern crate log;
 extern crate misc_utils;
 extern crate rayon;
-#[macro_use]
 extern crate serde;
 extern crate serde_with;
 extern crate string_cache;
@@ -20,9 +16,12 @@ pub mod knn;
 mod load_sequence;
 mod utils;
 
+use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use common_sequence_classifications::*;
 use failure::Error;
+use lazy_static::lazy_static;
+use log::error;
 use misc_utils::Min;
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},

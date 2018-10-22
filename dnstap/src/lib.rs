@@ -3,10 +3,8 @@
 #![feature(try_from)]
 
 extern crate chrono;
-#[macro_use]
 extern crate failure;
 extern crate framestream;
-#[macro_use]
 extern crate log;
 extern crate misc_utils;
 extern crate protobuf;
@@ -15,8 +13,9 @@ extern crate trust_dns_proto;
 pub mod protos;
 
 use dnstap::Message_Type;
-use failure::{Error, ResultExt};
+use failure::{bail, Error, ResultExt};
 use framestream::DecoderReader;
+use log::warn;
 use misc_utils::fs::file_open_read;
 pub use protos::dnstap;
 use protos::DnstapContent;

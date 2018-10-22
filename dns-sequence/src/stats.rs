@@ -1,6 +1,6 @@
-// use super::*;
 use csv::WriterBuilder;
 use failure::{format_err, Error, ResultExt};
+use lazy_static::lazy_static;
 use misc_utils::fs::{file_open_write, WriteOptions};
 use prettytable::{
     cell,
@@ -423,6 +423,7 @@ impl<S: Eq + Hash> StatsCounter<S> {
 #[cfg(not(feature = "plot"))]
 mod plot {
     use failure::Error;
+    use log::info;
     use misc_utils::fs::{file_open_write, WriteOptions};
     use serde_pickle;
     use std::{collections::HashMap, fs::OpenOptions, path::Path};

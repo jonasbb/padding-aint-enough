@@ -6,7 +6,8 @@ use dnstap::{
     protos::{self, DnstapContent},
     sanity_check_dnstap,
 };
-use failure::Error;
+use failure::{bail, format_err, Error};
+use log::{debug, info};
 use std::{collections::BTreeMap, path::Path};
 
 enum Padding {

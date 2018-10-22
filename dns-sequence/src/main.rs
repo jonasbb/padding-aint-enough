@@ -4,11 +4,8 @@
 extern crate csv;
 extern crate encrypted_dns;
 extern crate env_logger;
-#[macro_use]
 extern crate failure;
-#[macro_use]
 extern crate lazy_static;
-#[macro_use]
 extern crate log;
 extern crate misc_utils;
 #[cfg(feature = "plot")]
@@ -16,7 +13,6 @@ extern crate plot;
 extern crate prettytable;
 extern crate rayon;
 extern crate sequences;
-#[macro_use]
 extern crate serde;
 extern crate serde_json;
 #[cfg(not(feature = "plot"))]
@@ -29,7 +25,9 @@ mod stats;
 
 use csv::ReaderBuilder;
 use encrypted_dns::{FailExt, JsonlFormatter};
-use failure::{Error, ResultExt};
+use failure::{bail, format_err, Error, ResultExt};
+use lazy_static::lazy_static;
+use log::{debug, error, info, warn};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use rayon::prelude::*;
 use sequences::{
@@ -37,7 +35,7 @@ use sequences::{
     knn::{self, ClassificationResult, ClassificationResultQuality},
     replace_loading_failed, LabelledSequences, Sequence,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Serializer as JsonSerializer;
 use stats::StatsCollector;
 use std::{
