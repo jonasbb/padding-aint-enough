@@ -7,7 +7,7 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 chrono = "0.4.6"
 failure = "0.1.2"
 framestream = { path = "../framestream" }
-log = "0.4.5"
+log = "0.4.6"
 misc_utils = "2.1.0"
 protobuf = "2.0.5"
 trust-dns-proto = "0.4.3"

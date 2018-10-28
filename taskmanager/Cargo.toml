@@ -11,7 +11,7 @@ encrypted-dns = { path = ".." }
 env_logger = "0.5.10"
 failure = "0.1.1"
 lazy_static = "1.0.1"
-log = "0.4.3"
+log = "0.4.6"
 misc_utils = "2.0.0"
 rayon = "1.0.1"
 sequences = { path = "../sequences" }
