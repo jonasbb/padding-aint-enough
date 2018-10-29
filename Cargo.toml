@@ -70,7 +70,7 @@ version = "0.2.0"
 features = [ "chrono" ]
 
 [build-dependencies]
-protoc-rust = "2.1.1"
+protoc-rust = "2.1.2"
 
 [dev-dependencies]
 chrome = { path = "./chrome" }
