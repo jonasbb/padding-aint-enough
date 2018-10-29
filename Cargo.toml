@@ -52,7 +52,7 @@ env_logger = "0.5.10"
 failure = "0.1.1"
 glob = "0.2.11"
 lazy_static = "1.0.1"
-log = "0.4.1"
+log = "0.4.6"
 min-max-heap = "1.2.0"
 misc_utils = "2.1.0"
 petgraph = { version = "0.4.13", features = [ "serde-1" ] }
