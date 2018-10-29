@@ -1,5 +1,5 @@
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-#![feature(nll)]
+#![feature(nll, transpose_result)]
 
 extern crate chrono;
 extern crate dnstap;
@@ -16,13 +16,13 @@ pub mod knn;
 mod load_sequence;
 mod utils;
 
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
 use common_sequence_classifications::*;
 use failure::Error;
 use lazy_static::lazy_static;
 use log::error;
 use misc_utils::Min;
+use serde::{Deserialize, Serialize};
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     collections::HashMap,
@@ -32,6 +32,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 use string_cache::DefaultAtom as Atom;
+pub use utils::load_all_dnstap_files_from_dir;
 
 lazy_static! {
     static ref LOADING_FAILED: RwLock<Arc<HashMap<Atom, &'static str>>> = RwLock::default();

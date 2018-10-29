@@ -1,4 +1,98 @@
+use crate::Sequence;
+use failure::{Error, ResultExt};
 use knn::ClassifierData;
+use log::{debug, warn};
+use rayon::prelude::*;
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
+
+pub fn load_all_dnstap_files_from_dir(
+    base_dir: &Path,
+) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
+    // Get a list of directories
+    // Each directory corresponds to a label
+    let directories: Vec<PathBuf> = fs::read_dir(base_dir)?
+        .flat_map(|x| {
+            x.and_then(|entry| {
+                // Result<Option<PathBuf>>
+                entry.file_type().map(|ft| {
+                    if ft.is_dir()
+                        || (ft.is_symlink() && fs::metadata(&entry.path()).ok()?.is_dir())
+                    {
+                        Some(entry.path())
+                    } else {
+                        None
+                    }
+                })
+            })
+            .transpose()
+        })
+        .collect::<Result<_, _>>()?;
+
+    // Pairs of Label with Data (the Sequences)
+    let data: Vec<(String, Vec<Sequence>)> = directories
+        .into_par_iter()
+        .map(|dir| {
+            let label = dir
+                .file_name()
+                .expect("Each directory has a name")
+                .to_string_lossy()
+                .into();
+
+            let mut filenames: Vec<PathBuf> = fs::read_dir(&dir)?
+                .flat_map(|x| {
+                    x.and_then(|entry| {
+                        // Result<Option<PathBuf>>
+                        entry.file_type().map(|ft| {
+                            if ft.is_file()
+                                && entry.file_name().to_string_lossy().contains(".dnstap")
+                            {
+                                Some(entry.path())
+                            } else {
+                                None
+                            }
+                        })
+                    })
+                    .transpose()
+                })
+                .collect::<Result<_, _>>()?;
+            // sort filenames for predictable results
+            filenames.sort();
+
+            let sequences: Vec<Sequence> = filenames
+                .into_iter()
+                .filter_map(|dnstap_file| {
+                    debug!("Processing dnstap file '{}'", dnstap_file.display());
+                    match Sequence::from_path(&*dnstap_file).with_context(|_| {
+                        format!("Processing dnstap file '{}'", dnstap_file.display())
+                    }) {
+                        Ok(seq) => Some(seq),
+                        Err(err) => {
+                            warn!("{}", err);
+                            None
+                        }
+                    }
+                })
+                .collect();
+
+            // Some directories do not contain data, e.g., because the site didn't exists
+            // Skip all directories with 0 results
+            if sequences.is_empty() {
+                warn!("Directory contains no data: {}", dir.display());
+                Ok(None)
+            } else {
+                Ok(Some((label, sequences)))
+            }
+        })
+        // Remove all the empty directories from the previous step
+        .filter_map(|x| x.transpose())
+        .collect::<Result<_, Error>>()?;
+
+    // return all loaded data
+    Ok(data)
+}
 
 pub(crate) fn take_smallest<'a, I, F, S>(iter: I, n: usize) -> Vec<ClassifierData<'a, S>>
 where
