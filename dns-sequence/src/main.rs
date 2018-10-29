@@ -1,6 +1,3 @@
-#![feature(transpose_result)]
-#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-
 extern crate csv;
 extern crate encrypted_dns;
 extern crate env_logger;
@@ -11,7 +8,6 @@ extern crate misc_utils;
 #[cfg(feature = "plot")]
 extern crate plot;
 extern crate prettytable;
-extern crate rayon;
 extern crate sequences;
 extern crate serde;
 extern crate serde_json;
@@ -24,12 +20,11 @@ extern crate structopt;
 mod stats;
 
 use csv::ReaderBuilder;
-use encrypted_dns::{FailExt, JsonlFormatter};
+use encrypted_dns::JsonlFormatter;
 use failure::{bail, format_err, Error, ResultExt};
 use lazy_static::lazy_static;
-use log::{debug, error, info, warn};
+use log::{error, info};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
-use rayon::prelude::*;
 use sequences::{
     common_sequence_classifications::*,
     knn::{self, ClassificationResult, ClassificationResultQuality},
@@ -40,7 +35,7 @@ use serde_json::Serializer as JsonSerializer;
 use stats::StatsCollector;
 use std::{
     collections::HashMap,
-    fs::{self, OpenOptions},
+    fs::OpenOptions,
     io::{stdout, BufReader, Write},
     path::{Path, PathBuf},
     sync::{Arc, RwLock},
@@ -115,26 +110,15 @@ fn run() -> Result<(), Error> {
         .context("Cannot open writer for misclassifications.")?;
     let mut mis_writer = JsonSerializer::with_formatter(writer, JsonlFormatter::new());
 
-    let (res1, res2) = rayon::join(
-        || {
-            info!("Start loading confusion domains...");
-            let res = prepare_confusion_domains(&cli_args.confusion_domains);
-            info!("Done loading confusion domains.");
-            res
-        },
-        || {
-            if let Some(ref path) = &cli_args.loading_failed {
-                info!("Start loading of failed domains...");
-                let res = prepare_failed_domains(path);
-                info!("Done loading of failed domains.");
-                res
-            } else {
-                Ok(())
-            }
-        },
-    );
-    res1?;
-    res2?;
+    info!("Start loading confusion domains...");
+    prepare_confusion_domains(&cli_args.confusion_domains)?;
+    info!("Done loading confusion domains.");
+
+    if let Some(ref path) = &cli_args.loading_failed {
+        info!("Start loading of failed domains...");
+        prepare_failed_domains(path)?;
+        info!("Done loading of failed domains.");
+    }
 
     info!("Start loading dnstap files...");
     let data = load_all_dnstap_files(&cli_args.base_dir)?;
@@ -316,95 +300,28 @@ fn make_check_confusion_domains() -> impl Fn(&Atom) -> Atom {
 fn load_all_dnstap_files(base_dir: &Path) -> Result<Vec<LabelledSequences>, Error> {
     let check_confusion_domains = make_check_confusion_domains();
 
-    // Get a list of directories
-    // Each directory corresponds to a label
-    let directories: Vec<PathBuf> = fs::read_dir(base_dir)?
-        .flat_map(|x| {
-            x.and_then(|entry| {
-                // Result<Option<PathBuf>>
-                entry.file_type().map(|ft| {
-                    if ft.is_dir()
-                        || (ft.is_symlink() && fs::metadata(&entry.path()).ok()?.is_dir())
-                    {
-                        Some(entry.path())
-                    } else {
-                        None
-                    }
-                })
-            })
-            .transpose()
-        })
-        .collect::<Result<_, _>>()?;
+    Ok(sequences::load_all_dnstap_files_from_dir(base_dir)
+        .with_context(|_| {
+            format!(
+                "Could not load some sequence files from dir: {}",
+                base_dir.display()
+            )
+        })?
+        .into_iter()
+        .map(|(label, seqs): (String, Vec<Sequence>)| {
+            let label = Atom::from(label);
+            let mapped_label = check_confusion_domains(&label);
 
-    // Pairs of Label with Data (the Sequences)
-    let data: Vec<LabelledSequences> = directories
-        .into_par_iter()
-        .map(|dir| {
-            let label = dir
-                .file_name()
-                .expect("Each directory has a name")
-                .to_string_lossy()
-                .into();
-
-            let mut filenames: Vec<PathBuf> = fs::read_dir(&dir)?
-                .flat_map(|x| {
-                    x.and_then(|entry| {
-                        // Result<Option<PathBuf>>
-                        entry.file_type().map(|ft| {
-                            if ft.is_file()
-                                && entry.file_name().to_string_lossy().contains(".dnstap")
-                            {
-                                Some(entry.path())
-                            } else {
-                                None
-                            }
-                        })
-                    })
-                    .transpose()
-                })
-                .collect::<Result<_, _>>()?;
-            // sort filenames for predictable results
-            filenames.sort();
-
-            let sequences: Vec<Sequence> = filenames
-                .into_iter()
-                .filter_map(|dnstap_file| {
-                    debug!("Processing dnstap file '{}'", dnstap_file.display());
-                    match Sequence::from_path(&*dnstap_file).with_context(|_| {
-                        format!("Processing dnstap file '{}'", dnstap_file.display())
-                    }) {
-                        Ok(seq) => Some(seq),
-                        Err(err) => {
-                            warn!("{}", err.display_causes());
-                            None
-                        }
-                    }
-                })
-                .collect();
-
-            // Some directories do not contain data, e.g., because the site didn't exists
-            // Skip all directories with 0 results
-            if sequences.is_empty() {
-                warn!("Directory contains no data: {}", dir.display());
-                Ok(None)
-            } else {
-                let mapped_label = check_confusion_domains(&label);
-                Ok(Some(LabelledSequences {
-                    true_domain: label,
-                    mapped_domain: mapped_label,
-                    sequences,
-                }))
+            LabelledSequences {
+                true_domain: label,
+                mapped_domain: mapped_label,
+                sequences: seqs,
             }
         })
-        // Remove all the empty directories from the previous step
-        .filter_map(|x| x.transpose())
-        .collect::<Result<_, Error>>()?;
-
-    // return all loaded data
-    Ok(data)
+        .collect())
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
+#[allow(clippy::too_many_arguments)]
 fn log_misclassification<W, FMT>(
     writer: &mut JsonSerializer<W, FMT>,
     k: usize,
