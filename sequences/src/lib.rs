@@ -1,4 +1,3 @@
-#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
 #![feature(nll, transpose_result)]
 
 extern crate chrono;
@@ -38,7 +37,7 @@ lazy_static! {
     static ref LOADING_FAILED: RwLock<Arc<HashMap<Atom, &'static str>>> = RwLock::default();
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(implicit_hasher))]
+#[allow(clippy::implicit_hasher)]
 pub fn replace_loading_failed(new_data: HashMap<Atom, &'static str>) {
     *LOADING_FAILED
         .write()

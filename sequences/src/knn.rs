@@ -1,8 +1,8 @@
-use serde::Serialize;
 use super::{LabelledSequence, LabelledSequences, Sequence};
 use log::{debug, error};
 use misc_utils::{Max, Min};
 use rayon::prelude::*;
+use serde::Serialize;
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     fmt::{self, Display},
@@ -109,7 +109,7 @@ impl ClassificationResult {
         result
     }
 
-    #[cfg_attr(feature = "cargo-clippy", allow(block_in_if_condition_stmt))]
+    #[allow(clippy::block_in_if_condition_stmt)]
     pub fn determine_quality(&self, real_label: &str) -> ClassificationResultQuality {
         if self.is(real_label) {
             return ClassificationResultQuality::Exact;
@@ -215,7 +215,7 @@ where
         .collect()
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(type_complexity))]
+#[allow(clippy::type_complexity)]
 pub fn split_training_test_data<S>(
     data: &[LabelledSequences<S>],
     fold: u8,

@@ -1,19 +1,15 @@
 #![feature(specialization)]
-#![cfg_attr(
-    feature = "cargo-clippy",
-    allow(renamed_and_removed_lints, clippy)
-)]
+#![allow(clippy::all)]
 
 extern crate encrypted_dns;
 extern crate failure;
 extern crate pyo3;
 extern crate sequences;
 
-use sequences::OneHotEncoding;
 use encrypted_dns::ErrorExt;
 use failure::Error;
 use pyo3::{exc::Exception, prelude::*};
-use sequences::Sequence;
+use sequences::{OneHotEncoding, Sequence};
 use std::path::Path;
 
 fn error2py(err: Error) -> PyErr {

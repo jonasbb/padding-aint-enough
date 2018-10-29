@@ -1,5 +1,3 @@
-#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-
 extern crate failure;
 extern crate min_max_heap;
 extern crate serde_json;

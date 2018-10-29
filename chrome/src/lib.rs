@@ -1,5 +1,3 @@
-#![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-
 extern crate chrono;
 extern crate serde;
 extern crate serde_with;
@@ -8,7 +6,7 @@ use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::chrono::datetime_utc_ts_seconds_from_any;
 
-#[cfg_attr(feature = "cargo-clippy", allow(large_enum_variant))]
+#[allow(clippy::large_enum_variant)]
 #[serde(tag = "method", content = "params")]
 #[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
 pub enum ChromeDebuggerMessage<S = String> {
