@@ -8,7 +8,7 @@ extern crate sequences;
 
 use encrypted_dns::ErrorExt;
 use failure::Error;
-use pyo3::{exc::Exception, prelude::*};
+use pyo3::{exceptions::Exception, prelude::*, CompareOp, PyObjectProtocol};
 use sequences::{OneHotEncoding, Sequence};
 use std::path::Path;
 

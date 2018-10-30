@@ -6,7 +6,7 @@ extern crate pyo3;
 extern crate tempfile;
 
 use failure::Error;
-use pyo3::prelude::*;
+use pyo3::{prelude::*, types::PyDict};
 use std::{collections::HashMap, path::Path};
 
 fn pyerr_to_error(py: Python, pyerr: &PyErr) -> Error {
