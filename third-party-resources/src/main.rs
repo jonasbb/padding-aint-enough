@@ -172,10 +172,17 @@ fn run() -> Result<(), Error> {
                         .filter_map(|ev| {
                             let DnstapContent::Message {
                                 message_type,
+                                // query_message,
                                 response_message,
                                 ..
                             } = ev.content;
                             match message_type {
+                                // Message_Type::FORWARDER_QUERY => {
+                                //     let (_dnsmsg, size) =
+                                //         query_message.expect("Unbound always sets this: FR r msg");
+                                //     println!("{}", size);
+                                //     None
+                                // }
                                 Message_Type::FORWARDER_RESPONSE => {
                                     let (dnsmsg, _size) = response_message
                                         .expect("Unbound always sets this: FR r msg");
