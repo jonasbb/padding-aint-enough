@@ -203,7 +203,7 @@ where
                         tlseq.sequences.iter().map(move |s| {
                             move |max_dist: usize| ClassifierData {
                                 label: &tlseq.mapped_domain,
-                                distance: vsample.distance_with_max(s, max_dist),
+                                distance: vsample.distance_with_limit(s, max_dist, true),
                             }
                         })
                     }),

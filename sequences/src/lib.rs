@@ -103,7 +103,7 @@ impl Sequence {
     }
 
     pub fn distance(&self, other: &Self) -> usize {
-        self.distance_with_max(other, usize::max_value())
+        self.distance_with_limit(other, usize::max_value(), false)
     }
 
     /// Same as `distance` but with an early exit criteria
@@ -113,56 +113,83 @@ impl Sequence {
     /// The return value for an early exit will be larger than `max_distance`.
     ///
     /// This means that early exit can be disabled by setting `max_distance` to `usize::max_value()`, as there can be no larger value.
-    pub fn distance_with_max(&self, other: &Self, max_distance: usize) -> usize {
-        if self.0.len() < other.0.len() {
-            return other.distance_with_max(self, max_distance);
-        }
-        // other is always shorter or equal sized
+    ///
+    /// If `use_length_prefilter` is true, the function performs an initial check, if the length of the sequences are similar enough.
+    /// The idea is that sequences of largly differing lengths, cannot be similar to start with.
+    /// Two sequences are similar, if
+    /// * they differ by less than 40, which allows for at least 20 new requests to appear
+    /// * OR they differ by less than 20% of the larger sequence
+    /// whichever of those two is larger.
+    pub fn distance_with_limit(
+        &self,
+        other: &Self,
+        max_distance: usize,
+        use_length_prefilter: bool,
+    ) -> usize {
+        let mut larger = self;
+        let mut smaller = other;
 
-        if other.0.is_empty() {
+        if larger.0.len() < smaller.0.len() {
+            mem::swap(&mut larger, &mut smaller);
+        }
+        // smaller is always shorter or equal sized
+
+        const ABSOLUTE_LENGTH_DIFF: usize = 40;
+        const RELATIVE_LENGTH_DIFF_FACTOR: usize = 5;
+        let length_diff = larger.0.len() - smaller.0.len();
+        if use_length_prefilter
+            && length_diff > ABSOLUTE_LENGTH_DIFF
+            && length_diff > (larger.0.len() / RELATIVE_LENGTH_DIFF_FACTOR)
+        {
+            return usize::max_value();
+        }
+
+        if smaller.0.is_empty() {
             let mut cost: usize = 0;
-            for x in &self.0 {
+            for x in &larger.0 {
                 cost = cost.saturating_add(x.insert_cost());
             }
             return cost;
         }
 
-        let mut prev_prev_row = vec![0usize; other.0.len() + 1];
-        // let mut previous_row: Vec<usize> = (0..(other.0.len() + 1)).into_iter().collect();
+        let mut prev_prev_row = vec![0usize; smaller.0.len() + 1];
+        // let mut previous_row: Vec<usize> = (0..(smaller.0.len() + 1)).into_iter().collect();
         let mut cost = 0;
         let mut previous_row: Vec<usize> = Some(0)
             .into_iter()
-            .chain(other.0.iter().cloned().map(|elem| elem.insert_cost()))
+            .chain(smaller.0.iter().cloned().map(|elem| elem.insert_cost()))
             .map(|c| {
                 cost += c;
                 cost
             })
             .collect();
-        let mut current_row = vec![0usize; other.0.len() + 1];
+        let mut current_row = vec![0usize; smaller.0.len() + 1];
         debug_assert_eq!(
             previous_row.len(),
             current_row.len(),
             "Row length must be equal"
         );
 
-        for (i, elem1) in self.0.iter().enumerate() {
+        for (i, elem1) in larger.0.iter().enumerate() {
             current_row.clear();
             // TODO give different costs for different elements
             current_row.push(previous_row[0] + elem1.delete_cost());
             let mut min_cost_current_row: Min<usize> = Default::default();
 
-            for (j, &elem2) in other.0.iter().enumerate() {
+            for (j, &elem2) in smaller.0.iter().enumerate() {
                 let insertions = previous_row[j + 1] + elem1.insert_cost();
                 let deletions = current_row[j] + elem2.delete_cost();
                 let substitutions = previous_row[j] + elem1.substitute_cost(elem2);
-                let swapping =
-                    if i > 0 && j > 0 && self.0[i] == other.0[j - 1] && self.0[i - 1] == other.0[j]
-                    {
-                        prev_prev_row[j - 1] + elem1.swap_cost(elem2)
-                    } else {
-                        // generate a large value but not so large, that an overflow might happen while performing some addition
-                        usize::max_value() / 4
-                    };
+                let swapping = if i > 0
+                    && j > 0
+                    && larger.0[i] == smaller.0[j - 1]
+                    && larger.0[i - 1] == smaller.0[j]
+                {
+                    prev_prev_row[j - 1] + elem1.swap_cost(elem2)
+                } else {
+                    // generate a large value but not so large, that an overflow might happen while performing some addition
+                    usize::max_value() / 4
+                };
                 let cost = insertions.min(deletions).min(substitutions).min(swapping);
                 min_cost_current_row.update(cost);
                 current_row.push(cost);
