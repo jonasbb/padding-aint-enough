@@ -127,9 +127,21 @@ See [issue #80][Intra #80].
 
 ### Retry
 
+Unclear.
+There is a retry test, which test if a unresponsible server becomse responsible, if the size is reduced.
+But no explicit mentions of query retries.
+
 ## Stubby
 
+The analysis refers to commit [`0964c357d574a66a9cacb53a908cdcc27428819b`].
+
 ### Padding
+
+Yes.
+Default to 128B block size, see [`stubby.yml.example:59`][].
+
+[`stubby.yml.example:59`]: https://github.com/getdnsapi/stubby/blob/0964c357d574a66a9cacb53a908cdcc27428819b/stubby.yml.example#L56-L59
+[`0964c357d574a66a9cacb53a908cdcc27428819b`]: https://github.com/getdnsapi/stubby/blob/0964c357d574a66a9cacb53a908cdcc27428819b/
 
 ### Out-of-Order
 
@@ -137,7 +149,11 @@ See [issue #80][Intra #80].
 
 ### Multiple DNS requests per TCP segment
 
+It does not seem to use `TCP_NODELAY`.
+
 ### Retry
+
+No mention of retries.
 
 ## Specification
 
