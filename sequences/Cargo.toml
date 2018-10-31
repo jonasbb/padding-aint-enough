@@ -10,7 +10,7 @@ harness = false
 [dependencies]
 chrono = { version = "0.4.6", features = [ "serde" ] }
 dnstap = { path = "../dnstap" }
-failure = "0.1.2"
+failure = "0.1.3"
 lazy_static = "1.1.0"
 log = "0.4.6"
 misc_utils = "2.1.0"
