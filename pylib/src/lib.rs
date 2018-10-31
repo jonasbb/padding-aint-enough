@@ -9,7 +9,7 @@ extern crate sequences;
 use encrypted_dns::ErrorExt;
 use failure::Error;
 use pyo3::{exceptions::Exception, prelude::*, CompareOp, PyObjectProtocol};
-use sequences::{OneHotEncoding, Sequence};
+use sequences::{load_all_dnstap_files_from_dir, OneHotEncoding, Sequence};
 use std::path::Path;
 
 fn error2py(err: Error) -> PyErr {
@@ -22,10 +22,28 @@ fn pylib(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_class::<PySequence>()?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
+    /// Load a dnstap file from disk and create a `Sequence` object
     #[pyfn(m, "load_file")]
-    fn load_file(py: Python, path: String) -> PyResult<Py<PySequence>> {
+    fn load_file(path: String) -> PyResult<PySequence> {
         let seq = Sequence::from_path(Path::new(&path)).map_err(error2py)?;
-        py.init(|token| PySequence::new(seq, token))
+        Ok(PySequence::new(seq))
+    }
+
+    /// Load a whole folder of dnstap files
+    #[pyfn(m, "load_folder")]
+    fn load_folder(py: Python, path: String) -> PyResult<Vec<(String, Vec<PySequence>)>> {
+        let seqs = py
+            .allow_threads(|| load_all_dnstap_files_from_dir(Path::new(&path)))
+            .map_err(error2py)?;
+        Ok(seqs
+            .into_iter()
+            .map(|(domain, seqs)| {
+                (
+                    domain,
+                    seqs.into_iter().map(|seq| PySequence::new(seq)).collect(),
+                )
+            })
+            .collect())
     }
 
     Ok(())
@@ -35,17 +53,23 @@ fn pylib(_py: Python, m: &PyModule) -> PyResult<()> {
 #[pyclass(name=Sequence)]
 pub struct PySequence {
     sequence: Sequence,
-    token: PyToken,
 }
 
 impl PySequence {
-    pub fn new(sequence: Sequence, token: PyToken) -> PySequence {
-        PySequence { sequence, token }
+    pub fn new(sequence: Sequence) -> PySequence {
+        PySequence { sequence }
     }
 }
 
 #[pymethods]
 impl PySequence {
+    /// Create a new class of type `Sequence` by loading the dnstap file
+    #[new]
+    pub fn __new__(obj: &PyRawObject, path: String) -> PyResult<()> {
+        let seq = Sequence::from_path(Path::new(&path)).map_err(error2py)?;
+        obj.init(|_| PySequence::new(seq))
+    }
+
     /// Returns a unique identifier for this sequence
     pub fn id(&self) -> PyResult<String> {
         Ok(self.sequence.id().to_string())
