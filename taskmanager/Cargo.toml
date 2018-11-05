@@ -16,5 +16,5 @@ misc_utils = "2.0.0"
 rayon = "1.0.3"
 sequences = { path = "../sequences" }
 serde = { version = "1.0.70", features = [ "derive" ] }
-structopt = "0.2.12"
+structopt = "0.2.13"
 toml = "0.4.8"
