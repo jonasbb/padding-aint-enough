@@ -42,7 +42,7 @@ RUN dnf -y --setopt=tsflags=nodocs install \
 # Copy needed executables
 COPY bin /usr/bin/
 COPY ./capture-dns.service /etc/systemd/system/
-RUN systemctl enable capture-dns
+RUN systemctl enable capture-dns unbound
 
 # Add a non-privileged user to run chrome with
 # But give it sudo permissions
@@ -50,4 +50,4 @@ RUN useradd --create-home docker \
     && echo "docker ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # Mount point to export all data
-VOLUME [ "/output" ]
+VOLUME [ "/output", "/tmp/.X11-unix" ]
