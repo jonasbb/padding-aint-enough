@@ -18,6 +18,27 @@ CMD [ "/usr/sbin/init" ]
 
 # Copy modified unbound rpms
 COPY rpms /rpms
+# Install all needed packages
+# `iproute` for `ss`
+# `bind-utils` for `dig`
+RUN dnf -y --setopt=tsflags=nodocs install \
+    dnf-plugins-core \
+    fedora-workstation-repositories \
+    && dnf config-manager --set-enabled google-chrome \
+    && dnf -y --setopt=tsflags=nodocs install \
+    bind-utils \
+    fish \
+    fstrm-devel \
+    google-chrome-stable \
+    iproute \
+    libglvnd-glx \
+    mesa-dri-drivers \
+    psmisc \
+    python3-websocket-client \
+    sudo \
+    /rpms/unbound*.rpm \
+    && dnf clean all
+
 # Copy needed executables
 COPY bin /usr/bin/
 COPY ./capture-dns.service /etc/systemd/system/
@@ -27,28 +48,6 @@ RUN systemctl enable capture-dns
 # But give it sudo permissions
 RUN useradd --create-home docker \
     && echo "docker ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-# # Install all needed packages
-# # `iproute` for `ss`
-# # `bind-utils` for `dig`
-# RUN dnf -y --setopt=tsflags=nodocs install \
-#     dnf-plugins-core \
-#     fedora-workstation-repositories \
-#     && dnf config-manager --set-enabled google-chrome \
-#     && dnf -y --setopt=tsflags=nodocs install \
-#     bind-utils \
-#     fish \
-#     fstrm-devel \
-#     google-chrome-stable \
-#     iproute \
-#     libglvnd-glx \
-#     mesa-dri-drivers \
-#     psmisc \
-#     python3-websocket-client \
-#     sudo \
-#     systemd \
-#     /rpms/unbound*.rpm \
-#     && dnf clean all
 
 # Mount point to export all data
 VOLUME [ "/output" ]
