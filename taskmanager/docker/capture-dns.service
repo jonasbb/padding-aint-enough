@@ -1,0 +1,16 @@
+[Unit]
+Description=Run the whole dns capturing process pipeline
+# Make sure the network is available
+After=network-online.target
+Requires=network-online.target
+# Stop system after this unit
+SuccessAction=poweroff
+FailureAction=poweroff
+
+[Service]
+TimeoutStartSec=0
+ExecStart=/usr/bin/touch /output/i_created_a_file
+Type=oneshot
+
+[Install]
+WantedBy=multi-user.target
