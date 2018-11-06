@@ -46,7 +46,7 @@ impl DepGraph {
     pub fn get_domain_names(&self) -> Vec<String> {
         self.graph
             .raw_nodes()
-            .into_iter()
+            .iter()
             .map(|node| node.weight.normalized_domain_name.to_string())
             .filter(|domain| domain != "other")
             .collect()
@@ -514,7 +514,7 @@ impl DepGraph {
         let edges: HashSet<(NodeIndex, NodeIndex)> = self
             .graph
             .raw_edges()
-            .into_iter()
+            .iter()
             .map(|edge| (edge.source(), edge.target()))
             .collect();
         self.graph.retain_edges(|g, edge| {

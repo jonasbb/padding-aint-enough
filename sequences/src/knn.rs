@@ -61,7 +61,7 @@ impl ClassificationResultQuality {
             Majority,
             Exact,
         ]
-            .into_iter()
+            .iter()
             .cloned()
     }
 }
@@ -197,7 +197,7 @@ where
         .map(|vsample| {
             let distances = take_smallest(
                 trainings_data
-                    .into_iter()
+                    .iter()
                     // iterate over all elements of the trainings data
                     .flat_map(|tlseq| {
                         tlseq.sequences.iter().map(move |s| {

@@ -309,7 +309,7 @@ where
         let mut first = true;
         for k in keys {
             if !first {
-                write!(f, "\n\n");
+                write!(f, "\n\n")?;
             }
             first = false;
 
@@ -321,7 +321,7 @@ where
             writeln!(
                 f,
                 "\n#Domains with at least x classification results of quality or higher:"
-            );
+            )?;
             let header = Row::new(
                 Some(cell!(bc->"Method"))
                     .into_iter()

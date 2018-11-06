@@ -365,7 +365,7 @@ fn url_to_domain(url: &str) -> Result<String, Error> {
 
 fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     let timings: Vec<(String, String, Timing)> = messages
-        .into_iter()
+        .iter()
         .filter_map(|msg| match msg {
             ChromeDebuggerMessage::NetworkRequestWillBeSent {
                 redirect_response: Some(RedirectResponse { url, timing }),

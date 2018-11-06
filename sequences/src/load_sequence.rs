@@ -185,7 +185,7 @@ fn convert_to_sequence(data: &[Query], identifier: String) -> Option<Sequence> {
 
     let mut last_end = None;
     Some(Sequence::new(
-        data.into_iter()
+        data.iter()
             .flat_map(|d| {
                 let mut gap = None;
                 if let Some(last_end) = last_end {
