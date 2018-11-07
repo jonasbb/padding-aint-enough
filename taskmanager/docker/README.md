@@ -28,3 +28,13 @@ docker run \
 * `--shm-size=2g` prevents SIGBUS errors due to too small file systems. [Reference](https://goblincoding.com/2018/02/19/docker-bus-error-no-space-left-on-device/)
 
 The `DISPLAY` variable must be set correctly to start chrome.
+
+## Recording Process
+
+The recording setup it started by a systemd service.
+The main service is `capture-dns.service`.
+It starts the recording procedure and then shutdowns the container.
+It calls the `/usr/bin/run-measurements-in-docker.fish` file.
+
+The dnstap capture is controlled by `dnstap.service`.
+It starts before unbound and ensures the `fstrm_capture` runs.

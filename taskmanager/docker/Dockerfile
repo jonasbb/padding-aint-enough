@@ -21,28 +21,36 @@ COPY rpms /rpms
 # Install all needed packages
 # `iproute` for `ss`
 # `bind-utils` for `dig`
+# `daemonize` for `daemonize`
+# `psmisc` for `killall`
+# `moreutils` for `ts`
 RUN dnf -y --setopt=tsflags=nodocs install \
     dnf-plugins-core \
     fedora-workstation-repositories \
     && dnf config-manager --set-enabled google-chrome \
     && dnf -y --setopt=tsflags=nodocs install \
     bind-utils \
+    daemonize \
     fish \
     fstrm-devel \
     google-chrome-stable \
     iproute \
     libglvnd-glx \
     mesa-dri-drivers \
+    moreutils \
     psmisc \
     python3-websocket-client \
     sudo \
     /rpms/unbound*.rpm \
     && dnf clean all
 
+# Configure unbound
+COPY unbound.conf /etc/unbound/
 # Copy needed executables
 COPY bin /usr/bin/
-COPY ./capture-dns.service /etc/systemd/system/
-RUN systemctl enable capture-dns unbound
+# Setup systemd units
+COPY [ "./capture-dns.service", "./dnstap.service", "/etc/systemd/system/" ]
+RUN systemctl enable capture-dns unbound dnstap
 
 # Add a non-privileged user to run chrome with
 # But give it sudo permissions

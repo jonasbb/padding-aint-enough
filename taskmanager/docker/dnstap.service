@@ -1,0 +1,14 @@
+[Unit]
+Description=Setup a fstrm_capture to record dnstap data
+# Make sure the network is available
+Before=unbound.service
+BindsTo=unbound.service
+JoinsNamespaceOf=unbound.service
+
+[Service]
+ExecStart=/usr/bin/dnstap-capture.fish
+Type=forking
+PIDFile=/run/fstrm_capture.pid
+
+[Install]
+WantedBy=unbound.service
