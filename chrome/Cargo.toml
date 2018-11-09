@@ -6,4 +6,4 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 [dependencies]
 chrono = "0.4.6"
 serde = { version = "1.0.79", features = [ "derive" ] }
-serde_with = { version = "0.2.2", features = [ "chrono" ] }
+serde_with = { version = "0.2.3", features = [ "chrono" ] }
