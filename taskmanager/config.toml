@@ -1,16 +1,10 @@
 working_directory = "/mnt/data/Downloads/new-task-setup"
-# database = "/mnt/data/Downloads/new-task-setup/tasks.db"
 database = "postgres://taskmanager@/taskmanager"
-per_domain_datasets = 10
+per_domain_datasets = 2
+# Set a high initial priority, such that the repeated measurements can get lower values
+initial_priority = 1000000
 max_allowed_dist_difference = 2.5
 max_allowed_dist_difference_abs = 300
-
-[[executors]]
-name = "fedora28chrome"
-sshconnect = "fedora28chrome"
-working_directory = "/home/jbushart/dnscaptures"
-
-[[executors]]
-name = "fedora28chrome2"
-sshconnect = "fedora28chrome2"
-working_directory = "/home/jbushart/dnscaptures"
+num_executors = 1
+refresh_cache_seconds = 3600
+docker_image = "dnscapture"

@@ -1,24 +1,27 @@
+extern crate chrome;
 extern crate encrypted_dns;
 extern crate env_logger;
 extern crate failure;
 extern crate lazy_static;
 extern crate log;
 extern crate misc_utils;
-extern crate rayon;
 extern crate sequences;
 extern crate serde;
+extern crate serde_json;
 extern crate structopt;
 extern crate taskmanager;
+extern crate tempfile;
 extern crate toml;
+extern crate xvfb;
 
 mod utils;
 
-use encrypted_dns::ErrorExt;
+use chrome::ChromeDebuggerMessage;
+use encrypted_dns::{chrome_log_contains_errors, ErrorExt};
 use failure::{bail, Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{debug, error, info, warn};
 use misc_utils::fs::file_open_read;
-use rayon::prelude::*;
 use sequences::{sequence_stats, Sequence};
 use std::{
     ffi::{OsStr, OsString},
@@ -27,18 +30,20 @@ use std::{
     io::{BufRead, BufReader, Read},
     panic::{self, RefUnwindSafe, UnwindSafe},
     path::{Path, PathBuf},
-    process::Command,
+    process::Stdio,
     sync::Arc,
     thread::{self, JoinHandle},
     time::Duration,
 };
 use structopt::StructOpt;
-use taskmanager::{models::Task, Config, Executor, TaskManager};
-use utils::{ensure_path_exists, scp_file, xz, ScpDirection};
+use taskmanager::{models::Task, Config, TaskManager};
+use tempfile::{Builder as TempDirBuilder, TempDir};
+use utils::*;
+use xvfb::Xvfb;
 
 lazy_static! {
     static ref DNSTAP_FILE_NAME: &'static Path = &Path::new("website-log.dnstap.xz");
-    static ref LOG_FILE: &'static Path = &Path::new("task.log.xz");
+    static ref LOG_FILE: &'static Path = &Path::new("website-log.log.xz");
     static ref CHROME_LOG_FILE_NAME: &'static Path = &Path::new("website-log.json.xz");
 }
 
@@ -146,7 +151,7 @@ fn run() -> Result<(), Error> {
 ///
 /// This parses a domain list and will create the initial list of task which we want to execute for
 /// them.
-#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
+#[allow(clippy::needless_pass_by_value)]
 fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
     if let SubCommand::InitTaskSet {
         domain_list: (mut domain_list_reader, domain_list_path),
@@ -156,16 +161,19 @@ fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
         let mut taskmgr = TaskManager::new(&*config.get_database_path().to_string_lossy())
             .context("Cannot create TaskManager")?;
 
+        debug!("Read domains file");
         let domains_r = BufReader::new(&mut domain_list_reader);
         let domains = domains_r
             .lines()
             .collect::<Result<Vec<String>, std::io::Error>>()
             .with_context(|_| format!("Failed to read line in {}", domain_list_path.display()))?;
+        info!("Empty old database entries");
         taskmgr
             .delete_all()
             .context("Empty database before filling it")?;
+        info!("Add new database entries");
         taskmgr
-            .add_domains(domains, config.per_domain_datasets)
+            .add_domains(domains, config.per_domain_datasets, config.initial_priority)
             .context("Could not create tasks")?;
     } else {
         unreachable!("The run function verifies which enum variant this is.")
@@ -173,48 +181,37 @@ fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
     Ok(())
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
+#[allow(clippy::needless_pass_by_value)]
 fn run_exec(cmd: SubCommand, config: Config) -> Result<(), Error> {
     if let SubCommand::Run = cmd {
-        let mut taskmgr = TaskManager::new(&*config.get_database_path().to_string_lossy())
+        let taskmgr = TaskManager::new(&*config.get_database_path().to_string_lossy())
             .context("Cannot create TaskManager")?;
         let config = Arc::new(config);
 
-        if config.executors.is_empty() {
+        if config.num_executors == 0 {
             bail!("You need to specify at least one executor.");
         }
 
-        if !config.get_scripts_dir().exists() {
-            bail!(
-                "The local directory with scripts does not exist!\nMissing {}",
-                config.get_scripts_dir().display()
-            );
-        }
+        ensure_docker_image_exists(&config.docker_image).context("Check for docker image")?;
+
+        init_global_environment(&config).context("Could not setup the global environment")?;
 
         let mut handles = Vec::new();
 
-        config
-            .executors
-            .par_iter()
-            .map(|executor| init_vm(executor, &config))
-            .collect::<Result<(), Error>>()
-            .context("Could not initialize all VMs")?;
-
-        for executor in &config.executors {
-            let executor_ = executor.clone();
-            let taskmgr = taskmgr.clone();
+        for i in 0..config.num_executors {
+            let taskmgr_ = taskmgr.clone();
+            let config_ = config.clone();
             handles.push(run_thread_restart(
-                move || process_tasks_vm(&taskmgr, &executor_),
-                Some(format!("VM Executor `{}`", executor.name)),
+                move || process_tasks_docker(&taskmgr_, &config_),
+                Some(format!("Docker Executor {}", i)),
             ));
         }
 
         {
-            let taskmgr_ = taskmgr.clone();
             let config_ = config.clone();
             handles.push(run_thread_restart(
-                move || copy_vm_results(&taskmgr_, &config_),
-                Some("Results Collector".to_string()),
+                move || background_update_unbound_cache_dump(&config_),
+                Some("Update Unbound Cache".to_string()),
             ));
             let taskmgr_ = taskmgr.clone();
             let config_ = config.clone();
@@ -245,7 +242,7 @@ fn run_exec(cmd: SubCommand, config: Config) -> Result<(), Error> {
     Ok(())
 }
 
-#[cfg_attr(feature = "cargo-clippy", allow(needless_pass_by_value))]
+#[allow(clippy::needless_pass_by_value)]
 fn run_debug(args: CliArgs, config: Config) -> Result<(), Error> {
     println!("{:#?}", args);
     println!("{:#?}", config);
@@ -285,51 +282,71 @@ where
 ///
 /// This function is responsible for all the steps related to capturing the measurement data from
 /// the VMs.
-fn process_tasks_vm(taskmgr: &TaskManager, executor: &Executor) -> Result<(), Error> {
+fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> {
+    let xvfb = Xvfb::new().context("Failed to spawn virtual frame buffer")?;
     loop {
-        if let Some(mut task) = taskmgr.get_task_for_vm(executor)? {
+        if let Some(mut task) = taskmgr.get_task_for_vm()? {
             execute_or_restart_task(&mut task, taskmgr, |mut task| {
-                info!("Process task {} ({}), step VM", task.name(), task.id());
-                let script_path = executor
-                    .working_directory
-                    .join("scripts")
-                    .join("record-websites.fish");
-                let output_path = executor.working_directory.join(task.name());
-                let logfile = output_path.join("task.log");
+                let tmp_dir = TempDirBuilder::new().prefix("docker").tempdir()?;
+                info!(
+                    "Process task {} ({}), step Docker, tmp dir {}",
+                    task.name(),
+                    task.id(),
+                    tmp_dir.path().display()
+                );
 
-                // Run task on VM
-                // Execute: mkdir -p OUTPUT_PATH && cd OUTPUT_PATH && fish ./SCRIPT_PATH DOMAIN >LOGFILE 2>&1
-                let res = Command::new("ssh")
-                    .args(&[&executor.sshconnect, "--", "mkdir", "-p"])
-                    .arg(&output_path)
-                    .args(&["&&", "cd"])
-                    .arg(&output_path)
-                    .args(&["&&", "fish"])
-                    .arg(&script_path)
-                    .arg(&format!("http://{}/", task.domain()))
-                    .arg(">")
-                    .arg(&logfile)
-                    .arg("2>&1")
+                debug!("{}: Copy initial files to mount point", task.name());
+                // Write all the required files to the mount point
+                fs::copy(config.get_cache_file(), tmp_dir.path().join("cache.dump"))
+                    .with_context(|_| format!("{}: Failed to copy cache.dump", task.name()))?;
+                fs::write(
+                    tmp_dir.path().join("domain"),
+                    &format!("http://{}", task.domain()),
+                )
+                .with_context(|_| format!("{}: Failed to create file `domain`", task.name()))?;
+                fs::write(
+                    tmp_dir.path().join("display"),
+                    &xvfb.get_display().to_string(),
+                )
+                .with_context(|_| format!("{}: Failed to create file `display`", task.name()))?;
+
+                debug!("{}: Run docker container", task.name());
+                let mounts = docker_mount_option(tmp_dir.path());
+                let success = run_docker(&config.docker_image, &[mounts.0, mounts.1], None)
                     .status()
-                    .with_context(|_| {
-                        format!(
-                            "Could not run script for task {} on VM {}",
-                            task.name(),
-                            executor.name,
-                        )
-                    })?;
-                if !res.success() {
+                    .with_context(|_| format!("{}: Failed to start the measuremetns", task.name()))?
+                    .success();
+                if !success {
                     bail!(
-                        "Could not run script for task {} on VM {}",
+                        "Executing the docker container failed for task {} ({})",
                         task.name(),
-                        executor.name,
-                    )
+                        task.id()
+                    );
                 }
 
-                taskmgr.finished_task_for_vm(&mut task, &output_path)
+                debug!("{}: Copy files from mount point to local back", task.name());
+                let local_path: PathBuf = config.get_collected_results_path().join(task.name());
+                ensure_path_exists(&local_path)?;
+
+                for fname in &[&*DNSTAP_FILE_NAME, &*LOG_FILE, &*CHROME_LOG_FILE_NAME] {
+                    let fname = fname.with_extension("");
+                    fs::copy(tmp_dir.path().join(&fname), local_path.join(&fname)).with_context(
+                        |_| {
+                            format!(
+                                "{}: Failed to copy back file {}",
+                                task.name(),
+                                fname.display()
+                            )
+                        },
+                    )?;
+                }
+                tmp_dir.close()?;
+
+                debug!("Finished task {} ({})", task.name(), task.id());
+                taskmgr.finished_task_for_vm(&mut task)
             })?;
         } else {
-            info!("No tasks left for VM");
+            info!("No tasks left for Docker");
             thread::sleep(Duration::new(10, 0));
         }
     }
@@ -350,6 +367,7 @@ fn cleanup_stale_tasks(taskmgr: &TaskManager) -> Result<(), Error> {
     }
 }
 
+/*
 /// Copy the finished results from a VM to the global directory
 fn copy_vm_results(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> {
     let local_path = config.get_collected_results_path();
@@ -405,6 +423,7 @@ fn copy_vm_results(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> 
         thread::sleep(Duration::new(10, 0));
     }
 }
+*/
 
 /// Check the VM results for consistency
 fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> {
@@ -414,6 +433,19 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
         let tasks = taskmgr.results_need_sanity_check_single()?;
         for mut task in tasks {
             execute_or_restart_task(&mut task, taskmgr, |mut task| {
+                // compress files to save space
+                for entry in fs::read_dir(local_path.join(task.name()))? {
+                    let entry = entry?;
+                    if let Ok(file_type) = entry.file_type() {
+                        if file_type.is_file() {
+                            let path = entry.path();
+                            xz(&*path).with_context(|_| {
+                                format!("Failed to compress {}", path.display())
+                            })?;
+                        }
+                    }
+                }
+
                 // if a file is loadable, it passes all easy sanity checks
                 Sequence::from_path(&local_path.join(task.name()).join(&*DNSTAP_FILE_NAME))
                     .with_context(|_| {
@@ -422,6 +454,27 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                             task.name()
                         )
                     })?;
+
+                let chrome_log = local_path.join(task.name()).join(&*CHROME_LOG_FILE_NAME);
+                // open Chrome file and parse it
+                let mut rdr = file_open_read(&chrome_log)
+                    .with_context(|_| format!("Failed to read {}", chrome_log.display()))?;
+                let mut content = String::new();
+                rdr.read_to_string(&mut content)
+                    .with_context(|_| format!("Error while reading '{}'", chrome_log.display()))?;
+                let msgs: Vec<ChromeDebuggerMessage> = serde_json::from_str(&content)
+                    .with_context(|_| {
+                        format!("Error while deserializing '{}'", chrome_log.display())
+                    })?;
+                if let Some(err_reason) = chrome_log_contains_errors(&msgs) {
+                    bail!(
+                        "Fail task {} ({}) due to chrome log: {}",
+                        task.name(),
+                        task.id(),
+                        err_reason
+                    );
+                }
+
                 taskmgr.mark_results_checked_single(&mut task)
             })?;
         }
@@ -430,31 +483,9 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
 }
 
 /// Make sure all necessary files are copied to the VM
-fn init_vm(executor: &Executor, config: &Config) -> Result<(), Error> {
-    let res = Command::new("ssh")
-        .arg(&executor.sshconnect)
-        .arg("--")
-        .arg("mkdir")
-        .arg("-p")
-        .arg(&executor.working_directory)
-        .status()
-        .with_context(|_| format!("Could not create working dir on VM {}", executor.name,))?;
-    if !res.success() {
-        bail!("Could not create working dir on VM {}", executor.name,)
-    }
-    let _res = Command::new("ssh")
-        .arg(&executor.sshconnect)
-        .arg("--")
-        .args(&["killall", "chrome", ";", "sudo", "killall", "fstrm_capture"])
-        .status()
-        .with_context(|_| format!("Could start killall commands on {}", executor.name,))?;
-    info!("Copy initial files to VM {}", executor.name);
-    scp_file(
-        executor,
-        ScpDirection::LocalToRemote,
-        &config.get_scripts_dir(),
-        &executor.working_directory,
-    )
+fn init_global_environment(config: &Config) -> Result<(), Error> {
+    // Create global tmp directory
+    update_unbound_cache_dump(config)
 }
 
 fn execute_or_restart_task<F>(task: &mut Task, taskmgr: &TaskManager, func: F) -> Result<(), Error>
@@ -478,7 +509,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
     loop {
         ensure_path_exists(&results_path)?;
 
-        let tasks = taskmgr.results_need_sanity_check_domain(config.per_domain_datasets)?;
+        let tasks = taskmgr.results_need_sanity_check_domain()?;
         if tasks.is_none() {
             thread::sleep(Duration::new(60, 0));
             continue;
@@ -494,6 +525,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
             })
             .collect();
 
+        // TODO use groupid here somewhere
         let mark_domain_good = |tasks: &mut Vec<Task>| -> Result<(), Error> {
             //everything is fine, advance the tasks to next stage
             for task in &*tasks {
@@ -550,53 +582,105 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
             continue;
         }
 
-        match median_distances
-            .iter()
-            .filter(|dist| is_bad_dist(**dist))
-            .count()
-        {
-            0 => {
-                mark_domain_good(&mut tasks)?;
-            }
-            1 => {
-                // restart the single bad task
-                let (dist, mut task) = median_distances
-                    .iter()
-                    .zip(tasks.iter_mut())
-                    .find(|(dist, _task)| is_bad_dist(**dist))
-                    .expect("There is exactly one task");
-                info!(
-                    "Restart task {} because of distance difference",
-                    task.name()
-                );
-                taskmgr
-                    .restart_task(
-                        &mut task,
-                        &format!(
-                            "The task's distance is {} while the average distance is only {}",
-                            dist, avg_median
-                        ),
-                    )
-                    .context("Cannot restart single bad task")?;
-            }
-            n => {
-                // restart all tasks
-                info!(
-                    "Restart task of domain {} because of distance difference",
-                    tasks[0].domain()
-                );
-                taskmgr
-                    .restart_tasks(
-                        &mut *tasks,
-                        &format!(
-                            "{} out of {} differ by too much from the average distance",
-                            n, config.per_domain_datasets
-                        ),
-                    )
-                    .context("Cannot restart bad domain")?;
+        // Only do this for the initial measurement with groupid 0 or for measurements of sufficient size.
+        // It does not make sense to do this for the repeated measurements with a single or two requests each.
+        if tasks[0].groupid() == 0 || tasks[0].groupsize() >= 10 {
+            match median_distances
+                .iter()
+                .filter(|dist| is_bad_dist(**dist))
+                .count()
+            {
+                0 => {
+                    mark_domain_good(&mut tasks)?;
+                }
+                1 => {
+                    // restart the single bad task
+                    let (dist, mut task) = median_distances
+                        .iter()
+                        .zip(tasks.iter_mut())
+                        .find(|(dist, _task)| is_bad_dist(**dist))
+                        .expect("There is exactly one task");
+                    info!(
+                        "Restart task {} because of distance difference",
+                        task.name()
+                    );
+                    taskmgr
+                        .restart_task(
+                            &mut task,
+                            &format!(
+                                "The task's distance is {} while the average distance is only {}",
+                                dist, avg_median
+                            ),
+                        )
+                        .context("Cannot restart single bad task")?;
+                }
+                n => {
+                    // restart all tasks
+                    info!(
+                        "Restart task of domain {} groupid {} because of distance difference",
+                        tasks[0].domain(),
+                        tasks[0].groupid(),
+                    );
+                    taskmgr
+                        .restart_tasks(
+                            &mut *tasks,
+                            &format!(
+                                "{} out of {} differ by too much from the average distance",
+                                n, config.per_domain_datasets
+                            ),
+                        )
+                        .context("Cannot restart bad domain")?;
+                }
             }
         }
 
         thread::sleep(Duration::new(10, 0));
+    }
+}
+
+fn update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
+    let tmp_dir = TempDir::new()?;
+    // Copy the prefetching list to the mount point
+    fs::copy(
+        config.get_prefetch_file(),
+        tmp_dir.path().join("prefetch-domains.txt"),
+    )?;
+    let mounts = docker_mount_option(tmp_dir.path());
+    info!(
+        "Start Unbound refresh in Docker with tmp dir '{}'",
+        tmp_dir.path().display()
+    );
+    let success = run_docker(
+        &config.docker_image,
+        &[mounts.0, mounts.1],
+        Some("/usr/bin/create-cache-dump.fish"),
+    )
+    .stdout(Stdio::null())
+    .stderr(Stdio::null())
+    .status()
+    .context("Failed to run docker image to create a cache dump")?
+    .success();
+    if !success {
+        bail!("Creating the unbound cache dump failed");
+    }
+
+    // Copy the file from the temporary directory to the working directory
+    // Do not copy it to the final destination yet, this should be atomic
+    fs::copy(
+        tmp_dir.path().join("cache.dump.new"),
+        config.get_cache_file().with_extension("tmp"),
+    )?;
+    fs::rename(
+        config.get_cache_file().with_extension("tmp"),
+        config.get_cache_file(),
+    )?;
+    tmp_dir.close()?;
+    Ok(())
+}
+
+fn background_update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
+    loop {
+        update_unbound_cache_dump(config)?;
+        thread::sleep(Duration::from_secs(config.refresh_cache_seconds as u64));
     }
 }

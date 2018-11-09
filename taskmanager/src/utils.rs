@@ -2,19 +2,11 @@
 
 use failure::{bail, Error, ResultExt};
 use std::{
-    ffi::{OsStr, OsString},
+    ffi::OsStr,
     fs, io,
     path::Path,
     process::{Command, Stdio},
 };
-use taskmanager::Executor;
-
-/// Specifies the direction of the copy of the scp command
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub enum ScpDirection {
-    LocalToRemote,
-    RemoteToLocal,
-}
 
 /// Compress a file with xz
 pub fn xz(path: &Path) -> Result<(), Error> {
@@ -36,39 +28,54 @@ pub fn xz(path: &Path) -> Result<(), Error> {
     Ok(())
 }
 
-/// Copy files between local and remote in both directions
-pub fn scp_file(
-    executor: &Executor,
-    direction: ScpDirection,
-    local_path: &Path,
-    remote_path: &Path,
-) -> Result<(), Error> {
-    let mut cmd = Command::new("scp");
-    cmd.arg("-pr");
-    let mut remote =
-        OsString::with_capacity(executor.name.len() + remote_path.as_os_str().len() + 4);
-    remote.push(&executor.name);
-    remote.push(":");
-    remote.push(remote_path);
-    match direction {
-        ScpDirection::LocalToRemote => cmd.args(&[local_path.as_os_str(), &*remote]),
-        ScpDirection::RemoteToLocal => cmd.args(&[&*remote, local_path.as_os_str()]),
-    };
-    let res = cmd
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .status()
-        .context("Could not start scp")?;
-    if !res.success() {
-        bail!("scp did not finish successfully")
-    }
-    Ok(())
-}
-
 /// Ensure the given path exists and if not create it
 pub fn ensure_path_exists(path: &Path) -> io::Result<()> {
     if !path.exists() {
         fs::create_dir_all(path)?;
+    }
+    Ok(())
+}
+
+/// Run a docker container
+///
+/// * `image` specifies the docker image to use
+/// * `extra_args` allows to pass extra configurations to docker. Make sure to not influence the `image`.
+/// * `command` is an optional command to be run *inside* the docker container.
+pub fn run_docker<I, S>(image: &str, extra_args: I, command: Option<&str>) -> Command
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<OsStr>,
+{
+    let mut cmd = Command::new("docker");
+    cmd.args(&[
+        "run",
+        "--privileged",
+        "-v",
+        "/tmp/.X11-unix:/tmp/.X11-unix:ro",
+        "--dns=127.0.0.1",
+        "--shm-size=2g",
+        "--rm",
+    ])
+    .args(extra_args)
+    .arg(image);
+    if let Some(command) = command {
+        cmd.arg(command);
+    }
+    cmd
+}
+
+pub fn docker_mount_option(host: &Path) -> (String, String) {
+    ("-v".into(), format!("{}:/output", host.to_string_lossy()))
+}
+
+pub fn ensure_docker_image_exists(image: &str) -> Result<(), Error> {
+    let output = Command::new("docker")
+        .arg("images")
+        .arg("-q")
+        .arg(image)
+        .output()?;
+    if output.stdout.len() < 10 {
+        bail!("Docker image {} does not exist.", image)
     }
     Ok(())
 }

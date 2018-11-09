@@ -11,7 +11,7 @@ extern crate toml;
 
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
-use failure::{bail, format_err, Error, ResultExt};
+use failure::{bail, Error, ResultExt};
 use misc_utils::fs::file_open_read;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -33,6 +33,8 @@ type TasksColumnType = (
     schema::tasks::restart_count,
     schema::tasks::last_modified,
     schema::tasks::associated_data,
+    schema::tasks::groupid,
+    schema::tasks::groupsize,
 );
 const TASKS_COLUMNS: TasksColumnType = (
     schema::tasks::id,
@@ -44,6 +46,8 @@ const TASKS_COLUMNS: TasksColumnType = (
     schema::tasks::restart_count,
     schema::tasks::last_modified,
     schema::tasks::associated_data,
+    schema::tasks::groupid,
+    schema::tasks::groupsize,
 );
 
 #[derive(Clone)]
@@ -60,6 +64,7 @@ impl Debug for TaskManager {
 }
 
 impl TaskManager {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new(database: &str) -> Result<Self, Error> {
         let db_connection = Arc::new(Mutex::new(PgConnection::establish(database)?));
         Ok(Self { db_connection })
@@ -93,7 +98,12 @@ impl TaskManager {
         })
     }
 
-    pub fn add_domains<I, S>(&self, domains: I, iteration_count: u8) -> Result<(), Error>
+    pub fn add_domains<I, S>(
+        &self,
+        domains: I,
+        groupsize: u8,
+        initial_priority: i32,
+    ) -> Result<(), Error>
     where
         I: IntoIterator<Item = S>,
         S: AsRef<str>,
@@ -104,9 +114,9 @@ impl TaskManager {
                 let prio = prio as i32;
                 let domain = domain.as_ref();
 
-                for i in 0..iteration_count {
+                for i in 0..groupsize {
                     let row = models::TaskInsert {
-                        priority: prio * i32::from(iteration_count) + i32::from(i),
+                        priority: prio * i32::from(groupsize) + i32::from(i) + initial_priority,
                         name: &format!("{}-{}", domain, i),
                         domain,
                         domain_counter: i32::from(i),
@@ -114,6 +124,8 @@ impl TaskManager {
                         restart_count: 0,
                         last_modified: Utc::now(),
                         associated_data: None,
+                        groupid: 0,
+                        groupsize: i32::from(groupsize),
                     };
                     diesel::insert_into(schema::tasks::table)
                         .values(&row)
@@ -126,7 +138,7 @@ impl TaskManager {
     }
 
     /// Return a task which waits for a VM to be executed
-    pub fn get_task_for_vm(&self, executor: &Executor) -> Result<Option<models::Task>, Error> {
+    pub fn get_task_for_vm(&self) -> Result<Option<models::Task>, Error> {
         use schema::tasks::dsl::{aborted, priority, state, tasks};
 
         let conn = self.db_connection.lock().unwrap();
@@ -144,8 +156,6 @@ impl TaskManager {
             let mut task = res.into_iter().next();
             if let Some(ref mut task) = &mut task {
                 task.advance();
-                task.associated_data =
-                    Some(toml::to_string(&executor).context("Cannot serialize executor")?);
                 diesel::update(&*task)
                     .set(&*task)
                     .execute(&*conn)
@@ -174,66 +184,9 @@ impl TaskManager {
         })
     }
 
-    pub fn finished_task_for_vm(
-        &self,
-        task: &mut models::Task,
-        path_on_vm: &Path,
-    ) -> Result<(), Error> {
+    pub fn finished_task_for_vm(&self, task: &mut models::Task) -> Result<(), Error> {
         if task.state != models::TaskState::SubmittedToVm {
             bail!("To complete a VM task it must be in the SubmittedToVm state.")
-        }
-
-        // Update task state
-        task.advance();
-        let executor: Executor =
-            toml::from_str(&*task.associated_data.as_ref().ok_or_else(|| {
-                format_err!("Task in SubmittedToVm state must have associated data")
-            })?)
-            .context("Associated data must be Executor")?;
-        let new_data = ResultsCollectableData {
-            executor,
-            path_on_vm: path_on_vm.to_path_buf(),
-        };
-        task.associated_data = Some(
-            toml::to_string(&new_data).context("Failed to serialize a ResultsCollectableData")?,
-        );
-
-        let conn = self.db_connection.lock().unwrap();
-        conn.transaction(|| self.update_tasks(&*conn, Some(&*task)))
-    }
-
-    pub fn results_collectable(
-        &self,
-    ) -> Result<Vec<(models::Task, ResultsCollectableData)>, Error> {
-        use schema::tasks::dsl::{aborted, priority, state, tasks};
-
-        let conn = self.db_connection.lock().unwrap();
-        conn.transaction(|| {
-            Ok(tasks
-                .filter(state.eq(models::TaskState::ResultsCollectable))
-                .filter(aborted.eq(false))
-                .order_by(priority.asc())
-                .select(TASKS_COLUMNS)
-                .load::<models::Task>(&*conn)
-                .context("Cannot retrieve tasks from database")?
-                .into_iter()
-                .map(|task| {
-                    let data: ResultsCollectableData =
-                        toml::from_str(&*task.associated_data.as_ref().ok_or_else(|| {
-                            format_err!(
-                                "Task in ResultsCollectable state must have associated data"
-                            )
-                        })?)
-                        .context("Associated data must be ResultsCollectableData")?;
-                    Ok((task, data))
-                })
-                .collect::<Result<Vec<_>, Error>>()?)
-        })
-    }
-
-    pub fn mark_results_collected(&self, task: &mut models::Task) -> Result<(), Error> {
-        if task.state != models::TaskState::ResultsCollectable {
-            bail!("Mark results as collected the task must be in the ResultsCollectable state.")
         }
 
         // Update task state
@@ -272,11 +225,8 @@ impl TaskManager {
         conn.transaction(|| self.update_tasks(&conn, Some(&*task)))
     }
 
-    pub fn results_need_sanity_check_domain(
-        &self,
-        iteration_count: u8,
-    ) -> Result<Option<Vec<models::Task>>, Error> {
-        use diesel::{dsl::sql_query, sql_types::Int4};
+    pub fn results_need_sanity_check_domain(&self) -> Result<Option<Vec<models::Task>>, Error> {
+        use diesel::dsl::sql_query;
 
         let conn = self.db_connection.lock().unwrap();
         let tasks = conn.transaction::<Vec<models::Task>, Error, _>(|| {
@@ -290,24 +240,27 @@ impl TaskManager {
                 t.state,
                 t.restart_count,
                 t.last_modified,
-                t.associated_data
+                t.associated_data,
+                t.groupid,
+                t.groupsize
             FROM (
-                SELECT domain
+                SELECT domain, groupid
                 FROM tasks
                 WHERE state = 'check_quality_domain'
                     AND aborted = false
-                GROUP BY domain
-                HAVING count(*) = $1
+                GROUP BY domain, groupid
+                HAVING count(*) = MAX(groupsize)
                 LIMIT 1
             ) AS s
             JOIN tasks t
                 ON s.domain = t.domain
+               AND s.groupid = t.groupid
+
             ORDER BY
                 t.domain,
                 priority ASC
             ;"#,
             )
-            .bind::<Int4, _>(i32::from(iteration_count))
             .load::<models::Task>(&*conn)
             .context("Cannot retrieve tasks from database")?)
         })?;
@@ -317,8 +270,8 @@ impl TaskManager {
         } else {
             assert_eq!(
                 tasks.len(),
-                iteration_count as usize,
-                "The number of tasks MUST match the iteration count."
+                tasks[0].groupsize() as usize,
+                "The number of tasks MUST match the groupsize."
             );
             Ok(Some(tasks))
         }
@@ -337,7 +290,11 @@ impl TaskManager {
             task.associated_data = None;
         }
 
-        let msg = format!("Finished domain {}", tasks[0].domain());
+        let msg = format!(
+            "Finished domain {} groupid {}",
+            tasks[0].domain(),
+            tasks[0].groupid()
+        );
         let row = models::InfoInsert {
             id: None,
             task_id: tasks[0].id(),
@@ -378,7 +335,7 @@ impl TaskManager {
                 Ok(())
             })
         } else {
-            use schema::tasks::dsl::{domain, tasks};
+            use schema::tasks::dsl::{domain, groupid, tasks};
 
             // We must abort all tasks for this domain
             let msg = format!("Too many restarts for task {}, abort domain.", task.name());
@@ -387,6 +344,7 @@ impl TaskManager {
                 // get all tasks for the same domain
                 let other_tasks = tasks
                     .filter(domain.eq(task.domain()))
+                    .filter(groupid.eq(task.groupid()))
                     .select(TASKS_COLUMNS)
                     .load::<models::Task>(&*conn)
                     .context("Cannot retrieve task from database")?;
@@ -420,6 +378,11 @@ impl TaskManager {
                 tasks[0].domain(),
                 task.domain(),
                 "restart_tasks only works if all tasks belong to the same domain"
+            );
+            assert_eq!(
+                tasks[0].groupid(),
+                task.groupid(),
+                "restart_tasks only works if all tasks belong to the same groupid"
             );
         }
 
@@ -456,7 +419,11 @@ impl TaskManager {
             })
         } else {
             // We must abort all tasks for this domain
-            let msg = format!("Too many restarts for domain {}", tasks[0].domain());
+            let msg = format!(
+                "Too many restarts for domain {} groupid {}",
+                tasks[0].domain(),
+                tasks[0].groupid()
+            );
 
             conn.transaction(|| {
                 for task in tasks {
@@ -486,27 +453,17 @@ impl TaskManager {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct ResultsCollectableData {
-    pub path_on_vm: PathBuf,
-    pub executor: Executor,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub working_directory: PathBuf,
     pub database: PathBuf,
     pub per_domain_datasets: u8,
-    pub executors: Vec<Executor>,
     pub max_allowed_dist_difference: f32,
     pub max_allowed_dist_difference_abs: usize,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Executor {
-    pub name: String,
-    pub sshconnect: String,
-    pub working_directory: PathBuf,
+    pub initial_priority: i32,
+    pub num_executors: u8,
+    pub refresh_cache_seconds: u32,
+    pub docker_image: String,
 }
 
 impl Config {
@@ -530,7 +487,11 @@ impl Config {
         self.working_directory.join("processed")
     }
 
-    pub fn get_scripts_dir(&self) -> PathBuf {
-        self.working_directory.join("scripts")
+    pub fn get_cache_file(&self) -> PathBuf {
+        self.working_directory.join("cache.dump")
+    }
+
+    pub fn get_prefetch_file(&self) -> PathBuf {
+        self.working_directory.join("alexa-top30k-eff-tlds.txt")
     }
 }

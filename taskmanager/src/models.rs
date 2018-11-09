@@ -21,6 +21,8 @@ pub struct Task {
     restart_count: i32,
     last_modified: DateTime<Utc>,
     pub(crate) associated_data: Option<String>,
+    groupid: i32,
+    groupsize: i32,
 }
 
 impl Task {
@@ -75,6 +77,16 @@ impl Task {
             associated_data: reason,
         }
     }
+
+    #[inline]
+    pub fn groupid(&self) -> i32 {
+        self.groupid
+    }
+
+    #[inline]
+    pub fn groupsize(&self) -> i32 {
+        self.groupsize
+    }
 }
 
 #[derive(Identifiable, AsChangeset, Debug, PartialEq, Eq)]
@@ -97,6 +109,8 @@ pub struct TaskInsert<'a> {
     pub restart_count: i32,
     pub last_modified: DateTime<Utc>,
     pub associated_data: Option<&'a str>,
+    pub groupid: i32,
+    pub groupsize: i32,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, DbEnum)]
@@ -124,12 +138,12 @@ impl TaskState {
 
         *self = match *self {
             Created => SubmittedToVm,
-            SubmittedToVm => ResultsCollectable,
-            ResultsCollectable => CheckQualitySingle,
+            SubmittedToVm => CheckQualitySingle,
             CheckQualitySingle => CheckQualityDomain,
             CheckQualityDomain => Done,
             Done => Done,
             Aborted => Aborted,
+            ResultsCollectable => panic!("This state is outdated after the switch to Docker"),
         }
     }
 
