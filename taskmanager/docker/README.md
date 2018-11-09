@@ -40,3 +40,7 @@ The following files will be created by running the container:
 * **`website-log.dnstap`** contains the dnstap output of Unbound
 * **`website-log.json`** contains a log of all the Chrome debugger messages
 * **`website-log.log`** contains timestamped progress and status output
+
+The cache update functionality has a slightly different interface.
+It expects two files **`prefetch-domains.txt`** containing a list of all domains to prefetch and creates a file **`cache.dump.new`** with the updated cache.
+To execute this functionality, start the `/usr/bin/create-cache-dump.fish` file.
