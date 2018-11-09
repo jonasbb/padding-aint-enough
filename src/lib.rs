@@ -1,9 +1,13 @@
+extern crate chrome;
 extern crate failure;
 extern crate min_max_heap;
+extern crate sequences;
 extern crate serde_json;
 
+use chrome::ChromeDebuggerMessage;
 use failure::{Error, Fail};
 use min_max_heap::MinMaxHeap;
+use sequences::common_sequence_classifications::{R008, R009};
 use serde_json::ser::Formatter;
 use std::{
     fmt::{self, Display},
@@ -117,4 +121,43 @@ impl Formatter for JsonlFormatter {
         }
         Ok(())
     }
+}
+
+pub fn chrome_log_contains_errors<S>(msgs: &[ChromeDebuggerMessage<S>]) -> Option<&'static str>
+where
+    S: AsRef<str>,
+{
+    // test if there is a chrome error page
+    let contains_chrome_error = msgs.iter().any(|msg| {
+        if let ChromeDebuggerMessage::NetworkRequestWillBeSent { document_url, .. } = msg {
+            document_url.as_ref() == "chrome-error://chromewebdata/"
+        } else {
+            false
+        }
+    });
+    if contains_chrome_error {
+        return Some(R008);
+    }
+
+    // Ensure at least one network request has succeeded.
+    let contains_response_received = msgs.iter().any(|msg| {
+        if let ChromeDebuggerMessage::NetworkResponseReceived { .. } = msg {
+            true
+        } else {
+            false
+        }
+    });
+    let contains_data_received = msgs.iter().any(|msg| {
+        if let ChromeDebuggerMessage::NetworkDataReceived { .. } = msg {
+            true
+        } else {
+            false
+        }
+    });
+    if !(contains_response_received && contains_data_received) {
+        return Some(R009);
+    }
+
+    // default case is `false`, meaning the data is good
+    None
 }

@@ -6,19 +6,17 @@ extern crate failure;
 extern crate glob;
 extern crate misc_utils;
 extern crate rayon;
-extern crate sequences;
 extern crate serde;
 extern crate serde_json;
 extern crate structopt;
 
 use chrome::ChromeDebuggerMessage;
 use csv::WriterBuilder;
-use encrypted_dns::ErrorExt;
+use encrypted_dns::{chrome_log_contains_errors, ErrorExt};
 use failure::{Error, ResultExt};
 use glob::glob;
 use misc_utils::fs::file_open_read;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
-use sequences::common_sequence_classifications::*;
 use serde::Serialize;
 use std::{io, path::PathBuf};
 use structopt::StructOpt;
@@ -84,7 +82,7 @@ fn run() -> Result<(), Error> {
                     .with_context(|_| format!("Error while reading '{}'", path.display()))?;
                 let msgs: Vec<ChromeDebuggerMessage> = serde_json::from_str(&content)
                     .with_context(|_| format!("Error while deserializing '{}'", path.display()))?;
-                Ok((path, is_problematic_case(&msgs)))
+                Ok((path, chrome_log_contains_errors(&msgs)))
             })
             .collect::<Vec<_>>()
             .into_iter()
@@ -110,43 +108,4 @@ fn run() -> Result<(), Error> {
     }
 
     Ok(())
-}
-
-fn is_problematic_case<S>(msgs: &[ChromeDebuggerMessage<S>]) -> Option<&'static str>
-where
-    S: AsRef<str>,
-{
-    // test if there is a chrome error page
-    let contains_chrome_error = msgs.iter().any(|msg| {
-        if let ChromeDebuggerMessage::NetworkRequestWillBeSent { document_url, .. } = msg {
-            document_url.as_ref() == "chrome-error://chromewebdata/"
-        } else {
-            false
-        }
-    });
-    if contains_chrome_error {
-        return Some(R008);
-    }
-
-    // Ensure at least one network request has succeeded.
-    let contains_response_received = msgs.iter().any(|msg| {
-        if let ChromeDebuggerMessage::NetworkResponseReceived { .. } = msg {
-            true
-        } else {
-            false
-        }
-    });
-    let contains_data_received = msgs.iter().any(|msg| {
-        if let ChromeDebuggerMessage::NetworkDataReceived { .. } = msg {
-            true
-        } else {
-            false
-        }
-    });
-    if !(contains_response_received && contains_data_received) {
-        return Some(R009);
-    }
-
-    // default case is `false`, meaning the data is good
-    None
 }
