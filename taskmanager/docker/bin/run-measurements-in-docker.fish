@@ -8,7 +8,7 @@
 
 function start_fstrm
     set -l LOG_FILE /output/website-log.dnstap
-    sudo -u unbound /usr/bin/fstrm_capture -t protobuf:dnstap.Dnstap -u "$DNSTAP_SOCK" -w $LOG_FILE 2>&1 &
+    sudo /usr/bin/fstrm_capture -t protobuf:dnstap.Dnstap -u "$DNSTAP_SOCK" -w $LOG_FILE 2>&1 &
     set -g FSTRM_PID %last
     echo "Started fstrm_capture with PID $FSTRM_PID"
 
@@ -18,7 +18,7 @@ function start_fstrm
         echo "Waiting for socket $DNSTAP_SOCK"
     end
     echo "Found socket $DNSTAP_SOCK"
-    sudo -u unbound chmod uga+rwx $DNSTAP_SOCK
+    sudo chmod uga+rwx $DNSTAP_SOCK
     # Wait until output file is created
     while [ ! -e "$DNSTAP_SOCK" ];
         sleep .1
@@ -81,9 +81,10 @@ function run
     sleep 2
     # Chrome should have exited by now
     killall google-chrome chrome
-    sudo -u unbound killall fstrm_capture
+    sudo killall fstrm_capture
     echo "Kill: " $status
     wait
+    sleep 1
     echo
 
     # copy experiment results
@@ -91,11 +92,11 @@ function run
     mv --force "$TMPDIR"/website-log.json ./website-log.json
 
     # cleanup
+    echo "Cleanup"
     rm -rf "$TMPDIR" "$CHROME_TMPDIR"
 
     echo "Successfully finished"
 end
 
 pushd /output
-sudo rm -f website-log.*
-run 2>&1 | stdbuf -oL ts | stdbuf -oL tee ./website-log.log
+run 2>&1

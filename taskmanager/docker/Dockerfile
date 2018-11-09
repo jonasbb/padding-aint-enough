@@ -59,4 +59,4 @@ VOLUME [ "/output", "/tmp/.X11-unix" ]
 USER docker
 ENV XDG_RUNTIME_DIR=/run/user/1000/
 
-CMD [ "/usr/bin/run-measurements-in-docker.fish" ]
+CMD [ "/usr/bin/capture-output.sh", "/usr/bin/run-measurements-in-docker.fish", "/output/website-log.log" ]
