@@ -369,64 +369,6 @@ fn cleanup_stale_tasks(taskmgr: &TaskManager) -> Result<(), Error> {
     }
 }
 
-/*
-/// Copy the finished results from a VM to the global directory
-fn copy_vm_results(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> {
-    let local_path = config.get_collected_results_path();
-    loop {
-        ensure_path_exists(&local_path)
-            .context("Cannot create local path for collected results")?;
-        let tasks = taskmgr.results_collectable()?;
-        for (mut task, data) in tasks {
-            execute_or_restart_task(&mut task, taskmgr, |mut task| {
-                // copy data from VM to local directory
-                scp_file(
-                    &data.executor,
-                    ScpDirection::RemoteToLocal,
-                    &local_path,
-                    &data.path_on_vm,
-                )?;
-                // copy data from VM to local directory
-                let res = Command::new("ssh")
-                    .args(&[&data.executor.sshconnect, "--", "rm", "-rf"])
-                    .arg(&data.path_on_vm)
-                    .status()
-                    .with_context(|_| {
-                        format!(
-                            "Could not copy the results of {} from VM {}",
-                            task.name(),
-                            data.executor.name,
-                        )
-                    })?;
-                if !res.success() {
-                    bail!(
-                        "Could not copy the results of {} from VM {}",
-                        task.name(),
-                        data.executor.name,
-                    )
-                }
-
-                // compress files to save space
-                for entry in fs::read_dir(local_path.join(task.name()))? {
-                    let entry = entry?;
-                    if let Ok(file_type) = entry.file_type() {
-                        if file_type.is_file() {
-                            let path = entry.path();
-                            xz(&*path).with_context(|_| {
-                                format!("Failed to compress {}", path.display())
-                            })?;
-                        }
-                    }
-                }
-
-                taskmgr.mark_results_collected(&mut task)
-            })?;
-        }
-        thread::sleep(Duration::new(10, 0));
-    }
-}
-*/
-
 /// Check the VM results for consistency
 fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> {
     let local_path = config.get_collected_results_path();
