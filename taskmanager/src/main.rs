@@ -313,6 +313,8 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 debug!("{}: Run docker container", task.name());
                 let mounts = docker_mount_option(tmp_dir.path());
                 let success = run_docker(&config.docker_image, &[mounts.0, mounts.1], None)
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
                     .status()
                     .with_context(|_| format!("{}: Failed to start the measuremetns", task.name()))?
                     .success();
