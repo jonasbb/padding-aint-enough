@@ -17,6 +17,7 @@ members = [
     "sequences",
     "taskmanager",
     "third-party-resources",
+    "xvfb",
 ]
 
 [profile.dev]

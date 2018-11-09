@@ -1764,6 +1764,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "xvfb"
+version = "0.1.0"
+dependencies = [
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "xz2"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
