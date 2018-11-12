@@ -46,8 +46,11 @@ where
     I: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    let mut cmd = Command::new("docker");
+    let mut cmd = Command::new("timeout");
     cmd.args(&[
+        "--kill-after=2m",
+        "1.5m",
+        "docker",
         "run",
         "--privileged",
         "-v",

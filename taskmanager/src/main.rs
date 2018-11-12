@@ -312,17 +312,27 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
 
                 debug!("{}: Run docker container", task.name());
                 let mounts = docker_mount_option(tmp_dir.path());
-                let success = run_docker(&config.docker_image, &[mounts.0, mounts.1], None)
+                let status = run_docker(&config.docker_image, &[mounts.0, mounts.1], None)
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())
                     .status()
-                    .with_context(|_| format!("{}: Failed to start the measuremetns", task.name()))?
-                    .success();
-                if !success {
+                    .with_context(|_| format!("{}: Failed to start the measuremetns", task.name()))?;
+                if !status.success() {
+                    use std::os::unix::process::ExitStatusExt;
+                    // 124 timeout, 128+9 terminated by kill signal
+                    if status.code() == Some(124) || status.signal() == Some(9) {
+                        bail!(
+                            "Executing the docker container failed for task {} ({}): Reason timeout, exit {}+{}",
+                            task.name(),
+                            task.id(),
+                            status.code().unwrap_or(0),
+                            status.signal().unwrap_or(0),
+                        );
+                    }
                     bail!(
                         "Executing the docker container failed for task {} ({})",
                         task.name(),
-                        task.id()
+                        task.id(),
                     );
                 }
 
