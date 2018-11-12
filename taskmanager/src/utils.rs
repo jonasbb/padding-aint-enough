@@ -53,6 +53,8 @@ where
         "docker",
         "run",
         "--privileged",
+        "--cpus",
+        "1",
         "-v",
         "/tmp/.X11-unix:/tmp/.X11-unix:ro",
         "--dns=127.0.0.1",
