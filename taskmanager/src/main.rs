@@ -36,7 +36,7 @@ use std::{
     time::Duration,
 };
 use structopt::StructOpt;
-use taskmanager::{models::Task, Config, TaskManager};
+use taskmanager::{models::Task, AddDomainConfig, Config, TaskManager};
 use tempfile::{Builder as TempDirBuilder, TempDir};
 use utils::*;
 use xvfb::{ProcessStatus, Xvfb};
@@ -179,7 +179,12 @@ fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
             .context("Empty database before filling it")?;
         info!("Add new database entries");
         taskmgr
-            .add_domains(domains, config.per_domain_datasets, config.initial_priority)
+            .add_domains(
+                domains
+                    .into_iter()
+                    .map(|domain| AddDomainConfig::new(domain, 0, 0, config.per_domain_datasets)),
+                config.initial_priority,
+            )
             .context("Could not create tasks")?;
     } else {
         unreachable!("The run function verifies which enum variant this is.")
@@ -512,7 +517,6 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
             })
             .collect();
 
-        // TODO use groupid here somewhere
         let mark_domain_good = |tasks: &mut Vec<Task>| -> Result<(), Error> {
             //everything is fine, advance the tasks to next stage
             for task in &*tasks {

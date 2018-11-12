@@ -55,6 +55,32 @@ const TASKS_COLUMNS: TasksColumnType = (
     schema::tasks::groupsize,
 );
 
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub struct AddDomainConfig {
+    pub(crate) domain: String,
+    pub(crate) domain_counter: i32,
+    pub(crate) groupid: i32,
+    pub(crate) groupsize: u8,
+}
+
+impl AddDomainConfig {
+    pub fn new(
+        domain: impl Into<String>,
+        domain_counter: i32,
+        groupid: i32,
+        groupsize: u8,
+    ) -> Self {
+        assert!(domain_counter >= 0);
+        assert!(groupid >= 0);
+        Self {
+            domain: domain.into(),
+            domain_counter,
+            groupid,
+            groupsize,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub struct TaskManager {
     db_connection: Arc<Mutex<PgConnection>>,
@@ -103,40 +129,35 @@ impl TaskManager {
         })
     }
 
-    pub fn add_domains<I, S>(
-        &self,
-        domains: I,
-        groupsize: u8,
-        initial_priority: i32,
-    ) -> Result<(), Error>
+    pub fn add_domains<I>(&self, domains: I, initial_priority: i32) -> Result<(), Error>
     where
-        I: IntoIterator<Item = S>,
-        S: AsRef<str>,
+        I: IntoIterator<Item = AddDomainConfig>,
     {
         let conn = self.db_connection.lock().unwrap();
         conn.transaction(|| {
-            for (prio, domain) in domains.into_iter().enumerate() {
-                let prio = prio as i32;
-                let domain = domain.as_ref();
-
-                for i in 0..groupsize {
+            let mut prio = 0;
+            for config in domains {
+                for i in 0..config.groupsize {
+                    let dc = config.domain_counter + i32::from(i);
                     let row = models::TaskInsert {
-                        priority: prio * i32::from(groupsize) + i32::from(i) + initial_priority,
-                        name: &format!("{}-{}", domain, i),
-                        domain,
-                        domain_counter: i32::from(i),
+                        priority: prio + i32::from(i) + initial_priority,
+                        name: &format!("{}-{}-{}", config.domain, dc, config.groupid),
+                        domain: &config.domain,
+                        domain_counter: dc,
                         state: models::TaskState::Created,
                         restart_count: 0,
                         last_modified: Utc::now(),
                         associated_data: None,
-                        groupid: 0,
-                        groupsize: i32::from(groupsize),
+                        groupid: config.groupid,
+                        groupsize: i32::from(config.groupsize),
                     };
                     diesel::insert_into(schema::tasks::table)
                         .values(&row)
                         .execute(&*conn)
                         .context("Error creating new task")?;
                 }
+
+                prio += i32::from(config.groupsize);
             }
             Ok(())
         })
