@@ -23,6 +23,11 @@ use std::{
 pub mod models;
 pub mod schema;
 
+/// Maximal number of restarts which are happening for a task.
+///
+/// The full number of tries which are executed are `MAX_RESTART_COUNT` + 1, for the initial try.
+const MAX_RESTART_COUNT: i32 = 3;
+
 type TasksColumnType = (
     schema::tasks::id,
     schema::tasks::priority,
@@ -316,7 +321,7 @@ impl TaskManager {
         task.associated_data = None;
 
         let conn = self.db_connection.lock().unwrap();
-        if task.restart_count() < 4 {
+        if task.restart_count() <= MAX_RESTART_COUNT {
             // The task is still allowed to be restarted
             let msg = format!("Restart task {} because {}", task.name(), reason);
             conn.transaction(|| {
@@ -391,7 +396,7 @@ impl TaskManager {
             task.restart();
             task.associated_data = None;
 
-            if task.restart_count() >= 4 {
+            if task.restart_count() > MAX_RESTART_COUNT {
                 abort_tasks = true;
             }
         }
