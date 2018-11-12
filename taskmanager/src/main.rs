@@ -39,7 +39,7 @@ use structopt::StructOpt;
 use taskmanager::{models::Task, Config, TaskManager};
 use tempfile::{Builder as TempDirBuilder, TempDir};
 use utils::*;
-use xvfb::Xvfb;
+use xvfb::{ProcessStatus, Xvfb};
 
 lazy_static! {
     static ref DNSTAP_FILE_NAME: &'static Path = &Path::new("website-log.dnstap.xz");
@@ -91,6 +91,12 @@ enum SubCommand {
     /// Print the CLI arguments to stdout
     #[structopt(name = "debug")]
     Debug,
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+enum TaskStatus {
+    Completed,
+    Restarted,
 }
 
 fn path_is_file_exists(path: &OsStr) -> Result<PathBuf, OsString> {
@@ -283,10 +289,16 @@ where
 /// This function is responsible for all the steps related to capturing the measurement data from
 /// the VMs.
 fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> {
-    let xvfb = Xvfb::new().context("Failed to spawn virtual frame buffer")?;
+    let mut xvfb = None;
     loop {
         if let Some(mut task) = taskmgr.get_task_for_vm()? {
-            execute_or_restart_task(&mut task, taskmgr, |mut task| {
+            if xvfb.is_none() {
+                debug!("{}: Start new xvfb", task.name());
+                xvfb = Some(Xvfb::new().context("Failed to spawn virtual frame buffer")?);
+            }
+
+            let taskstatus = execute_or_restart_task(&mut task, taskmgr, |mut task| {
+                let xvfb = xvfb.as_ref().expect("xvfb must always exist and be Some()");
                 let tmp_dir = TempDirBuilder::new().prefix("docker").tempdir()?;
                 info!(
                     "Process task {} ({}), step Docker, tmp dir {}",
@@ -316,7 +328,9 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())
                     .status()
-                    .with_context(|_| format!("{}: Failed to start the measuremetns", task.name()))?;
+                    .with_context(|_| {
+                        format!("{}: Failed to start the measuremetns", task.name())
+                    })?;
                 if !status.success() {
                     use std::os::unix::process::ExitStatusExt;
                     // 124 timeout, 128+9 terminated by kill signal
@@ -357,6 +371,20 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 debug!("Finished task {} ({})", task.name(), task.id());
                 taskmgr.finished_task_for_vm(&mut task)
             })?;
+
+            // Perform tests to see if we need to restart xvfb
+            if taskstatus != TaskStatus::Completed {
+                debug!("Kill xvfb due to error in task execution");
+                xvfb = None;
+            }
+            let is_xvfb_alive = xvfb.as_mut().map(|xvfb| match xvfb.process_status() {
+                ProcessStatus::Alive => true,
+                _ => false,
+            });
+            if is_xvfb_alive != Some(true) {
+                debug!("Reset xvfb, as it is no longer alive");
+                xvfb = None;
+            }
         } else {
             info!("No tasks left for Docker");
             thread::sleep(Duration::new(10, 0));
@@ -442,16 +470,21 @@ fn init_global_environment(config: &Config) -> Result<(), Error> {
     update_unbound_cache_dump(config)
 }
 
-fn execute_or_restart_task<F>(task: &mut Task, taskmgr: &TaskManager, func: F) -> Result<(), Error>
+fn execute_or_restart_task<F>(
+    task: &mut Task,
+    taskmgr: &TaskManager,
+    func: F,
+) -> Result<TaskStatus, Error>
 where
     F: FnOnce(&mut Task) -> Result<(), Error>,
 {
     let res = func(task);
     if let Err(err) = res {
         warn!("{}", err.display_causes());
-        taskmgr.restart_task(task, &err.display_causes())
+        taskmgr.restart_task(task, &err.display_causes())?;
+        Ok(TaskStatus::Restarted)
     } else {
-        Ok(())
+        Ok(TaskStatus::Completed)
     }
 }
 

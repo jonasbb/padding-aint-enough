@@ -4,6 +4,7 @@ use log::{debug, error, warn};
 use std::{
     fmt,
     io::{self, Read},
+    os::unix::process::ExitStatusExt,
     process::{Child, Command, Stdio},
     str::FromStr,
 };
@@ -14,6 +15,16 @@ pub struct Xvfb {
     process: Child,
     /// The X display opened by this instance of Xvfb
     display: XDisplay,
+}
+
+#[derive(Debug)]
+pub enum ProcessStatus {
+    Alive,
+    Exited {
+        exitcode: Option<i32>,
+        signal: Option<i32>,
+    },
+    Error(io::Error),
 }
 
 impl Xvfb {
@@ -40,6 +51,17 @@ impl Xvfb {
 
     pub fn get_display(&self) -> XDisplay {
         self.display
+    }
+
+    pub fn process_status(&mut self) -> ProcessStatus {
+        match self.process.try_wait() {
+            Ok(None) => ProcessStatus::Alive,
+            Ok(Some(status)) => ProcessStatus::Exited {
+                exitcode: status.code(),
+                signal: status.signal(),
+            },
+            Err(err) => ProcessStatus::Error(err),
+        }
     }
 }
 
