@@ -91,6 +91,16 @@ enum SubCommand {
     /// Print the CLI arguments to stdout
     #[structopt(name = "debug")]
     Debug,
+    /// Create the initial list of tasks from a domain list
+    #[structopt(name = "add")]
+    AddRecurring {
+        #[structopt(
+            short = "d",
+            long = "domain",
+            parse(try_from_os_str = "path_file_exists_and_readable_open")
+        )]
+        domain_list: (Box<Read>, PathBuf),
+    },
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -150,6 +160,7 @@ fn run() -> Result<(), Error> {
         SubCommand::InitTaskSet { .. } => run_init(cli_args.cmd, config),
         SubCommand::Run => run_exec(cli_args.cmd, config),
         SubCommand::Debug => run_debug(cli_args, config),
+        SubCommand::AddRecurring { .. } => run_add_recurring(cli_args.cmd, config),
     }
 }
 
@@ -257,6 +268,39 @@ fn run_exec(cmd: SubCommand, config: Config) -> Result<(), Error> {
 fn run_debug(args: CliArgs, config: Config) -> Result<(), Error> {
     println!("{:#?}", args);
     println!("{:#?}", config);
+    Ok(())
+}
+
+#[allow(clippy::needless_pass_by_value)]
+fn run_add_recurring(cmd: SubCommand, config: Config) -> Result<(), Error> {
+    if let SubCommand::AddRecurring {
+        domain_list: (mut domain_list_reader, domain_list_path),
+        ..
+    } = cmd
+    {
+        let mut taskmgr = TaskManager::new(&*config.get_database_path().to_string_lossy())
+            .context("Cannot create TaskManager")?;
+
+        debug!("Read domains file");
+        let domains = BufReader::new(&mut domain_list_reader)
+            .lines()
+            .collect::<Result<Vec<String>, std::io::Error>>()
+            .with_context(|_| format!("Failed to read line in {}", domain_list_path.display()))?;
+
+        let domain_state = taskmgr
+            .get_domain_state(&domains)
+            .context("Failed to retrieve the domainstate")?;
+        taskmgr
+            .add_domains(
+                domain_state.into_iter().map(|dc| {
+                    dc.into_add_domain_config(config.per_domain_datasets_repeated_measurements)
+                }),
+                0,
+            )
+            .context("Failed to add repeated domains tasks")?;
+    } else {
+        unreachable!("The run function verifies which enum variant this is.")
+    }
     Ok(())
 }
 

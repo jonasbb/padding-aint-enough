@@ -3,6 +3,7 @@
 use chrono::{DateTime, Utc};
 use diesel_derive_enum::DbEnum;
 use schema::{infos, tasks};
+use crate::AddDomainConfig;
 
 #[derive(Identifiable, Queryable, AsChangeset, QueryableByName, Debug, PartialEq, Eq)]
 #[changeset_options(treat_none_as_null = "true")]
@@ -164,4 +165,24 @@ pub struct InfoInsert<'a> {
     pub task_id: i32,
     pub time: DateTime<Utc>,
     pub message: &'a str,
+}
+
+#[table_name = "tasks"]
+#[derive(Debug, QueryableByName)]
+pub struct DomainCounters {
+    pub(crate) domain: String,
+    pub(crate) domain_counter: i32,
+    pub(crate) groupid: i32,
+}
+
+
+impl DomainCounters {
+    pub fn into_add_domain_config(self, groupsize: u8) -> AddDomainConfig {
+        AddDomainConfig {
+            domain: self.domain,
+            domain_counter: self.domain_counter,
+            groupid: self.groupid,
+            groupsize,
+        }
+    }
 }

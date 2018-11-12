@@ -473,6 +473,45 @@ impl TaskManager {
             })
         }
     }
+
+    pub fn get_domain_state(
+        &self,
+        domains: &[impl AsRef<str>],
+    ) -> Result<Vec<models::DomainCounters>, Error> {
+        use diesel::{dsl::sql_query, sql_types::*};
+
+        let conn = self.db_connection.lock().unwrap();
+        let domain_counters =
+            conn.transaction::<Vec<Vec<models::DomainCounters>>, Error, _>(|| {
+                domains
+                    .iter()
+                    .map(|domain| -> Result<Vec<models::DomainCounters>, Error> {
+                        Ok(sql_query(
+                            r#"SELECT
+                            domain,
+                            MAX(domain_counter) + 1 as domain_counter,
+                            MAX(groupid) + 1 as groupid
+                        FROM tasks
+                        WHERE
+                            domain = $1
+                        GROUP BY
+                            domain
+                        ;"#,
+                        )
+                        .bind::<Text, _>(domain.as_ref())
+                        .load::<models::DomainCounters>(&*conn)
+                        .with_context(|_| {
+                            format!(
+                                "Cannot retrieve domain counters from database for domain '{}'",
+                                domain.as_ref(),
+                            )
+                        })?)
+                    })
+                    .collect()
+            })?;
+
+        Ok(domain_counters.into_iter().flat_map(|x| x).collect())
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -480,6 +519,7 @@ pub struct Config {
     pub working_directory: PathBuf,
     pub database: PathBuf,
     pub per_domain_datasets: u8,
+    pub per_domain_datasets_repeated_measurements: u8,
     pub max_allowed_dist_difference: f32,
     pub max_allowed_dist_difference_abs: usize,
     pub initial_priority: i32,
