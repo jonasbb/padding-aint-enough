@@ -36,7 +36,7 @@ test:cargo:
   # They are usefull for local development, as this crates more optimized debug binaries
   # but makes CI very slow
   - sed -i '/profile.dev.overrides./,+1 d' Cargo.toml
-  - sed '/profile.dev.build-override/,+1 d' Cargo.toml
+  - sed -i '/profile.dev.build-override/,+1 d' Cargo.toml
   - cargo build --all --verbose
   - cargo test --all --verbose
   # start pipenv virtual environment
