@@ -32,6 +32,11 @@ test:cargo:
   - pipenv install --dev --verbose
   - pipenv run pip freeze
   - rustc --version && cargo --version      # Print version info for debugging
+  # Remove debug build optimizations for third-party crates
+  # They are usefull for local development, as this crates more optimized debug binaries
+  # but makes CI very slow
+  - sed -i '/profile.dev.overrides./,+1 d' Cargo.toml
+  - sed '/profile.dev.build-override/,+1 d' Cargo.toml
   - cargo build --all --verbose
   - cargo test --all --verbose
   # start pipenv virtual environment
