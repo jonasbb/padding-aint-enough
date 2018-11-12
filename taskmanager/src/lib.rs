@@ -452,10 +452,6 @@ impl TaskManager {
             })
         }
     }
-
-    pub fn find_stale_tasks(&self) -> Result<Vec<models::Task>, Error> {
-        unimplemented!()
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
