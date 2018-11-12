@@ -37,6 +37,7 @@ See issue [#33][] for more details.
 ## List of Clients
 
 * [Android 9][]: DoT
+* [Cloudflare App][]: ?, probably DoT
 * [Firefox][]: DoH
 * [Intra][]: DoH
 * [Stubby][]: DoT
@@ -198,6 +199,7 @@ Keywords: padding, EDNS0, RFC 7830 (Padding Option), RFC 8467 (Padding Policies)
 [`16b6d76f0ebb8d355f95fe65c1a110117c05e1c3`]: https://android.googlesource.com/platform/system/netd/+/16b6d76f0ebb8d355f95fe65c1a110117c05e1c3/
 [`netwerk/dns/TRR.cpp:464`]:(https://github.com/mozilla/gecko/tree/3f502e430c7887baaca10a1246a265bd4d51e187/netwerk/dns/TRR.cpp#L464)
 [Android 9]: https://android-developers.googleblog.com/2018/04/dns-over-tls-support-in-android-p.html
+[Cloudflare App]: https://blog.cloudflare.com/1-thing-you-can-do-to-make-your-internet-safer-and-faster/
 [Firefox]: https://blog.nightly.mozilla.org/2018/06/01/improving-dns-privacy-in-firefox/
 [Intra #80]: https://github.com/Jigsaw-Code/Intra/issues/80
 [Intra #98]: https://github.com/Jigsaw-Code/Intra/issues/98
