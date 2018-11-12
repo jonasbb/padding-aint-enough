@@ -13,6 +13,7 @@ variables:
   MPLBACKEND: "Agg"
   LC_ALL: "C.UTF-8"
   LANG: "C.UTF-8"
+  PYLIB_FORCE_DEBUG: "TRUE"
 
 # Use cargo to test the project
 test:cargo:
