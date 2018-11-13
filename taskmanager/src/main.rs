@@ -12,6 +12,7 @@ extern crate structopt;
 extern crate taskmanager;
 extern crate tempfile;
 extern crate toml;
+extern crate wait_timeout;
 extern crate xvfb;
 
 mod utils;
@@ -30,7 +31,6 @@ use std::{
     io::{BufRead, BufReader, Read},
     panic::{self, RefUnwindSafe, UnwindSafe},
     path::{Path, PathBuf},
-    process::Stdio,
     sync::Arc,
     thread::{self, JoinHandle},
     time::Duration,
@@ -372,26 +372,15 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 .with_context(|_| format!("{}: Failed to create file `display`", task.name()))?;
 
                 debug!("{}: Run docker container", task.name());
-                let mounts = docker_mount_option(tmp_dir.path());
-                let status = run_docker(&config.docker_image, &[mounts.0, mounts.1], None)
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .status()
-                    .with_context(|_| {
-                        format!("{}: Failed to start the measuremetns", task.name())
-                    })?;
+                let status = docker_run(
+                    &config.docker_image,
+                    tmp_dir.path(),
+                    None,
+                    // 45 seconds
+                    Duration::new(45, 0),
+                )
+                .with_context(|_| format!("{}: Failed to start the measuremetns", task.name()))?;
                 if !status.success() {
-                    use std::os::unix::process::ExitStatusExt;
-                    // 124 timeout, 128+9 terminated by kill signal
-                    if status.code() == Some(124) || status.signal() == Some(9) {
-                        bail!(
-                            "Executing the docker container failed for task {} ({}): Reason timeout, exit {}+{}",
-                            task.name(),
-                            task.id(),
-                            status.code().unwrap_or(0),
-                            status.signal().unwrap_or(0),
-                        );
-                    }
                     bail!(
                         "Executing the docker container failed for task {} ({})",
                         task.name(),
@@ -680,22 +669,19 @@ fn update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
         config.get_prefetch_file(),
         tmp_dir.path().join("prefetch-domains.txt"),
     )?;
-    let mounts = docker_mount_option(tmp_dir.path());
     info!(
         "Start Unbound refresh in Docker with tmp dir '{}'",
         tmp_dir.path().display()
     );
-    let success = run_docker(
+    let status = docker_run(
         &config.docker_image,
-        &[mounts.0, mounts.1],
+        tmp_dir.path(),
         Some("/usr/bin/create-cache-dump.fish"),
+        // 90 seconds
+        Duration::new(90, 0),
     )
-    .stdout(Stdio::null())
-    .stderr(Stdio::null())
-    .status()
-    .context("Failed to run docker image to create a cache dump")?
-    .success();
-    if !success {
+    .context("Failed to run docker image to create a cache dump")?;
+    if !status.success() {
         bail!("Creating the unbound cache dump failed");
     }
 
@@ -716,6 +702,6 @@ fn update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
 fn background_update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
     loop {
         update_unbound_cache_dump(config)?;
-        thread::sleep(Duration::from_secs(config.refresh_cache_seconds as u64));
+        thread::sleep(Duration::from_secs(u64::from(config.refresh_cache_seconds)));
     }
 }
