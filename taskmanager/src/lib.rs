@@ -104,7 +104,10 @@ impl Debug for TaskManager {
 impl TaskManager {
     #[allow(clippy::new_ret_no_self)]
     pub fn new(database: &str) -> Result<Self, Error> {
-        let db_connection = Arc::new(Mutex::new(PgConnection::establish(database)?));
+        let conn = PgConnection::establish(database)?;
+        conn.execute("SET lock_timeout TO 30000")?;
+        conn.execute("SET statement_timeout TO 90000")?;
+        let db_connection = Arc::new(Mutex::new(conn));
         Ok(Self { db_connection })
     }
 
