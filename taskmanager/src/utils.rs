@@ -7,7 +7,7 @@ use std::{
     fs, io,
     os::unix::fs::PermissionsExt,
     path::Path,
-    process::{Command, Stdio},
+    process::{Command, ExitStatus, Stdio},
     time::Duration,
 };
 use wait_timeout::ChildExt;
@@ -82,12 +82,12 @@ pub fn docker_run(
     trace!("Execute command: {:?}", cmd);
     let mut child = cmd.spawn()?;
     match child.wait_timeout(timeout) {
-        Ok(Some(status)) => Ok(status.into()),
+        Ok(Some(status)) => Ok(status),
         Ok(None) => {
             // container has not exited yet
             let containerid = fs::read_to_string(host_dir.join("cidfile"))?;
             docker_kill(containerid.trim())?;
-            Ok(child.wait()?.into())
+            Ok(child.wait()?)
         }
         Err(err) => {
             let containerid = fs::read_to_string(host_dir.join("cidfile"))?;
@@ -137,36 +137,4 @@ pub fn ensure_docker_image_exists(image: &str) -> Result<(), Error> {
         bail!("Docker image {} does not exist.", image)
     }
     Ok(())
-}
-
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-pub struct ExitStatus {
-    code: Option<i32>,
-    signal: Option<i32>,
-}
-
-impl ExitStatus {
-    pub fn success(&self) -> bool {
-        self.code == Some(0) && self.signal == None
-    }
-}
-
-impl From<wait_timeout::ExitStatus> for ExitStatus {
-    fn from(status: wait_timeout::ExitStatus) -> Self {
-        Self {
-            code: status.code(),
-            signal: status.unix_signal(),
-        }
-    }
-}
-
-#[cfg(unix)]
-impl From<std::process::ExitStatus> for ExitStatus {
-    fn from(status: std::process::ExitStatus) -> Self {
-        use std::os::unix::process::ExitStatusExt;
-        Self {
-            code: status.code(),
-            signal: status.signal(),
-        }
-    }
 }
