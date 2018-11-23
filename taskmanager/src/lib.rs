@@ -4,7 +4,10 @@ extern crate chrono;
 #[macro_use]
 extern crate diesel;
 extern crate diesel_derive_enum;
+#[macro_use]
+extern crate diesel_migrations;
 extern crate failure;
+extern crate log;
 extern crate misc_utils;
 extern crate serde;
 extern crate toml;
@@ -12,6 +15,7 @@ extern crate toml;
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
 use failure::{bail, Error, ResultExt};
+use log::info;
 use misc_utils::fs::file_open_read;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -22,6 +26,9 @@ use std::{
 
 pub mod models;
 pub mod schema;
+
+// This createa a module called `embedded_migrations` which can then be used to run them.
+embed_migrations!("./migrations");
 
 /// Maximal number of restarts which are happening for a task.
 ///
@@ -99,6 +106,13 @@ impl TaskManager {
     pub fn new(database: &str) -> Result<Self, Error> {
         let db_connection = Arc::new(Mutex::new(PgConnection::establish(database)?));
         Ok(Self { db_connection })
+    }
+
+    pub fn run_migrations(&self) -> Result<(), Error> {
+        let conn = self.db_connection.lock().unwrap();
+        info!("Run database migrations");
+        embedded_migrations::run_with_output(&*conn, &mut std::io::stdout())?;
+        Ok(())
     }
 
     pub fn delete_all(&self) -> Result<(), Error> {

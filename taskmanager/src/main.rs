@@ -177,6 +177,9 @@ fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
     {
         let mut taskmgr = TaskManager::new(&*config.get_database_path().to_string_lossy())
             .context("Cannot create TaskManager")?;
+        taskmgr
+            .run_migrations()
+            .context("Error while executing migrations")?;
 
         debug!("Read domains file");
         let domains_r = BufReader::new(&mut domain_list_reader);
