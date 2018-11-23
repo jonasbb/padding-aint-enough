@@ -5,6 +5,7 @@ extern crate failure;
 extern crate lazy_static;
 extern crate log;
 extern crate misc_utils;
+extern crate openssl; // Needed for cross compilation
 extern crate sequences;
 extern crate serde;
 extern crate serde_json;
