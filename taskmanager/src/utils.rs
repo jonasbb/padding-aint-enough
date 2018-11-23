@@ -4,6 +4,7 @@ use failure::{bail, Error, ResultExt};
 use std::{
     ffi::OsStr,
     fs, io,
+    os::unix::fs::PermissionsExt,
     path::Path,
     process::{Command, Stdio},
     time::Duration,
@@ -50,6 +51,12 @@ pub fn docker_run(
     command: Option<&str>,
     timeout: Duration,
 ) -> Result<ExitStatus, Error> {
+    // Change permissions, such that if a different user than the docker user creates the
+    // host_dir, the docker container can still write to it
+    let mut perms = fs::metadata(host_dir)?.permissions();
+    perms.set_mode(0o777);
+    fs::set_permissions(host_dir, perms)?;
+
     let mut cmd = Command::new("docker");
     cmd.args(&[
         "run",
