@@ -557,6 +557,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
             .collect();
 
         let mark_domain_good = |tasks: &mut Vec<Task>| -> Result<(), Error> {
+            info!("Sanity check domain: Marked Good: '{}'", tasks[0].name());
             //everything is fine, advance the tasks to next stage
             for task in &*tasks {
                 let outdir = results_path.join(task.domain());
@@ -662,6 +663,10 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                         .context("Cannot restart bad domain")?;
                 }
             }
+        } else {
+            // we always need to take a decision
+            // so mark them as good
+            mark_domain_good(&mut tasks)?;
         }
     }
 }
