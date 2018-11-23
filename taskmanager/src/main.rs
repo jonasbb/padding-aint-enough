@@ -672,7 +672,8 @@ fn update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
     fs::copy(
         config.get_prefetch_file(),
         tmp_dir.path().join("prefetch-domains.txt"),
-    )?;
+    )
+    .context("Prefetch file missing")?;
     info!(
         "Start Unbound refresh in Docker with tmp dir '{}'",
         tmp_dir.path().display()
@@ -694,7 +695,8 @@ fn update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
     fs::copy(
         tmp_dir.path().join("cache.dump.new"),
         config.get_cache_file().with_extension("tmp"),
-    )?;
+    )
+    .context("The new cache.dump.new file is missing")?;
     fs::rename(
         config.get_cache_file().with_extension("tmp"),
         config.get_cache_file(),

@@ -1,9 +1,9 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 
+use crate::AddDomainConfig;
 use chrono::{DateTime, Utc};
 use diesel_derive_enum::DbEnum;
 use schema::{infos, tasks};
-use crate::AddDomainConfig;
 
 #[derive(Identifiable, Queryable, AsChangeset, QueryableByName, Debug, PartialEq, Eq)]
 #[changeset_options(treat_none_as_null = "true")]
@@ -174,7 +174,6 @@ pub struct DomainCounters {
     pub(crate) domain_counter: i32,
     pub(crate) groupid: i32,
 }
-
 
 impl DomainCounters {
     pub fn into_add_domain_config(self, groupsize: u8) -> AddDomainConfig {

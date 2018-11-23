@@ -1,6 +1,7 @@
 //! This module contains different utility functions, such as command invocations
 
 use failure::{bail, Error, ResultExt};
+use log::trace;
 use std::{
     ffi::OsStr,
     fs, io,
@@ -78,6 +79,7 @@ pub fn docker_run(
     if let Some(command) = command {
         cmd.arg(command);
     }
+    trace!("Execute command: {:?}", cmd);
     let mut child = cmd.spawn()?;
     match child.wait_timeout(timeout) {
         Ok(Some(status)) => Ok(status.into()),
