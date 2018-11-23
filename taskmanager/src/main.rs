@@ -540,7 +540,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
 
         let tasks = taskmgr.results_need_sanity_check_domain()?;
         if tasks.is_none() {
-            thread::sleep(Duration::new(60, 0));
+            thread::sleep(Duration::new(10, 0));
             continue;
         }
         // we just checked that tasks is not None
@@ -661,8 +661,6 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                 }
             }
         }
-
-        thread::sleep(Duration::new(10, 0));
     }
 }
 
