@@ -20,7 +20,7 @@ pub fn xz(path: &Path) -> Result<(), Error> {
     }
 
     let res = Command::new("xz")
-        .args(&["-9", "--force"])
+        .args(&["-7", "--force"])
         .arg(path)
         .stdin(Stdio::null())
         .stdout(Stdio::null())
