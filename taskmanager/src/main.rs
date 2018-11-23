@@ -540,11 +540,13 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
 
         let tasks = taskmgr.results_need_sanity_check_domain()?;
         if tasks.is_none() {
+            info!("No tasks for sanity check domains");
             thread::sleep(Duration::new(10, 0));
             continue;
         }
         // we just checked that tasks is not None
         let mut tasks = tasks.unwrap();
+        info!("Sanity check domains: '{}'", tasks[0].name());
 
         let sequences: Vec<_> = tasks
             .iter()
