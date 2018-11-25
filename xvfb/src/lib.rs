@@ -5,7 +5,7 @@ use std::{
     fmt,
     io::{self, Read},
     os::unix::process::ExitStatusExt,
-    process::{Child, Command, Stdio},
+    process::{Child, Command, ExitStatus, Stdio},
     str::FromStr,
 };
 
@@ -63,23 +63,32 @@ impl Xvfb {
             Err(err) => ProcessStatus::Error(err),
         }
     }
+
+    pub fn close(&mut self) -> Result<ExitStatus, io::Error> {
+        if let Err(err) = self.process.kill() {
+            // InvalidInput is raise, if process was already dead
+            if err.kind() != io::ErrorKind::InvalidInput {
+                warn!("Xvfb({}) failed to stop due to {}", self.process.id(), err);
+            } else {
+                return self.process.wait();
+            }
+        };
+        debug!("Xbfn({}) stopped", self.process.id());
+        let res = self.process.wait();
+        if let Err(err) = &res {
+            warn!(
+                "Failed to wait on Xvfb process {} due to {}",
+                self.process.id(),
+                err
+            );
+        }
+        res
+    }
 }
 
 impl Drop for Xvfb {
     fn drop(&mut self) {
-        match self.process.kill() {
-            Ok(()) => debug!("Stopped Xvfb process {}", self.process.id()),
-            Err(err) => {
-                // InvalidInput is raise, if process was already dead
-                if err.kind() != io::ErrorKind::InvalidInput {
-                    warn!(
-                        "Failed to stop Xvfb process {} due to {}",
-                        self.process.id(),
-                        err
-                    )
-                }
-            }
-        }
+        let _ = self.close();
     }
 }
 
