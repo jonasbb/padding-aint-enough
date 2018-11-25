@@ -86,12 +86,18 @@ pub fn docker_run(
         Ok(None) => {
             // container has not exited yet
             let containerid = fs::read_to_string(host_dir.join("cidfile"))?;
-            docker_kill(containerid.trim())?;
+            docker_kill(containerid.trim());
+            // if docker container cannot be killed, at least kill the child process
+            let _ = child.kill();
             Ok(child.wait()?)
         }
         Err(err) => {
             let containerid = fs::read_to_string(host_dir.join("cidfile"))?;
-            docker_kill(containerid.trim())?;
+            docker_kill(containerid.trim());
+            // if docker container cannot be killed, at least kill the child process
+            let _ = child.kill();
+            // try to reap it to avoid zombies
+            let _ = child.try_wait();
             Err(err.into())
         }
     }
@@ -100,31 +106,17 @@ pub fn docker_run(
 /// Make really really sure the docker container will not be running afterwards
 ///
 /// Required the id of the container to kill.
-fn docker_kill(containerid: &str) -> Result<(), Error> {
-    let mut error_msg = String::new();
-    let status = Command::new("docker")
+fn docker_kill(containerid: &str)  {
+    let _= Command::new("docker")
         .args(&["kill", containerid])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .status()
-        .with_context(|_| format!("Could not kill docker container '{}'\n", containerid))?;
-    if !status.success() {
-        error_msg += &format!("Could not kill docker container '{}'\n", containerid);
-    }
-    let status = Command::new("docker")
+        .status();
+    let _ = Command::new("docker")
         .args(&["rm", "--force=true", containerid])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
-        .status()
-        .with_context(|_| format!("Could not remove docker container '{}'\n", containerid))?;
-    if !status.success() {
-        error_msg += &format!("Could not remove docker container '{}'\n", containerid);
-    }
-    if !error_msg.is_empty() {
-        bail!(error_msg)
-    } else {
-        Ok(())
-    }
+        .status();
 }
 
 pub fn ensure_docker_image_exists(image: &str) -> Result<(), Error> {
