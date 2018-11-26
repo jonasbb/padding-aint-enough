@@ -1,3 +1,4 @@
+DROP TYPE IF EXISTS Task_State;
 CREATE TYPE Task_State AS ENUM (
     'created',
     'submitted_to_vm',
