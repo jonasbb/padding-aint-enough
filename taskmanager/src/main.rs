@@ -376,12 +376,11 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 .with_context(|_| format!("{}: Failed to create file `display`", task.name()))?;
 
                 debug!("{}: Run docker container", task.name());
-                let status = docker_run(
+                let _status = docker_run(
                     &config.docker_image,
                     tmp_dir.path(),
                     None,
-                    // 45 seconds
-                    Duration::new(45, 0),
+                    Duration::new(60, 0),
                 )
                 .with_context(|_| format!("{}: Failed to start the measuremetns", task.name()))?;
                 debug!("{}: Copy files from mount point to local back", task.name());
@@ -679,8 +678,7 @@ fn update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
         &config.docker_image,
         tmp_dir.path(),
         Some("/usr/bin/create-cache-dump.fish"),
-        // 90 seconds
-        Duration::new(90, 0),
+        Duration::new(120, 0),
     )
     .context("Failed to run docker image to create a cache dump")?;
     if !status.success() {

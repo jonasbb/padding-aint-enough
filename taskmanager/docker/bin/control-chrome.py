@@ -9,7 +9,6 @@ import typing as t
 
 # import IPython
 import requests
-
 from websocket import (
     WebSocketTimeoutException,
     create_connection as create_ws_connection,
@@ -17,7 +16,7 @@ from websocket import (
 
 # Wait this many seconds after every browser event before a browser close can occur
 WAIT_SECONDS = 7
-WEBPAGE_TOTAL_TIME = 25.
+WEBPAGE_TOTAL_TIME = 30.
 
 
 def handle_url(url: str, special_url: str, chrome_debug_port: int) -> None:
