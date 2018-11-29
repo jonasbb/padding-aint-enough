@@ -447,13 +447,23 @@ pub fn sequence_stats(
 
     let avg_distances: Vec<_> = dists
         .iter()
-        .map(|dists2| dists2.iter().sum::<usize>() / dists2.len())
+        .map(|dists2| {
+            if !dists2.is_empty() {
+                dists2.iter().sum::<usize>() / dists2.len()
+            } else {
+                0
+            }
+        })
         .collect();
     let median_distances: Vec<_> = dists
         .into_iter()
         .map(|mut dists2| {
-            dists2.sort();
-            dists2[dists2.len() / 2]
+            if !dists2.is_empty() {
+                dists2.sort();
+                dists2[dists2.len() / 2]
+            } else {
+                0
+            }
         })
         .collect();
     let avg_avg = avg_distances.iter().sum::<usize>() / avg_distances.len();
