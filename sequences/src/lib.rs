@@ -11,10 +11,12 @@ extern crate serde;
 extern crate serde_with;
 extern crate string_cache;
 
+mod constants;
 pub mod knn;
 mod load_sequence;
 mod utils;
 
+use constants::*;
 use chrono::{DateTime, Utc};
 use common_sequence_classifications::*;
 use failure::Error;
@@ -355,8 +357,8 @@ impl SequenceElement {
             //     error!("Sequence contains a Size(0) elements");
             //     usize::max_value()
             // }
-            Size(_) => 20,
-            Gap(g) => g as usize * 5,
+            Size(_) => SIZE_INSERT_COST,
+            Gap(g) => g as usize * GAP_INSERT_COST_MULTIPLIER,
         }
     }
 
@@ -377,8 +379,8 @@ impl SequenceElement {
         use self::SequenceElement::*;
         match (self, other) {
             // 2/3rds cost of insert
-            (Size(_), Size(_)) => (self.insert_cost() + other.delete_cost()) / 3,
-            (Gap(g1), Gap(g2)) => (g1.max(g2) - g1.min(g2)) as usize * 2,
+            (Size(_), Size(_)) => (self.insert_cost() + other.delete_cost()) / SIZE_SUBSTITUTE_COST_DIVIDER,
+            (Gap(g1), Gap(g2)) => (g1.max(g2) - g1.min(g2)) as usize * GAP_SUBSTITUTE_COST_MULTIPLIER,
             (a, b) => a.delete_cost() + b.insert_cost(),
         }
     }
@@ -388,7 +390,7 @@ impl SequenceElement {
             return 0;
         }
 
-        20
+        SWAP_COST
     }
 
     fn to_one_hot_encoding(self) -> OneHotEncoding {
