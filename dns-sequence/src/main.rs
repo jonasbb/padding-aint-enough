@@ -1,5 +1,4 @@
 extern crate csv;
-extern crate encrypted_dns;
 extern crate env_logger;
 extern crate failure;
 extern crate lazy_static;
@@ -17,11 +16,12 @@ extern crate serde_with;
 extern crate string_cache;
 extern crate structopt;
 
+mod jsonl;
 mod stats;
 
 use csv::ReaderBuilder;
-use encrypted_dns::JsonlFormatter;
 use failure::{bail, format_err, Error, ResultExt};
+use jsonl::JsonlFormatter;
 use lazy_static::lazy_static;
 use log::{error, info};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
