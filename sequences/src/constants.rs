@@ -2,8 +2,9 @@
 
 /// The cost of inserting any Size(_)
 ///
-/// Pre-optimization default: `20`
-pub(crate) const SIZE_INSERT_COST: usize = 20;
+/// * Pre-optimization default: `20`
+/// * Phase 1 optimization value: `28`
+pub(crate) const SIZE_INSERT_COST: usize = 28;
 
 /// A multiplier to the Gap value while inserting
 ///
