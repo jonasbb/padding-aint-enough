@@ -529,7 +529,7 @@ mod test_edit_dist {
 
         // deletion
         let seq4 = Sequence(vec![Size(1), Size(1), Size(2), Size(1)], "".into());
-        assert_eq!(10, seq1.distance(&seq4));
+        assert_eq!(2, seq1.distance(&seq4));
 
         // insertion
         let seq5 = Sequence(
