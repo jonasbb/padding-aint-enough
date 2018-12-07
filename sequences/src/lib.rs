@@ -528,7 +528,7 @@ mod test_edit_dist {
 
         // swapping
         let seq3 = Sequence(vec![Size(1), Gap(2), Size(2), Size(1), Size(1)], "".into());
-        assert_eq!(20, seq1.distance(&seq3));
+        assert_eq!(3, seq1.distance(&seq3));
 
         // deletion
         let seq4 = Sequence(vec![Size(1), Size(1), Size(2), Size(1)], "".into());

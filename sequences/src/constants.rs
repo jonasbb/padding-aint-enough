@@ -24,5 +24,6 @@ pub(crate) const GAP_SUBSTITUTE_COST_MULTIPLIER: usize = 2;
 
 /// The cost of swapping two non-equal elements
 ///
-/// Pre-optimization default: `20`
-pub(crate) const SWAP_COST: usize = 20;
+/// * Pre-optimization default: `20`
+/// * Phase 1 optimization value: `3` / `4`
+pub(crate) const SWAP_COST: usize = 3;
