@@ -176,7 +176,7 @@ fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
         ..
     } = cmd
     {
-        let mut taskmgr = TaskManager::new(&*config.get_database_path().to_string_lossy())
+        let taskmgr = TaskManager::new(&*config.get_database_path().to_string_lossy())
             .context("Cannot create TaskManager")?;
         taskmgr
             .run_migrations()
@@ -282,7 +282,7 @@ fn run_add_recurring(cmd: SubCommand, config: Config) -> Result<(), Error> {
         ..
     } = cmd
     {
-        let mut taskmgr = TaskManager::new(&*config.get_database_path().to_string_lossy())
+        let taskmgr = TaskManager::new(&*config.get_database_path().to_string_lossy())
             .context("Cannot create TaskManager")?;
 
         debug!("Read domains file");
