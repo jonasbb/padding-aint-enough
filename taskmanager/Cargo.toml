@@ -23,6 +23,6 @@ serde = { version = "1.0.70", features = [ "derive" ] }
 serde_json = "1.0.33"
 structopt = "0.2.13"
 tempfile = "3.0.5"
-toml = "0.4.8"
+toml = "0.4.10"
 wait-timeout = "0.2"
 xvfb = { path = "../xvfb" }
