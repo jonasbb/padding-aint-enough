@@ -2,7 +2,7 @@
 name = "plot"
 version = "0.1.0"
 authors = ["Jonas Bushart <jonas@bushart.org>"]
-# edition = "2018"
+edition = "2018"
 
 [dependencies]
 failure = "0.1.3"

@@ -2,6 +2,7 @@
 name = "sequences"
 version = "0.1.0"
 authors = ["Jonas Bushart <jonas@bushart.org>"]
+edition = "2018"
 
 [[bench]]
 name = "take_smallest"

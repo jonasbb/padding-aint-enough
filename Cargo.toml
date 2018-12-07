@@ -5,6 +5,7 @@ cargo-features = ["profile-overrides"]
 name = "encrypted-dns"
 version = "0.1.0"
 authors = ["Jonas Bushart <jonas@bushart.org>"]
+edition = "2018"
 
 [workspace]
 members = [

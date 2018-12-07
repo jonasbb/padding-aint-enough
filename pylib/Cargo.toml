@@ -2,6 +2,7 @@
 name = "pylib"
 version = "0.1.1"
 authors = ["Jonas Bushart <jonas@bushart.org>"]
+edition = "2018"
 
 [lib]
 name = "pylib"
