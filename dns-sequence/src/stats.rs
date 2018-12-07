@@ -1,3 +1,4 @@
+use crate::reverse_cum_sum;
 use csv::WriterBuilder;
 use failure::{format_err, Error, ResultExt};
 use lazy_static::lazy_static;
@@ -7,7 +8,6 @@ use prettytable::{
     format::{FormatBuilder, LinePosition, LineSeparator, TableFormat},
     row, Table,
 };
-use reverse_cum_sum;
 use sequences::knn::ClassificationResultQuality;
 use serde::Serialize;
 use std::{
@@ -213,7 +213,7 @@ impl<S: Eq + Hash> StatsCollector<S> {
             for (_domain, stats) in data {
                 for quality in ClassificationResultQuality::iter_variants() {
                     for &with_problems in &[false, true] {
-                        let mut entry = plot_data.entry((quality, with_problems)).or_default();
+                        let entry = plot_data.entry((quality, with_problems)).or_default();
                         entry.push(
                             stats
                                 .results

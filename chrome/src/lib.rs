@@ -11,10 +11,7 @@ use serde_with::chrono::datetime_utc_ts_seconds_from_any;
 #[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
 pub enum ChromeDebuggerMessage<S = String> {
     // Everything Network
-    #[serde(
-        rename = "Network.requestWillBeSent",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Network.requestWillBeSent", rename_all = "camelCase")]
     NetworkRequestWillBeSent {
         #[serde(rename = "documentURL")]
         document_url: S,
@@ -25,23 +22,14 @@ pub enum ChromeDebuggerMessage<S = String> {
         #[serde(deserialize_with = "datetime_utc_ts_seconds_from_any::deserialize")]
         wall_time: DateTime<Utc>,
     },
-    #[serde(
-        rename = "Network.requestServedFromCache",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Network.requestServedFromCache", rename_all = "camelCase")]
     NetworkRequestServedFromCache { request_id: S },
-    #[serde(
-        rename = "Network.responseReceived",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Network.responseReceived", rename_all = "camelCase")]
     NetworkResponseReceived {
         request_id: S,
         response: Response<S>,
     },
-    #[serde(
-        rename = "Network.resourceChangedPriority",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Network.resourceChangedPriority", rename_all = "camelCase")]
     NetworkResourceChangedPriority { request_id: S },
     #[serde(rename = "Network.loadingFailed", rename_all = "camelCase")]
     NetworkLoadingFailed { request_id: S },
@@ -49,10 +37,7 @@ pub enum ChromeDebuggerMessage<S = String> {
     NetworkDataReceived { request_id: S },
     #[serde(rename = "Network.loadingFinished", rename_all = "camelCase")]
     NetworkLoadingFinished { request_id: S },
-    #[serde(
-        rename = "Network.webSocketCreated",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Network.webSocketCreated", rename_all = "camelCase")]
     NetworkWebSocketCreated {
         request_id: S,
         url: S,
@@ -70,20 +55,11 @@ pub enum ChromeDebuggerMessage<S = String> {
         rename_all = "camelCase"
     )]
     NetworkWebSocketHandshakeResponseReceived { request_id: S },
-    #[serde(
-        rename = "Network.webSocketFrameError",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Network.webSocketFrameError", rename_all = "camelCase")]
     NetworkWebSocketFrameError { request_id: S },
-    #[serde(
-        rename = "Network.webSocketFrameReceived",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Network.webSocketFrameReceived", rename_all = "camelCase")]
     NetworkWebSocketFrameReceived { request_id: S },
-    #[serde(
-        rename = "Network.webSocketFrameSent",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Network.webSocketFrameSent", rename_all = "camelCase")]
     NetworkWebSocketFrameSent { request_id: S },
     #[serde(
         rename = "Network.eventSourceMessageReceived",
@@ -94,24 +70,15 @@ pub enum ChromeDebuggerMessage<S = String> {
     // Everything Target
     #[serde(rename = "Target.targetCreated", rename_all = "camelCase")]
     TargetTargetCreated {},
-    #[serde(
-        rename = "Target.targetInfoChanged",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Target.targetInfoChanged", rename_all = "camelCase")]
     TargetTargetInfoChanged { target_info: TargetInfo<S> },
     #[serde(rename = "Target.targetDestroyed", rename_all = "camelCase")]
     TargetTargetDestroyed {},
     #[serde(rename = "Target.attachedToTarget", rename_all = "camelCase")]
     TargetAttachedToTarget {},
-    #[serde(
-        rename = "Target.detachedFromTarget",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Target.detachedFromTarget", rename_all = "camelCase")]
     TargetDetachedFromTarget {},
-    #[serde(
-        rename = "Target.receivedMessageFromTarget",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Target.receivedMessageFromTarget", rename_all = "camelCase")]
     TargetReceivedMessageFromTarget {},
 
     // Everything Debugger
@@ -121,10 +88,7 @@ pub enum ChromeDebuggerMessage<S = String> {
         url: S,
         stack_trace: Option<StackTrace<S>>,
     },
-    #[serde(
-        rename = "Debugger.scriptFailedToParse",
-        rename_all = "camelCase"
-    )]
+    #[serde(rename = "Debugger.scriptFailedToParse", rename_all = "camelCase")]
     DebuggerScriptFailedToParse {
         script_id: S,
         url: S,

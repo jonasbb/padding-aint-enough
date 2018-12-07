@@ -106,8 +106,8 @@ pub fn docker_run(
 /// Make really really sure the docker container will not be running afterwards
 ///
 /// Required the id of the container to kill.
-fn docker_kill(containerid: &str)  {
-    let _= Command::new("docker")
+fn docker_kill(containerid: &str) {
+    let _ = Command::new("docker")
         .args(&["kill", containerid])
         .stdout(Stdio::null())
         .stderr(Stdio::null())

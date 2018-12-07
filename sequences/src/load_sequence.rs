@@ -80,7 +80,8 @@ pub fn dnstap_to_sequence(dnstap_file: &Path) -> Result<Sequence, Error> {
                 }
             }
             true
-        }) {
+        })
+    {
         let DnstapContent::Message {
             message_type,
             query_message,

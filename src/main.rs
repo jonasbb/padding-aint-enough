@@ -21,9 +21,9 @@ extern crate url;
 
 mod depgraph;
 
+use crate::depgraph::DepGraph;
 use chrome::{ChromeDebuggerMessage, RedirectResponse, Request, Response, TargetInfo, Timing};
 use chrono::{DateTime, Utc};
-use depgraph::DepGraph;
 use dnstap::{
     dnstap::Message_Type,
     protos::{Dnstap, DnstapContent},
@@ -212,7 +212,8 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
                     }
                 }
                 true
-            }) {
+            })
+        {
             let DnstapContent::Message {
                 message_type,
                 query_message,

@@ -19,9 +19,9 @@ extern crate structopt;
 mod jsonl;
 mod stats;
 
+use crate::{jsonl::JsonlFormatter, stats::StatsCollector};
 use csv::ReaderBuilder;
 use failure::{bail, format_err, Error, ResultExt};
-use jsonl::JsonlFormatter;
 use lazy_static::lazy_static;
 use log::{error, info};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
@@ -32,7 +32,6 @@ use sequences::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Serializer as JsonSerializer;
-use stats::StatsCollector;
 use std::{
     collections::HashMap,
     fs::OpenOptions,

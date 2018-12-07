@@ -16,9 +16,9 @@ pub mod knn;
 mod load_sequence;
 mod utils;
 
-use constants::*;
+pub use crate::utils::load_all_dnstap_files_from_dir;
+use crate::{common_sequence_classifications::*, constants::*};
 use chrono::{DateTime, Utc};
-use common_sequence_classifications::*;
 use failure::Error;
 use lazy_static::lazy_static;
 use log::error;
@@ -33,7 +33,6 @@ use std::{
     sync::{Arc, RwLock},
 };
 use string_cache::DefaultAtom as Atom;
-pub use utils::load_all_dnstap_files_from_dir;
 
 lazy_static! {
     static ref LOADING_FAILED: RwLock<Arc<HashMap<Atom, &'static str>>> = RwLock::default();
@@ -379,8 +378,12 @@ impl SequenceElement {
         use self::SequenceElement::*;
         match (self, other) {
             // 2/3rds cost of insert
-            (Size(_), Size(_)) => (self.insert_cost() + other.delete_cost()) / SIZE_SUBSTITUTE_COST_DIVIDER,
-            (Gap(g1), Gap(g2)) => (g1.max(g2) - g1.min(g2)) as usize * GAP_SUBSTITUTE_COST_MULTIPLIER,
+            (Size(_), Size(_)) => {
+                (self.insert_cost() + other.delete_cost()) / SIZE_SUBSTITUTE_COST_DIVIDER
+            }
+            (Gap(g1), Gap(g2)) => {
+                (g1.max(g2) - g1.min(g2)) as usize * GAP_SUBSTITUTE_COST_MULTIPLIER
+            }
             (a, b) => a.delete_cost() + b.insert_cost(),
         }
     }
@@ -411,7 +414,7 @@ impl SequenceElement {
 
 impl Debug for SequenceElement {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        use SequenceElement::*;
+        use crate::SequenceElement::*;
         let (l, v) = match self {
             Size(v) => ("S", v),
             Gap(v) => ("G", v),

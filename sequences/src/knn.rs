@@ -1,4 +1,5 @@
 use super::{LabelledSequence, LabelledSequences, Sequence};
+use crate::utils::take_smallest;
 use log::{debug, error};
 use misc_utils::{Max, Min};
 use rayon::prelude::*;
@@ -7,7 +8,6 @@ use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     fmt::{self, Display},
 };
-use utils::take_smallest;
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum ClassificationResultQuality {
@@ -61,8 +61,8 @@ impl ClassificationResultQuality {
             Majority,
             Exact,
         ]
-            .iter()
-            .cloned()
+        .iter()
+        .cloned()
     }
 }
 
@@ -150,7 +150,8 @@ impl ClassificationResult {
                 // if there are multiple pluralities check if there is one with a smaller or equal minimal distance
                     || (other.count == corr_option.count
                         && other.distance_min <= corr_option.distance_min)
-            }) {
+            })
+        {
             return ClassificationResultQuality::PluralityThenMinDist;
         }
 

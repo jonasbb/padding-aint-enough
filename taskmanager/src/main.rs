@@ -18,6 +18,7 @@ extern crate xvfb;
 
 mod utils;
 
+use crate::utils::*;
 use chrome::ChromeDebuggerMessage;
 use encrypted_dns::{chrome_log_contains_errors, ErrorExt};
 use failure::{bail, Error, ResultExt};
@@ -39,7 +40,6 @@ use std::{
 use structopt::StructOpt;
 use taskmanager::{models::Task, AddDomainConfig, Config, TaskManager};
 use tempfile::{Builder as TempDirBuilder, TempDir};
-use utils::*;
 use xvfb::{ProcessStatus, Xvfb};
 
 lazy_static! {

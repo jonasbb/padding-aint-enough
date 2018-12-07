@@ -178,7 +178,7 @@ impl TaskManager {
 
     /// Return a task which waits for a VM to be executed
     pub fn get_task_for_vm(&self) -> Result<Option<models::Task>, Error> {
-        use schema::tasks::dsl::{aborted, priority, state, tasks};
+        use crate::schema::tasks::dsl::{aborted, priority, state, tasks};
 
         let conn = self.db_connection.lock().unwrap();
         conn.transaction(|| {
@@ -206,7 +206,7 @@ impl TaskManager {
 
     /// Return all tasks which did not make any progress for a too long time
     pub fn get_stale_tasks(&self) -> Result<Vec<models::Task>, Error> {
-        use schema::tasks::dsl::{aborted, last_modified, state, tasks};
+        use crate::schema::tasks::dsl::{aborted, last_modified, state, tasks};
 
         let conn = self.db_connection.lock().unwrap();
         conn.transaction(|| {
@@ -237,7 +237,7 @@ impl TaskManager {
     }
 
     pub fn results_need_sanity_check_single(&self) -> Result<Vec<models::Task>, Error> {
-        use schema::tasks::dsl::{aborted, priority, state, tasks};
+        use crate::schema::tasks::dsl::{aborted, priority, state, tasks};
 
         let conn = self.db_connection.lock().unwrap();
         conn.transaction(|| {
@@ -374,7 +374,7 @@ impl TaskManager {
                 Ok(())
             })
         } else {
-            use schema::tasks::dsl::{domain, groupid, tasks};
+            use crate::schema::tasks::dsl::{domain, groupid, tasks};
 
             // We must abort all tasks for this domain
             let msg = format!("Too many restarts for task {}, abort domain.", task.name());

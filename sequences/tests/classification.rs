@@ -4,7 +4,7 @@ use sequences::{common_sequence_classifications::*, *};
 
 #[test]
 fn test_classify_sequence_r001() {
-    use SequenceElement::{Gap, Size};
+    use crate::SequenceElement::{Gap, Size};
 
     let sequence = Sequence::new(vec![Size(1), Size(2)], "".to_string());
     assert_eq!(sequence.classify(), Some(R001));
@@ -27,7 +27,7 @@ fn test_classify_sequence_r001() {
 
 #[test]
 fn test_classify_sequence_r002() {
-    use SequenceElement::{Gap, Size};
+    use crate::SequenceElement::{Gap, Size};
 
     let sequence = Sequence::new(vec![Size(1), Size(2), Size(1)], "".to_string());
     assert_eq!(sequence.classify(), Some(R002));
@@ -61,7 +61,7 @@ fn test_classify_sequence_r002() {
 
 #[test]
 fn test_classify_sequence_r004() {
-    use SequenceElement::Size;
+    use crate::SequenceElement::Size;
 
     let sequence = Sequence::new(vec![Size(1)], "".to_string());
     assert_eq!(sequence.classify(), Some(R004_SIZE1));
@@ -69,7 +69,7 @@ fn test_classify_sequence_r004() {
 
 #[test]
 fn test_classify_sequence_r007() {
-    use SequenceElement::{Gap, Size};
+    use crate::SequenceElement::{Gap, Size};
 
     let sequence = Sequence::new(vec![Size(1), Gap(3), Size(1)], "".to_string());
     assert_eq!(sequence.classify(), Some(R007));

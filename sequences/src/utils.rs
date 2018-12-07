@@ -1,6 +1,5 @@
-use crate::Sequence;
+use crate::{knn::ClassifierData, Sequence};
 use failure::{Error, ResultExt};
-use knn::ClassifierData;
 use log::{debug, warn};
 use rayon::prelude::*;
 use std::{

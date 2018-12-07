@@ -1,3 +1,4 @@
+use crate::{should_ignore_url, GraphExt, RequestInfo};
 use chrome::{
     ChromeDebuggerMessage, Initiator, InitiatorScript, RedirectResponse, Request, StackTrace,
     TargetInfo, TargetType,
@@ -7,14 +8,11 @@ use log::{debug, error, info, trace, warn};
 use misc_utils::Min;
 use petgraph::{graph::NodeIndex, Directed, Direction, Graph};
 use serde::Serialize;
-use should_ignore_url;
 use std::{
     cell::RefCell,
     collections::{HashMap, HashSet},
     convert::TryFrom,
 };
-use GraphExt;
-use RequestInfo;
 
 #[derive(Clone, Debug, Serialize)]
 pub struct DepGraph {
@@ -75,7 +73,9 @@ impl DepGraph {
             // The events Debugger.scriptParsed and Debugger.scriptFailedToParse might only appear after a network request, which has the script in the stack trace.
             // Parse them before everything else such that the script_ids can be used for the network requests parts
             for message in messages {
-                use ChromeDebuggerMessage::{DebuggerScriptFailedToParse, DebuggerScriptParsed};
+                use crate::ChromeDebuggerMessage::{
+                    DebuggerScriptFailedToParse, DebuggerScriptParsed,
+                };
                 match message {
                     DebuggerScriptParsed {
                         script_id,
@@ -123,7 +123,7 @@ impl DepGraph {
                             // Chrome contains special case URLs like "extensions::event_bindings"
                             // They all start with "extensions::", so skip them
                             if !should_ignore_url(&url) {
-                                let mut deps =
+                                let deps =
                                     traverse_stack(stack_trace, find_script_deps, HashSet::new())
                                         .with_context(|_| {
                                         format!(
@@ -153,7 +153,7 @@ impl DepGraph {
     fn process_messages(
         messages: &[ChromeDebuggerMessage],
     ) -> Result<Graph<RequestInfo, ()>, Error> {
-        use ChromeDebuggerMessage::{
+        use crate::ChromeDebuggerMessage::{
             NetworkRequestWillBeSent, NetworkWebSocketCreated, TargetTargetInfoChanged,
         };
 
@@ -643,7 +643,7 @@ impl DepGraph {
                         }
 
                         {
-                            let (mut node_weight, other_weight) =
+                            let (node_weight, other_weight) =
                                 self.graph.index_twice_mut(node, other);
                             other_weight.merge_with(node_weight);
                         }
@@ -669,7 +669,7 @@ impl DepGraph {
         for node in self.graph.node_indices() {
             let weight = self.graph.node_weight(node).unwrap();
 
-            let mut entry = nodes_per_domain
+            let entry = nodes_per_domain
                 .entry(&weight.normalized_domain_name)
                 .or_insert_with(Vec::new);
             entry.push(node);

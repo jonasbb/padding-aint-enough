@@ -1,9 +1,11 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 
-use crate::AddDomainConfig;
+use crate::{
+    schema::{infos, tasks},
+    AddDomainConfig,
+};
 use chrono::{DateTime, Utc};
 use diesel_derive_enum::DbEnum;
-use schema::{infos, tasks};
 
 #[derive(Identifiable, Queryable, AsChangeset, QueryableByName, Debug, PartialEq, Eq)]
 #[changeset_options(treat_none_as_null = "true")]

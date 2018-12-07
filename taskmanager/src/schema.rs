@@ -1,8 +1,8 @@
 #![allow(proc_macro_derive_resolution_fallback, unused_imports)]
 
 table! {
+    use crate::models::Task_state;
     use diesel::sql_types::*;
-    use models::Task_state;
 
     /// Representation of the `infos` table.
     ///
@@ -36,8 +36,8 @@ table! {
 }
 
 table! {
+    use crate::models::Task_state;
     use diesel::sql_types::*;
-    use models::Task_state;
 
     /// Representation of the `tasks` table.
     ///

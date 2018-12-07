@@ -80,7 +80,7 @@ fn run() -> Result<(), Error> {
                         .expect("The domain is never empty, thus one substring always exists."),
                     ".",
                 ]
-                    .join("")
+                .join("")
             })
         })
         .collect::<Result<BTreeSet<String>, _>>()

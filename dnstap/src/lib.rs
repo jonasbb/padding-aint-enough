@@ -12,13 +12,12 @@ extern crate trust_dns_proto;
 
 pub mod protos;
 
-use dnstap::Message_Type;
+pub use crate::protos::dnstap;
+use crate::{dnstap::Message_Type, protos::DnstapContent};
 use failure::{bail, Error, ResultExt};
 use framestream::DecoderReader;
 use log::warn;
 use misc_utils::fs::file_open_read;
-pub use protos::dnstap;
-use protos::DnstapContent;
 use std::{convert::TryFrom, path::Path};
 
 pub fn process_dnstap<P: AsRef<Path>>(
