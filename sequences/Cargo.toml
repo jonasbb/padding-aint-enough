@@ -16,7 +16,7 @@ lazy_static = "1.2.0"
 log = "0.4.6"
 misc_utils = "2.1.0"
 rayon = "1.0.3"
-serde = { version = "1.0.79", features = [ "derive" ] }
+serde = { version = "1.0.81", features = [ "derive" ] }
 serde_with = "0.2.5"
 string_cache = "0.7.3"
 
