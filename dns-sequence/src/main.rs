@@ -1,21 +1,3 @@
-extern crate csv;
-extern crate env_logger;
-extern crate failure;
-extern crate lazy_static;
-extern crate log;
-extern crate misc_utils;
-#[cfg(feature = "plot")]
-extern crate plot;
-extern crate prettytable;
-extern crate sequences;
-extern crate serde;
-extern crate serde_json;
-#[cfg(not(feature = "plot"))]
-extern crate serde_pickle;
-extern crate serde_with;
-extern crate string_cache;
-extern crate structopt;
-
 mod jsonl;
 mod stats;
 
