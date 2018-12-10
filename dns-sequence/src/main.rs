@@ -149,44 +149,14 @@ fn run() -> Result<(), Error> {
         info!("Done splitting trainings and test data.");
 
         for k in (1..=(cli_args.k)).step_by(2) {
-            info!("Start classification for k={}...", k);
-            let classification = knn::knn(&*training_data, &*test_data, k as u8);
-            assert_eq!(classification.len(), test_labels.len());
-            info!("Done classification for k={}, start evaluation...", k);
-            classification
-                .iter()
-                .zip(&test_labels)
-                .zip(&test_data)
-                .for_each(|((class_result, (true_domain, mapped_domain)), sequence)| {
-                    let result_quality = class_result.determine_quality(&*mapped_domain);
-                    let known_problems = sequence.classify().map(Atom::from);
-
-                    stats.update(
-                        k as u8,
-                        true_domain.clone(),
-                        mapped_domain.clone(),
-                        result_quality,
-                        known_problems.clone(),
-                    );
-
-                    if result_quality != ClassificationResultQuality::Exact
-                        && log_misclassification(
-                            &mut mis_writer,
-                            k,
-                            &sequence,
-                            &mapped_domain,
-                            &class_result,
-                            known_problems.as_ref().map(|x| &**x),
-                        )
-                        .is_err()
-                    {
-                        error!(
-                            "Cannot log misclassification for sequence: {}",
-                            sequence.id()
-                        );
-                    }
-                });
-            info!("Done evaluation for k={}", k);
+            classify_and_evaluate(
+                k,
+                &*training_data,
+                &*test_data,
+                &*test_labels,
+                &mut stats,
+                &mut mis_writer,
+            );
         }
     }
 
@@ -199,6 +169,54 @@ fn run() -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+fn classify_and_evaluate(
+    k: usize,
+    training_data: &[LabelledSequences],
+    test_data: &[Sequence],
+    test_labels: &[(Atom, Atom)],
+    stats: &mut StatsCollector,
+    mis_writer: &mut JsonSerializer<impl Write, impl serde_json::ser::Formatter>,
+) {
+    info!("Start classification for k={}...", k);
+    let classification = knn::knn(&*training_data, &*test_data, k as u8);
+    assert_eq!(classification.len(), test_labels.len());
+    info!("Done classification for k={}, start evaluation...", k);
+    classification
+        .iter()
+        .zip(test_labels)
+        .zip(test_data)
+        .for_each(|((class_result, (true_domain, mapped_domain)), sequence)| {
+            let result_quality = class_result.determine_quality(&*mapped_domain);
+            let known_problems = sequence.classify().map(Atom::from);
+
+            stats.update(
+                k as u8,
+                true_domain.clone(),
+                mapped_domain.clone(),
+                result_quality,
+                known_problems.clone(),
+            );
+
+            if result_quality != ClassificationResultQuality::Exact
+                && log_misclassification(
+                    mis_writer,
+                    k,
+                    &sequence,
+                    &mapped_domain,
+                    &class_result,
+                    known_problems.as_ref().map(|x| &**x),
+                )
+                .is_err()
+            {
+                error!(
+                    "Cannot log misclassification for sequence: {}",
+                    sequence.id()
+                );
+            }
+        });
+    info!("Done evaluation for k={}", k);
 }
 
 fn prepare_confusion_domains<D, P>(data: D) -> Result<(), Error>
