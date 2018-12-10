@@ -17,7 +17,7 @@ use serde_json::Serializer as JsonSerializer;
 use std::{
     collections::HashMap,
     fs::OpenOptions,
-    io::{stdout, BufReader, Write},
+    io::{BufReader, Write},
     path::{Path, PathBuf},
     sync::{Arc, RwLock},
 };
@@ -107,7 +107,11 @@ fn run() -> Result<(), Error> {
                     .set_open_options(OpenOptions::new().create(true).truncate(true)),
             )
         })
-        .unwrap_or_else(|| Ok(Box::new(stdout())))
+        .unwrap_or_else(|| {
+            Ok(Box::new(
+                OpenOptions::new().write(true).open("/dev/null").unwrap(),
+            ))
+        })
         .context("Cannot open writer for misclassifications.")?;
     let mut mis_writer = JsonSerializer::with_formatter(writer, JsonlFormatter::new());
 
