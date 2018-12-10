@@ -14,8 +14,9 @@ pub(crate) const GAP_INSERT_COST_MULTIPLIER: usize = 1;
 
 /// Specify how much a substitute from Size->Size should cost compared to insert+delete costs
 ///
-/// Pre-optimization default: `3`
-pub(crate) const SIZE_SUBSTITUTE_COST_DIVIDER: usize = 3;
+/// * Pre-optimization default: `3`
+/// * Phase 1 optimization value: `4`
+pub(crate) const SIZE_SUBSTITUTE_COST_DIVIDER: usize = 4;
 
 /// Specify a multiplier to the difference in Gap values for a Gap->Gap substitution
 ///
