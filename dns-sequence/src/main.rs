@@ -67,11 +67,12 @@ enum SubCommand {
     /// Perform classification of the test data against the trainings data
     #[structopt(name = "classify")]
     Classify {
-        /// If specified, the data is treated as open-world data with the corresponding distance function
-        open_world: bool,
         /// Data to be classified. Directory containing a folder per domain, like `base_dir`.
-        #[structopt(parse(from_os_str))]
+        #[structopt(long = "test-data", parse(from_os_str))]
         test_data: PathBuf,
+        /// If specified, the data is treated as open-world data with the corresponding distance function
+        #[structopt(short = "O", long = "open-world")]
+        open_world: bool,
     },
 }
 
