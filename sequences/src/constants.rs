@@ -20,8 +20,9 @@ pub(crate) const SIZE_SUBSTITUTE_COST_DIVIDER: usize = 4;
 
 /// Specify a multiplier to the difference in Gap values for a Gap->Gap substitution
 ///
-/// Pre-optimization default: `2`
-pub(crate) const GAP_SUBSTITUTE_COST_MULTIPLIER: usize = 2;
+/// * Pre-optimization default: `2`
+/// * Phase 1 optimization value: `3`
+pub(crate) const GAP_SUBSTITUTE_COST_MULTIPLIER: usize = 3;
 
 /// The cost of swapping two non-equal elements
 ///
