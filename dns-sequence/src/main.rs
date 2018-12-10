@@ -34,6 +34,9 @@ lazy_static! {
     raw(setting = "structopt::clap::AppSettings::ColoredHelp")
 )]
 struct CliArgs {
+    /// Subcommand to execute: Command is more specific set
+    #[structopt(subcommand)]
+    cmd: Option<SubCommand>,
     /// Base directory containing per domain a folder which contains the dnstap files
     #[structopt(parse(from_os_str))]
     base_dir: PathBuf,
@@ -56,6 +59,22 @@ struct CliArgs {
     k: usize,
 }
 
+#[derive(StructOpt, Debug, Clone)]
+enum SubCommand {
+    /// Perform crossvalidation within the trainings data
+    #[structopt(name = "crossvalidate")]
+    Crossvalidate,
+    /// Perform classification of the test data against the trainings data
+    #[structopt(name = "classify")]
+    Classify {
+        /// If specified, the data is treated as open-world data with the corresponding distance function
+        open_world: bool,
+        /// Data to be classified. Directory containing a folder per domain, like `base_dir`.
+        #[structopt(parse(from_os_str))]
+        test_data: PathBuf,
+    },
+}
+
 fn main() {
     use std::io::{self, Write};
 
@@ -75,7 +94,7 @@ fn main() {
 fn run() -> Result<(), Error> {
     // generic setup
     env_logger::init();
-    let cli_args = CliArgs::from_args();
+    let mut cli_args = CliArgs::from_args();
 
     let writer: Box<Write> = cli_args
         .misclassifications
@@ -102,8 +121,11 @@ fn run() -> Result<(), Error> {
     }
 
     info!("Start loading dnstap files...");
-    let data = load_all_dnstap_files(&cli_args.base_dir)?;
-    info!("Done loading dnstap files. Found {} domains.", data.len());
+    let training_data = load_all_dnstap_files(&cli_args.base_dir)?;
+    info!(
+        "Done loading dnstap files. Found {} domains.",
+        training_data.len()
+    );
     {
         // delete non-permanent memory
         let mut lock = CONFUSION_DOMAINS
@@ -115,6 +137,34 @@ fn run() -> Result<(), Error> {
     // Collect the stats during the execution and print them at the end
     let mut stats = StatsCollector::new();
 
+    match cli_args.cmd {
+        None | Some(SubCommand::Crossvalidate) => {
+            // In case of `None` overwrite it to make sure the individual functions never have to handle a `None`.
+            cli_args.cmd = Some(SubCommand::Crossvalidate);
+            run_crossvalidation(&cli_args, training_data, &mut stats, &mut mis_writer)
+        }
+        Some(SubCommand::Classify { .. }) => {
+            run_classify(&cli_args, training_data, &mut stats, &mut mis_writer)?;
+        }
+    }
+
+    // TODO print final stats
+    println!("{}", stats);
+    if let Some(path) = &cli_args.statistics {
+        stats.dump_stats_to_file(path)?;
+        // the file extension will be overwritten later
+        stats.plot(&path.with_extension("placeholder"))?;
+    }
+
+    Ok(())
+}
+
+fn run_crossvalidation(
+    cli_args: &CliArgs,
+    data: Vec<LabelledSequences>,
+    stats: &mut StatsCollector,
+    mis_writer: &mut JsonSerializer<impl Write, impl serde_json::ser::Formatter>,
+) {
     for fold in 0..10 {
         info!("Testing for fold {}", fold);
         info!("Start splitting trainings and test data...");
@@ -136,21 +186,63 @@ fn run() -> Result<(), Error> {
                 &*training_data,
                 &*test_data,
                 &*test_labels,
-                &mut stats,
-                &mut mis_writer,
+                stats,
+                mis_writer,
             );
         }
     }
+}
 
-    // TODO print final stats
-    println!("{}", stats);
-    if let Some(path) = &cli_args.statistics {
-        stats.dump_stats_to_file(path)?;
-        // the file extension will be overwritten later
-        stats.plot(&path.with_extension("placeholder"))?;
+fn run_classify(
+    cli_args: &CliArgs,
+    data: Vec<LabelledSequences>,
+    stats: &mut StatsCollector,
+    mis_writer: &mut JsonSerializer<impl Write, impl serde_json::ser::Formatter>,
+) -> Result<(), Error> {
+    if let Some(SubCommand::Classify {
+        open_world,
+        test_data,
+    }) = cli_args.cmd.clone()
+    {
+        if open_world {
+            bail!("Open world not yet implemented");
+        }
+
+        info!("Start loading test data dnstap files...");
+        let test_data = load_all_dnstap_files(&test_data)?;
+        info!(
+            "Done loading test data dnstap files. Found {} domains.",
+            test_data.len()
+        );
+
+        // Separate labels from sequences
+        let len = test_data.len();
+        let (test_labels, test_sequences) = test_data.into_iter().fold(
+            (Vec::with_capacity(len), Vec::with_capacity(len)),
+            |(mut test_labels, mut test_sequences), elem| {
+                for seq in elem.sequences {
+                    test_labels.push((elem.true_domain.clone(), elem.mapped_domain.clone()));
+                    test_sequences.push(seq);
+                }
+                (test_labels, test_sequences)
+            },
+        );
+
+        for k in (1..=cli_args.k).step_by(2) {
+            classify_and_evaluate(
+                k,
+                &*data,
+                &*test_sequences,
+                &*test_labels,
+                stats,
+                mis_writer,
+            )
+        }
+
+        Ok(())
+    } else {
+        unreachable!("The value of `SubCommand` must be a `Classify`.")
     }
-
-    Ok(())
 }
 
 fn classify_and_evaluate(
