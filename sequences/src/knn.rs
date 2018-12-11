@@ -178,9 +178,10 @@ impl LabelOption {
     }
 }
 
-/// Find the k-nearest-neighbours in trainings_data for each element in validation_data
+/// Find the k-nearest-neighbours in `trainings_data` for each element in `validation_data`
 ///
-/// Returns a label for each entry in validation_data together with the minimal and maximal distance seen.
+/// Returns a label for each entry in `validation_data` together with the minimal and maximal distance seen.
+/// This is grouped together in a [`ClassificationResult`].
 pub fn knn<S>(
     trainings_data: &[LabelledSequences<S>],
     validation_data: &[Sequence],

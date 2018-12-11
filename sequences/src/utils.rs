@@ -93,6 +93,17 @@ pub fn load_all_dnstap_files_from_dir(
     Ok(data)
 }
 
+/// Take the `n` smallest elements from `iter`
+///
+/// It is unspecified which `n` smallest elements are being returned.
+///
+/// `iter` contains functions, which each return a [`ClassifierData`].
+/// The argument to the function, is a maximal distance we are interested in.
+/// If the distance in [`ClassifierData`] is smaller than the function argument, the value has to be correct.
+///
+/// If the function knows, that the distance will be larger than it's argument, then it can abort early.
+/// In this case the only constraint is, that the distance in [`ClassifierData`] is larger or equal to the function argument.
+/// The returned [`ClassifierData`] will not be used any further.
 pub(crate) fn take_smallest<'a, I, F, S>(iter: I, n: usize) -> Vec<ClassifierData<'a, S>>
 where
     I: IntoIterator<Item = F>,
