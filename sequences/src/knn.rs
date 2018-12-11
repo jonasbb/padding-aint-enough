@@ -1,5 +1,7 @@
-use super::{LabelledSequence, LabelledSequences, Sequence};
-use crate::utils::take_smallest;
+use crate::{
+    utils::{take_smallest, take_smallest_opt},
+    LabelledSequence, LabelledSequences, Sequence,
+};
 use log::{debug, error};
 use misc_utils::{Max, Min};
 use rayon::prelude::*;
@@ -11,6 +13,8 @@ use std::{
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum ClassificationResultQuality {
+    /// There are no classification labels
+    NoResult,
     /// None of the classification labels matches the real label
     Wrong,
     /// One of the classification labels matches the real label
@@ -39,6 +43,7 @@ pub enum ClassificationResultQuality {
 impl Display for ClassificationResultQuality {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
+            ClassificationResultQuality::NoResult => write!(f, "NoResult"),
             ClassificationResultQuality::Wrong => write!(f, "Wrong"),
             ClassificationResultQuality::Contains => write!(f, "Contains"),
             ClassificationResultQuality::PluralityThenMinDist => write!(f, "PluralityThenMinDist"),
@@ -54,6 +59,7 @@ impl ClassificationResultQuality {
     ) -> std::iter::Cloned<std::slice::Iter<'a, ClassificationResultQuality>> {
         use self::ClassificationResultQuality::*;
         [
+            NoResult,
             Wrong,
             Contains,
             PluralityThenMinDist,
@@ -111,6 +117,10 @@ impl ClassificationResult {
 
     #[allow(clippy::block_in_if_condition_stmt)]
     pub fn determine_quality(&self, real_label: &str) -> ClassificationResultQuality {
+        if self.options.is_empty() {
+            return ClassificationResultQuality::NoResult;
+        }
+
         if self.is(real_label) {
             return ClassificationResultQuality::Exact;
         }

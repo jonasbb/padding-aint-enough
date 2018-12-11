@@ -106,6 +106,8 @@ impl<S: Eq + Hash> StatsCollector<S> {
         struct Out<'a, S> {
             k: u8,
             label: &'a S,
+            no_result: usize,
+            no_result_w_reason: usize,
             wrong: usize,
             wrong_w_reason: usize,
             contains: usize,
@@ -128,6 +130,16 @@ impl<S: Eq + Hash> StatsCollector<S> {
                 let out = Out {
                     k,
                     label: domain,
+                    no_result: stats
+                        .results
+                        .get(&(ClassificationResultQuality::NoResult, false))
+                        .cloned()
+                        .unwrap_or_default(),
+                    no_result_w_reason: stats
+                        .results
+                        .get(&(ClassificationResultQuality::NoResult, true))
+                        .cloned()
+                        .unwrap_or_default(),
                     wrong: stats
                         .results
                         .get(&(ClassificationResultQuality::Wrong, false))
@@ -332,8 +344,9 @@ where
 
             // For each quality level, we want to count the number of classifications with equal or better quality
             let counts: Vec<_> = ClassificationResultQuality::iter_variants()
-                // skip the `wrong` quality, as this does not match the semantics of the rest
-                .skip(1)
+                // skip some qualitys, as this does not match the semantics of the rest
+                .filter(|&q| q != ClassificationResultQuality::NoResult)
+                .filter(|&q| q != ClassificationResultQuality::Wrong)
                 .map(|quality| {
                     let mut num_class = tmp[&quality].clone();
 
