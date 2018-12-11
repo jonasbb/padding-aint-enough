@@ -18,7 +18,7 @@ serde_json = "1.0.33"
 serde-pickle = "0.4.1"
 serde_with = "0.2.5"
 string_cache = "0.7.3"
-structopt = "0.2.13"
+structopt = "0.2.14"
 sequences = { path = "../sequences/" }
 
 [features]
