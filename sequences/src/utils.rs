@@ -170,6 +170,25 @@ where
     res
 }
 
+#[test]
+fn take_smallest_empty() {
+    let res = take_smallest(
+        vec![]
+            .into_iter()
+            .map(|_: usize| |_: usize| -> ClassifierData<'static, str> { unimplemented!() }),
+        1,
+    );
+    assert!(res.is_empty());
+
+    let res = take_smallest(
+        vec![]
+            .into_iter()
+            .map(|_: usize| |_: usize| -> ClassifierData<'static, str> { unimplemented!() }),
+        12,
+    );
+    assert!(res.is_empty());
+}
+
 // #[allow(dead_code)]
 // fn take_smallest<I, T>(iter: I, n: usize) -> Vec<T>
 // where
