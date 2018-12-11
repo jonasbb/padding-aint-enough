@@ -163,10 +163,7 @@ where
         }
     }
 
-    debug_assert!(
-        res.len() <= n,
-        "Output vector only contains more than n elements."
-    );
+    debug_assert!(res.len() <= n, "Output vector only contains n elements.");
     res
 }
 
