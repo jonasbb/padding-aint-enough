@@ -263,27 +263,27 @@ where
 #[derive(Debug)]
 pub(crate) struct ClassifierData<'a, S>
 where
-    S: 'a,
+    S: 'a + ?Sized,
 {
     label: &'a S,
     pub distance: usize,
 }
 
-impl<'a, S> PartialEq for ClassifierData<'a, S> {
+impl<'a, S: ?Sized> PartialEq for ClassifierData<'a, S> {
     fn eq(&self, other: &Self) -> bool {
         self.distance == other.distance
     }
 }
 
-impl<'a, S> Eq for ClassifierData<'a, S> {}
+impl<'a, S: ?Sized> Eq for ClassifierData<'a, S> {}
 
-impl<'a, S> PartialOrd for ClassifierData<'a, S> {
+impl<'a, S: ?Sized> PartialOrd for ClassifierData<'a, S> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(&other))
     }
 }
 
-impl<'a, S> Ord for ClassifierData<'a, S> {
+impl<'a, S: ?Sized> Ord for ClassifierData<'a, S> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.distance.cmp(&other.distance)
     }

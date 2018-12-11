@@ -97,6 +97,7 @@ pub(crate) fn take_smallest<'a, I, F, S>(iter: I, n: usize) -> Vec<ClassifierDat
 where
     I: IntoIterator<Item = F>,
     F: Fn(usize) -> ClassifierData<'a, S>,
+    S: ?Sized,
 {
     let mut iter = iter.into_iter();
     if n == 1 {
