@@ -227,6 +227,63 @@ where
         .collect()
 }
 
+pub fn knn_with_threshold<S>(
+    trainings_data: &[LabelledSequences<S>],
+    validation_data: &[Sequence],
+    k: u8,
+    distance_threshold: f32,
+) -> Vec<ClassificationResult>
+where
+    S: AsRef<str> + Clone + Display + Sync,
+{
+    assert!(k > 0, "kNN needs a k with k > 0");
+
+    validation_data
+        .into_par_iter()
+        .map(|vsample| {
+            let distances = take_smallest_opt(
+                trainings_data
+                    .iter()
+                    // iterate over all elements of the trainings data
+                    .flat_map(|tlseq| {
+                        tlseq.sequences.iter().map(move |s| {
+                            // TODO determine a absolute max distance applicable to the pair of
+                            // sequences `s` and `vsample`. Apply this abs value in combination with max_dist.
+                            let abs_threshold =
+                                (vsample.len().max(s.len()) as f32 * distance_threshold) as usize;
+
+                            move |max_dist: usize| {
+                                // this is the distance as determined by the DNS sequence distance function
+                                let real_distance = vsample.distance_with_limit(
+                                    s,
+                                    max_dist.min(abs_threshold),
+                                    true,
+                                );
+
+                                if real_distance >= abs_threshold {
+                                    // In case the distance reaches our threshold, we do not want any result
+                                    None
+                                } else {
+                                    Some(ClassifierData {
+                                        label: &tlseq.mapped_domain,
+                                        distance: vsample.distance_with_limit(
+                                            s,
+                                            max_dist.min(abs_threshold),
+                                            true,
+                                        ),
+                                    })
+                                }
+                            }
+                        })
+                    }),
+                // collect the k smallest distances
+                k as usize,
+            );
+            ClassificationResult::from_classifier_data(&distances)
+        })
+        .collect()
+}
+
 #[allow(clippy::type_complexity)]
 pub fn split_training_test_data<S>(
     data: &[LabelledSequences<S>],

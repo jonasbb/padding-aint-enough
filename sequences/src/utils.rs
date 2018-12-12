@@ -186,6 +186,72 @@ fn take_smallest_empty() {
     assert!(res.is_empty());
 }
 
+pub(crate) fn take_smallest_opt<'a, I, F, S>(iter: I, n: usize) -> Vec<ClassifierData<'a, S>>
+where
+    I: IntoIterator<Item = F>,
+    F: Fn(usize) -> Option<ClassifierData<'a, S>>,
+    S: ?Sized,
+{
+    let mut iter = iter.into_iter();
+    if n == 1 {
+        // get a first element to make the rest of the code simpler
+        // At the beginning we do not have a maximum value to consider
+        let best = (&mut iter).filter_map(|f| f(usize::max_value())).next();
+        // iter is empty
+        if best.is_none() {
+            return vec![];
+        }
+        let mut best = best.unwrap();
+        // The first element could already be a best match
+        if best.distance == 0 {
+            return vec![best];
+        }
+
+        for elem in iter {
+            // convert to ClassifierData with max distance
+            if let Some(elem) = elem(best.distance) {
+                if elem < best {
+                    // found a better element, so replace the current best
+                    best = elem;
+                    // better element is also best possible, stop search
+                    if best.distance == 0 {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // return whatever the current best is
+        vec![best]
+    } else {
+        let mut res = Vec::with_capacity(n);
+        // fill the vector with n elements
+        // At the beginning we do not have a maximum value to consider
+        res.extend((&mut iter).filter_map(|f| f(usize::max_value())).take(n));
+        res.sort();
+
+        // the iterator is already exhausted, so we can stop early
+        // This hopefully also tells LLVM, that array indexing is fine
+        if res.len() < n {
+            return res;
+        }
+
+        // replace exisiting elements keeping the heap size
+        for v in iter {
+            // convert to ClassifierData with max distance
+            if let Some(v) = v(res[n - 1].distance) {
+                // compare with worst element so far
+                if v < res[n - 1] {
+                    res[n - 1] = v;
+                    res.sort();
+                }
+            }
+        }
+
+        debug_assert!(res.len() <= n, "Output vector only contains n elements.");
+        res
+    }
+}
 // #[allow(dead_code)]
 // fn take_smallest<I, T>(iter: I, n: usize) -> Vec<T>
 // where

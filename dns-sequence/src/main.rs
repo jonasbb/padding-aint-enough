@@ -73,6 +73,8 @@ enum SubCommand {
         /// If specified, the data is treated as open-world data with the corresponding distance function
         #[structopt(short = "O", long = "open-world")]
         open_world: bool,
+        #[structopt(long = "dist-thres")]
+        distance_threshold: Option<f32>,
     },
 }
 
@@ -188,6 +190,7 @@ fn run_crossvalidation(
         for k in (1..=(cli_args.k)).step_by(2) {
             classify_and_evaluate(
                 k,
+                None,
                 &*training_data,
                 &*test_data,
                 &*test_labels,
@@ -207,6 +210,7 @@ fn run_classify(
     if let Some(SubCommand::Classify {
         open_world,
         test_data,
+        distance_threshold,
     }) = cli_args.cmd.clone()
     {
         if open_world {
@@ -236,6 +240,7 @@ fn run_classify(
         for k in (1..=cli_args.k).step_by(2) {
             classify_and_evaluate(
                 k,
+                distance_threshold,
                 &*data,
                 &*test_sequences,
                 &*test_labels,
@@ -250,8 +255,19 @@ fn run_classify(
     }
 }
 
+/// This function takes trainings and test data and performs classification with them.
+///
+/// Results of the classification process are logged to the `stats/StatsCollector` and
+/// `mis_writer`/`JsonSerializer`.
+///
+/// The parameters `k` and `distance_threshold` configure the behaviour of the function. `k` refers
+/// to the k in k-NN, while the `distance_threshold`, if not `None`, allows to specify an additional
+/// threshold, in which case no classification should happen. This toggles the two different k-NN
+/// variants from the paper.
 fn classify_and_evaluate(
+    // The `k` for k-NN
     k: usize,
+    distance_threshold: Option<f32>,
     training_data: &[LabelledSequences],
     test_data: &[Sequence],
     test_labels: &[(Atom, Atom)],
@@ -259,7 +275,13 @@ fn classify_and_evaluate(
     mis_writer: &mut JsonSerializer<impl Write, impl serde_json::ser::Formatter>,
 ) {
     info!("Start classification for k={}...", k);
-    let classification = knn::knn(&*training_data, &*test_data, k as u8);
+    let classification;
+    if let Some(distance_threshold) = distance_threshold {
+        classification =
+            knn::knn_with_threshold(&*training_data, &*test_data, k as u8, distance_threshold)
+    } else {
+        classification = knn::knn(&*training_data, &*test_data, k as u8)
+    }
     assert_eq!(classification.len(), test_labels.len());
     info!("Done classification for k={}, start evaluation...", k);
     classification

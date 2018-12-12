@@ -72,6 +72,7 @@ pub type OneHotEncoding = (u8, u8, u8, u8, u8, u8, u8);
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sequence(Vec<SequenceElement>, String);
 
+#[allow(clippy::len_without_is_empty)]
 impl Sequence {
     pub fn new(sequence: Vec<SequenceElement>, identifier: String) -> Sequence {
         Sequence(sequence, identifier)
@@ -83,6 +84,10 @@ impl Sequence {
 
     pub fn id(&self) -> &str {
         &*self.1
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 
     pub fn complexity(&self) -> usize {
