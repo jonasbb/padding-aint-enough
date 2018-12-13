@@ -67,7 +67,9 @@ fn test_classify_sequence_r004() {
     assert_eq!(sequence.classify(), Some(R004_SIZE1));
 }
 
+// Ignore this test, as the classification code has been commented out
 #[test]
+#[ignore]
 fn test_classify_sequence_r007() {
     use crate::SequenceElement::{Gap, Size};
 
