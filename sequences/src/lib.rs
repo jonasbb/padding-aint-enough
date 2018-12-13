@@ -286,6 +286,10 @@ impl Sequence {
                 Some(R006_3RD_LVL_DOM)
             }
             _ => {
+                // This part only makes sense when operating on DNSSEC data
+                // This check should be unnecessary now, given that we check for unreachability in
+                // the Chrome debugger messages and retry the loading there already
+                /*
                 let mut is_unreachable_domain = true;
                 {
                     // Unreachable domains have many requests of Size 1 but never a DNSKEY
@@ -315,6 +319,8 @@ impl Sequence {
                 } else {
                     None
                 }
+                */
+                None
             }
         }
     }
