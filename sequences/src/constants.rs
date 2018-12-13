@@ -11,6 +11,7 @@ pub(crate) const SIZE_INSERT_COST: usize = 12;
 ///
 /// * Pre-optimization default: `5`
 /// * Phase 1 optimization value: `1`
+/// * Phase 2 optimization value: `1`
 pub(crate) const GAP_INSERT_COST_MULTIPLIER: usize = 1;
 
 /// Specify how much a substitute from Size->Size should cost compared to insert+delete costs
