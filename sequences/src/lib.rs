@@ -28,6 +28,7 @@ use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     collections::HashMap,
     fmt::{self, Debug},
+    hash::Hash,
     mem,
     path::Path,
     sync::{Arc, RwLock},
@@ -78,16 +79,36 @@ impl Sequence {
         Sequence(sequence, identifier)
     }
 
+    /// Load a [`Sequence`] from a file path. The file has to be a dnstap file.
     pub fn from_path(path: &Path) -> Result<Sequence, Error> {
         load_sequence::dnstap_to_sequence(path)
     }
 
+    /// Return the [`Sequence`]'s identifier. Normally, the file name.
     pub fn id(&self) -> &str {
         &*self.1
     }
 
+    /// Return the number of [`SequenceElement`]s contained
     pub fn len(&self) -> usize {
         self.0.len()
+    }
+
+    /// Generalize the [`Sequence`] and make an abstract version by removing some features.
+    ///
+    /// * ID will be the empty string, thus allowing comparisons between different abstract Sequences
+    /// * All [`Gap`][`SequenceElement::Gap`] elements will have a value of `0`, as exact values are often undesireable.
+    pub fn to_abstract_sequence(&self) -> Self {
+        Sequence(
+            self.0
+                .iter()
+                .map(|seqelem| match seqelem {
+                    SequenceElement::Gap(_) => SequenceElement::Gap(0),
+                    elem => *elem,
+                })
+                .collect(),
+            "".to_string(),
+        )
     }
 
     pub fn complexity(&self) -> usize {
@@ -108,11 +129,12 @@ impl Sequence {
             .collect()
     }
 
+    /// Return the distance to the `other` [`Sequence`].
     pub fn distance(&self, other: &Self) -> usize {
         self.distance_with_limit(other, usize::max_value(), false)
     }
 
-    /// Same as `distance` but with an early exit criteria
+    /// Same as [`Sequence::distance`] but with an early exit criteria
     ///
     /// `max_distance` specifies an early exit criteria.
     /// The function will exit early, if the distance found will be larger than `max_distance` without computing the final value.
@@ -219,6 +241,7 @@ impl Sequence {
             .expect("The rows are never empty, thus there is a last.")
     }
 
+    /// Return the internal slice of [`SequenceElement`]s
     pub fn as_elements(&self) -> &[SequenceElement] {
         &self.0
     }
@@ -334,6 +357,16 @@ impl PartialEq for Sequence {
 }
 
 impl Eq for Sequence {}
+
+impl Hash for Sequence {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: std::hash::Hasher,
+    {
+        self.1.hash(state);
+        self.0.hash(state);
+    }
+}
 
 impl Ord for Sequence {
     fn cmp(&self, other: &Self) -> Ordering {
