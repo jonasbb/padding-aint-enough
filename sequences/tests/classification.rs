@@ -3,6 +3,7 @@ extern crate sequences;
 use sequences::{common_sequence_classifications::*, *};
 
 #[test]
+#[ignore]
 fn test_classify_sequence_r001() {
     use crate::SequenceElement::{Gap, Size};
 
@@ -26,6 +27,7 @@ fn test_classify_sequence_r001() {
 }
 
 #[test]
+#[ignore]
 fn test_classify_sequence_r002() {
     use crate::SequenceElement::{Gap, Size};
 
