@@ -47,6 +47,7 @@ pub fn replace_loading_failed(new_data: HashMap<Atom, &'static str>) {
 }
 
 pub mod common_sequence_classifications {
+    // These patterns were generated for traces using DNSSEC
     pub const R001: &str = "R001 Single Domain. A + DNSKEY";
     pub const R002: &str = "R002 Single Domain with www redirect. A + DNSKEY + A (for www)";
     pub const R003: &str = "R003 Two domains for website. (A + DNSKEY) * 2";
@@ -65,6 +66,9 @@ pub mod common_sequence_classifications {
     pub const R008: &str =
         "R008 Domain did not load properly and Chrome performed a Google search on the error page.";
     pub const R009: &str = "R009 No network response received.";
+
+    // These patterns are intended for traces without DNSSEC
+    pub const R102: &str = "R102 Single Domain with www redirect. A + A (for www)";
 }
 
 //                         S1, S2, S3, S4, S5, S6, G?
@@ -263,26 +267,13 @@ impl Sequence {
             }
         }
 
-        // Test if sequence only contains two responses of size 1 and then 2
-        let packets: Vec<_> = self
-            .as_elements()
-            .iter()
-            .filter(|elem| {
-                if let SequenceElement::Size(_) = elem {
-                    true
-                } else {
-                    false
-                }
-            })
-            .cloned()
-            .collect();
-
-        match &*packets {
+        use crate::SequenceElement::{Gap, Size};
+        match &*self.as_elements() {
             [] => {
                 error!("Empty sequence for ID {}. Should never occur", self.id());
                 None
             }
-            [SequenceElement::Size(n)] => Some(match n {
+            [Size(n)] => Some(match n {
                 0 => unreachable!("Packets of size 0 may never occur."),
                 1 => R004_SIZE1,
                 2 => R004_SIZE2,
@@ -292,6 +283,8 @@ impl Sequence {
                 6 => R004_SIZE6,
                 _ => R004_UNKNOWN,
             }),
+            [Size(1), Gap(_), Size(1)] => Some(R102),
+            /*
             [SequenceElement::Size(1), SequenceElement::Size(2)] => Some(R001),
             [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1)] => {
                 Some(R002)
@@ -308,6 +301,7 @@ impl Sequence {
             [SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
                 Some(R006_3RD_LVL_DOM)
             }
+            */
             _ => {
                 // This part only makes sense when operating on DNSSEC data
                 // This check should be unnecessary now, given that we check for unreachability in
