@@ -25,6 +25,7 @@ pub(crate) const SIZE_SUBSTITUTE_COST_DIVIDER: usize = 4;
 ///
 /// * Pre-optimization default: `2`
 /// * Phase 1 optimization value: `3`
+/// * Phase 2 optimization value: `3`
 pub(crate) const GAP_SUBSTITUTE_COST_MULTIPLIER: usize = 3;
 
 /// The cost of swapping two non-equal elements
