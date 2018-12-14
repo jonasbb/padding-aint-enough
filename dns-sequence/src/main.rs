@@ -63,7 +63,10 @@ struct CliArgs {
 enum SubCommand {
     /// Perform crossvalidation within the trainings data
     #[structopt(name = "crossvalidate")]
-    Crossvalidate,
+    Crossvalidate {
+        #[structopt(long = "dist-thres")]
+        distance_threshold: Option<f32>,
+    },
     /// Perform classification of the test data against the trainings data
     #[structopt(name = "classify")]
     Classify {
@@ -145,9 +148,14 @@ fn run() -> Result<(), Error> {
     let mut stats = StatsCollector::new();
 
     match cli_args.cmd {
-        None | Some(SubCommand::Crossvalidate) => {
+        None => {
             // In case of `None` overwrite it to make sure the individual functions never have to handle a `None`.
-            cli_args.cmd = Some(SubCommand::Crossvalidate);
+            cli_args.cmd = Some(SubCommand::Crossvalidate {
+                distance_threshold: None,
+            });
+            run_crossvalidation(&cli_args, training_data, &mut stats, &mut mis_writer)
+        }
+        Some(SubCommand::Crossvalidate { .. }) => {
             run_crossvalidation(&cli_args, training_data, &mut stats, &mut mis_writer)
         }
         Some(SubCommand::Classify { .. }) => {
@@ -172,32 +180,36 @@ fn run_crossvalidation(
     stats: &mut StatsCollector,
     mis_writer: &mut JsonSerializer<impl Write, impl serde_json::ser::Formatter>,
 ) {
-    for fold in 0..10 {
-        info!("Testing for fold {}", fold);
-        info!("Start splitting trainings and test data...");
-        let (training_data, test) = knn::split_training_test_data(&*data, fold as u8);
-        let len = test.len();
-        let (test_labels, test_data) = test.into_iter().fold(
-            (Vec::with_capacity(len), Vec::with_capacity(len)),
-            |(mut test_labels, mut data), elem| {
-                test_labels.push((elem.true_domain, elem.mapped_domain));
-                data.push(elem.sequence);
-                (test_labels, data)
-            },
-        );
-        info!("Done splitting trainings and test data.");
-
-        for k in (1..=(cli_args.k)).step_by(2) {
-            classify_and_evaluate(
-                k,
-                None,
-                &*training_data,
-                &*test_data,
-                &*test_labels,
-                stats,
-                mis_writer,
+    if let Some(SubCommand::Crossvalidate { distance_threshold }) = cli_args.cmd.clone() {
+        for fold in 0..10 {
+            info!("Testing for fold {}", fold);
+            info!("Start splitting trainings and test data...");
+            let (training_data, test) = knn::split_training_test_data(&*data, fold as u8);
+            let len = test.len();
+            let (test_labels, test_data) = test.into_iter().fold(
+                (Vec::with_capacity(len), Vec::with_capacity(len)),
+                |(mut test_labels, mut data), elem| {
+                    test_labels.push((elem.true_domain, elem.mapped_domain));
+                    data.push(elem.sequence);
+                    (test_labels, data)
+                },
             );
+            info!("Done splitting trainings and test data.");
+
+            for k in (1..=(cli_args.k)).step_by(2) {
+                classify_and_evaluate(
+                    k,
+                    distance_threshold,
+                    &*training_data,
+                    &*test_data,
+                    &*test_labels,
+                    stats,
+                    mis_writer,
+                );
+            }
         }
+    } else {
+        unreachable!("The value of `SubCommand` must be a `Crossvalidate`.")
     }
 }
 
