@@ -247,10 +247,11 @@ where
                     // iterate over all elements of the trainings data
                     .flat_map(|tlseq| {
                         tlseq.sequences.iter().map(move |s| {
+                            let length_of_longer_sequence = vsample.len().max(s.len());
                             // TODO determine a absolute max distance applicable to the pair of
                             // sequences `s` and `vsample`. Apply this abs value in combination with max_dist.
                             let abs_threshold =
-                                (vsample.len().max(s.len()) as f32 * distance_threshold) as usize;
+                                (length_of_longer_sequence as f32 * distance_threshold.ceil()) as usize;
 
                             move |max_dist: usize| {
                                 // this is the distance as determined by the DNS sequence distance function
@@ -260,7 +261,7 @@ where
                                     true,
                                 );
 
-                                if real_distance >= abs_threshold {
+                                if (real_distance as f32 / length_of_longer_sequence as f32) > distance_threshold {
                                     // In case the distance reaches our threshold, we do not want any result
                                     None
                                 } else {
