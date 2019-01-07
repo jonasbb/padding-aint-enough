@@ -27,6 +27,15 @@ test:cargo:
   - python3 -m pip install pipenv
   - rustup update nightly
   - rustup default nightly
+
+  # Install rust tools
+  - which cargo-install-update || cargo install cargo-update
+  - cargo install-update --allow-no-update sccache
+  - export RUSTC_WRAPPER="sccache"
+  - export SCCACHE_CACHE_SIZE="5G"
+  - export SCCACHE_DIR="/sccache"
+  # Update all tools
+  - cargo +stable install-update -a
   script:
   - python3 --version
   - pipenv install --dev --verbose
