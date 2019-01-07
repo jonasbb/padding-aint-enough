@@ -20,10 +20,10 @@ test:cargo:
   before_script:
   - echo "deb http://ftp.de.debian.org/debian testing main" >> /etc/apt/sources.list
   - apt-get update
-  - apt-get install -y protobuf-compiler xvfb libssl-dev
-  - apt-get -t testing -y install python3.6 python3.6-dev python3-ipython python3-matplotlib python3-numpy python3-pip python3-pandas
-  - update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
-  - update-alternatives --set python3 `which python3.6`
+  - apt-get install -y protobuf-compiler xvfb libssl1.0-dev
+  - apt-get -t testing -y install python3.7 python3.7-dev python3-ipython python3-matplotlib python3-numpy python3-pip python3-pandas libboost-all-dev
+  - update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
+  - update-alternatives --set python3 `which python3.7`
   - python3 -m pip install pipenv
   - rustup update nightly
   - rustup default nightly
@@ -35,7 +35,7 @@ test:cargo:
   - export SCCACHE_CACHE_SIZE="5G"
   - export SCCACHE_DIR="/sccache"
   # Update all tools
-  - cargo +stable install-update -a
+  - cargo install-update -a
   script:
   - python3 --version
   - pipenv install --dev --verbose
