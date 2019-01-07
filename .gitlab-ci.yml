@@ -20,7 +20,7 @@ test:cargo:
   before_script:
   - echo "deb http://ftp.de.debian.org/debian testing main" >> /etc/apt/sources.list
   - apt-get update
-  - apt-get install -y protobuf-compiler xvfb
+  - apt-get install -y protobuf-compiler xvfb libssl-dev
   - apt-get -t testing -y install python3.6 python3.6-dev python3-ipython python3-matplotlib python3-numpy python3-pip python3-pandas
   - update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1
   - update-alternatives --set python3 `which python3.6`
