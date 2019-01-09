@@ -32,4 +32,5 @@ pub(crate) const GAP_SUBSTITUTE_COST_MULTIPLIER: usize = 3;
 ///
 /// * Pre-optimization default: `20`
 /// * Phase 1 optimization value: `3` / `4`
+/// * Phase 2 optimization value: `3`
 pub(crate) const SWAP_COST: usize = 3;
