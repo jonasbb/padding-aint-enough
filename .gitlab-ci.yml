@@ -29,6 +29,7 @@ test:cargo:
   - rustup default nightly
 
   # Install rust tools
+  - export PATH="$CARGO_HOME"/bin:"$PATH"
   - which cargo-install-update || cargo install cargo-update
   - cargo install-update --allow-no-update sccache
   - export RUSTC_WRAPPER="sccache"
