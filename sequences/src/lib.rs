@@ -69,6 +69,11 @@ pub mod common_sequence_classifications {
 
     // These patterns are intended for traces without DNSSEC
     pub const R102: &str = "R102 Single Domain with www redirect. A + A (for www)";
+    pub const R102A: &str = "R102A Single Domain with www redirect. A + A (for www). Missing gap.";
+    pub const R103: &str = "R103 Three Domain requests. Can sometimes be R102 with an erroneous `ssl.gstatic.com` or similar.";
+    pub const R103A: &str = "R103A Three Domain requests. Missing first gap.";
+    pub const R103B: &str = "R103B Three Domain requests. Missing second gap.";
+    pub const R103C: &str = "R103C Three Domain requests. No gaps.";
 }
 
 //                         S1, S2, S3, S4, S5, S6, G?
@@ -283,7 +288,13 @@ impl Sequence {
                 6 => R004_SIZE6,
                 _ => R004_UNKNOWN,
             }),
-            [Size(1), Gap(_), Size(1)] => Some(R102),
+            [Size(1), Size(1)] => Some(R102),
+            [Size(1), Gap(_), Size(1)] => Some(R102A),
+
+            [Size(1), Gap(_), Size(1), Gap(_), Size(1)] => Some(R103),
+            [Size(1), Size(1), Gap(_), Size(1)] => Some(R103A),
+            [Size(1), Gap(_), Size(1), Size(1)] => Some(R103B),
+            [Size(1), Size(1), Size(1)] => Some(R103C),
             /*
             [SequenceElement::Size(1), SequenceElement::Size(2)] => Some(R001),
             [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1)] => {
