@@ -26,4 +26,4 @@ string_cache = "0.7.3"
 
 [dev-dependencies]
 criterion = "0.2.5"
-min-max-heap = "1.2.0"
+min-max-heap = "1.2.2"
