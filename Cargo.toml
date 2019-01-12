@@ -48,7 +48,7 @@ harness = false
 [dependencies]
 chrome = { path = "./chrome" }
 chrono = "0.4.2"
-csv = "1.0.0"
+csv = "1.0.5"
 dnstap = { path = "./dnstap" }
 env_logger = "0.6.0"
 failure = "0.1.3"
