@@ -14,7 +14,7 @@ misc_utils = "2.1.0"
 plot = { path = "../plot", optional = true }
 prettytable-rs = { version = "0.8.0", default-features = false }
 serde = { version = "1.0.84", features = [ "derive" ] }
-serde_json = "1.0.33"
+serde_json = "1.0.35"
 serde-pickle = "0.4.1"
 serde_with = "0.2.5"
 string_cache = "0.7.3"
