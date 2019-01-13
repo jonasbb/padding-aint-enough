@@ -10,7 +10,7 @@ crate-type = [ "cdylib" ]
 
 [dependencies]
 encrypted-dns = { path = ".." }
-failure = "0.1.3"
+failure = "0.1.5"
 sequences = { path = "../sequences" }
 
 [dependencies.pyo3]
