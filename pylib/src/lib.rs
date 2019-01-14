@@ -88,6 +88,11 @@ impl PySequence {
     pub fn to_one_hot_encoding(&self) -> PyResult<Vec<OneHotEncoding>> {
         Ok(self.sequence.to_one_hot_encoding())
     }
+
+    /// Returns the number of elements in this sequence
+    pub fn len(&self) -> PyResult<usize> {
+        Ok(self.sequence.len())
+    }
 }
 
 #[pyproto]
