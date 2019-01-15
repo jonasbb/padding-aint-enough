@@ -58,4 +58,5 @@ test:cargo:
   - pushd pylib && python3 ./setup.py install && popd
   - python3 -c "import pylib; help(pylib)"
   after_script:
-    - sccache --show-stats
+  - export PATH="$CARGO_HOME"/bin:"$PATH"
+  - sccache --show-stats
