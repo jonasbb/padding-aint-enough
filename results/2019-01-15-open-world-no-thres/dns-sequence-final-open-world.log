@@ -1,0 +1,104 @@
+knn with k=1:
+       Quality        │   #    │ #With Prob. │ Total 
+══════════════════════╪════════╪═════════════╪════════
+ Exact                │     27 │           0 │     27 
+ Majority             │      0 │           0 │      0 
+ Plurality            │      0 │           0 │      0 
+ PluralityThenMinDist │      0 │           0 │      0 
+ Contains             │      0 │           0 │      0 
+ Wrong                │ 160086 │       10259 │ 170345 
+ NoResult             │      0 │           0 │      0 
+
+#Domains with at least x classification results of quality or higher:
+        Method        │   0    │ 1  │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │ 10 
+══════════════════════╪════════╪════╪═══╪═══╪═══╪═══╪═══╪═══╪═══╪═══╪════
+ Contains             │ 170372 │ 27 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ PluralityThenMinDist │ 170372 │ 27 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Plurality            │ 170372 │ 27 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Majority             │ 170372 │ 27 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Exact                │ 170372 │ 27 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+
+
+knn with k=3:
+       Quality        │   #    │ #With Prob. │ Total 
+══════════════════════╪════════╪═════════════╪════════
+ Exact                │      9 │           0 │      9 
+ Majority             │     10 │           0 │     10 
+ Plurality            │      0 │           0 │      0 
+ PluralityThenMinDist │      7 │           0 │      7 
+ Contains             │      5 │           0 │      5 
+ Wrong                │ 160082 │       10259 │ 170341 
+ NoResult             │      0 │           0 │      0 
+
+#Domains with at least x classification results of quality or higher:
+        Method        │   0    │ 1  │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │ 10 
+══════════════════════╪════════╪════╪═══╪═══╪═══╪═══╪═══╪═══╪═══╪═══╪════
+ Contains             │ 170372 │ 31 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ PluralityThenMinDist │ 170372 │ 26 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Plurality            │ 170372 │ 19 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Majority             │ 170372 │ 19 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Exact                │ 170372 │  9 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+
+
+knn with k=5:
+       Quality        │   #    │ #With Prob. │ Total 
+══════════════════════╪════════╪═════════════╪════════
+ Exact                │      5 │           0 │      5 
+ Majority             │     10 │           0 │     10 
+ Plurality            │      9 │           0 │      9 
+ PluralityThenMinDist │      4 │           0 │      4 
+ Contains             │      9 │           0 │      9 
+ Wrong                │ 160076 │       10259 │ 170335 
+ NoResult             │      0 │           0 │      0 
+
+#Domains with at least x classification results of quality or higher:
+        Method        │   0    │ 1  │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │ 10 
+══════════════════════╪════════╪════╪═══╪═══╪═══╪═══╪═══╪═══╪═══╪═══╪════
+ Contains             │ 170372 │ 37 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ PluralityThenMinDist │ 170372 │ 28 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Plurality            │ 170372 │ 24 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Majority             │ 170372 │ 15 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Exact                │ 170372 │  5 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+
+
+knn with k=7:
+       Quality        │   #    │ #With Prob. │ Total 
+══════════════════════╪════════╪═════════════╪════════
+ Exact                │      4 │           0 │      4 
+ Majority             │      7 │           0 │      7 
+ Plurality            │     13 │           0 │     13 
+ PluralityThenMinDist │      3 │           0 │      3 
+ Contains             │     12 │           0 │     12 
+ Wrong                │ 160074 │       10259 │ 170333 
+ NoResult             │      0 │           0 │      0 
+
+#Domains with at least x classification results of quality or higher:
+        Method        │   0    │ 1  │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │ 10 
+══════════════════════╪════════╪════╪═══╪═══╪═══╪═══╪═══╪═══╪═══╪═══╪════
+ Contains             │ 170372 │ 39 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ PluralityThenMinDist │ 170372 │ 27 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Plurality            │ 170372 │ 24 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Majority             │ 170372 │ 11 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Exact                │ 170372 │  4 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+
+
+knn with k=9:
+       Quality        │   #    │ #With Prob. │ Total 
+══════════════════════╪════════╪═════════════╪════════
+ Exact                │      2 │           0 │      2 
+ Majority             │      9 │           0 │      9 
+ Plurality            │     14 │           0 │     14 
+ PluralityThenMinDist │      1 │           0 │      1 
+ Contains             │     16 │           0 │     16 
+ Wrong                │ 160071 │       10259 │ 170330 
+ NoResult             │      0 │           0 │      0 
+
+#Domains with at least x classification results of quality or higher:
+        Method        │   0    │ 1  │ 2 │ 3 │ 4 │ 5 │ 6 │ 7 │ 8 │ 9 │ 10 
+══════════════════════╪════════╪════╪═══╪═══╪═══╪═══╪═══╪═══╪═══╪═══╪════
+ Contains             │ 170372 │ 42 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ PluralityThenMinDist │ 170372 │ 26 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Plurality            │ 170372 │ 25 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Majority             │ 170372 │ 11 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+ Exact                │ 170372 │  2 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │ 0 │  0 
+
