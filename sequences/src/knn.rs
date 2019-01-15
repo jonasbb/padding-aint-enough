@@ -240,6 +240,7 @@ where
 
     validation_data
         .into_par_iter()
+        .with_max_len(5)
         .map(|vsample| {
             let distances = take_smallest_opt(
                 trainings_data
