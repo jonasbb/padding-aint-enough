@@ -49,6 +49,7 @@ test:cargo:
   - sed -i '/profile.dev.build-override/,+1 d' Cargo.toml
   - cargo build --all --verbose
   - cargo test --all --verbose
+  - sccache --show-stats
   # start pipenv virtual environment
   - source $(pipenv --venv)/bin/activate
   # This rust program calls some python scripts
@@ -57,6 +58,4 @@ test:cargo:
   # Test pylib build
   - pushd pylib && python3 ./setup.py install && popd
   - python3 -c "import pylib; help(pylib)"
-  after_script:
-  - export PATH="$CARGO_HOME"/bin:"$PATH"
   - sccache --show-stats
