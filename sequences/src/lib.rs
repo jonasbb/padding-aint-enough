@@ -76,8 +76,8 @@ pub mod common_sequence_classifications {
     pub const R103C: &str = "R103C Three Domain requests. No gaps.";
 }
 
-//                         S1, S2, S3, S4, S5, S6, G?
-pub type OneHotEncoding = (u8, u8, u8, u8, u8, u8, u8);
+// Gap + S1-S15
+pub type OneHotEncoding = Vec<u8>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sequence(Vec<SequenceElement>, String);
@@ -447,17 +447,16 @@ impl SequenceElement {
 
     fn to_one_hot_encoding(self) -> OneHotEncoding {
         use self::SequenceElement::*;
+        let mut res = vec![0; 16];
+        let len = res.len();
         match self {
             Size(0) => unreachable!(),
-            Size(1) => (1, 0, 0, 0, 0, 0, 0),
-            Size(2) => (0, 1, 0, 0, 0, 0, 0),
-            Size(3) => (0, 0, 1, 0, 0, 0, 0),
-            Size(4) => (0, 0, 0, 1, 0, 0, 0),
-            Size(5) => (0, 0, 0, 0, 1, 0, 0),
-            Size(6) => (0, 0, 0, 0, 0, 1, 0),
-            Gap(g) => (0, 0, 0, 0, 0, 0, g),
-            _ => unimplemented!(),
+            Size(s) if s < len as u8 => res[s as usize] = 1,
+            Gap(g) => res[0] = g,
+
+            Size(s) => panic!("One Hot Encoding only works for Sequences not exceeding a Size({}), but found a Size({})", len - 1, s),
         }
+        res
     }
 }
 
