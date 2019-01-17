@@ -120,6 +120,7 @@ impl Sequence {
         )
     }
 
+    /// Return a rough complexity score for the [`Sequence`]
     pub fn complexity(&self) -> usize {
         self.0
             .iter()
@@ -128,6 +129,17 @@ impl Sequence {
                 _ => None,
             })
             .sum()
+    }
+
+    /// Return the number of [`SequenceElement::Size`] elements in the [`Sequence`]
+    pub fn message_count(&self) -> usize {
+        self.0
+            .iter()
+            .filter(|x| match x {
+                SequenceElement::Size(_) => true,
+                _ => false,
+            })
+            .count()
     }
 
     pub fn to_one_hot_encoding(&self) -> Vec<OneHotEncoding> {

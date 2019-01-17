@@ -93,6 +93,16 @@ impl PySequence {
     pub fn len(&self) -> PyResult<usize> {
         Ok(self.sequence.len())
     }
+
+    /// Returns the number of DNS messages inside this sequence
+    pub fn message_count(&self) -> usize {
+        self.sequence.message_count()
+    }
+
+    /// Returns the complexity score of this sequence
+    pub fn complexity(&self) -> usize {
+        self.sequence.complexity()
+    }
 }
 
 #[pyproto]
