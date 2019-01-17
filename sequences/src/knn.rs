@@ -5,7 +5,7 @@ use crate::{
 use log::{debug, error};
 use misc_utils::{Max, Min};
 use rayon::prelude::*;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     fmt::{self, Display},
@@ -72,12 +72,12 @@ impl ClassificationResultQuality {
     }
 }
 
-#[derive(Debug, Default, Serialize)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct ClassificationResult {
     options: Vec<LabelOption>,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Serialize)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 struct LabelOption {
     name: String,
     count: u8,
