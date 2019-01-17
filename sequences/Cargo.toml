@@ -18,7 +18,7 @@ dnstap = { path = "../dnstap" }
 failure = "0.1.5"
 lazy_static = "1.2.0"
 log = "0.4.6"
-misc_utils = "2.1.0"
+misc_utils = "2.2.0"
 rayon = "1.0.3"
 serde = { version = "1.0.84", features = [ "derive" ] }
 serde_with = "0.2.5"
