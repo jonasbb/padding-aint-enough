@@ -11,7 +11,7 @@ use std::{
     fmt::{self, Display},
 };
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub enum ClassificationResultQuality {
     /// There are no classification labels
     NoResult,
