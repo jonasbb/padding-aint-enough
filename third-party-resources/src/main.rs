@@ -202,21 +202,19 @@ fn run() -> Result<(), Error> {
         })
         .collect::<Result<_, _>>()?;
 
+    // Map domain to pair of (set of domains using this first domain, set of traces using this first domain)
     let mut usage_per_domain: HashMap<String, (HashSet<String>, HashSet<String>)> =
         HashMap::default();
     for (label, traces) in &loaded_domains {
         for (trace_num, trace) in traces.iter().enumerate() {
             for domain in trace {
-                usage_per_domain
-                    .entry(domain.clone())
-                    .and_modify(|(label_set, trace_set)| {
-                        label_set.insert(label.to_string());
-                        trace_set.insert(format!("{}-{}", label, trace_num));
-                    })
-                    .or_insert((HashSet::default(), HashSet::default()));
+                let entry = usage_per_domain.entry(domain.clone()).or_default();
+                entry.0.insert(label.to_string());
+                entry.1.insert(format!("{}-{}", label, trace_num));
             }
         }
     }
+    // Map domain to pair of (count in how many domains the first domain is a third-party domain, count in how many traces the first domain is a thrid-party domain)
     let counts_per_domain: HashMap<String, (usize, usize)> = usage_per_domain
         .iter()
         .map(|(label, (label_set, trace_set))| (label.clone(), (label_set.len(), trace_set.len())))
