@@ -68,7 +68,7 @@ structopt = "0.2.14"
 url = "1.7.2"
 
 [dependencies.serde_with]
-version = "0.2.5"
+version = "1.0.0"
 features = [ "chrono" ]
 
 [build-dependencies]
