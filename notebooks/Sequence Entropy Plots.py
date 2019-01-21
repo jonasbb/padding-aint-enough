@@ -18,6 +18,7 @@
 
 # %%
 import json
+import lzma
 import math
 import typing as t
 from collections import Counter
@@ -27,7 +28,7 @@ import numpy as np
 
 # %%
 # Map from filename to tuple of entropy and result quality
-data = json.load(open("./sequences-stats-cw.json", "rt"))
+data = json.load(lzma.open("./sequences-stats-cw.json.xz", "rt"))
 
 # %% [markdown]
 # # First count how many files there are in each category of entropy
