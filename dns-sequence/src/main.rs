@@ -62,13 +62,19 @@ struct CliArgs {
 #[derive(StructOpt, Debug, Clone)]
 enum SubCommand {
     /// Perform crossvalidation within the trainings data
-    #[structopt(name = "crossvalidate")]
+    #[structopt(
+        name = "crossvalidate",
+        raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+    )]
     Crossvalidate {
         #[structopt(long = "dist-thres")]
         distance_threshold: Option<f32>,
     },
     /// Perform classification of the test data against the trainings data
-    #[structopt(name = "classify")]
+    #[structopt(
+        name = "classify",
+        raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+    )]
     Classify {
         /// Data to be classified. Directory containing a folder per domain, like `base_dir`.
         #[structopt(long = "test-data", parse(from_os_str))]
