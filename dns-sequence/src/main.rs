@@ -142,13 +142,6 @@ fn run() -> Result<(), Error> {
         "Done loading dnstap files. Found {} domains.",
         training_data.len()
     );
-    {
-        // delete non-permanent memory
-        let mut lock = CONFUSION_DOMAINS
-            .write()
-            .expect("CONFUSION_DOMAINS should still be accessible");
-        *lock = Arc::default();
-    }
 
     // Collect the stats during the execution and print them at the end
     let mut stats = StatsCollector::new();
