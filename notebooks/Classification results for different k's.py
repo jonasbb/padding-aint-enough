@@ -22,6 +22,7 @@ import typing as t
 from itertools import cycle
 from os import path
 
+import matplotlib.cm
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -32,8 +33,6 @@ fname = "../results/2019-01-11-closed-world/statistics-final.csv"
 res: t.Dict[str, t.List[int]] = {}
 csv_reader = csv.reader(open(fname))
 labels = next(csv_reader)[2:-1]
-# Remove the no result columns, as they are always 0
-labels = labels[2:]
 for row in csv_reader:
     # The first two entries are k and label
     # The last entry is the number of distinct reasons
@@ -43,57 +42,75 @@ for row in csv_reader:
     stats = res.get(key_k, [0] * len(good_values))
     res[key_k] = [x + int(y) for x, y in zip(stats, good_values)]
 del csv_reader
-# res
 
 # %%
-# calculate inclusive numbers, meaning this result OR better
-# Like: plurality_and_dist = plurality_and_dist + plurality + majority + exact
-res_cum_sum = {}
-for key, values in res.items():
-    good_values = values[-8:]
-    good_values = list(np.cumsum(good_values[::-1]))[::-1]
-    res_cum_sum[key] = values[:-8] + good_values
-# res_cum_sum
+# Combine the values for `x` and `x_w_reason`
+res = {
+    key: [values[i] + values[i + 1] for i in range(0, len(values), 2)]
+    for key, values in res.items()
+}
+labels = [labels[i] for i in range(0, len(labels), 2)]
+
+# %%
+# Check that each k-values has the same number of traces
+num_traces = [sum(v) for v in res.values()]
+for v in num_traces:
+    assert v == num_traces[0]
+total_traces = num_traces[0]
+
+# %%
+# Cut out the classification results we do not care for
+# Namely: No Result, Wrong, and Contains
+res = {key: values[3:] for key, values in res.items()}
+# Use real proper labels
+labels = ["Pseudo-Plurality + Distance", "Plurality", "Majority", "Exact"]
 
 # %%
 # Transpose res, such that for each label, we have a list of values for increasing k's
-# res_to_use = res
-res_to_use = res_cum_sum
 res_label: t.Dict[str, t.List[int]] = {}
-res_keys = sorted(res_to_use.keys())
+res_keys = sorted(res.keys())
 for l_idx, label in enumerate(labels):
     res_label[label] = []
     for res_key in res_keys:
-        res_label[label].append(res_to_use[res_key][l_idx+2])
+        res_label[label].append(res[res_key][l_idx])
 
 # %%
 plt.close()
-colors = cycle(
-    [
-        "#2ca02c",
-        "#98df8a",
-        "#bcbd22",
-        "#dbdb8d",
-        "#1f77b4",
-        "#aec7e8",
-        "#9467bd",
-        "#c5b0d5",
-        "#ff7f0e",
-        "#ffbb78",
-        "#d62728",
-        "#ff9896",
-        "#333333",
-        "#000000",
-    ]
-)
-markers = cycle(["+", "."])
+plt.rcParams.update( {'legend.handlelength': 3, "legend.handleheight":1.5})
+colors = cycle(matplotlib.cm.Set1.colors)  # pylint: disable=E1101
+hatches = cycle(["/", "-", "\\", "|"])
+
+last_values = np.array([0] * len(res_label[labels[0]]))
 for label in labels[::-1]:
     values = res_label[label]
-    c = next(colors)
-    m = next(markers)
-    plt.plot(range(len(values)), values, label=label, color=c, marker=m)
-plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
-plt.xticks(range(len(res_label[labels[0]])), ["k=1", "k=3", "k=5", "k=7", "k=9"])
-plt.gcf().set_size_inches(10,5)
+    # Convert into percentages
+    pv = [v * 100 / total_traces for v in values]
+    pb = [v * 100 / total_traces for v in last_values]
+    plt.bar(
+        range(1, 1 + len(values)),
+        pv,
+        label=label,
+        color=next(colors),
+        hatch=next(hatches),
+        # Make them a tiny bit wider than they need to be in order to avoid white lines between the bars
+        width=1.01,
+        bottom=pb,
+    )
+    last_values += values
+
+plt.legend(loc="upper center", ncol=4, mode="expand")
+plt.xticks(range(1, 1 + len(res.keys())), [f"k={k}" for k in res.keys()])
+plt.xlim(0.5, len(res_label[labels[0]]) + 0.5)
+plt.ylim(0, 100)
+plt.gcf().set_size_inches(7, 4)
 plt.tight_layout()
-plt.savefig(f"classification-results-{path.basename(fname)}.png")
+plt.savefig(f"classification-results-{path.basename(fname)}.svg")
+
+# %%
+total_traces
+
+# %%
+[v * 100 / total_traces for v in last_values]
+
+# %%
+
