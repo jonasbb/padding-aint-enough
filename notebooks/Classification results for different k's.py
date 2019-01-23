@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -99,9 +100,13 @@ for label in labels[::-1]:
     last_values += values
 
 plt.legend(loc="upper center", ncol=4, mode="expand")
-plt.xticks(range(1, 1 + len(res.keys())), [f"k={k}" for k in res.keys()])
+
+# CAREFUL: Those are tiny spaces around the =
+plt.xticks(range(1, 1 + len(res.keys())), [f"k = {k}" for k in res.keys()])
 plt.xlim(0.5, len(res_label[labels[0]]) + 0.5)
 plt.ylim(0, 100)
+plt.ylabel("Percent of all DNS sequences")
+
 plt.gcf().set_size_inches(7, 4)
 plt.tight_layout()
 plt.savefig(f"classification-results-{path.basename(fname)}.svg")
@@ -113,4 +118,5 @@ total_traces
 [v * 100 / total_traces for v in last_values]
 
 # %%
+
 
