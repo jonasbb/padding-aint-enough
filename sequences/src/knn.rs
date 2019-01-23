@@ -249,8 +249,6 @@ where
                     .flat_map(|tlseq| {
                         tlseq.sequences.iter().map(move |s| {
                             let length_of_longer_sequence = vsample.len().max(s.len());
-                            // TODO determine a absolute max distance applicable to the pair of
-                            // sequences `s` and `vsample`. Apply this abs value in combination with max_dist.
                             let abs_threshold =
                                 (length_of_longer_sequence as f32 * distance_threshold.ceil()) as usize;
 

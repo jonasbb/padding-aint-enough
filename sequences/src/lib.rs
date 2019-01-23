@@ -221,7 +221,6 @@ impl Sequence {
 
         for (i, elem1) in larger.0.iter().enumerate() {
             current_row.clear();
-            // TODO give different costs for different elements
             current_row.push(previous_row[0] + elem1.delete_cost());
             let mut min_cost_current_row: Min<usize> = Default::default();
 
