@@ -27,6 +27,8 @@ import matplotlib.cm
 import matplotlib.pyplot as plt
 import numpy as np
 
+from common_functions import autolabel
+
 # %%
 fname = "../results/2019-01-11-closed-world/statistics-final.csv"
 # fname = "../results/2019-01-11-closed-world/statistics-final-dist-2.16.csv"
@@ -77,7 +79,7 @@ for l_idx, label in enumerate(labels):
 
 # %%
 plt.close()
-plt.rcParams.update( {'legend.handlelength': 3, "legend.handleheight":1.5})
+plt.rcParams.update({"legend.handlelength": 3, "legend.handleheight": 1.5})
 colors = cycle(matplotlib.cm.Set1.colors)  # pylint: disable=E1101
 hatches = cycle(["/", "-", "\\", "|"])
 
@@ -87,7 +89,7 @@ for label in labels[::-1]:
     # Convert into percentages
     pv = [v * 100 / total_traces for v in values]
     pb = [v * 100 / total_traces for v in last_values]
-    plt.bar(
+    bar = plt.bar(
         range(1, 1 + len(values)),
         pv,
         label=label,
@@ -98,6 +100,7 @@ for label in labels[::-1]:
         bottom=pb,
     )
     last_values += values
+autolabel(bar, plt)
 
 plt.legend(loc="upper center", ncol=4, mode="expand")
 
@@ -112,11 +115,7 @@ plt.tight_layout()
 plt.savefig(f"classification-results-{path.basename(fname)}.svg")
 
 # %%
-total_traces
-
-# %%
 [v * 100 / total_traces for v in last_values]
 
 # %%
-
 

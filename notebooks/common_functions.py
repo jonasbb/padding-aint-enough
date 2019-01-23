@@ -21,6 +21,7 @@
 
 # %%
 import os.path
+import typing as t
 from glob import glob
 
 import pylib
@@ -42,3 +43,20 @@ def show_infos_for_domain(domain: str) -> None:
     ]
 
     display(HTML(tabulate.tabulate(table, tablefmt="html")))
+
+
+# %%
+def autolabel(rects: t.Any, plt: t.Any) -> None:
+    """
+    Attach a text label above each bar displaying its height
+    """
+    for rect in rects:
+        height = rect.get_height() + rect.get_y()
+        plt.text(
+            rect.get_x() + rect.get_width() / 2.0,
+            height + 0.5,
+            "%.1f" % round(height, 1),
+            ha="center",
+            va="bottom",
+            rotation=0,
+        )

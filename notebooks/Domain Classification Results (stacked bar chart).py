@@ -24,12 +24,15 @@ from itertools import cycle
 import matplotlib.cm
 import matplotlib.pyplot as plt
 
+from common_functions import autolabel
+
 
 # %%
 def label2good_label(label: str) -> str:
     if label == "PluralityThenMinDist":
         return "Pseudo-Plurality\n + Distance"
     return label
+
 
 # %%
 def parse_data(data: str) -> t.List[t.Tuple[str, t.List[int]]]:
@@ -89,7 +92,7 @@ for i, data in enumerate(datas):
     colors = cycle(matplotlib.cm.Set1.colors)  # pylint: disable=E1101
     hatches = cycle(["/", "-", "\\", "|"])
 
-    plt.rcParams.update( {'legend.handlelength': 3, "legend.handleheight":1.5})
+    plt.rcParams.update({"legend.handlelength": 3, "legend.handleheight": 1.5})
 
     prev_values = [0] * 10
     pdata = parse_data(data)
@@ -102,11 +105,20 @@ for i, data in enumerate(datas):
         # Convert into percentages
         h = [v * 100 / total_domains for v in heights]
         ph = [v * 100 / total_domains for v in prev_values]
-        plt.bar(range(1, 1 + len(values)), h, bottom=ph, label=label, width=1.01, color=next(colors), hatch =next(hatches))
+        bars = plt.bar(
+            range(1, 1 + len(values)),
+            h,
+            bottom=ph,
+            label=label,
+            width=1.01,
+            color=next(colors),
+            hatch=next(hatches),
+        )
         prev_values = values
+    autolabel(bars, plt)
 
     # print values for k=7 extra
-    if i*2+1 == 7:
+    if i * 2 + 1 == 7:
         for v in prev_values:
             print(v * 100 / total_domains)
 
@@ -119,10 +131,10 @@ for i, data in enumerate(datas):
     plt.ylabel("Percent of all domains")
     plt.xlabel("At least n / 10 domains correctly classified")
 
-    plt.legend(loc="best")
-#     plt.legend(loc="lower left")
+    plt.legend(loc="upper right", bbox_to_anchor=(1, 1), borderpad=0, frameon=False)
     plt.tight_layout()
     plt.savefig(f"classification-results-per-domain-k{i*2 + 1}.svg")
     plt.show()
 
 # %%
+
