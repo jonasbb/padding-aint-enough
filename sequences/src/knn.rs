@@ -133,7 +133,7 @@ impl ClassificationResult {
         // Total number of label options
         let option_count = self.options.iter().map(|opt| opt.count).sum();
 
-        if (corr_option.count * 2) >= option_count {
+        if (corr_option.count * 2) > option_count {
             return ClassificationResultQuality::Majority;
         }
 
