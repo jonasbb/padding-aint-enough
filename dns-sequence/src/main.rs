@@ -57,6 +57,9 @@ struct CliArgs {
     /// The largest `k` to be used for knn. Only odd numbers are tested.
     #[structopt(short = "k", default_value = "1")]
     k: usize,
+    /// Only test a single k. Overwrites `-k` option.
+    #[structopt(long = "exact-k", value_name = "k")]
+    exact_k: Option<usize>,
 }
 
 #[derive(StructOpt, Debug, Clone)]
@@ -195,7 +198,14 @@ fn run_crossvalidation(
             );
             info!("Done splitting trainings and test data.");
 
-            for k in (1..=(cli_args.k)).step_by(2) {
+            let ks: Vec<usize>;
+            if let Some(exact_k) = cli_args.exact_k {
+                ks = vec![exact_k];
+            } else {
+                ks = (1..=(cli_args.k)).step_by(2).collect();
+            }
+
+            for k in ks {
                 classify_and_evaluate(
                     k,
                     distance_threshold,
@@ -248,7 +258,14 @@ fn run_classify(
             },
         );
 
-        for k in (1..=cli_args.k).step_by(2) {
+        let ks: Vec<usize>;
+        if let Some(exact_k) = cli_args.exact_k {
+            ks = vec![exact_k];
+        } else {
+            ks = (1..=(cli_args.k)).step_by(2).collect();
+        }
+
+        for k in ks {
             classify_and_evaluate(
                 k,
                 distance_threshold,
