@@ -181,7 +181,7 @@ dependencies = [
 
 [[package]]
 name = "criterion"
-version = "0.2.8"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "atty 0.2.11 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -360,7 +360,7 @@ version = "0.1.0"
 dependencies = [
  "chrome 0.1.0",
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "criterion 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "criterion 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "csv 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "dnstap 0.1.0",
  "env_logger 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1257,7 +1257,7 @@ name = "sequences"
 version = "0.1.0"
 dependencies = [
  "chrono 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "criterion 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "criterion 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "dnstap 0.1.0",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1892,7 +1892,7 @@ dependencies = [
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
 "checksum crc 1.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d663548de7f5cca343f1e0a48d14dcfb0e9eb4e079ec58883b7251539fa10aeb"
 "checksum crc32fast 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e91d5240c6975ef33aeb5f148f35275c25eda8e8a5f95abe421978b05b8bf192"
-"checksum criterion 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "081adfc237162f72aeb66a151f972b4fa546063f0ac363696ed686ebbbb7a140"
+"checksum criterion 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)" = "4f80c6ccd9d5cdeb74d67d2d5b9ee84e0a2b5eb0331bc2209a9796652dd7fddf"
 "checksum criterion-plot 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4107e4a5abb94267e0149922b8ff49dc70a87cc202820fdbfc0d3e1edbdc4b16"
 "checksum crossbeam-deque 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f739f8c5363aca78cfb059edf753d8f0d36908c348f3d8d1503f03d8b75d9cf3"
 "checksum crossbeam-epoch 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "927121f5407de9956180ff5e936fe3cf4324279280001cd56b669d28ee7e9150"

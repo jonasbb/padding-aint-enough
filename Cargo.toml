@@ -76,7 +76,7 @@ protoc-rust = "2.2.5"
 
 [dev-dependencies]
 chrome = { path = "./chrome" }
-criterion = "0.2.8"
+criterion = "0.2.9"
 failure = "0.1.5"
 misc_utils = "2.2.0"
 serde_json = "1.0.37"
