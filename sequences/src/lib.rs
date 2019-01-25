@@ -74,6 +74,19 @@ pub mod common_sequence_classifications {
     pub const R103A: &str = "R103A Three Domain requests. Missing first gap.";
     pub const R103B: &str = "R103B Three Domain requests. Missing second gap.";
     pub const R103C: &str = "R103C Three Domain requests. No gaps.";
+    pub const R104A: &str = "R104A Four Domain requests. No gaps.";
+    pub const R104B: &str = "R104B Four Domain requests. Gap after one.";
+    pub const R104C: &str = "R104C Four Domain requests. Gap after two.";
+    pub const R104D: &str = "R104D Four Domain requests. Gap after three.";
+    pub const R104E: &str = "R104E Four Domain requests.";
+    pub const R104F: &str = "R104F Four Domain requests.";
+    pub const R104G: &str = "R104G Four Domain requests.";
+    pub const R105A: &str = "R105A Five Domain requests. No gaps.";
+    pub const R105B: &str = "R105B Five Domain requests.";
+    pub const R105C: &str = "R105C Five Domain requests.";
+    pub const R105D: &str = "R105D Five Domain requests.";
+    pub const R105E: &str = "R105E Five Domain requests.";
+    pub const R106A: &str = "R106A Five Domain requests. No gaps.";
 }
 
 // Gap + S1-S15
@@ -283,6 +296,8 @@ impl Sequence {
             }
         }
 
+        // Sequences of length 6 and lower were the most problematic to classify.
+        // Therefore, assign all of them a reason.
         use crate::SequenceElement::{Gap, Size};
         match &*self.as_elements() {
             [] => {
@@ -299,13 +314,43 @@ impl Sequence {
                 6 => R004_SIZE6,
                 _ => R004_UNKNOWN,
             }),
-            [Size(1), Size(1)] => Some(R102),
-            [Size(1), Gap(_), Size(1)] => Some(R102A),
+            [Size(_), Size(_)] => Some(R102),
 
-            [Size(1), Gap(_), Size(1), Gap(_), Size(1)] => Some(R103),
-            [Size(1), Size(1), Gap(_), Size(1)] => Some(R103A),
-            [Size(1), Gap(_), Size(1), Size(1)] => Some(R103B),
-            [Size(1), Size(1), Size(1)] => Some(R103C),
+            // Length 3
+            // One gap
+            [Size(_), Gap(_), Size(_)] => Some(R102A),
+            // No gap
+            [Size(_), Size(_), Size(_)] => Some(R103C),
+
+            // Length 4
+            // One gap
+            [Size(_), Size(_), Gap(_), Size(_)] => Some(R103A),
+            [Size(_), Gap(_), Size(_), Size(_)] => Some(R103B),
+            // No gap
+            [Size(_), Size(_), Size(_), Size(_)] => Some(R104A),
+
+            // Length 5
+            // One gap
+            [Size(_), Gap(_), Size(_), Gap(_), Size(_)] => Some(R103),
+            [Size(_), Gap(_), Size(_), Size(_), Size(_)] => Some(R104B),
+            [Size(_), Size(_), Gap(_), Size(_), Size(_)] => Some(R104C),
+            [Size(_), Size(_), Size(_), Gap(_), Size(_)] => Some(R104D),
+            // No gap
+            [Size(_), Size(_), Size(_), Size(_), Size(_)] => Some(R105A),
+
+            // Length 6
+            // Two gaps
+            [Size(_), Gap(_), Size(_), Gap(_), Size(_), Size(_)] => Some(R104E),
+            [Size(_), Gap(_), Size(_), Size(_), Gap(_), Size(_)] => Some(R104F),
+            [Size(_), Size(_), Gap(_), Size(_), Gap(_), Size(_)] => Some(R104G),
+            // One gap
+            [Size(_), Gap(_), Size(_), Size(_), Size(_), Size(_)] => Some(R105B),
+            [Size(_), Size(_), Gap(_), Size(_), Size(_), Size(_)] => Some(R105C),
+            [Size(_), Size(_), Size(_), Gap(_), Size(_), Size(_)] => Some(R105D),
+            [Size(_), Size(_), Size(_), Size(_), Gap(_), Size(_)] => Some(R105E),
+            // No gap
+            [Size(_), Size(_), Size(_), Size(_), Size(_), Size(_)] => Some(R106A),
+
             /*
             [SequenceElement::Size(1), SequenceElement::Size(2)] => Some(R001),
             [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1)] => {
