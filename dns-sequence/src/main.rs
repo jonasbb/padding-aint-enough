@@ -82,9 +82,6 @@ enum SubCommand {
         /// Data to be classified. Directory containing a folder per domain, like `base_dir`.
         #[structopt(long = "test-data", parse(from_os_str))]
         test_data: PathBuf,
-        /// If specified, the data is treated as open-world data with the corresponding distance function
-        #[structopt(short = "O", long = "open-world")]
-        open_world: bool,
         #[structopt(long = "dist-thres")]
         distance_threshold: Option<f32>,
     },
@@ -229,15 +226,10 @@ fn run_classify(
     mis_writer: &mut JsonSerializer<impl Write, impl serde_json::ser::Formatter>,
 ) -> Result<(), Error> {
     if let Some(SubCommand::Classify {
-        open_world,
         test_data,
         distance_threshold,
     }) = cli_args.cmd.clone()
     {
-        if open_world {
-            bail!("Open world not yet implemented");
-        }
-
         info!("Start loading test data dnstap files...");
         let test_data = load_all_dnstap_files(&test_data)?;
         info!(
