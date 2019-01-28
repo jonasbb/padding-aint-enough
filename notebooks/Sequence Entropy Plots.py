@@ -61,12 +61,23 @@ bad_result_qualities = ["Contains", "Wrong", "NoResult"]
 # %%
 # Provide some limits for for wide the plots should be based on knowledge of the plots
 plot_args: t.Dict[str, t.Dict[str, t.Any]] = {}
+plot_args["length"] = {}
+plot_args["complexity"] = {}
+plot_args["count_messages"] = {}
 plot_args["shannon_n1"] = {}
-plot_args["shannon_n1"]["xlim"] = (0, 0.6)
 plot_args["shannon_n2"] = {}
-plot_args["shannon_n2"]["xlim"] = (0, 0.15)
 plot_args["shannon_n3"] = {}
-plot_args["shannon_n3"]["xlim"] = (0, 0.15)
+
+plot_args["shannon_n1"]["xlim"] = (0.28, 0.35)
+plot_args["shannon_n2"]["xlim"] = (0, 0.09)
+plot_args["shannon_n3"]["xlim"] = (0, 0.055)
+
+plot_args["length"]["ylim"] = (0, 1750)
+plot_args["complexity"]["ylim"] = (0, 2250)
+plot_args["count_messages"]["ylim"] = (0, 2250)
+plot_args["shannon_n1"]["ylim"] = (0, 425)
+plot_args["shannon_n2"]["ylim"] = (0, 750)
+plot_args["shannon_n3"]["ylim"] = (0, 1000)
 
 # %% [markdown]
 # # Plot Entropy and Sequence count
@@ -100,6 +111,7 @@ shannon_resolution = 4
 
 float2str = lambda v: f"{v:.{shannon_resolution}f}"
 
+# %%
 for do_reverse_cumsum in [False, True]:
     for title, x in counters_per_entropy.items():
         if "shannon" in title:
@@ -154,18 +166,28 @@ for do_reverse_cumsum in [False, True]:
 
         # Store some generic arguments for all plt.bar() calls
         kwargs: t.Dict[str, t.Any] = {}
-        kwargs["align"] = "edge"
-        if "shannon" in title:
-            kwargs["width"] = 1 / (10 ** shannon_resolution)
-        else:
-            kwargs["width"] = 1
+        #         kwargs["align"] = "edge"
+        kwargs["step"] = "pre"
+        kwargs["linewidth"] = 0.0
+        #         if "shannon" in title:
+        #             kwargs["width"] = 1 / (10 ** shannon_resolution)
+        #         else:
+        #             kwargs["width"] = 1
 
-        plt.bar(xs, ys_bad, **kwargs)
-        plt.bar(xs, ys_good, **kwargs, bottom=ys_bad)
+        plt.fill_between(xs, ys_bad, **kwargs)
+        plt.fill_between(
+            xs, [yg + yb for yg, yb in zip(ys_good, ys_bad)], **kwargs, y2=ys_bad
+        )
         plt.ylabel("#Traces")
+
+        # Add alpha for the rest of plotting
+        kwargs["alpha"] = 0.3
 
         xlim = plot_args.get(title, {}).get("xlim", (0, 250))
         plt.xlim(xlim)
+        ylim = plot_args.get(title, {}).get("ylim", None)
+        if ylim:
+            plt.ylim(ylim)
 
         # We need a second axis to plot percentages
         ax2 = plt.gca().twinx()
@@ -181,7 +203,7 @@ for do_reverse_cumsum in [False, True]:
         perc = [x * 100 / cumsum[-1] for x in cumsum]
         if do_reverse_cumsum:
             perc = perc[::-1]
-        ax2.bar(xs, perc, **kwargs, color="black", alpha=0.3)
+        ax2.fill_between(xs, perc, **kwargs, facecolor="black")
 
         # Make a red and a green bar for bad/good classification results
         cumsum_good = np.cumsum(ys_good)
@@ -200,8 +222,14 @@ for do_reverse_cumsum in [False, True]:
             [x * 100 / p if p > 0 else 0 for x, p in zip(perc_bad, perc)],
         )
 
-        ax2.bar(xs, perc_bad, **kwargs, color="red", alpha=0.3)
-        ax2.bar(xs, perc_good, **kwargs, bottom=perc_bad, color="green", alpha=0.3)
+        ax2.fill_between(xs, perc_bad, **kwargs, facecolor="red")
+        ax2.fill_between(
+            xs,
+            [pg + pb for pg, pb in zip(perc_good, perc_bad)],
+            **kwargs,
+            y2=perc_bad,
+            facecolor="green",
+        )
         ax2.set_ylim(0, 100)
         ax2.set_ylabel("% of Sequences")
 
@@ -210,7 +238,9 @@ for do_reverse_cumsum in [False, True]:
         )
         plt.gcf().set_size_inches(15, 7.5)
         plt.tight_layout()
-        plt.savefig(f"sequence-entropy-{title}.png")
+        plt.savefig(
+            f"sequence-entropy-{title}{'-reverse' if do_reverse_cumsum else ''}.png"
+        )
         plt.show()
         plt.close()
 
