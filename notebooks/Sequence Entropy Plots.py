@@ -34,6 +34,14 @@ data = json.load(lzma.open("./sequences-stats-cw.json.xz", "rt"))
 # # First count how many files there are in each category of entropy
 
 # %%
+def filter_out(entropy: t.Any) -> bool:  # pylint: disable=W0621
+    #     # VERY good
+    #     if entropy["length"] <= 6:
+    #         return True
+    return False
+
+
+# %%
 # EntropyKind -> EntropyValue -> Counter of ResultQuality
 counters_per_entropy: t.Dict[str, t.Dict[float, t.Counter[str]]] = {}
 
@@ -41,8 +49,15 @@ counters_per_entropy: t.Dict[str, t.Dict[float, t.Counter[str]]] = {}
 for keys in next(iter(data.values()))[0].keys():
     counters_per_entropy[keys] = {}
 
+filtered_out: t.Counter[t.Tuple[float, str]] = Counter()
+
 # Count files now
 for entropy, result_quality in data.values():
+    # Skip some values and do not put them into the graphs below
+    if filter_out(entropy):
+        filtered_out.update([(entropy["count_messages"], result_quality)])
+        continue
+
     for entropy_kind, value in entropy.items():
         # Some values might be `None`, because they are not computable.
         # For example: n-grams (n>1) for Sequences of length 1
@@ -52,6 +67,9 @@ for entropy, result_quality in data.values():
 
         counter = counters_per_entropy[entropy_kind].setdefault(value, Counter())
         counter.update([result_quality])
+
+# %%
+sorted(filtered_out.items())
 
 # %%
 # Hardcoded list of all result qualities and if they are good (meaning we use them in the paper) or bad
