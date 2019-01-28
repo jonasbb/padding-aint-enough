@@ -29,6 +29,7 @@ import pylib
 
 from common_functions import show_infos_for_domain
 
+
 # %%
 @dataclass
 class SequenceStats:
@@ -59,19 +60,19 @@ content[-1]
 # # Most common misclassifications
 
 # %%
-most_common_misclassification: t.Counter[str] = Counter()
-for entry in content:
-    if entry["reason"] is not None:
-        continue
-    for mis in entry["class_result"]["options"]:
-        if int(mis["distance_min"]) < 100000:
-            most_common_misclassification.update([mis["name"]] * mis["count"])
+# most_common_misclassification: t.Counter[str] = Counter()
+# for entry in content:
+#     if entry["reason"] is not None:
+#         continue
+#     for mis in entry["class_result"]["options"]:
+#         if int(mis["distance_min"]) < 100000:
+#             most_common_misclassification.update([mis["name"]] * mis["count"])
 
 # %%
-most_common_misclassification.most_common(20)
+# most_common_misclassification.most_common(20)
 
 # %%
-show_infos_for_domain("qichacha.com")
+# show_infos_for_domain("qichacha.com")
 
 # %% [markdown]
 # # Minimal / Maximal distance within block of misclassifications
@@ -79,14 +80,14 @@ show_infos_for_domain("qichacha.com")
 # %%
 # Load all local dnstap files with the current pylib version
 # The current pylib version might be newer and have more classifications
-local_root = "/mnt/data/Downloads/dnscaptures-open-world/"
+local_root = "/home/jbushart/projects/data/dnscaptures-open-world/"
 # index by filename
 cache = {}
 for _, seqs in pylib.load_folder(local_root):
     for seq in seqs:
         cache[Path(seq.id()).name] = seq
 
-local_root = "/mnt/data/Downloads/dnscaptures-main-group/"
+local_root = "/home/jbushart/projects/data/dnscaptures-main-group/"
 for _, seqs in pylib.load_folder(local_root):
     for seq in seqs:
         cache[Path(seq.id()).name] = seq
@@ -107,6 +108,9 @@ for entry in content:
     fname = Path(entry["id"]).name
     curr_length: int = cache[fname].len()
 
+    if cache[fname].classify():
+        continue
+
     # Get min and max distance
     min_dist = 999999
     min_dist_label = ""
@@ -126,25 +130,33 @@ for entry in content:
 # %%
 min_dists_norm = {
     key: sorted(
-        [float(stat.min_dist)/stat.seq_length for stat in stats.values()]
+        [float(stat.min_dist)/stat.seq_length for stat in stats_.values()]
     )
-    for key, stats in distances_per_k.items()
+    for key, stats_ in distances_per_k.items()
 }
 max_dists_norm = {
     key: sorted(
-        [float(stat.max_dist)/stat.seq_length for stat in stats.values()]
+        [float(stat.max_dist)/stat.seq_length for stat in stats_.values()]
     )
-    for key, stats in distances_per_k.items()
+    for key, stats_ in distances_per_k.items()
 }
 
 # %%
 plt.plot(range(len(min_dists_norm[1])), min_dists_norm[1], label = "Min")
 for key, values in list(max_dists_norm.items())[1:]:
     plt.plot(range(len(values)), values, label = f"Max k={key}")
-# plt.ylim(0, 4)
+plt.ylim(0, 4)
 plt.hlines(y=2.16, xmin=0, xmax=200000, color='black')
 plt.gcf().set_size_inches(15,10)
 plt.legend()
+plt.tight_layout()
+plt.xlim(0, 180000)
+
+# %%
+# Try to figure out how the thresholds have to be to set a false positive rate of 10%, 20%, etc.
+dists = sorted(min_dists_norm[1])
+for i in range(1,11):
+    print(dists[len(dists) * i // 10])
 
 # %%
 # Count how many traces will not match due to the distance threshold
@@ -158,4 +170,3 @@ for fname, stat in distances_per_k[1].items():
         print(fname, stat)
 
 # %%
-
