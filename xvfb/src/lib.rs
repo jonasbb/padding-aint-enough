@@ -1,5 +1,3 @@
-extern crate log;
-
 use log::{debug, error, warn};
 use std::{
     fmt,
@@ -97,7 +95,7 @@ impl Drop for Xvfb {
 pub struct XDisplay(u16);
 
 impl fmt::Display for XDisplay {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         write!(f, ":{}", self.0)
     }
 }

@@ -1,16 +1,10 @@
 #![recursion_limit = "128"]
 
-extern crate chrono;
 #[macro_use]
 extern crate diesel;
-extern crate diesel_derive_enum;
+
 #[macro_use]
 extern crate diesel_migrations;
-extern crate failure;
-extern crate log;
-extern crate misc_utils;
-extern crate serde;
-extern crate toml;
 
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
@@ -23,6 +17,7 @@ use std::{
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
 };
+use toml;
 
 pub mod models;
 pub mod schema;
@@ -94,7 +89,7 @@ pub struct TaskManager {
 }
 
 impl Debug for TaskManager {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         f.debug_struct("TaskManager")
             .field("db_connection", &"<PgConnection>")
             .finish()
@@ -350,7 +345,7 @@ impl TaskManager {
         })
     }
 
-    pub fn restart_task(&self, task: &mut models::Task, reason: &Display) -> Result<(), Error> {
+    pub fn restart_task(&self, task: &mut models::Task, reason: &dyn Display) -> Result<(), Error> {
         task.restart();
         task.associated_data = None;
 
@@ -410,7 +405,11 @@ impl TaskManager {
         }
     }
 
-    pub fn restart_tasks(&self, tasks: &mut [models::Task], reason: &Display) -> Result<(), Error> {
+    pub fn restart_tasks(
+        &self,
+        tasks: &mut [models::Task],
+        reason: &dyn Display,
+    ) -> Result<(), Error> {
         // check that all tasks belong to the same domain
         for task in &*tasks {
             assert_eq!(

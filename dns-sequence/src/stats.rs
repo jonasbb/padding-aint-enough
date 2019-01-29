@@ -311,7 +311,7 @@ impl<S> Display for StatsCollector<S>
 where
     S: Display + Eq + Hash,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use prettytable::Row;
 
         let mut keys: Vec<_> = self.data.keys().collect();
@@ -382,7 +382,7 @@ impl<S> Display for StatsCounter<S>
 where
     S: Display + Eq + Hash,
 {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut rows = Vec::with_capacity(4);
         // build table rows
         for res in ClassificationResultQuality::iter_variants().rev() {

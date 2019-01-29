@@ -1,5 +1,3 @@
-extern crate sequences;
-
 use sequences::{common_sequence_classifications::*, *};
 
 #[test]

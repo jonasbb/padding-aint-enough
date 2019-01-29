@@ -1,33 +1,16 @@
 #![feature(try_from)]
 
-extern crate chrome;
-extern crate chrono;
-extern crate dnstap;
-extern crate encrypted_dns;
-extern crate env_logger;
-extern crate failure;
-extern crate lazy_static;
-extern crate log;
-extern crate misc_utils;
-extern crate petgraph;
-extern crate petgraph_graphml;
-extern crate sequences;
-extern crate serde;
-extern crate serde_json;
-extern crate serde_pickle;
-extern crate serde_with;
-extern crate structopt;
-extern crate url;
-
 mod depgraph;
 
 use crate::depgraph::DepGraph;
 use chrome::{ChromeDebuggerMessage, RedirectResponse, Request, Response, TargetInfo, Timing};
 use chrono::{DateTime, Utc};
 use dnstap::{
+    self,
     dnstap::Message_Type,
     protos::{Dnstap, DnstapContent},
 };
+use env_logger;
 use failure::{bail, format_err, Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{debug, info, warn};
@@ -39,6 +22,9 @@ use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
 use sequences::{MatchKey, Query, QuerySource, UnmatchedClientQuery};
 use serde::{Deserialize, Serialize};
+use serde_json;
+use serde_pickle;
+use serde_with;
 use std::{
     borrow::Cow,
     collections::BTreeMap,
@@ -48,7 +34,7 @@ use std::{
     process::Command,
     sync::RwLock,
 };
-use structopt::StructOpt;
+use structopt::{self, StructOpt};
 use url::Url;
 
 lazy_static! {
@@ -484,7 +470,7 @@ impl RequestInfo {
         self.earliest_wall_time.update(other.earliest_wall_time);
     }
 
-    pub fn graphml_support(&self) -> Vec<(Cow<'static, str>, Cow<str>)> {
+    pub fn graphml_support(&self) -> Vec<(Cow<'static, str>, Cow<'_, str>)> {
         vec![
             ("domain_name".into(), (&*self.normalized_domain_name).into()),
             (

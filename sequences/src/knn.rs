@@ -41,7 +41,7 @@ pub enum ClassificationResultQuality {
 }
 
 impl Display for ClassificationResultQuality {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ClassificationResultQuality::NoResult => write!(f, "NoResult"),
             ClassificationResultQuality::Wrong => write!(f, "Wrong"),
@@ -88,7 +88,7 @@ struct LabelOption {
 }
 
 impl ClassificationResult {
-    fn from_classifier_data<S: AsRef<str>>(data: &[ClassifierData<S>]) -> ClassificationResult {
+    fn from_classifier_data<S: AsRef<str>>(data: &[ClassifierData<'_, S>]) -> ClassificationResult {
         let mut result = ClassificationResult {
             options: Vec::with_capacity(9),
         };
@@ -249,8 +249,9 @@ where
                     .flat_map(|tlseq| {
                         tlseq.sequences.iter().map(move |s| {
                             let length_of_longer_sequence = vsample.len().max(s.len());
-                            let abs_threshold =
-                                (length_of_longer_sequence as f32 * distance_threshold.ceil()) as usize;
+                            let abs_threshold = (length_of_longer_sequence as f32
+                                * distance_threshold.ceil())
+                                as usize;
 
                             move |max_dist: usize| {
                                 // this is the distance as determined by the DNS sequence distance function
@@ -260,7 +261,9 @@ where
                                     true,
                                 );
 
-                                if (real_distance as f32 / length_of_longer_sequence as f32) > distance_threshold {
+                                if (real_distance as f32 / length_of_longer_sequence as f32)
+                                    > distance_threshold
+                                {
                                     // In case the distance reaches our threshold, we do not want any result
                                     None
                                 } else {
@@ -329,10 +332,7 @@ where
 }
 
 #[derive(Debug)]
-pub(crate) struct ClassifierData<'a, S>
-where
-    S: 'a + ?Sized,
-{
+pub(crate) struct ClassifierData<'a, S: ?Sized> {
     label: &'a S,
     pub distance: usize,
 }

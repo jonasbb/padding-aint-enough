@@ -1,16 +1,5 @@
 #![feature(nll, transpose_result)]
 
-extern crate chrono;
-extern crate dnstap;
-extern crate failure;
-extern crate lazy_static;
-extern crate log;
-extern crate misc_utils;
-extern crate rayon;
-extern crate serde;
-extern crate serde_with;
-extern crate string_cache;
-
 mod constants;
 pub mod knn;
 mod load_sequence;
@@ -18,12 +7,12 @@ mod utils;
 
 pub use crate::utils::load_all_dnstap_files_from_dir;
 use crate::{common_sequence_classifications::*, constants::*};
-use chrono::{DateTime, Utc};
-use failure::Error;
+use chrono::{self, DateTime, Utc};
+use failure::{self, Error};
 use lazy_static::lazy_static;
-use log::error;
-use misc_utils::Min;
-use serde::{Deserialize, Serialize};
+use log::{self, error};
+use misc_utils::{self, Min};
+use serde::{self, Deserialize, Serialize};
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     collections::HashMap,
@@ -33,7 +22,7 @@ use std::{
     path::Path,
     sync::{Arc, RwLock},
 };
-use string_cache::DefaultAtom as Atom;
+use string_cache::{self, DefaultAtom as Atom};
 
 lazy_static! {
     static ref LOADING_FAILED: RwLock<Arc<HashMap<Atom, &'static str>>> = RwLock::default();
@@ -517,7 +506,7 @@ impl SequenceElement {
 }
 
 impl Debug for SequenceElement {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use crate::SequenceElement::*;
         let (l, v) = match self {
             Size(v) => ("S", v),

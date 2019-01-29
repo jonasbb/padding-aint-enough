@@ -1,7 +1,3 @@
-extern crate chrono;
-extern crate serde;
-extern crate serde_with;
-
 use chrono::{DateTime, Duration, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::chrono::datetime_utc_ts_seconds_from_any;

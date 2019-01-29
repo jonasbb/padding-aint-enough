@@ -1,15 +1,10 @@
 #![feature(specialization)]
 
-extern crate failure;
-extern crate pyo3;
-#[cfg(test)]
-extern crate tempfile;
-
-use failure::Error;
+use failure::{self, Error};
 use pyo3::{prelude::*, types::PyDict};
 use std::{collections::HashMap, path::Path};
 
-fn pyerr_to_error(py: Python, pyerr: &PyErr) -> Error {
+fn pyerr_to_error(py: Python<'_>, pyerr: &PyErr) -> Error {
     let err: String = pyerr
         .into_object(py)
         .call_method0(py, "__repr__")
@@ -94,7 +89,7 @@ fn test_percentage_stacked_area_chart_with_colors() {
     let file = NamedTempFile::new().unwrap();
     let colors = &["#ff0000", "#00ff00"] as &[&str];
     let mut config = HashMap::new();
-    config.insert("colors", &colors as &ToPyObject);
+    config.insert("colors", &colors as &dyn ToPyObject);
     let res = percentage_stacked_area_chart(&data, file.path(), config);
     // leanup temp file
     drop(file);

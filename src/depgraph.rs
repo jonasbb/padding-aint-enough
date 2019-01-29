@@ -574,8 +574,7 @@ impl DepGraph {
                     // We do not need to transfer all the edges, because we calculated the transitive closure,
                     // meaning all the edges are already transfered
                     {
-                        let (node_weight, other_weight) =
-                            self.graph.index_twice_mut(node, other);
+                        let (node_weight, other_weight) = self.graph.index_twice_mut(node, other);
                         other_weight.merge_with(node_weight);
                     }
                     let _ = self.graph.remove_node(node).expect("Node id is valid");

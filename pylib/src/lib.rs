@@ -1,14 +1,9 @@
 #![feature(specialization)]
 #![allow(clippy::all)]
 
-extern crate encrypted_dns;
-extern crate failure;
-extern crate pyo3;
-extern crate sequences;
-
 use encrypted_dns::ErrorExt;
 use failure::Error;
-use pyo3::{exceptions::Exception, prelude::*, CompareOp, PyObjectProtocol};
+use pyo3::{self, exceptions::Exception, prelude::*, CompareOp, PyObjectProtocol};
 use sequences::{load_all_dnstap_files_from_dir, OneHotEncoding, Sequence};
 use std::path::Path;
 
@@ -18,7 +13,7 @@ fn error2py(err: Error) -> PyErr {
 
 // Function name is module name
 #[pymodinit]
-fn pylib(_py: Python, m: &PyModule) -> PyResult<()> {
+fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PySequence>()?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
@@ -31,7 +26,7 @@ fn pylib(_py: Python, m: &PyModule) -> PyResult<()> {
 
     /// Load a whole folder of dnstap files
     #[pyfn(m, "load_folder")]
-    fn load_folder(py: Python, path: String) -> PyResult<Vec<(String, Vec<PySequence>)>> {
+    fn load_folder(py: Python<'_>, path: String) -> PyResult<Vec<(String, Vec<PySequence>)>> {
         let seqs = py
             .allow_threads(|| load_all_dnstap_files_from_dir(Path::new(&path)))
             .map_err(error2py)?;

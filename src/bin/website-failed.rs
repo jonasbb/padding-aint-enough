@@ -1,25 +1,15 @@
-extern crate chrome;
-extern crate csv;
-extern crate encrypted_dns;
-extern crate env_logger;
-extern crate failure;
-extern crate glob;
-extern crate misc_utils;
-extern crate rayon;
-extern crate serde;
-extern crate serde_json;
-extern crate structopt;
-
 use chrome::ChromeDebuggerMessage;
 use csv::WriterBuilder;
 use encrypted_dns::{chrome_log_contains_errors, ErrorExt};
+use env_logger;
 use failure::{Error, ResultExt};
 use glob::glob;
 use misc_utils::fs::file_open_read;
 use rayon::prelude::{IntoParallelRefIterator, ParallelIterator};
 use serde::Serialize;
+use serde_json;
 use std::{io, path::PathBuf};
-use structopt::StructOpt;
+use structopt::{self, StructOpt};
 
 #[derive(Debug, Serialize)]
 struct Record {

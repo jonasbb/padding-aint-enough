@@ -1,31 +1,15 @@
-extern crate chrome;
-extern crate encrypted_dns;
-extern crate env_logger;
-extern crate failure;
-extern crate lazy_static;
-extern crate log;
-extern crate misc_utils;
-extern crate openssl; // Needed for cross compilation
-extern crate sequences;
-extern crate serde;
-extern crate serde_json;
-extern crate structopt;
-extern crate taskmanager;
-extern crate tempfile;
-extern crate toml;
-extern crate wait_timeout;
-extern crate xvfb;
-
 mod utils;
 
 use crate::utils::*;
 use chrome::ChromeDebuggerMessage;
 use encrypted_dns::{chrome_log_contains_errors, ErrorExt};
+use env_logger;
 use failure::{bail, Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{debug, error, info, warn};
 use misc_utils::fs::file_open_read;
 use sequences::{sequence_stats, Sequence};
+use serde_json;
 use std::{
     ffi::{OsStr, OsString},
     fmt::{self, Debug},
@@ -37,7 +21,7 @@ use std::{
     thread::{self, JoinHandle},
     time::Duration,
 };
-use structopt::StructOpt;
+use structopt::{self, StructOpt};
 use taskmanager::{models::Task, AddDomainConfig, Config, TaskManager};
 use tempfile::{Builder as TempDirBuilder, TempDir};
 use xvfb::{ProcessStatus, Xvfb};
@@ -67,7 +51,7 @@ struct CliArgs {
 }
 
 impl Debug for CliArgs {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
         f.debug_struct("CliArgs")
             .field("config", &self.config)
             .finish()
@@ -84,7 +68,7 @@ enum SubCommand {
             long = "domain",
             parse(try_from_os_str = "path_file_exists_and_readable_open")
         )]
-        domain_list: (Box<Read>, PathBuf),
+        domain_list: (Box<dyn Read>, PathBuf),
     },
     /// Start executing the tasks
     #[structopt(name = "run")]
@@ -100,7 +84,7 @@ enum SubCommand {
             long = "domain",
             parse(try_from_os_str = "path_file_exists_and_readable_open")
         )]
-        domain_list: (Box<Read>, PathBuf),
+        domain_list: (Box<dyn Read>, PathBuf),
     },
 }
 
@@ -126,7 +110,7 @@ fn path_is_file_exists(path: &OsStr) -> Result<PathBuf, OsString> {
     }
 }
 
-fn path_file_exists_and_readable_open(path: &OsStr) -> Result<(Box<Read>, PathBuf), OsString> {
+fn path_file_exists_and_readable_open(path: &OsStr) -> Result<(Box<dyn Read>, PathBuf), OsString> {
     let path = path_is_file_exists(path)?;
     file_open_read(&path)
         .map(|read| (read, path))

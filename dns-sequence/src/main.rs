@@ -108,7 +108,7 @@ fn run() -> Result<(), Error> {
     env_logger::init();
     let mut cli_args = CliArgs::from_args();
 
-    let writer: Box<Write> = cli_args
+    let writer: Box<dyn Write> = cli_args
         .misclassifications
         .as_ref()
         .map(|path| {

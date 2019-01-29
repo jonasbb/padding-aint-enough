@@ -1,9 +1,3 @@
-extern crate chrome;
-extern crate failure;
-extern crate min_max_heap;
-extern crate sequences;
-extern crate serde_json;
-
 use chrome::ChromeDebuggerMessage;
 use failure::{Error, Fail};
 use min_max_heap::MinMaxHeap;
@@ -45,12 +39,12 @@ where
 
 /// A short-lived wrapper for some `Fail` type that displays it and all its
 /// causes delimited by the string ": ".
-pub struct DisplayCauses<'a>(&'a Fail);
+pub struct DisplayCauses<'a>(&'a dyn Fail);
 
 impl<'a> Display for DisplayCauses<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         Display::fmt(&self.0, f)?;
-        let mut x: &Fail = self.0;
+        let mut x: &dyn Fail = self.0;
         while let Some(cause) = x.cause() {
             f.write_str(": ")?;
             Display::fmt(&cause, f)?;
@@ -61,24 +55,24 @@ impl<'a> Display for DisplayCauses<'a> {
 }
 
 pub trait FailExt {
-    fn display_causes(&self) -> DisplayCauses;
+    fn display_causes(&self) -> DisplayCauses<'_>;
 }
 
 impl<T> FailExt for T
 where
     T: Fail,
 {
-    fn display_causes(&self) -> DisplayCauses {
+    fn display_causes(&self) -> DisplayCauses<'_> {
         DisplayCauses(self)
     }
 }
 
 pub trait ErrorExt {
-    fn display_causes(&self) -> DisplayCauses;
+    fn display_causes(&self) -> DisplayCauses<'_>;
 }
 
 impl ErrorExt for Error {
-    fn display_causes(&self) -> DisplayCauses {
+    fn display_causes(&self) -> DisplayCauses<'_> {
         DisplayCauses(self.as_fail())
     }
 }

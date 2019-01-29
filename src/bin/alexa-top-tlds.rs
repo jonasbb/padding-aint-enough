@@ -1,15 +1,5 @@
-/// Extract TLDs from an Alexa Top x Domains file
-///
-/// Read the Alexa Top x Domains CSV file and collect all observable domains in it
-extern crate csv;
-extern crate env_logger;
-extern crate failure;
-extern crate log;
-extern crate misc_utils;
-extern crate serde;
-extern crate structopt;
-
 use csv::ReaderBuilder;
+use env_logger;
 use failure::{Error, ResultExt};
 use log::info;
 use misc_utils::fs::file_open_read;
@@ -19,7 +9,7 @@ use std::{
     io::{self, Write},
     path::PathBuf,
 };
-use structopt::StructOpt;
+use structopt::{self, StructOpt};
 
 #[derive(StructOpt, Debug)]
 #[structopt(

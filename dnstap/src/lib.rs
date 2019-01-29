@@ -2,14 +2,6 @@
 #![feature(transpose_result)]
 #![feature(try_from)]
 
-extern crate chrono;
-extern crate failure;
-extern crate framestream;
-extern crate log;
-extern crate misc_utils;
-extern crate protobuf;
-extern crate trust_dns_proto;
-
 pub mod protos;
 
 pub use crate::protos::dnstap;
@@ -18,6 +10,7 @@ use failure::{bail, Error, ResultExt};
 use framestream::DecoderReader;
 use log::warn;
 use misc_utils::fs::file_open_read;
+use protobuf;
 use std::{convert::TryFrom, path::Path};
 
 pub fn process_dnstap<P: AsRef<Path>>(

@@ -1,6 +1,3 @@
-extern crate criterion;
-extern crate min_max_heap;
-
 use criterion::{criterion_group, criterion_main, Criterion, Fun};
 use min_max_heap::MinMaxHeap;
 use std::cmp::Ordering;
@@ -215,10 +212,7 @@ where
 }
 
 #[derive(Debug)]
-struct ClassifierData<'a, S>
-where
-    S: 'a,
-{
+struct ClassifierData<'a, S> {
     label: &'a S,
     pub distance: usize,
 }
