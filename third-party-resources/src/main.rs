@@ -41,7 +41,7 @@ struct CliArgs {
     /// List of file names which did not load properly.
     /// Also see the `website-failed` tool.
     #[structopt(long = "loading_failed", parse(from_os_str))]
-    loading_failed: PathBuf,
+    loading_failed: Option<PathBuf>,
 }
 
 fn main() {
@@ -69,9 +69,14 @@ fn run() -> Result<(), Error> {
     prepare_confusion_domains(&cli_args.confusion_domains)?;
     info!("Done loading confusion domains.");
 
-    info!("Start loading of failed domains...");
-    let failed_domains = prepare_failed_domains(&cli_args.loading_failed)?;
-    info!("Done loading of failed domains.");
+    let failed_domains = if let Some(path) = &cli_args.loading_failed {
+        info!("Start loading of failed domains...");
+        let tmp = prepare_failed_domains(path)?;
+        info!("Done loading of failed domains.");
+        tmp
+    } else {
+        HashSet::default()
+    };
 
     let check_confusion_domains = make_check_confusion_domains();
 
