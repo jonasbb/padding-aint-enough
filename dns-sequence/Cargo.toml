@@ -10,7 +10,7 @@ env_logger = "0.6.0"
 failure = "0.1.5"
 lazy_static = "1.2.0"
 log = "0.4.6"
-misc_utils = "2.2.0"
+misc_utils = "2.3.0"
 plot = { path = "../plot", optional = true }
 prettytable-rs = { version = "0.8.0", default-features = false }
 serde = { version = "1.0.85", features = [ "derive" ] }
