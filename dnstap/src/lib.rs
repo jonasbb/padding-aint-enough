@@ -1,5 +1,4 @@
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-#![feature(transpose_result)]
 #![feature(try_from)]
 
 pub mod protos;

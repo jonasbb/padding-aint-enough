@@ -1,5 +1,3 @@
-#![feature(transpose_result)]
-
 use encrypted_dns::FailExt;
 use env_logger;
 use failure::{Error, ResultExt};

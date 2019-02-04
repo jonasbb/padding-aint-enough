@@ -1,5 +1,3 @@
-#![feature(transpose_result)]
-
 use csv::ReaderBuilder;
 use dnstap::{
     dnstap::Message_Type,

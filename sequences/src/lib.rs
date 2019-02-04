@@ -1,5 +1,3 @@
-#![feature(nll, transpose_result)]
-
 mod constants;
 pub mod knn;
 mod load_sequence;
