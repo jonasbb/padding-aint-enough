@@ -135,9 +135,9 @@ for label in LABELS[::-1]:
     )
     last_values += values
 
-yoffset = 0
+yoffset = None
 if res_label_err:
-    yoffset = max(v * 100 / total_traces for v in res_label_err)
+    yoffset = [v * 100 / total_traces for v in res_label_err]
 autolabel(bar, plt, yoffset=yoffset)
 
 plt.legend(loc="upper center", ncol=4, mode="expand")
