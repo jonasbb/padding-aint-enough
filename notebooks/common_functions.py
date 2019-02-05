@@ -46,15 +46,20 @@ def show_infos_for_domain(domain: str) -> None:
 
 
 # %%
-def autolabel(rects: t.Any, plt: t.Any) -> None:
+def autolabel(rects: t.Any, plt: t.Any, yoffset: t.Optional[float] = None) -> None:
     """
     Attach a text label above each bar displaying its height
+
+    yoffset: Allows moving the text on the y-axis by a fixed amount
     """
+    if yoffset is None:
+        yoffset = 0
+
     for rect in rects:
         height = rect.get_height() + rect.get_y()
         plt.text(
             rect.get_x() + rect.get_width() / 2.0,
-            height + 0.5,
+            height + 0.5 + yoffset,
             "%.1f" % round(height, 1),
             ha="center",
             va="bottom",
