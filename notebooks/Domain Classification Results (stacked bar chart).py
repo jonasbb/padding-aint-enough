@@ -137,4 +137,69 @@ for i, data in enumerate(datas):
     plt.show()
 
 # %%
+# Parse all the data
+pdatas = [parse_log_data(data) for data in datas]
 
+# %%
+# Create a structure similar to pdata, but where the entries are organized by n/10
+data_per_n_ = []
+for i in range(len(pdatas[0][0][1])):
+    tmp = {}
+    for quality, _ in pdatas[0]:
+        tmp[quality] = []
+    data_per_n_.append(tmp)
+
+for i in range(len(pdatas[0][0][1])):
+    for pdata in pdatas:
+        for quality, values in pdata:
+            data_per_n_[i][quality].append(values[i])
+
+# Convert the Dict into a tuple
+data_per_n = [[(q, v) for q, v in x.items()] for x in data_per_n_]
+del data_per_n_
+
+# %%
+for i, pdata in enumerate(data_per_n):
+    colors = cycle(matplotlib.cm.Set1.colors)  # pylint: disable=E1101
+    hatches = cycle(["/", "-", "\\", "|"])
+
+    plt.rcParams.update({"legend.handlelength": 3, "legend.handleheight": 1.5})
+
+    prev_values = [0] * len(pdata[0][1])
+    total_domains = data_per_n[0][0][1][0]
+    for label, values in pdata:
+        label = label2good_label(label)
+        heights = [v - pv for v, pv in zip(values, prev_values)]
+        # Convert into percentages
+        h = [v * 100 / 9205 for v in heights]
+        ph = [v * 100 / 9205 for v in prev_values]
+        bars = plt.bar(
+            range(1, 1 + len(values)),
+            h,
+            bottom=ph,
+            label=label,
+            width=1.01,
+            color=next(colors),
+            hatch=next(hatches),
+        )
+        prev_values = values
+    autolabel(bars, plt)
+
+    # CAREFUL: Those are tiny spaces around the =
+    #     plt.xticks(range(1, 6), [f"k = {i}" for i in range(1, 10, 2)])
+    plt.xticks(range(1, 11), [f"{i}0%" for i in range(1, 11)])
+    plt.xlabel("FPR in OW")
+    plt.ylabel("Percent of all domains")
+    plt.title(f"At least {i} / 10 domains correctly classified")
+
+    plt.ylim(0, 100)
+    plt.xlim(0.5, 10.5)
+
+    plt.legend(loc="upper center", ncol=4, mode="expand")
+    plt.gcf().set_size_inches(7, 4)
+    plt.tight_layout()
+    plt.savefig(f"classification-results-per-domain-k7-n{i}.svg")
+    plt.show()
+
+
+# %%
