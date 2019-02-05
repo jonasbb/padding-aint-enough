@@ -46,20 +46,34 @@ def show_infos_for_domain(domain: str) -> None:
 
 
 # %%
-def autolabel(rects: t.Any, plt: t.Any, yoffset: t.Optional[float] = None) -> None:
+def autolabel(
+    rects: t.Any, plt: t.Any, yoffset: t.Union[None, float, t.List[float]] = None
+) -> None:
     """
     Attach a text label above each bar displaying its height
 
     yoffset: Allows moving the text on the y-axis by a fixed amount
+    The value must be a scalar, applying the same offset to all bars, or a list with one entry per bar
     """
-    if yoffset is None:
-        yoffset = 0
+    yoffsets: t.List = []
 
-    for rect in rects:
+    if yoffset is None:
+        yoffsets = [0] * len(rects)
+    elif isinstance(yoffset, float):
+        yoffsets = [yoffset] * len(rects)
+    elif isinstance(yoffset, list):
+        assert len(rects) == len(yoffset)
+        yoffsets = yoffset
+    else:
+        raise Exception(
+            "Unkown type for `yoffsets`, needs to be scalar or list of scalar."
+        )
+
+    for rect, offset in zip(rects, yoffsets):
         height = rect.get_height() + rect.get_y()
         plt.text(
             rect.get_x() + rect.get_width() / 2.0,
-            height + 0.5 + yoffset,
+            height + 0.5 + offset,
             "%.1f" % round(height, 1),
             ha="center",
             va="bottom",
