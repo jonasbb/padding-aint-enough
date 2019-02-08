@@ -7,6 +7,7 @@ use failure::{bail, format_err, Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{error, info};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
+use rayon::prelude::*;
 use sequences::{
     common_sequence_classifications::*,
     knn::{self, ClassificationResult},
@@ -443,7 +444,8 @@ fn load_all_dnstap_files(base_dir: &Path) -> Result<Vec<LabelledSequences>, Erro
                 base_dir.display()
             )
         })?
-        .into_iter()
+        .into_par_iter()
+        .with_max_len(5)
         .map(|(label, seqs): (String, Vec<Sequence>)| {
             let label = Atom::from(label);
             let mapped_label = check_confusion_domains(&label);

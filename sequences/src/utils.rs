@@ -33,6 +33,7 @@ pub fn load_all_dnstap_files_from_dir(
     // Pairs of Label with Data (the Sequences)
     let data: Vec<(String, Vec<Sequence>)> = directories
         .into_par_iter()
+        .with_max_len(5)
         .map(|dir| {
             let label = dir
                 .file_name()
