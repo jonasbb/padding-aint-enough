@@ -9,7 +9,7 @@ use log::{error, info};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use sequences::{
     common_sequence_classifications::*,
-    knn::{self, ClassificationResult, ClassificationResultQuality},
+    knn::{self, ClassificationResult},
     replace_loading_failed, LabelledSequences, Sequence,
 };
 use serde::{Deserialize, Serialize};
@@ -320,20 +320,18 @@ fn classify_and_evaluate(
                 known_problems.clone(),
             );
 
-            if result_quality != ClassificationResultQuality::Exact
-                && log_misclassification(
-                    mis_writer,
-                    k,
-                    &sequence,
-                    &mapped_domain,
-                    &class_result,
-                    known_problems.as_ref().map(|x| &**x),
-                )
-                .is_err()
-            {
+            if let Err(err) = log_misclassification(
+                mis_writer,
+                k,
+                &sequence,
+                &mapped_domain,
+                &class_result,
+                known_problems.as_ref().map(|x| &**x),
+            ) {
                 error!(
-                    "Cannot log misclassification for sequence: {}",
-                    sequence.id()
+                    "Cannot log misclassification for sequence `{}`: {}",
+                    sequence.id(),
+                    err,
                 );
             }
         });
