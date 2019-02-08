@@ -219,6 +219,7 @@ where
 
     validation_data
         .into_par_iter()
+        .with_max_len(1)
         .map(|vsample| {
             let distances = take_smallest(
                 trainings_data
@@ -263,7 +264,7 @@ where
 
     validation_data
         .into_par_iter()
-        .with_max_len(5)
+        .with_max_len(1)
         .map(|vsample| {
             let distances = take_smallest_opt(
                 trainings_data
@@ -344,21 +345,25 @@ where
         }
 
         let mut trainings = sequences.clone();
-        let test_sequence = trainings.remove(fold as usize % sequences.len());
+        for idx in (0..sequences.len()).rev() {
+            if idx % 10 == fold as usize {
+                let test_sequence = trainings.remove(idx);
+                // only take each test element once, if it belongs to exactly that fold
+                if (fold as usize) < sequences.len() {
+                    test.push(LabelledSequence {
+                        true_domain: true_domain.clone(),
+                        mapped_domain: mapped_domain.clone(),
+                        sequence: test_sequence,
+                    });
+                }
+            }
+        }
 
         training.push(LabelledSequences {
             true_domain: true_domain.clone(),
             mapped_domain: mapped_domain.clone(),
             sequences: trainings,
         });
-        // only take each test element once, if it belongs to exactly that fold
-        if (fold as usize) < sequences.len() {
-            test.push(LabelledSequence {
-                true_domain: true_domain.clone(),
-                mapped_domain: mapped_domain.clone(),
-                sequence: test_sequence,
-            });
-        }
     }
 
     debug!("Finished splitting trainings and test data");
