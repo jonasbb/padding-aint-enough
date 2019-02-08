@@ -1,6 +1,7 @@
 mod constants;
 pub mod knn;
 mod load_sequence;
+mod serialization;
 mod utils;
 
 pub use crate::utils::load_all_dnstap_files_from_dir;

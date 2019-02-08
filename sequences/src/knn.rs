@@ -4,6 +4,7 @@ use crate::{
 };
 use log::{debug, error};
 use misc_utils::{Max, Min};
+use ordered_float::NotNan;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -85,6 +86,16 @@ struct LabelOption {
     distance_min: Min<usize>,
     #[serde(with = "::serde_with::rust::display_fromstr")]
     distance_max: Max<usize>,
+    #[serde(
+        serialize_with = "::serde_with::rust::display_fromstr::serialize",
+        deserialize_with = "crate::serialization::deserialize_min_notnan"
+    )]
+    distance_min_norm: Min<NotNan<f64>>,
+    #[serde(
+        serialize_with = "::serde_with::rust::display_fromstr::serialize",
+        deserialize_with = "crate::serialization::deserialize_max_notnan"
+    )]
+    distance_max_norm: Max<NotNan<f64>>,
 }
 
 impl ClassificationResult {
@@ -105,6 +116,8 @@ impl ClassificationResult {
                         count: 1,
                         distance_min: Min::with_initial(entry.distance),
                         distance_max: Max::with_initial(entry.distance),
+                        distance_min_norm: Min::with_initial(entry.distance_norm),
+                        distance_max_norm: Max::with_initial(entry.distance_norm),
                     };
                     result.options.push(new_opt);
                 }
@@ -213,9 +226,19 @@ where
                     // iterate over all elements of the trainings data
                     .flat_map(|tlseq| {
                         tlseq.sequences.iter().map(move |s| {
-                            move |max_dist: usize| ClassifierData {
-                                label: &tlseq.mapped_domain,
-                                distance: vsample.distance_with_limit(s, max_dist, true),
+                            move |max_dist: usize| {
+                                let distance = vsample.distance_with_limit(s, max_dist, true);
+                                ClassifierData {
+                                    label: &tlseq.mapped_domain,
+                                    distance,
+                                    distance_norm: NotNan::new(
+                                        distance as f64 / s.len().max(vsample.len()) as f64,
+                                    )
+                                    .unwrap_or_else(|err| {
+                                        error!("Failed to calculate normalized distance: {}", err);
+                                        NotNan::new(999.).unwrap()
+                                    }),
+                                }
                             }
                         })
                     }),
@@ -267,13 +290,24 @@ where
                                     // In case the distance reaches our threshold, we do not want any result
                                     None
                                 } else {
+                                    let distance = vsample.distance_with_limit(
+                                        s,
+                                        max_dist.min(abs_threshold),
+                                        true,
+                                    );
                                     Some(ClassifierData {
                                         label: &tlseq.mapped_domain,
-                                        distance: vsample.distance_with_limit(
-                                            s,
-                                            max_dist.min(abs_threshold),
-                                            true,
-                                        ),
+                                        distance,
+                                        distance_norm: NotNan::new(
+                                            distance as f64 / s.len().max(vsample.len()) as f64,
+                                        )
+                                        .unwrap_or_else(|err| {
+                                            error!(
+                                                "Failed to calculate normalized distance: {}",
+                                                err
+                                            );
+                                            NotNan::new(999.).unwrap()
+                                        }),
                                     })
                                 }
                             }
@@ -335,11 +369,12 @@ where
 pub(crate) struct ClassifierData<'a, S: ?Sized> {
     label: &'a S,
     pub distance: usize,
+    pub distance_norm: NotNan<f64>,
 }
 
 impl<'a, S: ?Sized> PartialEq for ClassifierData<'a, S> {
     fn eq(&self, other: &Self) -> bool {
-        self.distance == other.distance
+        self.distance == other.distance && self.distance_norm == other.distance_norm
     }
 }
 
@@ -353,7 +388,9 @@ impl<'a, S: ?Sized> PartialOrd for ClassifierData<'a, S> {
 
 impl<'a, S: ?Sized> Ord for ClassifierData<'a, S> {
     fn cmp(&self, other: &Self) -> Ordering {
-        self.distance.cmp(&other.distance)
+        self.distance
+            .cmp(&other.distance)
+            .then_with(|| self.distance_norm.cmp(&other.distance_norm))
     }
 }
 
