@@ -5,9 +5,8 @@ use crate::{jsonl::JsonlFormatter, stats::StatsCollector};
 use csv::ReaderBuilder;
 use failure::{bail, format_err, Error, ResultExt};
 use lazy_static::lazy_static;
-use log::{error, info};
+use log::{error, info, warn};
 use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
-use rayon::prelude::*;
 use sequences::{
     common_sequence_classifications::*,
     knn::{self, ClassificationResult},
@@ -427,8 +426,26 @@ fn make_check_confusion_domains() -> impl Fn(&Atom) -> Atom {
     let conf_domains: Arc<_> = lock.clone();
     move |domain: &Atom| -> Atom {
         let mut curr = domain;
+        let mut loop_check = 10;
         while let Some(other) = conf_domains.get(curr) {
             curr = other;
+
+            loop_check -= 1;
+            if loop_check == 0 {
+                error!("Loop detected");
+                let mut visited = Vec::new();
+                let mut c = domain;
+                visited.push(c);
+                warn!("Visit {}", c);
+                while let Some(o) = conf_domains.get(c) {
+                    if visited.contains(&o) {
+                        error!("{:#?}", visited);
+                        return o.into();
+                    }
+                    warn!("Visit {}", o);
+                    c = o;
+                }
+            }
         }
         curr.into()
     }
@@ -437,26 +454,25 @@ fn make_check_confusion_domains() -> impl Fn(&Atom) -> Atom {
 fn load_all_dnstap_files(base_dir: &Path) -> Result<Vec<LabelledSequences>, Error> {
     let check_confusion_domains = make_check_confusion_domains();
 
-    Ok(sequences::load_all_dnstap_files_from_dir(base_dir)
-        .with_context(|_| {
-            format!(
-                "Could not load some sequence files from dir: {}",
-                base_dir.display()
-            )
-        })?
-        .into_par_iter()
-        .with_max_len(5)
+    let seqs = sequences::load_all_dnstap_files_from_dir(base_dir).with_context(|_| {
+        format!(
+            "Could not load some sequence files from dir: {}",
+            base_dir.display()
+        )
+    })?;
+    info!("Start creating LabelledSequences");
+    Ok(seqs
+        .into_iter()
         .map(|(label, seqs): (String, Vec<Sequence>)| {
             let label = Atom::from(label);
             let mapped_label = check_confusion_domains(&label);
-
             LabelledSequences {
                 true_domain: label,
                 mapped_domain: mapped_label,
                 sequences: seqs,
             }
         })
-        .collect())
+        .collect::<Vec<_>>())
 }
 
 #[allow(clippy::too_many_arguments)]
