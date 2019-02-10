@@ -96,7 +96,7 @@ enum SubCommand {
         distance_threshold: Option<f32>,
         #[structopt(
             long = "simulate",
-            default_value = "SimulateOption::Normal",
+            default_value = "Normal",
             raw(
                 possible_values = "&SimulateOption::variants()",
                 case_insensitive = "true"
@@ -117,7 +117,7 @@ enum SubCommand {
         distance_threshold: Option<f32>,
         #[structopt(
             long = "simulate",
-            default_value = "SimulateOption::Normal",
+            default_value = "Normal",
             raw(
                 possible_values = "&SimulateOption::variants()",
                 case_insensitive = "true"
