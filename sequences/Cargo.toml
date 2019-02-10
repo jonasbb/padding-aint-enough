@@ -27,5 +27,5 @@ serde_with = "1.0.0"
 string_cache = "0.7.3"
 
 [dev-dependencies]
-criterion = "0.2.9"
+criterion = "0.2.10"
 min-max-heap = "1.2.2"
