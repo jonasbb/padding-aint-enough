@@ -1,4 +1,4 @@
-use crate::{knn::ClassifierData, Sequence};
+use crate::{knn::ClassifierData, Sequence, LoadDnstapConfig};
 use failure::{Error, ResultExt};
 use log::{debug, warn};
 use rayon::prelude::*;
@@ -9,6 +9,13 @@ use std::{
 
 pub fn load_all_dnstap_files_from_dir(
     base_dir: &Path,
+) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
+    load_all_dnstap_files_from_dir_with_config(base_dir, LoadDnstapConfig::Normal)
+}
+
+pub fn load_all_dnstap_files_from_dir_with_config(
+    base_dir: &Path,
+    config: LoadDnstapConfig,
 ) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
     // Get a list of directories
     // Each directory corresponds to a label
@@ -65,7 +72,7 @@ pub fn load_all_dnstap_files_from_dir(
                 .into_iter()
                 .filter_map(|dnstap_file| {
                     debug!("Processing dnstap file '{}'", dnstap_file.display());
-                    match Sequence::from_path(&*dnstap_file).with_context(|_| {
+                    match Sequence::from_path_with_config(&*dnstap_file, config).with_context(|_| {
                         format!("Processing dnstap file '{}'", dnstap_file.display())
                     }) {
                         Ok(seq) => Some(seq),

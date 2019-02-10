@@ -1,4 +1,6 @@
-use super::{MatchKey, Query, QuerySource, Sequence, SequenceElement, UnmatchedClientQuery};
+use crate::{
+    LoadDnstapConfig, MatchKey, Query, QuerySource, Sequence, SequenceElement, UnmatchedClientQuery,
+};
 use chrono::Duration;
 use dnstap::{
     dnstap::Message_Type,
@@ -14,8 +16,18 @@ enum Padding {
     Q128R468,
 }
 
-/// Load a dnstap file and generate a Sequence from it
+/// Load a dnstap file and generate a [`Sequence`] from it
 pub fn dnstap_to_sequence(dnstap_file: &Path) -> Result<Sequence, Error> {
+    dnstap_to_sequence_with_config(dnstap_file, LoadDnstapConfig::Normal)
+}
+
+/// Load a dnstap file and generate a [`Sequence`] from it
+///
+/// `config` allows to alter the loading according to [`LoadDnstapConfig`]
+pub fn dnstap_to_sequence_with_config(
+    dnstap_file: &Path,
+    config: LoadDnstapConfig,
+) -> Result<Sequence, Error> {
     // process dnstap if available
     let mut events: Vec<protos::Dnstap> =
         process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
@@ -170,14 +182,18 @@ pub fn dnstap_to_sequence(dnstap_file: &Path) -> Result<Sequence, Error> {
 
     sanity_check_matched_queries(&matched)?;
 
-    let seq = convert_to_sequence(&matched, dnstap_file.to_string_lossy().to_string());
+    let seq = convert_to_sequence(&matched, dnstap_file.to_string_lossy().to_string(), config);
     Ok(seq.ok_or_else(|| format_err!("Sequence is empty"))?)
 }
 
 /// Takes a list of Queries and returns a Sequence
 ///
 /// The functions abstracts over some details of Queries, such as absolute size and absolute time.
-fn convert_to_sequence(data: &[Query], identifier: String) -> Option<Sequence> {
+fn convert_to_sequence(
+    data: &[Query],
+    identifier: String,
+    config: LoadDnstapConfig,
+) -> Option<Sequence> {
     let base_gap_size = Duration::microseconds(1000);
 
     if data.is_empty() {
@@ -192,10 +208,31 @@ fn convert_to_sequence(data: &[Query], identifier: String) -> Option<Sequence> {
                 if let Some(last_end) = last_end {
                     gap = gap_size(d.end - last_end, base_gap_size);
                 }
+
+                let mut size = Some(pad_size(d.response_size, false, Padding::Q128R468));
+
+                // The config allows us to remove either Gap or Size
+                match config {
+                    LoadDnstapConfig::Normal => {}
+                    LoadDnstapConfig::PerfectPadding => {
+                        // We need to enforce Gap(0) messages to ensure that counting the number of messages still works
+
+                        // If `last_end` is set, then there was a previous message, so we need to add a gap
+                        // Only add a gap, if there is not one already
+                        if last_end.is_some() && gap.is_none() {
+                            gap = Some(SequenceElement::Gap(0));
+                        }
+                        size = None;
+                    }
+                    LoadDnstapConfig::PerfectTiming => {
+                        gap = None;
+                    }
+                }
+
+                // Mark this as being not the first iteration anymore
                 last_end = Some(d.end);
 
-                let size = pad_size(d.response_size, false, Padding::Q128R468);
-                gap.into_iter().chain(Some(size))
+                gap.into_iter().chain(size)
             })
             .collect(),
         identifier,

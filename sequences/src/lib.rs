@@ -4,7 +4,9 @@ mod load_sequence;
 mod serialization;
 mod utils;
 
-pub use crate::utils::load_all_dnstap_files_from_dir;
+pub use crate::utils::{
+    load_all_dnstap_files_from_dir, load_all_dnstap_files_from_dir_with_config,
+};
 use crate::{common_sequence_classifications::*, constants::*};
 use chrono::{self, DateTime, Utc};
 use failure::{self, Error};
@@ -77,6 +79,20 @@ pub mod common_sequence_classifications {
     pub const R106A: &str = "R106A Five Domain requests. No gaps.";
 }
 
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub enum LoadDnstapConfig {
+    /// Load the Dnstap file normally
+    Normal,
+    /// Assume perfect padding is applied.
+    ///
+    /// This removes all [`SequenceElement::Size`] from the [`Sequence`]
+    PerfectPadding,
+    /// Assume perfect timing defense
+    ///
+    /// This removes all [`SequenceElement::Gap`] from the [`Sequence`]
+    PerfectTiming,
+}
+
 // Gap + S1-S15
 pub type OneHotEncoding = Vec<u8>;
 
@@ -92,6 +108,13 @@ impl Sequence {
     /// Load a [`Sequence`] from a file path. The file has to be a dnstap file.
     pub fn from_path(path: &Path) -> Result<Sequence, Error> {
         load_sequence::dnstap_to_sequence(path)
+    }
+
+    /// Load a [`Sequence`] from a file path. The file has to be a dnstap file.
+    ///
+    /// `config` allows to alter the loading according to [`LoadDnstapConfig`]
+    pub fn from_path_with_config(path: &Path, config: LoadDnstapConfig) -> Result<Sequence, Error> {
+        load_sequence::dnstap_to_sequence_with_config(path, config)
     }
 
     /// Return the [`Sequence`]'s identifier. Normally, the file name.
