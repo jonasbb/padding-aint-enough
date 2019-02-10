@@ -229,16 +229,23 @@ where
                         tlseq.sequences.iter().map(move |s| {
                             move |max_dist: usize| {
                                 let distance = vsample.distance_with_limit(s, max_dist, true);
+                                // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
+                                let distance_norm = if distance == 0 {
+                                    NotNan::new(0.).unwrap()
+                                } else {
+                                    NotNan::new(distance as f64 / s.len().max(vsample.len()) as f64)
+                                        .unwrap_or_else(|err| {
+                                            error!(
+                                                "Failed to calculate normalized distance: {}",
+                                                err
+                                            );
+                                            NotNan::new(999.).unwrap()
+                                        })
+                                };
                                 ClassifierData {
                                     label: &tlseq.mapped_domain,
                                     distance,
-                                    distance_norm: NotNan::new(
-                                        distance as f64 / s.len().max(vsample.len()) as f64,
-                                    )
-                                    .unwrap_or_else(|err| {
-                                        error!("Failed to calculate normalized distance: {}", err);
-                                        NotNan::new(999.).unwrap()
-                                    }),
+                                    distance_norm,
                                 }
                             }
                         })
@@ -296,19 +303,26 @@ where
                                         max_dist.min(abs_threshold),
                                         true,
                                     );
+                                    // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
+                                    let distance_norm =
+                                        if distance == 0 {
+                                            NotNan::new(0.).unwrap()
+                                        } else {
+                                            NotNan::new(
+                                                distance as f64 / s.len().max(vsample.len()) as f64,
+                                            )
+                                            .unwrap_or_else(|err| {
+                                                error!(
+                                                    "Failed to calculate normalized distance: {}",
+                                                    err
+                                                );
+                                                NotNan::new(999.).unwrap()
+                                            })
+                                        };
                                     Some(ClassifierData {
                                         label: &tlseq.mapped_domain,
                                         distance,
-                                        distance_norm: NotNan::new(
-                                            distance as f64 / s.len().max(vsample.len()) as f64,
-                                        )
-                                        .unwrap_or_else(|err| {
-                                            error!(
-                                                "Failed to calculate normalized distance: {}",
-                                                err
-                                            );
-                                            NotNan::new(999.).unwrap()
-                                        }),
+                                        distance_norm,
                                     })
                                 }
                             }
