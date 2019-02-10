@@ -10,7 +10,7 @@ use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
 use sequences::{
     common_sequence_classifications::*,
     knn::{self, ClassificationResult},
-    replace_loading_failed, LabelledSequences, Sequence,
+    replace_loading_failed, LabelledSequences, LoadDnstapConfig, Sequence,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Serializer as JsonSerializer;
@@ -22,7 +22,10 @@ use std::{
     sync::{Arc, RwLock},
 };
 use string_cache::DefaultAtom as Atom;
-use structopt::StructOpt;
+use structopt::{
+    clap::{_clap_count_exprs, arg_enum},
+    StructOpt,
+};
 
 lazy_static! {
     static ref CONFUSION_DOMAINS: RwLock<Arc<HashMap<Atom, Atom>>> = RwLock::default();
@@ -62,6 +65,25 @@ struct CliArgs {
     exact_k: Option<usize>,
 }
 
+arg_enum! {
+    #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+    enum SimulateOption {
+        Normal,
+        PerfectPadding,
+        PerfectTiming,
+    }
+}
+
+impl Into<LoadDnstapConfig> for SimulateOption {
+    fn into(self) -> LoadDnstapConfig {
+        match self {
+            SimulateOption::Normal => LoadDnstapConfig::Normal,
+            SimulateOption::PerfectPadding => LoadDnstapConfig::PerfectPadding,
+            SimulateOption::PerfectTiming => LoadDnstapConfig::PerfectTiming,
+        }
+    }
+}
+
 #[derive(StructOpt, Debug, Clone)]
 enum SubCommand {
     /// Perform crossvalidation within the trainings data
@@ -72,6 +94,15 @@ enum SubCommand {
     Crossvalidate {
         #[structopt(long = "dist-thres")]
         distance_threshold: Option<f32>,
+        #[structopt(
+            long = "simulate",
+            default_value = "SimulateOption::Normal",
+            raw(
+                possible_values = "&SimulateOption::variants()",
+                case_insensitive = "true"
+            )
+        )]
+        simulate: SimulateOption,
     },
     /// Perform classification of the test data against the trainings data
     #[structopt(
@@ -84,6 +115,15 @@ enum SubCommand {
         test_data: PathBuf,
         #[structopt(long = "dist-thres")]
         distance_threshold: Option<f32>,
+        #[structopt(
+            long = "simulate",
+            default_value = "SimulateOption::Normal",
+            raw(
+                possible_values = "&SimulateOption::variants()",
+                case_insensitive = "true"
+            )
+        )]
+        simulate: SimulateOption,
     },
 }
 
@@ -137,7 +177,12 @@ fn run() -> Result<(), Error> {
     }
 
     info!("Start loading dnstap files...");
-    let training_data = load_all_dnstap_files(&cli_args.base_dir)?;
+    let simulate = match &cli_args.cmd {
+        None => SimulateOption::Normal,
+        Some(SubCommand::Crossvalidate { simulate, .. }) => *simulate,
+        Some(SubCommand::Classify { simulate, .. }) => *simulate,
+    };
+    let training_data = load_all_dnstap_files(&cli_args.base_dir, simulate)?;
     info!(
         "Done loading dnstap files. Found {} domains.",
         training_data.len()
@@ -151,6 +196,7 @@ fn run() -> Result<(), Error> {
             // In case of `None` overwrite it to make sure the individual functions never have to handle a `None`.
             cli_args.cmd = Some(SubCommand::Crossvalidate {
                 distance_threshold: None,
+                simulate: SimulateOption::Normal,
             });
             run_crossvalidation(&cli_args, training_data, &mut stats, &mut mis_writer)
         }
@@ -179,7 +225,10 @@ fn run_crossvalidation(
     stats: &mut StatsCollector,
     mis_writer: &mut JsonSerializer<impl Write, impl serde_json::ser::Formatter>,
 ) {
-    if let Some(SubCommand::Crossvalidate { distance_threshold }) = cli_args.cmd.clone() {
+    if let Some(SubCommand::Crossvalidate {
+        distance_threshold, ..
+    }) = cli_args.cmd.clone()
+    {
         for fold in 0..10 {
             info!("Testing for fold {}", fold);
             info!("Start splitting trainings and test data...");
@@ -228,10 +277,11 @@ fn run_classify(
     if let Some(SubCommand::Classify {
         test_data,
         distance_threshold,
+        simulate,
     }) = cli_args.cmd.clone()
     {
         info!("Start loading test data dnstap files...");
-        let test_data = load_all_dnstap_files(&test_data)?;
+        let test_data = load_all_dnstap_files(&test_data, simulate)?;
         info!(
             "Done loading test data dnstap files. Found {} domains.",
             test_data.len()
@@ -451,15 +501,19 @@ fn make_check_confusion_domains() -> impl Fn(&Atom) -> Atom {
     }
 }
 
-fn load_all_dnstap_files(base_dir: &Path) -> Result<Vec<LabelledSequences>, Error> {
+fn load_all_dnstap_files(
+    base_dir: &Path,
+    simulate: SimulateOption,
+) -> Result<Vec<LabelledSequences>, Error> {
     let check_confusion_domains = make_check_confusion_domains();
 
-    let seqs = sequences::load_all_dnstap_files_from_dir(base_dir).with_context(|_| {
-        format!(
-            "Could not load some sequence files from dir: {}",
-            base_dir.display()
-        )
-    })?;
+    let seqs = sequences::load_all_dnstap_files_from_dir_with_config(base_dir, simulate.into())
+        .with_context(|_| {
+            format!(
+                "Could not load some sequence files from dir: {}",
+                base_dir.display()
+            )
+        })?;
     info!("Start creating LabelledSequences");
     Ok(seqs
         .into_iter()
