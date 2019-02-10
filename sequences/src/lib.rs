@@ -11,7 +11,6 @@ use crate::{common_sequence_classifications::*, constants::*};
 use chrono::{self, DateTime, Utc};
 use failure::{self, Error};
 use lazy_static::lazy_static;
-use log::{self, error};
 use misc_utils::{self, Min};
 use serde::{self, Deserialize, Serialize};
 use std::{
@@ -311,10 +310,7 @@ impl Sequence {
         // Therefore, assign all of them a reason.
         use crate::SequenceElement::{Gap, Size};
         match &*self.as_elements() {
-            [] => {
-                error!("Empty sequence for ID {}. Should never occur", self.id());
-                None
-            }
+            [] => None,
             [Size(n)] => Some(match n {
                 0 => unreachable!("Packets of size 0 may never occur."),
                 1 => R004_SIZE1,
