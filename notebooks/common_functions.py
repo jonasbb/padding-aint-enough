@@ -23,11 +23,18 @@
 import os.path
 import typing as t
 from glob import glob
+from itertools import cycle
 
+import matplotlib.cm
 import pylib
 import tabulate
 from IPython.display import HTML, display
 
+# %%
+# Use real proper labels
+LABELS = ["Pseudo-Plurality", "Plurality", "Majority", "Unanimous"]
+COLORS = cycle(matplotlib.cm.Set1.colors)  # pylint: disable=E1101
+HATCHES = cycle(["/", "-", "\\", "|"])
 
 # %%
 def show_infos_for_domain(domain: str) -> None:
@@ -83,3 +90,12 @@ def autolabel(
             va="bottom",
             rotation=0,
         )
+
+
+# %%
+def label2good_label(label: str) -> str:
+    if label == "Exact":
+        return "Unanimous"
+    if label == "PluralityThenMinDist":
+        return "Pseudo-Plurality"
+    return label
