@@ -19,7 +19,7 @@ pub fn load_all_dnstap_files_from_dir_with_config(
 ) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
     // Get a list of directories
     // Each directory corresponds to a label
-    let directories: Vec<PathBuf> = fs::read_dir(base_dir)?
+    let mut directories: Vec<PathBuf> = fs::read_dir(base_dir)?
         .flat_map(|x| {
             x.and_then(|entry| {
                 // Result<Option<PathBuf>>
@@ -36,6 +36,7 @@ pub fn load_all_dnstap_files_from_dir_with_config(
             .transpose()
         })
         .collect::<Result<_, _>>()?;
+    directories.sort();
 
     // Pairs of Label with Data (the Sequences)
     let data: Vec<(String, Vec<Sequence>)> = directories
