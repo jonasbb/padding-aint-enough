@@ -47,7 +47,11 @@ def show_infos_for_domain(domain: str) -> None:
 
 # %%
 def autolabel(
-    rects: t.Any, plt: t.Any, yoffset: t.Union[None, float, t.List[float]] = None
+    rects: t.Any,
+    plt: t.Any,
+    *,
+    yoffset: t.Union[None, float, t.List[float]] = None,
+    precision: int = 1,
 ) -> None:
     """
     Attach a text label above each bar displaying its height
@@ -74,7 +78,7 @@ def autolabel(
         plt.text(
             rect.get_x() + rect.get_width() / 2.0,
             height + 0.5 + offset,
-            "%.1f" % round(height, 1),
+            f"{height:.{precision}f}",
             ha="center",
             va="bottom",
             rotation=0,
