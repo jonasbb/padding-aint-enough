@@ -77,12 +77,17 @@ def load_stats_file(fname: str) -> t.Tuple[t.Dict[str, t.List[int]], int]:
 
 
 # %%
-fname = "../results/2019-01-11-closed-world/statistics-final.csv"
-fname = "../results/2019-02-04-scenario4/scenario4-cross-cache-stats.csv"
+res_label_err: t.Optional[t.List[float]] = None
+
+fname = "../results/2019-01-09-closed-world/statistics-final.csv"
+# fname = "../results/2019-01-11-closed-world/statistics-final.csv"
+# fname = "../results/2019-02-04-scenario4/scenario4-cross-cache-stats.csv"
 
 # Use this for a single file
 res_label, total_traces = load_stats_file(fname)
-res_label_err: t.Optional[t.List[float]] = None
+
+# fname_a = "../results/2019-02-04-scenario4/scenario4-stats.csv"
+# fname_b = "../results/2019-02-04-scenario4/scenario4-b-stats.csv"
 
 # # Use this when plotting the average of two files
 # res_label_a, total_traces_a = load_stats_file(fname_a)
@@ -145,7 +150,7 @@ plt.legend(loc="upper center", ncol=4, mode="expand")
 plt.xticks(range(1, 1 + 5), [f"k = {k}" for k in range(1, 10, 2)])
 plt.xlim(0.5, len(res_label[LABELS[0]]) + 0.5)
 plt.ylim(0, 100)
-plt.ylabel("Percent of all DNS sequences")
+plt.ylabel("Correctly classified websites in %")
 
 plt.gcf().set_size_inches(7, 4)
 plt.tight_layout()
@@ -155,9 +160,9 @@ plt.savefig(f"classification-results-{path.basename(fname)}.svg")
 res_label_, total_traces_ = zip(
     *[
         load_stats_file(
-            f"/home/jbushart/projects/encrypted-dns/results/2019-02-09-ow-small/statistics-fpr-{fpr}.csv"
+            f"../results/2019-02-11-ow-from-cw/statistics-fpr-{fpr}.csv"
         )
-        for fpr in range(0, 94, 5)
+        for fpr in range(5, 91, 5)
     ]
 )
 
@@ -206,14 +211,15 @@ autolabel(bar, plt, precision=0)
 
 plt.legend(loc="upper center", ncol=4, mode="expand")
 
+xlabels = [f"{fpr * 5}" for fpr in range(1, len(last_values) + 1)]
 plt.xticks(
     range(1, len(last_values) + 1),
-    [f"{fpr * 5}" for fpr in range(0, len(last_values) + 1)],
+    xlabels
 )
 plt.xlim(0.5, len(res_label[LABELS[0]]) + 0.5)
 plt.ylim(0, 100)
-plt.ylabel("Percent of all DNS sequences")
-plt.xlabel("False Positive Rate")
+plt.ylabel("Correctly classified websites in %")
+plt.xlabel("False Positive Rate in %")
 
 plt.gcf().set_size_inches(7, 4)
 plt.tight_layout()
