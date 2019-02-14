@@ -34,6 +34,7 @@ from IPython.display import HTML, display
 # Use real proper labels
 LABELS = ["Pseudo-Plurality", "Plurality", "Majority", "Unanimous"]
 COLORS = cycle(matplotlib.cm.Set1.colors)  # pylint: disable=E1101
+COLORS2 = cycle(matplotlib.cm.tab10.colors)  # pylint: disable=E1101
 HATCHES = cycle(["/", "-", "\\", "|"])
 
 # %%
