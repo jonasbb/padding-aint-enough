@@ -185,7 +185,7 @@ for title, x in counters_per_entropy.items():
 
     # Store some generic arguments for all plt.bar() calls
     kwargs: t.Dict[str, t.Any] = {}
-    kwargs["step"] = "pre"
+    kwargs["step"] = "post"
     kwargs["linewidth"] = 0.0
     #         if "shannon" in title:
     #             kwargs["width"] = 1 / (10 ** shannon_resolution)
@@ -222,22 +222,22 @@ for title, x in counters_per_entropy.items():
         for good, bad in zip(ys_good, ys_bad)
     ]
     # smooth fraction a bit
-    fraction = [sum(x) / len(x) for x in zip(fraction, fraction[1:])]
+    fraction = [sum(x) / len(x) for x in zip(fraction)]#, fraction[1:]
     ax2.step(
-        xs[: len(fraction)],
-        fraction,
+        [0, *xs[:len(fraction)]],
+        [0, *fraction],
         **kwargs,
         color="white",
-        where="pre",
+        where="post",
         label="Ratio",
         linewidth=3,
     )
     ln3 = ax2.step(
-        xs[: len(fraction)],
-        fraction,
+        [0, *xs[:len(fraction)]],
+        [0, *fraction],
         **kwargs,
         color="black",
-        where="pre",
+        where="post",
         label="Ratio",
         linewidth=1,
     )
