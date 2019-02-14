@@ -64,9 +64,11 @@ def parse_log_data(fname: str) -> t.List[t.List[t.Tuple[str, t.List[int]]]]:
 
 
 # %%
-# Use this for a single file
-pdatas = parse_log_data("../results/2019-02-09-cache-both/dns-sequence-cache-both.log")
 pdatas_err: t.Optional[t.List[t.List[float]]] = None
+
+# Use this for a single file
+# pdatas = parse_log_data("../results/2019-02-09-cache-both/dns-sequence-cache-both.log")
+pdatas = parse_log_data("../results/2019-01-09-closed-world/dns-sequence-final.log")
 
 # # Use this when plotting the average of two files
 # # Parse all the data
@@ -101,7 +103,7 @@ for i, pdata in enumerate(pdatas):
 
     plt.rcParams.update({"legend.handlelength": 3, "legend.handleheight": 1.5})
 
-    prev_values = [0] * 20
+    prev_values = [0] * (len(pdata[0][1])-1)
     total_domains = pdata[0][1][0]
     for label, values in pdata:
         label = label2good_label(label)
@@ -142,20 +144,23 @@ for i, pdata in enumerate(pdatas):
             v * 100 / total_domains
             for v in pdatas_err[i][1:]  # pylint: disable=unsubscriptable-object
         ]
-    autolabel(bars, plt, yoffset=yoffset, precision=0)
+    precision = 1
+    if len(prev_values) > 15:
+        precision = 0
+    autolabel(bars, plt, yoffset=yoffset, precision=precision)
 
     plt.gcf().set_size_inches(7, 4)
 
     plt.ylim(0, 100)
-    #     plt.xlim(0.5, 10.5)
-    plt.xlim(0.5, 20.5)
+    plt.xlim(0.5, len(prev_values) + 0.5)
     # CAREFUL: Those are tiny spaces around the /
-    plt.xticks(range(1, 21), [f"{i}" for i in range(1, 21)])
-    plt.ylabel("Percent of all domains")
-    plt.xlabel("At least n / 20 domains correctly classified")
+    plt.xticks(range(1, len(prev_values) + 1), [f"{i}" for i in range(1, len(prev_values) + 1)])
+    plt.ylabel("Correctly classified websites in %")
+    plt.xlabel(f"At least n / {len(prev_values)} traces correctly classified")
 
-    #     plt.legend(loc="upper right", bbox_to_anchor=(1, 1), borderpad=0, frameon=False)
-    plt.legend(loc="lower left", bbox_to_anchor=(0, 0), frameon=True)
+    plt.legend(loc="upper right", bbox_to_anchor=(1, 1), borderpad=0, frameon=False)
+#     plt.legend(loc="lower left", bbox_to_anchor=(0, 0), frameon=True)
+#     plt.legend(loc="upper center", ncol=4, mode="expand")
     plt.tight_layout()
     plt.savefig(f"classification-results-per-domain-k{i*2 + 1}.svg")
     plt.show()
@@ -164,9 +169,10 @@ for i, pdata in enumerate(pdatas):
 # Parse all the data
 pdatas = [
     parse_log_data(
-        f"../results/2019-02-09-ow-small/dns-sequence-ow-small-fpr-{fpr}.log"
+        f"../results/2019-02-11-ow-from-cw/dns-sequence-final-fpr-{fpr}.log"
+#         f"../results/2019-02-09-ow-small/dns-sequence-ow-small-fpr-{fpr}.log"
     )[0]
-    for fpr in range(10, 91, 10)
+    for fpr in range(5, 91, 5)
 ]
 
 # %%
@@ -213,20 +219,24 @@ for i, pdata in enumerate(data_per_n):
             hatch=next(hatches),
         )
         prev_values = values
-    autolabel(bars, plt)
+    precision = 1
+    if len(pdatas) > 15:
+        precision=0
+    autolabel(bars, plt, precision=precision)
 
     # CAREFUL: Those are tiny spaces around the =
     #     plt.xticks(range(1, 6), [f"k = {i}" for i in range(1, 10, 2)])
-    plt.xticks(range(1, 11), [f"{i}0%" for i in range(1, 11)])
-    plt.xlabel("FPR in OW")
-    plt.ylabel("Percent of all domains")
-    plt.title(f"At least {i} / 10 domains correctly classified")
+    xlabels = [f"{i*5}" for i in range(1, len(pdatas) + 1)]
+    plt.xticks(range(1, 1 + len(xlabels)), xlabels)
+    plt.xlabel("False Positive Rate in %")
+    plt.ylabel("Correctly classified websites in %")
+    plt.title(f"At least {i} / 10 traces correctly classified")
 
     plt.ylim(0, 100)
-    plt.xlim(0.5, 9.5)
+    plt.xlim(0.5, len(xlabels) + 0.5)
 
     plt.legend(loc="upper center", ncol=4, mode="expand")
-    #     plt.legend(loc="lower center", ncol=4, mode="expand")
+#     plt.legend(loc="lower center", ncol=4, mode="expand")
     plt.gcf().set_size_inches(7, 4)
     plt.tight_layout()
     plt.savefig(f"classification-results-per-domain-k7-n{i}.svg")
