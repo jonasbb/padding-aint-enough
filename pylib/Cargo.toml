@@ -14,5 +14,5 @@ failure = "0.1.5"
 sequences = { path = "../sequences" }
 
 [dependencies.pyo3]
-version = "0.5.3"
+version = "0.5.4"
 features = [ "python3" ]
