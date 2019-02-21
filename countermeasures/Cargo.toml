@@ -1,0 +1,10 @@
+[package]
+name = "tlsproxy"
+version = "0.1.0"
+authors = ["Jonas Bushart <jonas@bushart.org>"]
+edition = "2018"
+
+[dependencies]
+native-tls = "0.2.2"
+tokio = "0.1.15"
+tokio-tls = "0.2.1"
