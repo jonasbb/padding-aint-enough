@@ -29,4 +29,4 @@ string_cache = "0.7.3"
 [dev-dependencies]
 criterion = "0.2.10"
 min-max-heap = "1.2.2"
-pretty_assertions = "0.5.1"
+pretty_assertions = "0.6.0"
