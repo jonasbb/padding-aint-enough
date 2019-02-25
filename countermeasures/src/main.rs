@@ -3,6 +3,8 @@
 // only needed to manually implement a std future:
 #![feature(arbitrary_self_types)]
 
+mod constant_rate;
+mod error;
 mod utils;
 
 use crate::utils::backward;
