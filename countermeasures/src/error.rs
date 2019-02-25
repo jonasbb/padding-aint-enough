@@ -4,6 +4,7 @@ pub enum Error {
     Timer(tokio_timer::Error),
     Io(std::io::Error),
     AddrParseError(std::net::AddrParseError),
+    DnsParseError(trust_dns_proto::error::ProtoError),
 }
 
 impl From<tokio_timer::Error> for Error {
@@ -27,5 +28,11 @@ impl From<()> for Error {
 impl From<std::net::AddrParseError> for Error {
     fn from(error: std::net::AddrParseError) -> Self {
         Error::AddrParseError(error)
+    }
+}
+
+impl From<trust_dns_proto::error::ProtoError> for Error {
+    fn from(error: trust_dns_proto::error::ProtoError) -> Self {
+        Error::DnsParseError(error)
     }
 }

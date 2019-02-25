@@ -24,7 +24,7 @@ use std::{
 };
 use tokio::{
     await,
-    io::{copy, shutdown},
+    io::shutdown,
     net::{TcpListener, TcpStream},
     prelude::*,
 };
@@ -136,10 +136,10 @@ async fn handle_client(client: TcpStream) -> Result<(), Error> {
     let client_to_server = backward(copy_client_to_server(client_reader, server_writer))
         .and_then(|(n, _, server_writer)| shutdown(server_writer).map(move |_| n).from_err());
 
-    let server_to_client = copy(server_reader, client_writer)
-        .and_then(|(n, _, client_writer)| shutdown(client_writer).map(move |_| n));
+    let server_to_client = backward(copy_server_to_client(server_reader, client_writer))
+        .and_then(|(n, _, client_writer)| shutdown(client_writer).map(move |_| n).from_err());
 
-    let (from_client, from_server) = await!(client_to_server.join(server_to_client.from_err()))?;
+    let (from_client, from_server) = await!(client_to_server.join(server_to_client))?;
     println!(
         "client wrote {} bytes and received {} bytes",
         from_client, from_server
@@ -157,7 +157,7 @@ where
 
     let mut out = Vec::with_capacity(128 * 5);
     let dnsbytes = DnsBytesStream::new(&mut client);
-    let mut cr = ConstantRate::new(Duration::from_millis(100), dnsbytes, || DUMMY_DNS.to_vec());
+    let mut cr = ConstantRate::new(Duration::from_millis(400), dnsbytes, || DUMMY_DNS.to_vec());
     while let Some(dns) = await!(cr.next()) {
         let dns = dns?;
         out.truncate(0);
@@ -170,6 +170,37 @@ where
         server.flush()?;
     }
     Ok((total_bytes, client, server))
+}
+
+async fn copy_server_to_client<R, W>(mut server: R, mut client: W) -> Result<(u64, R, W), Error>
+where
+    R: AsyncRead,
+    W: AsyncWrite,
+{
+    let mut total_bytes = 0;
+
+    let mut out = Vec::with_capacity(128 * 5);
+    let mut dnsbytes = DnsBytesStream::new(&mut server);
+    while let Some(dns) = await!(dnsbytes.next()) {
+        let dns = dns?;
+        let msg = trust_dns_proto::op::message::Message::from_vec(&*dns)?;
+
+        // Remove all dummy messages from the responses
+        if msg.id() == 47255 {
+            continue;
+        }
+
+        out.truncate(0);
+        out.write_u16::<BigEndian>(dns.len() as u16)?;
+        out.extend_from_slice(&*dns);
+
+        // Add 2 for the length of the length header
+        total_bytes += out.len() as u64;
+        await!(tokio::io::write_all(&mut client, &mut out))?;
+        client.flush()?;
+    }
+
+    Ok((total_bytes, server, client))
 }
 
 enum DnsBytesReadState {
