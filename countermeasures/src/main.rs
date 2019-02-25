@@ -1,3 +1,5 @@
+#![deny(rust_2018_compatibility)]
+#![warn(rust_2018_idioms)]
 // enable the await! macro, async support, and the new std::Futures api.
 #![feature(await_macro, async_await, futures_api)]
 // only needed to manually implement a std future:
@@ -7,16 +9,18 @@ mod constant_rate;
 mod error;
 mod utils;
 
-use crate::utils::backward;
+use crate::{constant_rate::ConstantRate, utils::backward};
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
-use log::debug;
-use native_tls::TlsConnector;
+use error::Error;
+use log::{debug, trace};
+use rustls::{KeyLogFile, Session};
 use std::{
     env,
     fmt::Debug,
     io::{self, Read, Write},
     net::{Shutdown, SocketAddr},
     sync::{Arc, Mutex},
+    time::Duration,
 };
 use tokio::{
     await,
@@ -24,9 +28,16 @@ use tokio::{
     net::{TcpListener, TcpStream},
     prelude::*,
 };
-// use tokio_tls::TlsStream;
-use rustls::KeyLogFile;
 use tokio_rustls::TlsStream;
+
+/// DNS query for `google.com.` with padding
+const DUMMY_DNS: [u8; 128] = [
+    184, 151, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 6, 103, 111, 111, 103, 108, 101, 3, 99, 111, 109, 0, 0,
+    1, 0, 1, 0, 0, 41, 16, 0, 0, 0, 0, 0, 0, 89, 0, 12, 0, 85, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0,
+];
 
 /*
 
@@ -44,7 +55,7 @@ client -> proxy -> resolver
 
 */
 
-fn main() -> Result<(), Box<std::error::Error>> {
+fn main() -> Result<(), Error> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
 
     let listen_addr = env::args()
@@ -81,7 +92,7 @@ where
     }
 }
 
-async fn handle_client(client: TcpStream) -> io::Result<()> {
+async fn handle_client(client: TcpStream) -> Result<(), Error> {
     let server_addr = "1.1.1.1:853".parse::<SocketAddr>().unwrap();
     let server = await!(TcpStream::connect(&server_addr))?;
 
@@ -123,12 +134,12 @@ async fn handle_client(client: TcpStream) -> io::Result<()> {
     // let client_to_server = copy(client_reader, server_writer)
     //     .and_then(|(n, _, server_writer)| shutdown(server_writer).map(move |_| n));
     let client_to_server = backward(copy_client_to_server(client_reader, server_writer))
-        .and_then(|(n, _, server_writer)| shutdown(server_writer).map(move |_| n));
+        .and_then(|(n, _, server_writer)| shutdown(server_writer).map(move |_| n).from_err());
 
     let server_to_client = copy(server_reader, client_writer)
         .and_then(|(n, _, client_writer)| shutdown(client_writer).map(move |_| n));
 
-    let (from_client, from_server) = await!(client_to_server.join(server_to_client))?;
+    let (from_client, from_server) = await!(client_to_server.join(server_to_client.from_err()))?;
     println!(
         "client wrote {} bytes and received {} bytes",
         from_client, from_server
@@ -137,21 +148,25 @@ async fn handle_client(client: TcpStream) -> io::Result<()> {
     Ok(())
 }
 
-async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> io::Result<(u64, R, W)>
+async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> Result<(u64, R, W), Error>
 where
     R: AsyncRead,
     W: AsyncWrite,
 {
     let mut total_bytes = 0;
 
-    let mut dnsbytes = DnsBytesStream::new(&mut client);
-    while let Some(dns) = await!(dnsbytes.next()) {
+    let mut out = Vec::with_capacity(128 * 5);
+    let dnsbytes = DnsBytesStream::new(&mut client);
+    let mut cr = ConstantRate::new(Duration::from_millis(100), dnsbytes, || DUMMY_DNS.to_vec());
+    while let Some(dns) = await!(cr.next()) {
         let dns = dns?;
+        out.truncate(0);
+        out.write_u16::<BigEndian>(dns.len() as u16)?;
+        out.extend_from_slice(&*dns);
+
         // Add 2 for the length of the length header
-        total_bytes += 2 + dns.len() as u64;
-        // TODO write them in one go as otherwise they end up in two TLS segments
-        server.write_u16::<BigEndian>(dns.len() as u16)?;
-        server.write_all(&*dns)?;
+        total_bytes += out.len() as u64;
+        await!(tokio::io::write_all(&mut server, &mut out))?;
         server.flush()?;
     }
     Ok((total_bytes, client, server))
@@ -192,7 +207,7 @@ impl<R: AsyncRead> Stream for DnsBytesStream<R> {
     // Stream can signal that it's finished by returning `None`:
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, io::Error> {
         if self.bytes_read < self.expected_bytes {
-            debug!(
+            trace!(
                 "Read {} bytes, expects {} bytes, missing {} bytes",
                 self.bytes_read,
                 self.expected_bytes,
@@ -280,40 +295,9 @@ impl AsyncWrite for MyTcpStream {
 }
 
 // This is a custom type used to have a custom implementation of the
-// `AsyncWrite::shutdown` method which actually calls `TcpStream::shutdown` to
+// `AsyncWrite::shutdown` method which actually calls `TlsStream::shutdown` to
 // notify the remote end that we're done writing.
-#[derive(Clone)]
-struct TokioTlsStream(Arc<Mutex<tokio_tls::TlsStream<TcpStream>>>);
-
-impl Read for TokioTlsStream {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().read(buf)
-    }
-}
-
-impl Write for TokioTlsStream {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().write(buf)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.0.lock().unwrap().flush()
-    }
-}
-
-impl AsyncRead for TokioTlsStream {}
-
-impl AsyncWrite for TokioTlsStream {
-    fn shutdown(&mut self) -> Poll<(), io::Error> {
-        self.0.lock().unwrap().shutdown()?;
-        Ok(().into())
-    }
-}
-
-// This is a custom type used to have a custom implementation of the
-// `AsyncWrite::shutdown` method which actually calls `TcpStream::shutdown` to
-// notify the remote end that we're done writing.
-struct TokioRustlsStream<IO, S>(Arc<Mutex<tokio_rustls::TlsStream<IO, S>>>);
+struct TokioRustlsStream<IO, S>(Arc<Mutex<TlsStream<IO, S>>>);
 
 impl<IO, S> Clone for TokioRustlsStream<IO, S> {
     fn clone(&self) -> Self {
@@ -324,7 +308,7 @@ impl<IO, S> Clone for TokioRustlsStream<IO, S> {
 impl<IO, S> Read for TokioRustlsStream<IO, S>
 where
     IO: Read + Write,
-    S: rustls::Session,
+    S: Session,
 {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.0.lock().unwrap().read(buf)
@@ -334,7 +318,7 @@ where
 impl<IO, S> Write for TokioRustlsStream<IO, S>
 where
     IO: Read + Write,
-    S: rustls::Session,
+    S: Session,
 {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.0.lock().unwrap().write(buf)
@@ -348,14 +332,14 @@ where
 impl<IO, S> AsyncRead for TokioRustlsStream<IO, S>
 where
     IO: AsyncRead + AsyncWrite,
-    S: rustls::Session,
+    S: Session,
 {
 }
 
 impl<IO, S> AsyncWrite for TokioRustlsStream<IO, S>
 where
     IO: AsyncRead + AsyncWrite,
-    S: rustls::Session,
+    S: Session,
 {
     fn shutdown(&mut self) -> Poll<(), io::Error> {
         self.0.lock().unwrap().shutdown()?;
