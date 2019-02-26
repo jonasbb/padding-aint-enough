@@ -6,13 +6,12 @@
 #![feature(arbitrary_self_types)]
 
 mod constant_rate;
+mod dns_tcp;
 mod error;
 mod utils;
 
-use crate::{constant_rate::ConstantRate, utils::backward};
-use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
-use error::Error;
-use log::{debug, trace};
+use crate::{constant_rate::ConstantRate, dns_tcp::DnsBytesStream, error::Error, utils::backward};
+use byteorder::{BigEndian, WriteBytesExt};
 use rustls::{KeyLogFile, Session};
 use std::{
     env,
@@ -131,8 +130,6 @@ async fn handle_client(client: TcpStream) -> Result<(), Error> {
     // Copy the data (in parallel) between the client and the server.
     // After the copy is done we indicate to the remote side that we've
     // finished by shutting down the connection.
-    // let client_to_server = copy(client_reader, server_writer)
-    //     .and_then(|(n, _, server_writer)| shutdown(server_writer).map(move |_| n));
     let client_to_server = backward(copy_client_to_server(client_reader, server_writer))
         .and_then(|(n, _, server_writer)| shutdown(server_writer).map(move |_| n).from_err());
 
@@ -201,97 +198,6 @@ where
     }
 
     Ok((total_bytes, server, client))
-}
-
-enum DnsBytesReadState {
-    Length,
-    DnsMessage,
-}
-
-struct DnsBytesStream<R> {
-    read: R,
-    buf: [u8; 128 * 5],
-    bytes_read: usize,
-    expected_bytes: usize,
-    read_state: DnsBytesReadState,
-}
-
-impl<R> DnsBytesStream<R> {
-    fn new(read: R) -> Self {
-        Self {
-            read,
-            buf: [0; 128 * 5],
-            bytes_read: 0,
-            expected_bytes: 2,
-            read_state: DnsBytesReadState::Length,
-        }
-    }
-}
-
-impl<R: AsyncRead> Stream for DnsBytesStream<R> {
-    // The same as our future above:
-    type Item = Vec<u8>;
-    type Error = io::Error;
-
-    // poll is very similar to our Future implementation, except that
-    // it returns an `Option<u8>` instead of a `u8`. This is so that the
-    // Stream can signal that it's finished by returning `None`:
-    fn poll(&mut self) -> Result<Async<Option<Self::Item>>, io::Error> {
-        if self.bytes_read < self.expected_bytes {
-            trace!(
-                "Read {} bytes, expects {} bytes, missing {} bytes",
-                self.bytes_read,
-                self.expected_bytes,
-                self.expected_bytes - self.bytes_read
-            );
-            match self
-                .read
-                .poll_read(&mut self.buf[self.bytes_read..self.expected_bytes])
-            {
-                Ok(Async::Ready(n)) => {
-                    // By convention, if an AsyncRead says that it read 0 bytes,
-                    // we should assume that it has got to the end, so we signal that
-                    // the Stream is done in this case by returning None:
-                    if n == 0 {
-                        return Ok(Async::Ready(None));
-                    } else {
-                        self.bytes_read += n;
-                    }
-                }
-                Ok(Async::NotReady) => return Ok(Async::NotReady),
-                Err(e) => return Err(e),
-            }
-        }
-
-        // now that we read more, we may be able to process it
-        if self.bytes_read == self.expected_bytes {
-            match self.read_state {
-                DnsBytesReadState::Length => {
-                    let len = BigEndian::read_u16(&self.buf[0..self.expected_bytes]) as usize;
-                    debug!("Read length field: {}", len);
-
-                    // init next state
-                    self.bytes_read = 0;
-                    self.expected_bytes = len;
-                    self.read_state = DnsBytesReadState::DnsMessage;
-                    // poll again, since we might be able to make progress
-                    self.poll()
-                }
-                DnsBytesReadState::DnsMessage => {
-                    let ret = self.buf[0..self.expected_bytes].to_vec();
-                    debug!("Read DNS message");
-
-                    // init next state
-                    self.bytes_read = 0;
-                    self.expected_bytes = 2;
-                    self.read_state = DnsBytesReadState::Length;
-                    Ok(Async::Ready(Some(ret)))
-                }
-            }
-        } else {
-            Ok(Async::NotReady)
-        }
-    }
 }
 
 // This is a custom type used to have a custom implementation of the
