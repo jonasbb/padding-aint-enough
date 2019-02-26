@@ -1752,7 +1752,7 @@ dependencies = [
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustls 0.15.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio 0.1.15 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-async-await 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-async-await 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-rustls 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-timer 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "trust-dns-proto 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1769,7 +1769,7 @@ dependencies = [
  "futures 0.1.25 (registry+https://github.com/rust-lang/crates.io-index)",
  "mio 0.6.16 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio-async-await 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio-async-await 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-codec 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-current-thread 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-executor 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1786,7 +1786,7 @@ dependencies = [
 
 [[package]]
 name = "tokio-async-await"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "futures 0.1.25 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2357,7 +2357,7 @@ dependencies = [
 "checksum time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)" = "db8dcfca086c1143c9270ac42a2bbd8a7ee477b78ac8e45b19abfb0cbede4b6f"
 "checksum tinytemplate 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7655088894274afb52b807bd3c87072daa1fedd155068b8705cabfd628956115"
 "checksum tokio 0.1.15 (registry+https://github.com/rust-lang/crates.io-index)" = "e0500b88064f08bebddd0c0bed39e19f5c567a5f30975bee52b0c0d3e2eeb38c"
-"checksum tokio-async-await 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "417f9fe772648c6c49a579040d0ed0008e557ef4803f6f4eb12920c093ddd88f"
+"checksum tokio-async-await 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "8221e9db7675e145fd4ecf5d8e017be9f198fb57ce1d11c7c1b6d7d9d73181bc"
 "checksum tokio-codec 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "5c501eceaf96f0e1793cf26beb63da3d11c738c4a943fdf3746d81d64684c39f"
 "checksum tokio-current-thread 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "331c8acc267855ec06eb0c94618dcbbfea45bed2d20b77252940095273fb58f6"
 "checksum tokio-executor 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "30c6dbf2d1ad1de300b393910e8a3aa272b724a400b6531da03eed99e329fbf0"
