@@ -54,6 +54,24 @@ client -> proxy -> resolver
 
 */
 
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub enum Payload<T> {
+    Payload(T),
+    Dummy,
+}
+
+impl<T> Payload<T> {
+    pub fn unwrap_or_else<F>(self, f: F) -> T
+    where
+        F: FnOnce() -> T,
+    {
+        match self {
+            Payload::Payload(p) => p,
+            Payload::Dummy => f(),
+        }
+    }
+}
+
 fn main() -> Result<(), Error> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
 
@@ -154,9 +172,9 @@ where
 
     let mut out = Vec::with_capacity(128 * 5);
     let dnsbytes = DnsBytesStream::new(&mut client);
-    let mut cr = ConstantRate::new(Duration::from_millis(400), dnsbytes, || DUMMY_DNS.to_vec());
-    while let Some(dns) = await!(cr.next()) {
-        let dns = dns?;
+    let mut delayed = ConstantRate::new(Duration::from_millis(400), dnsbytes);
+    while let Some(dns) = await!(delayed.next()) {
+        let dns = dns?.unwrap_or_else(|| DUMMY_DNS.to_vec());
         out.truncate(0);
         out.write_u16::<BigEndian>(dns.len() as u16)?;
         out.extend_from_slice(&*dns);
