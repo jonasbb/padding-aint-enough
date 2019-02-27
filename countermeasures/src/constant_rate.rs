@@ -94,6 +94,8 @@ mod tests {
         let mut last = Instant::now();
         let mut elements_between_dummies = 0;
         let fut = cr.map_err(|_err| ()).for_each(move |x| {
+            // Remove one layer of the douple payload
+            let x = x.flatten();
             let now = Instant::now();
             println!("{:?}: {:?}", now - last, x);
             // The precision of the timer wheel is only up to 1 ms

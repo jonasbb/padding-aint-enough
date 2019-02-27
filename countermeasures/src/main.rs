@@ -72,6 +72,18 @@ impl<T> Payload<T> {
     }
 }
 
+impl<T> Payload<Payload<T>> {
+    /// Flatten two layers of [`Payload`] into one
+    pub fn flatten(self) -> Payload<T> {
+        match self {
+            Payload::Payload(Payload::Payload(p)) => {
+                Payload::Payload(p)
+            }
+            _ => Payload::Dummy
+        }
+    }
+}
+
 fn main() -> Result<(), Error> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
 
