@@ -229,7 +229,7 @@ impl Sequence {
         let mut cost = 0;
         let mut previous_row: Vec<usize> = Some(0)
             .into_iter()
-            .chain(smaller.0.iter().cloned().map(|elem| elem.insert_cost()))
+            .chain(smaller.0.iter().cloned().map(SequenceElement::insert_cost))
             .map(|c| {
                 cost += c;
                 cost

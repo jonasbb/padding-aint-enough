@@ -117,7 +117,7 @@ where
                         Ok(None)
                     }
                 })
-                .filter_map(|x| x.transpose())
+                .filter_map(Result::transpose)
                 .collect::<Result<_, _>>()?)
         })
         .collect::<Result<_, Error>>()?;

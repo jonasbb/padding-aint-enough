@@ -15,7 +15,7 @@ fn pyerr_to_error(py: Python<'_>, pyerr: &PyErr) -> Error {
         let traceback_mod = py.import("traceback").unwrap();
         traceback = traceback_mod
             .call1("format_tb", (tb,))
-            .and_then(|obj| obj.extract::<Vec<String>>())
+            .and_then(ObjectProtocol::extract)
             .ok();
     }
 

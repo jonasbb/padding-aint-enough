@@ -1,5 +1,4 @@
 #![cfg_attr(feature = "cargo-clippy", allow(renamed_and_removed_lints))]
-#![feature(try_from)]
 
 pub mod protos;
 
@@ -37,7 +36,7 @@ pub fn process_dnstap<P: AsRef<Path>>(
                 }
             }
         })
-        .filter_map(|x| x.transpose()))
+        .filter_map(Result::transpose))
 }
 
 pub fn sanity_check_dnstap(events: &[protos::Dnstap]) -> Result<(), Error> {

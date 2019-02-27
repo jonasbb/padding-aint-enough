@@ -29,7 +29,7 @@ impl<W: Write> EncoderWriter<W> {
     pub fn new(writer: W, content_type: Option<String>) -> EncoderWriter<W> {
         EncoderWriter {
             writer: Some(writer),
-            content_type: content_type,
+            content_type,
             partial: false,
             started: false,
         }

@@ -1,5 +1,3 @@
-#![feature(try_from)]
-
 mod depgraph;
 
 use crate::depgraph::DepGraph;
@@ -341,7 +339,7 @@ fn url_to_domain(url: &str) -> Result<String, Error> {
         Url::parse(&url).context("RequestInfo needs a domain name, but URL is not a valid URL.")?;
     Ok(parsed_url
         .host_str()
-        .map(|d| d.to_string())
+        .map(ToString::to_string)
         .ok_or_else(|| {
             format_err!(
                 "The URL must have a domain part, but does not. URL: '{}'",
@@ -540,7 +538,7 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
                 let ind_req = IndividualRequest::try_from(from)?;
                 Ok(RequestInfo{
                     normalized_domain_name: url_to_domain(url)?,
-                    earliest_wall_time: ind_req.wall_time.map(|v| v.into()).unwrap_or_default(),
+                    earliest_wall_time: ind_req.wall_time.map(Into::into).unwrap_or_default(),
                     requests: vec![ind_req],
                 })
            },
@@ -551,7 +549,7 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
                 let ind_req = IndividualRequest::try_from(from)?;
                 Ok(RequestInfo{
                     normalized_domain_name: url_to_domain(url)?,
-                    earliest_wall_time: ind_req.wall_time.map(|v| v.into()).unwrap_or_default(),
+                    earliest_wall_time: ind_req.wall_time.map(Into::into).unwrap_or_default(),
                     requests: vec![ind_req],
                 })
            },

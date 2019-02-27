@@ -95,7 +95,7 @@ pub fn load_all_dnstap_files_from_dir_with_config(
             }
         })
         // Remove all the empty directories from the previous step
-        .filter_map(|x| x.transpose())
+        .filter_map(Result::transpose)
         .collect::<Result<_, Error>>()?;
 
     // return all loaded data
