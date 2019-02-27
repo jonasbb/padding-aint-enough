@@ -5,12 +5,16 @@
 // only needed to manually implement a std future:
 #![feature(arbitrary_self_types)]
 
+mod adaptive_padding;
 mod constant_rate;
 mod dns_tcp;
 mod error;
 mod utils;
 
-use crate::{constant_rate::ConstantRate, dns_tcp::DnsBytesStream, error::Error, utils::backward};
+use crate::{
+    adaptive_padding::AdaptivePadding, constant_rate::ConstantRate, dns_tcp::DnsBytesStream,
+    error::Error, utils::backward,
+};
 use byteorder::{BigEndian, WriteBytesExt};
 use rustls::{KeyLogFile, Session};
 use std::{
@@ -177,14 +181,15 @@ async fn handle_client(client: TcpStream) -> Result<(), Error> {
 
 async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> Result<(u64, R, W), Error>
 where
-    R: AsyncRead,
+    R: AsyncRead + Send,
     W: AsyncWrite,
 {
     let mut total_bytes = 0;
 
     let mut out = Vec::with_capacity(128 * 5);
     let dnsbytes = DnsBytesStream::new(&mut client);
-    let mut delayed = ConstantRate::new(Duration::from_millis(400), dnsbytes);
+    // let mut delayed = ConstantRate::new(Duration::from_millis(400), dnsbytes);
+    let mut delayed = AdaptivePadding::new(dnsbytes);
     while let Some(dns) = await!(delayed.next()) {
         let dns = dns?.unwrap_or_else(|| DUMMY_DNS.to_vec());
         out.truncate(0);
@@ -196,6 +201,8 @@ where
         await!(tokio::io::write_all(&mut server, &mut out))?;
         server.flush()?;
     }
+    // Ensure client stream is available again
+    drop(delayed);
     Ok((total_bytes, client, server))
 }
 
