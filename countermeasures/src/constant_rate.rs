@@ -11,7 +11,7 @@ where
     stream: S,
 }
 
-impl<S, T, > ConstantRate<S, T>
+impl<S, T> ConstantRate<S, T>
 where
     S: Stream<Item = T>,
 {
@@ -61,9 +61,11 @@ mod tests {
     use futures::{future, stream};
     use std::time::Instant;
 
+    /// [`Duration`] of exactly 5 ms
+    const MS_5: Duration = Duration::from_millis(5);
+
     #[test]
     fn test_constant_time_ensure_time_gap() {
-        let one_ms = Duration::new(0, 1_000_000);
         let dur = Duration::new(0, 100_000_000);
         let items = stream::iter_ok::<_, ()>(0..10);
         let cr = ConstantRate::new(dur, items);
@@ -71,9 +73,9 @@ mod tests {
 
         let fut = cr.map_err(|_err| ()).for_each(move |x| {
             let now = Instant::now();
-            println!("{:?}: {:?}", now - last, x);
+            eprintln!("{:?}: {:?}", now - last, x);
             // The precision of the timer wheel is only up to 1 ms
-            assert!(now - last > (dur - one_ms));
+            assert!(now - last > (dur - MS_5), "Measured gap is lower than minimal value for constant-rate. Expected: {:?}, Found {:?}", dur-MS_5, now-last);
             last = now;
             future::ok(())
         });
@@ -83,7 +85,6 @@ mod tests {
 
     #[test]
     fn test_constant_time_insert_dummy() {
-        let one_ms = Duration::new(0, 1_000_000);
         let dur_short = Duration::new(0, 33_000_000);
         let dur_long = Duration::new(0, 100_000_000);
 
@@ -97,9 +98,9 @@ mod tests {
             // Remove one layer of the douple payload
             let x = x.flatten();
             let now = Instant::now();
-            println!("{:?}: {:?}", now - last, x);
+            eprintln!("{:?}: {:?}", now - last, x);
             // The precision of the timer wheel is only up to 1 ms
-            assert!(now - last > (dur_short - one_ms));
+            assert!(now - last > (dur_short - MS_5), "Measured gap is lower than minimal value for constant-rate. Expected: {:?}, Found {:?}", dur_short-MS_5, now-last);
             last = now;
             if x == Payload::Dummy {
                 elements_between_dummies = 0
