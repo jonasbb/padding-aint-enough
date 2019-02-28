@@ -13,6 +13,7 @@ members = [
     "countermeasures",
     "dnstap",
     "dns-sequence",
+    "extract-sequence",
     "framestream",
     "plot",
     "pylib",
