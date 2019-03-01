@@ -2,29 +2,29 @@
 #![warn(rust_2018_idioms)]
 // enable the await! macro, async support, and the new std::Futures api.
 #![feature(await_macro, async_await, futures_api)]
-// only needed to manually implement a std future:
-#![feature(arbitrary_self_types)]
+// // only needed to manually implement a std future:
+// #![feature(arbitrary_self_types)]
 
 mod adaptive_padding;
-mod constant_rate;
+// mod constant_rate;
 mod dns_tcp;
 mod error;
 mod utils;
 
 use crate::{
-    adaptive_padding::AdaptivePadding, constant_rate::ConstantRate, dns_tcp::DnsBytesStream,
-    error::Error, utils::backward,
+    adaptive_padding::AdaptivePadding, dns_tcp::DnsBytesStream, error::Error, utils::backward,
 };
 use byteorder::{BigEndian, WriteBytesExt};
 use rustls::{KeyLogFile, Session};
 use std::{
-    env,
     fmt::Debug,
     io::{self, Read, Write},
     net::{Shutdown, SocketAddr},
+    path::PathBuf,
     sync::{Arc, Mutex},
     time::Duration,
 };
+use structopt::StructOpt;
 use tokio::{
     await,
     io::shutdown,
@@ -58,6 +58,60 @@ client -> proxy -> resolver
 
 */
 
+#[derive(Clone, Debug, StructOpt)]
+#[structopt(
+    // name = "crossvalidate",
+    author = "",
+    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+)]
+struct CliArgs {
+    /// Local TCP port
+    #[structopt(
+        short = "l",
+        long = "listen",
+        default_value = "127.0.0.1:8853",
+        parse(try_from_str)
+    )]
+    listen: SocketAddr,
+
+    /// Remote DNS over TLS endpoint
+    #[structopt(
+        short = "s",
+        long = "server",
+        default_value = "1.1.1.1:853",
+        parse(try_from_str)
+    )]
+    server: SocketAddr,
+
+    /// Log all TLS keys into this file
+    #[structopt(long = "sslkeylogfile", env = "SSLKEYLOGFILE")]
+    sslkeylogfile: Option<PathBuf>,
+
+    #[structopt(subcommand)]
+    strategy: Strategy,
+}
+
+#[derive(Clone, Debug, StructOpt)]
+#[structopt(
+    rename_all = "kebab-case",
+    author = "",
+    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+)]
+enum Strategy {
+    #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
+    Constant {
+        /// The rate in which packets are send specified in ms between them
+        #[structopt(parse(try_from_str = "parse_duration_ms"))]
+        rate: Duration,
+    },
+}
+
+/// Parse a string as [`u64`], interpret it as milliseconds, and return a [`Duration`]
+fn parse_duration_ms(s: &str) -> Result<Duration, std::num::ParseIntError> {
+    let ms: u64 = s.parse()?;
+    Ok(Duration::from_millis(ms))
+}
+
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum Payload<T> {
     Payload(T),
@@ -80,34 +134,32 @@ impl<T> Payload<Payload<T>> {
     /// Flatten two layers of [`Payload`] into one
     pub fn flatten(self) -> Payload<T> {
         match self {
-            Payload::Payload(Payload::Payload(p)) => {
-                Payload::Payload(p)
-            }
-            _ => Payload::Dummy
+            Payload::Payload(Payload::Payload(p)) => Payload::Payload(p),
+            _ => Payload::Dummy,
         }
     }
 }
 
 fn main() -> Result<(), Error> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
-
-    let listen_addr = env::args()
-        .nth(1)
-        .unwrap_or_else(|| "127.0.0.1:8081".to_string());
-    let listen_addr = listen_addr.parse::<SocketAddr>()?;
-
-    let server_addr = "1.1.1.1:853".parse::<SocketAddr>()?;
+    let cli_args = CliArgs::from_args();
+    if let Some(file) = cli_args.sslkeylogfile {
+        std::env::set_var("SSLKEYLOGFILE", file.to_path_buf());
+    }
 
     // Create a TCP listener which will listen for incoming connections.
-    let socket = TcpListener::bind(&listen_addr)?;
-    println!("Listening on: {}", listen_addr);
-    println!("Proxying to: {}", server_addr);
+    let socket = TcpListener::bind(&cli_args.listen)?;
+    println!(
+        "Listening on: {}\nProxying to: {}\n",
+        cli_args.listen, cli_args.server
+    );
 
+    let server = cli_args.server;
     let done = socket
         .incoming()
         .map_err(|e| println!("error accepting socket; error = {:?}", e))
-        .for_each(|client| {
-            tokio::spawn_async(print_error(handle_client(client)));
+        .for_each(move |client| {
+            tokio::spawn_async(print_error(handle_client(client, server)));
             Ok(())
         });
 
@@ -125,8 +177,7 @@ where
     }
 }
 
-async fn handle_client(client: TcpStream) -> Result<(), Error> {
-    let server_addr = "1.1.1.1:853".parse::<SocketAddr>().unwrap();
+async fn handle_client(client: TcpStream, server_addr: SocketAddr) -> Result<(), Error> {
     let server = await!(TcpStream::connect(&server_addr))?;
 
     // // tokio_tls
