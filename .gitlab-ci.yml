@@ -10,7 +10,6 @@ variables:
   LANG: "C.UTF-8"
   LC_ALL: "C.UTF-8"
   MPLBACKEND: "Agg"
-  PATH: "$CI_PROJECT_DIR/cargo/bin:$PATH"
   PYLIB_FORCE_DEBUG: "TRUE"
   RUST_BACKTRACE: "1"
   SCCACHE_CACHE_SIZE: "5G"
@@ -19,6 +18,9 @@ variables:
 # Use cargo to test the project
 test:cargo:
   before_script:
+  # For some reason this cannot be in the variables section
+  - export PATH="$CARGO_HOME/bin:$PATH"
+
   - python3 -m pip install pipenv
 
   # Install rust tools
