@@ -1,4 +1,4 @@
-use extract_sequence::{extract_tls_records, filter_tls_records};
+use extract_sequence::{build_sequence, extract_tls_records, filter_tls_records};
 use failure::Error;
 
 fn main() {
@@ -21,7 +21,8 @@ fn run() -> Result<(), Error> {
     // generic setup
     env_logger::init();
 
-    let mut records = extract_tls_records("./tests/data/CF-constant-rate-400ms-2packets.pcap")?;
+    let file = "./tests/data/CF-constant-rate-400ms-2packets.pcap";
+    let mut records = extract_tls_records(file)?;
     records = filter_tls_records(records);
 
     // println!(
@@ -37,8 +38,13 @@ fn run() -> Result<(), Error> {
     //     .unwrap()
     // );
 
-    for r in records {
+    for r in &records {
         println!("{:?}", r);
+    }
+
+    let seq = build_sequence(records, file);
+    if let Some(seq) = seq {
+        println!("{:?}", seq);
     }
 
     Ok(())

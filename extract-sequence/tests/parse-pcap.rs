@@ -1,13 +1,19 @@
-use extract_sequence::{extract_tls_records, filter_tls_records, TlsRecord};
+use extract_sequence::{
+    build_sequence, extract_tls_records, filter_tls_records, pcap_to_sequence, TlsRecord,
+};
 use pretty_assertions::assert_eq;
+use sequences::{
+    Sequence,
+    SequenceElement::{Gap, Size},
+};
 
 #[test]
 fn test_parse_and_filter_basic() {
-    let mut expected_records: Vec<TlsRecord> = ron::de::from_str(&PCAP_BASIC_ALL).unwrap();
+    let file = "./tests/data/CF-constant-rate-400ms-2packets.pcap".to_string();
 
     // Test basic parsing of pcap
-    let mut records =
-        extract_tls_records("./tests/data/CF-constant-rate-400ms-2packets.pcap").unwrap();
+    let mut expected_records: Vec<TlsRecord> = ron::de::from_str(&PCAP_BASIC_ALL).unwrap();
+    let mut records = extract_tls_records(&*file).unwrap();
     assert_eq!(
         expected_records.len(),
         records.len(),
@@ -15,11 +21,11 @@ fn test_parse_and_filter_basic() {
     );
     assert_eq!(expected_records, records);
 
+    // Test the filtering procedure
     expected_records = PCAP_BASIC_FILTER_IDS
         .iter()
         .map(|&i| expected_records[i])
         .collect();
-    // Test the filtering procedure
     records = filter_tls_records(records);
     assert_eq!(
         expected_records.len(),
@@ -27,15 +33,28 @@ fn test_parse_and_filter_basic() {
         "Number of records must be equal"
     );
     assert_eq!(expected_records, records);
+
+    // Test building a sequence
+    let expected_sequence = Sequence::new(
+        vec![Size(1), Gap(8), Size(1), Gap(8), Size(1)],
+        file.clone(),
+    );
+    assert_eq!(
+        expected_sequence,
+        build_sequence(records, file.clone()).unwrap()
+    );
+
+    // End to end test
+    assert_eq!(expected_sequence, pcap_to_sequence(file).unwrap());
 }
 
 #[test]
 fn test_parse_and_filter_with_split_tls_record() {
-    let mut expected_records: Vec<TlsRecord> = ron::de::from_str(&PCAP_SPLIT_ALL).unwrap();
+    let file = "./tests/data/CF-constant-rate-400ms-2packets-with-fragment.pcap".to_string();
 
     // Test basic parsing of pcap
-    let mut records =
-        extract_tls_records("./tests/data/CF-constant-rate-400ms-2packets-with-fragment.pcap").unwrap();
+    let mut expected_records: Vec<TlsRecord> = ron::de::from_str(&PCAP_SPLIT_ALL).unwrap();
+    let mut records = extract_tls_records(&*file).unwrap();
     assert_eq!(
         expected_records.len(),
         records.len(),
@@ -43,11 +62,11 @@ fn test_parse_and_filter_with_split_tls_record() {
     );
     assert_eq!(expected_records, records);
 
+    // Test the filtering procedure
     expected_records = PCAP_SPLIT_FILTER_IDS
         .iter()
         .map(|&i| expected_records[i])
         .collect();
-    // Test the filtering procedure
     records = filter_tls_records(records);
     assert_eq!(
         expected_records.len(),
@@ -55,6 +74,19 @@ fn test_parse_and_filter_with_split_tls_record() {
         "Number of records must be equal"
     );
     assert_eq!(expected_records, records);
+
+    // Test building a sequence
+    let expected_sequence = Sequence::new(
+        vec![Size(1), Gap(8), Size(1), Gap(8), Size(1)],
+        file.clone(),
+    );
+    assert_eq!(
+        expected_sequence,
+        build_sequence(records, file.clone()).unwrap()
+    );
+
+    // End to end test
+    assert_eq!(expected_sequence, pcap_to_sequence(file).unwrap());
 }
 
 /// All TLS records contained in `CF-constant-rate-400ms-2packets.pcap`
@@ -200,7 +232,6 @@ const PCAP_BASIC_ALL: &str = r#"[
 ]"#;
 /// IDs of the records we want to keep after filtering [`PCAP_BASIC_ALL`]
 const PCAP_BASIC_FILTER_IDS: [usize; 3] = [11, 13, 15];
-
 
 /// All TLS records contained in `CF-constant-rate-400ms-2packets-with-split.pcap`
 ///

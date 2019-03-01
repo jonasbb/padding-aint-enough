@@ -13,6 +13,7 @@ pcap = "0.7.0"
 pnet = { version = "0.22.0", features = [ "pcap" ] }
 ron = "0.4.1"
 rustls = "0.15.1"
+sequences = { path = "../sequences" }
 serde = { version = "1.0.88", features = [ "derive" ] }
 
 [dev-dependencies]

@@ -494,6 +494,7 @@ dependencies = [
  "pretty_assertions 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ron 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustls 0.15.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sequences 0.1.0",
  "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

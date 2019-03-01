@@ -6,6 +6,7 @@ use pnet::packet::{ethernet::EthernetPacket, ipv4::Ipv4Packet, tcp::TcpPacket, P
 use rustls::internal::msgs::{
     codec::Codec, enums::ContentType as TlsContentType, message::Message as TlsMessage,
 };
+use sequences::{AbstractQueryResponse, Sequence};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, net::Ipv4Addr, path::Path};
 
@@ -46,6 +47,30 @@ pub struct TlsRecord {
     pub time: NaiveDateTime,
     pub message_type: MessageType,
     pub message_length: u32,
+}
+
+impl Into<AbstractQueryResponse> for &TlsRecord {
+    fn into(self) -> AbstractQueryResponse {
+        AbstractQueryResponse {
+            time: self.time,
+            // Substract some overhead from the TLS encryption
+            size: self.message_length - 40,
+        }
+    }
+}
+
+pub fn pcap_to_sequence(file: impl AsRef<Path>) -> Result<Sequence, Error> {
+    let file = file.as_ref();
+    let mut records = extract_tls_records(&file)?;
+    records = filter_tls_records(records);
+
+    let seq = build_sequence(records, file.to_string_lossy());
+    seq.ok_or_else(|| {
+        format_err!(
+            "No DNS communication found in the PCAP `{}`",
+            file.display()
+        )
+    })
 }
 
 pub fn extract_tls_records(file: impl AsRef<Path>) -> Result<Vec<TlsRecord>, Error> {
@@ -207,4 +232,15 @@ pub fn filter_tls_records(records: Vec<TlsRecord>) -> Vec<TlsRecord> {
         })
         .filter(|rec| rec.sender == server && rec.port == server_port)
         .collect()
+}
+
+pub fn build_sequence<S>(records: Vec<TlsRecord>, identifier: S) -> Option<Sequence>
+where
+    S: Into<String>,
+{
+    sequences::convert_to_sequence(
+        &records,
+        identifier.into(),
+        sequences::LoadDnstapConfig::Normal,
+    )
 }
