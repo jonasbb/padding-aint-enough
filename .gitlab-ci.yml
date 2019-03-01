@@ -1,56 +1,57 @@
-# Official language image. Look for the different tagged releases at:
-# https://hub.docker.com/r/library/rust/tags/
-image: "rust:latest"
+image: "projects.cispa.saarland:5005/bushart/docker/rust-ci:master"
 
 cache:
   paths:
   - cargo
 
 variables:
-  RUST_BACKTRACE: "1"
-  GIT_DEPTH: "3"
   CARGO_HOME: "$CI_PROJECT_DIR/cargo"
-  MPLBACKEND: "Agg"
-  LC_ALL: "C.UTF-8"
+  GIT_DEPTH: "3"
   LANG: "C.UTF-8"
+  LC_ALL: "C.UTF-8"
+  MPLBACKEND: "Agg"
+  PATH: "$CI_PROJECT_DIR/cargo/bin:$PATH"
   PYLIB_FORCE_DEBUG: "TRUE"
+  RUST_BACKTRACE: "1"
+  SCCACHE_CACHE_SIZE: "5G"
+  SCCACHE_DIR: "/sccache"
 
 # Use cargo to test the project
 test:cargo:
   before_script:
-  - echo "deb http://ftp.de.debian.org/debian testing main" >> /etc/apt/sources.list
-  - apt-get update
-  - apt-get install -y protobuf-compiler xvfb libssl1.0-dev libpcap-dev
-  - apt-get -t testing -y install python3.7 python3.7-dev python3-ipython python3-matplotlib python3-numpy python3-pip python3-pandas libboost-all-dev
-  - update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
-  - update-alternatives --set python3 `which python3.7`
   - python3 -m pip install pipenv
 
   # Install rust tools
-  - export PATH="$CARGO_HOME"/bin:"$PATH"
   - which cargo-install-update || cargo install cargo-update
   - cargo install-update --allow-no-update sccache
+  # This may only be set AFTER installing sccache
   - export RUSTC_WRAPPER="sccache"
-  - export SCCACHE_CACHE_SIZE="5G"
-  - export SCCACHE_DIR="/sccache"
   # Update all tools
   - cargo install-update -a
+
   script:
+  # Print version info for debugging
   - python3 --version
+  - rustc --version
+  - cargo --version
+
   - pipenv install --dev --verbose
   - pipenv run pip freeze
-  - rustc --version && cargo --version      # Print version info for debugging
+
   # Remove debug build optimizations for third-party crates
   # They are usefull for local development, as this crates more optimized debug binaries
   # but makes CI very slow
   - sed -i '/profile.dev.overrides./,+1 d' Cargo.toml
   - sed -i '/profile.dev.build-override/,+1 d' Cargo.toml
-  - cargo build --all --verbose
-  - cargo test --all --verbose
+
+  - cargo build --all
+  - cargo test --all
   - sccache --show-stats
+
   # start pipenv virtual environment
   - source $(pipenv --venv)/bin/activate
   # Test pylib build
   - pushd pylib && python3 ./setup.py install && popd
   - python3 -c "import pylib; help(pylib)"
+
   - sccache --show-stats
