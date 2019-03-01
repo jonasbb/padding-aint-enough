@@ -8,9 +8,10 @@ pub use crate::utils::{
     load_all_dnstap_files_from_dir, load_all_dnstap_files_from_dir_with_config,
 };
 use crate::{common_sequence_classifications::*, constants::*};
-use chrono::{self, DateTime, Utc};
+use chrono::{self, DateTime, NaiveDateTime, Utc};
 use failure::{self, Error};
 use lazy_static::lazy_static;
+pub use load_sequence::convert_to_sequence;
 use misc_utils::{self, Min};
 use serde::{self, Deserialize, Serialize};
 use std::{
@@ -76,6 +77,29 @@ pub mod common_sequence_classifications {
     pub const R105D: &str = "R105D Five Domain requests.";
     pub const R105E: &str = "R105E Five Domain requests.";
     pub const R106A: &str = "R106A Five Domain requests. No gaps.";
+}
+
+/// Interaperability type used when building sequences
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub struct AbstractQueryResponse {
+    pub time: NaiveDateTime,
+    pub size: u32,
+}
+
+impl From<&AbstractQueryResponse> for AbstractQueryResponse {
+    fn from(other: &AbstractQueryResponse) -> Self {
+        *other
+    }
+}
+
+
+impl From<&Query> for AbstractQueryResponse {
+    fn from(other: &Query) -> Self {
+        AbstractQueryResponse {
+            time: other.end.naive_utc(),
+            size: other.response_size,
+        }
+    }
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]

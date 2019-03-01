@@ -1,5 +1,6 @@
 use crate::{
-    LoadDnstapConfig, MatchKey, Query, QuerySource, Sequence, SequenceElement, UnmatchedClientQuery,
+    AbstractQueryResponse, LoadDnstapConfig, MatchKey, Query, QuerySource, Sequence,
+    SequenceElement, UnmatchedClientQuery,
 };
 use chrono::Duration;
 use dnstap::{
@@ -189,27 +190,34 @@ pub fn dnstap_to_sequence_with_config(
 /// Takes a list of Queries and returns a Sequence
 ///
 /// The functions abstracts over some details of Queries, such as absolute size and absolute time.
-fn convert_to_sequence(
-    data: &[Query],
+/// The function only returns [`None`], if the input sequence is empty.
+pub fn convert_to_sequence<'a, QR>(
+    data: &'a [QR],
     identifier: String,
     config: LoadDnstapConfig,
-) -> Option<Sequence> {
+) -> Option<Sequence>
+where
+    QR: 'a,
+    &'a QR: Into<AbstractQueryResponse>,
+{
     let base_gap_size = Duration::microseconds(1000);
 
     if data.is_empty() {
         return None;
     }
 
-    let mut last_end = None;
+    let mut last_time = None;
     Some(Sequence::new(
         data.iter()
             .flat_map(|d| {
+                let d: AbstractQueryResponse = d.into();
+
                 let mut gap = None;
-                if let Some(last_end) = last_end {
-                    gap = gap_size(d.end - last_end, base_gap_size);
+                if let Some(last_end) = last_time {
+                    gap = gap_size(d.time - last_end, base_gap_size);
                 }
 
-                let mut size = Some(pad_size(d.response_size, false, Padding::Q128R468));
+                let mut size = Some(pad_size(d.size, false, Padding::Q128R468));
 
                 // The config allows us to remove either Gap or Size
                 match config {
@@ -219,7 +227,7 @@ fn convert_to_sequence(
 
                         // If `last_end` is set, then there was a previous message, so we need to add a gap
                         // Only add a gap, if there is not one already
-                        if last_end.is_some() && gap.is_none() {
+                        if last_time.is_some() && gap.is_none() {
                             gap = Some(SequenceElement::Gap(0));
                         }
                         size = None;
@@ -230,7 +238,7 @@ fn convert_to_sequence(
                 }
 
                 // Mark this as being not the first iteration anymore
-                last_end = Some(d.end);
+                last_time = Some(d.time);
 
                 gap.into_iter().chain(size)
             })
