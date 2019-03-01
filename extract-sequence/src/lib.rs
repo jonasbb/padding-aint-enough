@@ -10,6 +10,7 @@ use sequences::{AbstractQueryResponse, Sequence};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, net::Ipv4Addr, path::Path};
 
+/// Identifier for a one-way TCP flow
 type FlowId = (Ipv4Addr, u16);
 
 /// Enum representing the different TLS record types.
@@ -39,13 +40,24 @@ impl From<TlsContentType> for MessageType {
     }
 }
 
+/// Abstract representation of a TlsRecord within a pcap file
+///
+/// This contains the necessary information to build a [`Sequence`] and to map them back to the pcap for debugging using wireshark.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]
 pub struct TlsRecord {
+    /// ID of the containing packet within the pcap
+    ///
+    /// Start at 1
     pub packet_in_pcap: u32,
+    /// IPv4 Address of the sender
     pub sender: Ipv4Addr,
+    /// TCP port of the sender
     pub port: u16,
+    /// Time in Utc when the packet was captures
     pub time: NaiveDateTime,
+    /// The TLS record type
     pub message_type: MessageType,
+    /// Payload size of the TLS record
     pub message_length: u32,
 }
 
@@ -59,6 +71,9 @@ impl Into<AbstractQueryResponse> for &TlsRecord {
     }
 }
 
+/// Extract a [`Sequence`] from the path to a pcap file.
+///
+/// Error conditions include unsupported pcaps, e.g., too fragmented records, or pcaps without DNS content.
 pub fn pcap_to_sequence(file: impl AsRef<Path>) -> Result<Sequence, Error> {
     let file = file.as_ref();
     let mut records = extract_tls_records(&file)?;
@@ -73,6 +88,9 @@ pub fn pcap_to_sequence(file: impl AsRef<Path>) -> Result<Sequence, Error> {
     })
 }
 
+/// First step in processing a pcap file, extracting *all* Tls records
+///
+/// This extracts all Tls records from the pcap file, from both client and server.
 pub fn extract_tls_records(file: impl AsRef<Path>) -> Result<Vec<TlsRecord>, Error> {
     let file = file.as_ref();
     let mut capture = Capture::from_file(file)?;
@@ -190,6 +208,10 @@ pub fn extract_tls_records(file: impl AsRef<Path>) -> Result<Vec<TlsRecord>, Err
     Ok(tls_records)
 }
 
+/// Filter a list of TLS records and only return *interesting* ones
+///
+/// The interesting TLS records are those needed to build the feature set.
+/// This means only those containing DNS traffic and maybe only the client or server.
 pub fn filter_tls_records(records: Vec<TlsRecord>) -> Vec<TlsRecord> {
     let server = Ipv4Addr::new(1, 1, 1, 1);
     let server_port = 853;
@@ -234,6 +256,9 @@ pub fn filter_tls_records(records: Vec<TlsRecord>) -> Vec<TlsRecord> {
         .collect()
 }
 
+/// Given a list of pre-filtered TLS records, build a [`Sequence`] with them
+///
+/// For filtering the list of [`TlsRecord`]s see the [`filter_tls_records`].
 pub fn build_sequence<S>(records: Vec<TlsRecord>, identifier: S) -> Option<Sequence>
 where
     S: Into<String>,
