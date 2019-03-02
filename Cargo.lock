@@ -492,7 +492,7 @@ dependencies = [
  "pcap 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pnet 0.22.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pretty_assertions 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "ron 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ron 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustls 0.15.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "sequences 0.1.0",
  "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1475,7 +1475,7 @@ dependencies = [
 
 [[package]]
 name = "ron"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2526,7 +2526,7 @@ dependencies = [
 "checksum regex-syntax 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)" = "8c2f35eedad5295fdf00a63d7d4b238135723f92b434ec06774dad15c7ab0861"
 "checksum remove_dir_all 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "3488ba1b9a2084d38645c4c08276a1752dcbf2c7130d74f1569681ad5d2799c5"
 "checksum ring 0.14.6 (registry+https://github.com/rust-lang/crates.io-index)" = "426bc186e3e95cac1e4a4be125a4aca7e84c2d616ffc02244eef36e2a60a093c"
-"checksum ron 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "d9cb28ade964585205aaca1f3d41a6297f72e1ad097b49c4bbde033ef86b38d7"
+"checksum ron 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)" = "17f52a24414403f81528b67488cf8edc4eda977d3af1646bb6b106a600ead78f"
 "checksum rustc-demangle 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "adacaae16d02b6ec37fdc7acfcddf365978de76d1983d3ee22afc260e1ca9619"
 "checksum rustc-serialize 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)" = "dcf128d1287d2ea9d80910b5f1120d0b8eede3fbf1abe91c40d39ea7d51e6fda"
 "checksum rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "138e3e0acb6c9fb258b19b67cb8abd63c00679d2851805ea151465464fe9030a"
