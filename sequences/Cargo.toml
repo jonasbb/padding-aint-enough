@@ -22,7 +22,7 @@ misc_utils = "2.3.1"
 num-traits = "0.2.6"
 ordered-float = { version = "1.0.1", features = [ "serde" ] }
 rayon = "1.0.3"
-serde = { version = "1.0.88", features = [ "derive" ] }
+serde = { version = "1.0.89", features = [ "derive" ] }
 serde_with = "1.1.0"
 string_cache = "0.7.3"
 
