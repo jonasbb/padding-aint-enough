@@ -14,7 +14,7 @@ pnet = { version = "0.22.0", features = [ "pcap" ] }
 ron = "0.4.1"
 rustls = "0.15.1"
 sequences = { path = "../sequences" }
-serde = { version = "1.0.88", features = [ "derive" ] }
+serde = { version = "1.0.89", features = [ "derive" ] }
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"

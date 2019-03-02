@@ -20,7 +20,7 @@ misc_utils = "2.3.1"
 openssl = "*"
 rayon = "1.0.3"
 sequences = { path = "../sequences" }
-serde = { version = "1.0.88", features = [ "derive" ] }
+serde = { version = "1.0.89", features = [ "derive" ] }
 serde_json = "1.0.38"
 structopt = "0.2.14"
 tempfile = "3.0.7"
