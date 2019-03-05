@@ -1,5 +1,25 @@
+use colored::Colorize;
 use extract_sequence::{build_sequence, extract_tls_records, filter_tls_records};
 use failure::Error;
+use structopt::StructOpt;
+
+#[derive(Clone, Debug, StructOpt)]
+#[structopt(
+    author = "",
+    raw(
+        // Enable color output for the help
+        setting = "structopt::clap::AppSettings::ColoredHelp",
+        // Print help, if no arguments are given
+        setting = "structopt::clap::AppSettings::ArgRequiredElseHelp"
+    )
+)]
+struct CliArgs {
+    #[structopt(short = "v", long = "verbose")]
+    verbose: bool,
+    /// List of PCAP files
+    #[structopt(name = "PCAPS")]
+    pcap_files: Vec<String>,
+}
 
 fn main() {
     use std::io::{self, Write};
@@ -20,31 +40,45 @@ fn main() {
 fn run() -> Result<(), Error> {
     // generic setup
     env_logger::init();
+    let cli_args = CliArgs::from_args();
 
-    let file = "./tests/data/CF-constant-rate-400ms-2packets.pcap";
-    let mut records = extract_tls_records(file)?;
-    records = filter_tls_records(records);
+    for file in cli_args.pcap_files {
+        println!("{}{}", "Processing file: ".bold(), file);
 
-    // println!(
-    //     "{}",
-    //     ron::ser::to_string_pretty(
-    //         &records,
-    //         ron::ser::PrettyConfig {
-    //             enumerate_arrays: true,
-    //             depth_limit: 3,
-    //             ..Default::default()
-    //         }
-    //     )
-    //     .unwrap()
-    // );
+        // let file = "./tests/data/CF-constant-rate-400ms-2packets.pcap";
+        let mut records = extract_tls_records(&file)?;
 
-    for r in &records {
-        println!("{:?}", r);
-    }
+        // If verbose show all records in RON notation
+        if cli_args.verbose {
+            println!(
+                "{}\n{}\n",
+                "List of all TLS records in RON notation:".underline(),
+                ron::ser::to_string_pretty(
+                    &records,
+                    ron::ser::PrettyConfig {
+                        enumerate_arrays: true,
+                        ..Default::default()
+                    }
+                )
+                .unwrap()
+            );
+        }
 
-    let seq = build_sequence(records, file);
-    if let Some(seq) = seq {
-        println!("{:?}", seq);
+        // Filter to only those records containing DNS
+        records = filter_tls_records(records);
+        println!("{}", "TLS Records with DNS responses:".underline());
+        for r in &records {
+            println!("{:?}", r);
+        }
+
+        // Build final Sequence
+        let seq = build_sequence(records, file);
+        println!("\n{}", "Final DNS Sequence:".underline());
+        if let Some(seq) = seq {
+            println!("{:?}", seq);
+        }
+
+        println!();
     }
 
     Ok(())
