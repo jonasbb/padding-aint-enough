@@ -5,33 +5,26 @@
 // // only needed to manually implement a std future:
 // #![feature(arbitrary_self_types)]
 
-mod adaptive_padding;
-// mod constant_rate;
-mod dns_tcp;
-mod error;
-mod utils;
-
-use crate::{
-    adaptive_padding::AdaptivePadding, dns_tcp::DnsBytesStream, error::Error, utils::backward,
-};
 use byteorder::{BigEndian, WriteBytesExt};
-use rustls::{KeyLogFile, Session};
+use failure::Fail;
+use rustls::KeyLogFile;
 use std::{
-    fmt::Debug,
-    io::{self, Read, Write},
-    net::{Shutdown, SocketAddr},
+    net::SocketAddr,
     path::PathBuf,
     sync::{Arc, Mutex},
     time::Duration,
 };
 use structopt::StructOpt;
+use tlsproxy::{
+    parse_duration_ms, print_error, utils::backward, AdaptivePadding, DnsBytesStream, Error,
+    MyTcpStream, TokioRustlsStream,
+};
 use tokio::{
     await,
     io::shutdown,
     net::{TcpListener, TcpStream},
     prelude::*,
 };
-use tokio_rustls::TlsStream;
 
 /// DNS query for `google.com.` with padding
 const DUMMY_DNS: [u8; 128] = [
@@ -106,41 +99,26 @@ enum Strategy {
     },
 }
 
-/// Parse a string as [`u64`], interpret it as milliseconds, and return a [`Duration`]
-fn parse_duration_ms(s: &str) -> Result<Duration, std::num::ParseIntError> {
-    let ms: u64 = s.parse()?;
-    Ok(Duration::from_millis(ms))
-}
+fn main() {
+    use std::io::{self, Write};
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-pub enum Payload<T> {
-    Payload(T),
-    Dummy,
-}
-
-impl<T> Payload<T> {
-    pub fn unwrap_or_else<F>(self, f: F) -> T
-    where
-        F: FnOnce() -> T,
-    {
-        match self {
-            Payload::Payload(p) => p,
-            Payload::Dummy => f(),
+    if let Err(err) = run() {
+        let stderr = io::stderr();
+        let mut out = stderr.lock();
+        // cannot handle a write error here, we are already in the outermost layer
+        let _ = writeln!(out, "An error occured:");
+        for fail in Fail::iter_chain(&err) {
+            let _ = writeln!(out, "  {}", fail);
         }
+        if let Some(backtrace) = err.backtrace() {
+            let _ = writeln!(out, "{}", backtrace);
+        }
+        std::process::exit(1);
     }
 }
 
-impl<T> Payload<Payload<T>> {
-    /// Flatten two layers of [`Payload`] into one
-    pub fn flatten(self) -> Payload<T> {
-        match self {
-            Payload::Payload(Payload::Payload(p)) => Payload::Payload(p),
-            _ => Payload::Dummy,
-        }
-    }
-}
-
-fn main() -> Result<(), Error> {
+fn run() -> Result<(), Error> {
+    // generic setup
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
     let cli_args = CliArgs::from_args();
     if let Some(file) = cli_args.sslkeylogfile {
@@ -167,25 +145,9 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-async fn print_error<F, T, E>(future: F)
-where
-    F: std::future::Future<Output = Result<T, E>>,
-    E: Debug,
-{
-    if let Err(err) = await!(future) {
-        eprintln!("{:?}", err);
-    }
-}
-
 async fn handle_client(client: TcpStream, server_addr: SocketAddr) -> Result<(), Error> {
     let server = await!(TcpStream::connect(&server_addr))?;
 
-    // // tokio_tls
-    // let cx = TlsConnector::builder().build().unwrap();
-    // let server = await!(tokio_tls::TlsConnector::from(cx)
-    //     .connect("cloudflare-dns.com", server)
-    //     .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err)))?;
-    // tokio_rustls
     let mut config = rustls::ClientConfig::new();
     config
         .root_store
@@ -207,9 +169,9 @@ async fn handle_client(client: TcpStream, server_addr: SocketAddr) -> Result<(),
     //
     // As a result, we wrap up our client/server manually in arcs and
     // use the impls below on our custom `MyTcpStream` type.
-    let client_reader = MyTcpStream(Arc::new(Mutex::new(client)));
+    let client_reader = MyTcpStream::new(Arc::new(Mutex::new(client)));
     let client_writer = client_reader.clone();
-    let server_reader = TokioRustlsStream(Arc::new(Mutex::new(server)));
+    let server_reader = TokioRustlsStream::new(Arc::new(Mutex::new(server)));
     let server_writer = server_reader.clone();
 
     // Copy the data (in parallel) between the client and the server.
@@ -264,7 +226,7 @@ where
 {
     let mut total_bytes = 0;
 
-    let mut out = Vec::with_capacity(128 * 5);
+    let mut out = Vec::with_capacity(468 * 5);
     let mut dnsbytes = DnsBytesStream::new(&mut server);
     while let Some(dns) = await!(dnsbytes.next()) {
         let dns = dns?;
@@ -286,88 +248,4 @@ where
     }
 
     Ok((total_bytes, server, client))
-}
-
-// This is a custom type used to have a custom implementation of the
-// `AsyncWrite::shutdown` method which actually calls `TcpStream::shutdown` to
-// notify the remote end that we're done writing.
-#[derive(Clone)]
-struct MyTcpStream(Arc<Mutex<TcpStream>>);
-
-impl Read for MyTcpStream {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().read(buf)
-    }
-}
-
-impl Write for MyTcpStream {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().write(buf)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.0.lock().unwrap().flush()
-    }
-}
-
-impl AsyncRead for MyTcpStream {}
-
-impl AsyncWrite for MyTcpStream {
-    fn shutdown(&mut self) -> Poll<(), io::Error> {
-        self.0.lock().unwrap().shutdown(Shutdown::Write)?;
-        Ok(().into())
-    }
-}
-
-// This is a custom type used to have a custom implementation of the
-// `AsyncWrite::shutdown` method which actually calls `TlsStream::shutdown` to
-// notify the remote end that we're done writing.
-struct TokioRustlsStream<IO, S>(Arc<Mutex<TlsStream<IO, S>>>);
-
-impl<IO, S> Clone for TokioRustlsStream<IO, S> {
-    fn clone(&self) -> Self {
-        TokioRustlsStream(self.0.clone())
-    }
-}
-
-impl<IO, S> Read for TokioRustlsStream<IO, S>
-where
-    IO: Read + Write,
-    S: Session,
-{
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().read(buf)
-    }
-}
-
-impl<IO, S> Write for TokioRustlsStream<IO, S>
-where
-    IO: Read + Write,
-    S: Session,
-{
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().write(buf)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.0.lock().unwrap().flush()
-    }
-}
-
-impl<IO, S> AsyncRead for TokioRustlsStream<IO, S>
-where
-    IO: AsyncRead + AsyncWrite,
-    S: Session,
-{
-}
-
-impl<IO, S> AsyncWrite for TokioRustlsStream<IO, S>
-where
-    IO: AsyncRead + AsyncWrite,
-    S: Session,
-{
-    fn shutdown(&mut self) -> Poll<(), io::Error> {
-        self.0.lock().unwrap().shutdown()?;
-        Ok(().into())
-    }
 }
