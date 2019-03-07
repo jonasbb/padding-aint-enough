@@ -15,10 +15,11 @@ pub use crate::{
     adaptive_padding::AdaptivePadding, constant_rate::ConstantRate, dns_tcp::DnsBytesStream,
     error::Error,
 };
+use failure::Fail;
 use log::{error, warn};
 use rustls::Session;
 use std::{
-    fmt::{self, Debug, Display},
+    fmt::{self, Display},
     fs::OpenOptions,
     io::{self, Read, Write},
     net::{Shutdown, SocketAddr, ToSocketAddrs},
@@ -278,10 +279,19 @@ fn test_function_has_correct_type() {
 pub async fn print_error<F, T, E>(future: F)
 where
     F: std::future::Future<Output = Result<T, E>>,
-    E: Debug,
+    E: Fail,
 {
+    use std::fmt::Write;
+
     if let Err(err) = await!(future) {
-        error!("{:?}", err);
+        let mut msg = String::new();
+        for fail in Fail::iter_chain(&err) {
+            let _ = writeln!(&mut msg, "{}", fail);
+        }
+        if let Some(backtrace) = err.backtrace() {
+            let _ = writeln!(&mut msg, "{}", backtrace);
+        };
+        error!("{}", msg);
     }
 }
 
