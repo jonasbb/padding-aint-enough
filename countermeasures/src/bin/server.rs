@@ -7,9 +7,12 @@
 
 use byteorder::{BigEndian, WriteBytesExt};
 use failure::Fail;
-use rustls::KeyLogFile;
+use openssl::{
+    pkey::PKey,
+    ssl::{SslAcceptor, SslConnector, SslMethod, SslOptions, SslVerifyMode, SslVersion},
+    x509::X509,
+};
 use std::{
-    io::Cursor,
     net::SocketAddr,
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -18,7 +21,7 @@ use std::{
 use structopt::StructOpt;
 use tlsproxy::{
     parse_duration_ms, print_error, utils::backward, ConstantRate, DnsBytesStream, Error,
-    TokioRustlsStream, SERVER_CERT, SERVER_KEY,
+    HostnameSocketAddr, TokioOpensslStream, SERVER_CERT, SERVER_KEY,
 };
 use tokio::{
     await,
@@ -26,7 +29,7 @@ use tokio::{
     net::{TcpListener, TcpStream},
     prelude::*,
 };
-use tokio_rustls::TlsAcceptor;
+use tokio_openssl::{SslAcceptorExt, SslConnectorExt};
 
 const DUMMY_DNS_REPLY: [u8; 468] = [
     /*0x01, 0xd4,*/ 0x0a, 0xa6, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
@@ -87,7 +90,7 @@ struct CliArgs {
         default_value = "1.1.1.1:853",
         parse(try_from_str)
     )]
-    server: SocketAddr,
+    server: HostnameSocketAddr,
 
     /// Log all TLS keys into this file
     #[structopt(long = "sslkeylogfile", env = "SSLKEYLOGFILE")]
@@ -136,7 +139,7 @@ fn run() -> Result<(), Error> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_settings))
         .init();
     let cli_args = CliArgs::from_args();
-    if let Some(file) = cli_args.sslkeylogfile {
+    if let Some(file) = &cli_args.sslkeylogfile {
         std::env::set_var("SSLKEYLOGFILE", file.to_path_buf());
     }
 
@@ -147,21 +150,22 @@ fn run() -> Result<(), Error> {
         cli_args.listen, cli_args.server
     );
 
-    let server = cli_args.server;
+    let mut acceptor = SslAcceptor::mozilla_intermediate(SslMethod::tls())?;
+    acceptor.set_verify(SslVerifyMode::NONE);
+    acceptor.set_certificate(X509::from_pem(SERVER_CERT)?.as_ref())?;
+    acceptor.set_private_key(PKey::private_key_from_pem(SERVER_KEY)?.as_ref())?;
+    let acceptor = acceptor.build();
 
-    let mut config = rustls::ServerConfig::new(rustls::NoClientAuth::new());
-    let certs = rustls::internal::pemfile::certs(&mut Cursor::new(SERVER_CERT)).unwrap();
-    let mut keys =
-        rustls::internal::pemfile::pkcs8_private_keys(&mut Cursor::new(SERVER_KEY)).unwrap();
-    assert_eq!(1, keys.len(), "Only one key should be specified");
-    config.set_single_cert(certs, keys.pop().unwrap())?;
-    let config = TlsAcceptor::from(Arc::new(config));
-
+    let config = Arc::new(cli_args);
     let done = socket
         .incoming()
         .map_err(|e| println!("error accepting socket; error = {:?}", e))
         .for_each(move |client| {
-            tokio::spawn_async(print_error(handle_client(client, config.clone(), server)));
+            tokio::spawn_async(print_error(handle_client(
+                config.clone(),
+                client,
+                acceptor.clone(),
+            )));
             Ok(())
         });
 
@@ -170,26 +174,26 @@ fn run() -> Result<(), Error> {
 }
 
 async fn handle_client(
+    config: Arc<CliArgs>,
     client: TcpStream,
-    acceptor: TlsAcceptor,
-    server_addr: SocketAddr,
+    acceptor: SslAcceptor,
 ) -> Result<(), Error> {
     // Setup TLS to client
-    let client = await!(acceptor.accept(client))?;
+    client.set_nodelay(true)?;
+    let client = await!(acceptor.accept_async(client))?;
 
-    let server = await!(TcpStream::connect(&server_addr))?;
-    let mut config = rustls::ClientConfig::new();
-    config
-        .root_store
-        .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
-    config.key_log = Arc::new(KeyLogFile::new());
-    let server = await!(tokio_rustls::TlsConnector::from(Arc::new(config))
-        .connect(
-            // FIXME we need a hostname here, so instead of a SocketAddr, we need something which carries a hostname
-            webpki::DNSNameRef::try_from_ascii_str("cloudflare-dns.com").unwrap(),
-            server
-        )
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err)))?;
+    // TODO only build TLS stream if port is 853
+    let server = await!(TcpStream::connect(&config.server.socket_addr()))?;
+    server.set_nodelay(true)?;
+    let mut connector = SslConnector::builder(SslMethod::tls())?;
+    connector.set_min_proto_version(Some(SslVersion::TLS1_2))?;
+    connector.set_options(SslOptions::NO_COMPRESSION);
+    if let Some(logfile) = std::env::var_os("SSLKEYLOGFILE") {
+        let cb = tlsproxy::keylog_to_file(logfile);
+        connector.set_keylog_callback(cb);
+    }
+    let connector = connector.build();
+    let server = await!(connector.connect_async(&config.server.hostname(), server))?;
 
     // Create separate read/write handles for the TCP clients that we're
     // proxying data between. Note that typically you'd use
@@ -200,9 +204,9 @@ async fn handle_client(
     //
     // As a result, we wrap up our client/server manually in arcs and
     // use the impls below on our custom `MyTcpStream` type.
-    let client_reader = TokioRustlsStream::new(Arc::new(Mutex::new(client)));
+    let client_reader = TokioOpensslStream::new(Arc::new(Mutex::new(client)));
     let client_writer = client_reader.clone();
-    let server_reader = TokioRustlsStream::new(Arc::new(Mutex::new(server)));
+    let server_reader = TokioOpensslStream::new(Arc::new(Mutex::new(server)));
     let server_writer = server_reader.clone();
 
     // Copy the data (in parallel) between the client and the server.
