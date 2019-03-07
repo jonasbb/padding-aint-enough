@@ -17,7 +17,6 @@ pub use crate::{
 };
 use failure::Fail;
 use log::{error, warn};
-use rustls::Session;
 use std::{
     fmt::{self, Display},
     fs::OpenOptions,
@@ -29,7 +28,6 @@ use std::{
     time::Duration,
 };
 use tokio::{await, net::TcpStream, prelude::*};
-use tokio_rustls::TlsStream;
 
 /// Self Signed server certificate in PEM format
 pub const SERVER_CERT: &[u8] = include_bytes!("../cert.pem");
@@ -370,6 +368,7 @@ impl AsyncWrite for MyTcpStream {
     }
 }
 
+/*
 // This is a custom type used to have a custom implementation of the
 // `AsyncWrite::shutdown` method which actually calls `TlsStream::shutdown` to
 // notify the remote end that we're done writing.
@@ -428,6 +427,7 @@ where
         Ok(().into())
     }
 }
+*/
 
 // This is a custom type used to have a custom implementation of the
 // `AsyncWrite::shutdown` method which actually calls `TlsStream::shutdown` to

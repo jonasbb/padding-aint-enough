@@ -13,8 +13,10 @@ pub enum Error {
     AddrParseError(#[fail(cause)] std::net::AddrParseError, Backtrace),
     #[fail(display = "Invalid DNS message: {}", _0)]
     DnsParseError(#[fail(cause)] trust_dns_proto::error::ProtoError, Backtrace),
+    /*
     #[fail(display = "TLS error: {}", _0)]
     TlsError(#[fail(cause)] rustls::TLSError, Backtrace),
+    */
     #[fail(display = "OpenSSL error: {}", _0)]
     OpensslError(#[fail(cause)] openssl::error::ErrorStack, Backtrace),
     #[fail(display = "OpenSSL Handshake error: {}", _0)]
@@ -51,11 +53,13 @@ impl From<trust_dns_proto::error::ProtoError> for Error {
     }
 }
 
+/*
 impl From<rustls::TLSError> for Error {
     fn from(error: rustls::TLSError) -> Self {
         Error::TlsError(error, Backtrace::default())
     }
 }
+*/
 
 impl From<openssl::error::ErrorStack> for Error {
     fn from(error: openssl::error::ErrorStack) -> Self {
