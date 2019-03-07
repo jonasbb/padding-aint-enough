@@ -17,7 +17,7 @@ use std::{
 use structopt::StructOpt;
 use tlsproxy::{
     parse_duration_ms, print_error, utils::backward, AdaptivePadding, DnsBytesStream, Error,
-    MyTcpStream, TokioOpensslStream,
+    HostnameSocketAddr, MyTcpStream, TokioOpensslStream,
 };
 use tokio::{
     await,
@@ -75,7 +75,7 @@ struct CliArgs {
         default_value = "1.1.1.1:853",
         parse(try_from_str)
     )]
-    server: SocketAddr,
+    server: HostnameSocketAddr,
 
     /// Log all TLS keys into this file
     #[structopt(long = "sslkeylogfile", env = "SSLKEYLOGFILE")]
@@ -126,7 +126,7 @@ fn run() -> Result<(), Error> {
         .init();
     openssl_probe::init_ssl_cert_env_vars();
     let cli_args = CliArgs::from_args();
-    if let Some(file) = cli_args.sslkeylogfile {
+    if let Some(file) = &cli_args.sslkeylogfile {
         std::env::set_var("SSLKEYLOGFILE", file.to_path_buf());
     }
 
@@ -137,12 +137,12 @@ fn run() -> Result<(), Error> {
         cli_args.listen, cli_args.server
     );
 
-    let server = cli_args.server;
+    let config = Arc::new(cli_args);
     let done = socket
         .incoming()
         .map_err(|e| println!("error accepting socket; error = {:?}", e))
         .for_each(move |client| {
-            tokio::spawn_async(print_error(handle_client(client, server)));
+            tokio::spawn_async(print_error(handle_client(config.clone(), client)));
             Ok(())
         });
 
@@ -150,10 +150,10 @@ fn run() -> Result<(), Error> {
     Ok(())
 }
 
-async fn handle_client(client: TcpStream, server_addr: SocketAddr) -> Result<(), Error> {
+async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Error> {
     client.set_nodelay(true)?;
 
-    let server = await!(TcpStream::connect(&server_addr))?;
+    let server = await!(TcpStream::connect(&config.server.socket_addr()))?;
     server.set_nodelay(true)?;
     // maybe call add_extra_chain_cert to always add the cert.pem
     let mut connector = SslConnector::builder(SslMethod::tls())?;
@@ -164,7 +164,7 @@ async fn handle_client(client: TcpStream, server_addr: SocketAddr) -> Result<(),
         connector.set_keylog_callback(cb);
     }
     let connector = connector.build();
-    let server = await!(connector.connect_async("1.1.1.1", server))?;
+    let server = await!(connector.connect_async(&config.server.hostname(), server))?;
 
     // Create separate read/write handles for the TCP clients that we're
     // proxying data between. Note that typically you'd use

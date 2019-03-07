@@ -18,11 +18,12 @@ pub use crate::{
 use log::{error, warn};
 use rustls::Session;
 use std::{
-    fmt::Debug,
+    fmt::{self, Debug, Display},
     fs::OpenOptions,
     io::{self, Read, Write},
-    net::Shutdown,
+    net::{Shutdown, SocketAddr, ToSocketAddrs},
     path::Path,
+    str::FromStr,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -33,6 +34,195 @@ use tokio_rustls::TlsStream;
 pub fn parse_duration_ms(s: &str) -> Result<Duration, std::num::ParseIntError> {
     let ms: u64 = s.parse()?;
     Ok(Duration::from_millis(ms))
+}
+
+#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+pub enum HostnameSocketAddr {
+    Hostname {
+        full_addr_string: String,
+        hostname_length: usize,
+        socket_addrs: Vec<SocketAddr>,
+    },
+    Ip([SocketAddr; 1]),
+}
+
+impl HostnameSocketAddr {
+    pub fn hostname(&self) -> String {
+        use HostnameSocketAddr::*;
+        match self {
+            Hostname {
+                full_addr_string,
+                hostname_length,
+                ..
+            } => full_addr_string[..*hostname_length].to_string(),
+            Ip(ip) => ip[0].ip().to_string(),
+        }
+    }
+
+    pub fn socket_addr(&self) -> SocketAddr {
+        use HostnameSocketAddr::*;
+        match self {
+            Hostname { socket_addrs, .. } => socket_addrs[0],
+            Ip(ip) => ip[0],
+        }
+    }
+
+    pub fn socket_addrs(&self) -> &[SocketAddr] {
+        use HostnameSocketAddr::*;
+        match self {
+            Hostname { socket_addrs, .. } => &socket_addrs,
+            Ip(ip) => ip,
+        }
+    }
+}
+
+impl Display for HostnameSocketAddr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
+        use HostnameSocketAddr::*;
+        match self {
+            Hostname {
+                full_addr_string,
+                socket_addrs,
+                ..
+            } => {
+                write!(f, "{} (", full_addr_string)?;
+                let mut first = true;
+                for addr in socket_addrs {
+                    write!(f, "{}{}", if first { "" } else { ", " }, addr.ip())?;
+                    first = false;
+                }
+                write!(f, ")")
+            }
+            Ip(ip) => write!(f, "{}", ip[0]),
+        }
+    }
+}
+
+impl FromStr for HostnameSocketAddr {
+    // TODO fix error type
+    type Err = String;
+
+    fn from_str(addr: &str) -> Result<Self, Self::Err> {
+        use HostnameSocketAddr::*;
+
+        // Test if the `addr` is directly convertable to a SocketAddr, then it is an IP address
+        if let Ok(addr) = addr.parse() {
+            return Ok(Ip([addr]));
+        }
+
+        let parts: Vec<_> = addr.rsplitn(2, ':').collect();
+        if parts.len() != 2 {
+            return Err("Missing Port number".into());
+        }
+        let socket_addrs: Vec<_> = addr
+            .to_socket_addrs()
+            .map_err(|err| err.to_string())?
+            .collect();
+        if socket_addrs.is_empty() {
+            return Err("The list of SocketAddrs is empty".into());
+        }
+        Ok(Hostname {
+            full_addr_string: addr.to_string(),
+            hostname_length: parts[1].len(),
+            socket_addrs,
+        })
+    }
+}
+
+#[cfg(test)]
+mod test_hostname_socket_add {
+    use super::HostnameSocketAddr;
+    use std::net::*;
+
+    #[test]
+    fn test_ip_address() {
+        let addr1 = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
+        let addr1_hostname = "127.0.0.1";
+        let addr1_str_clean = "127.0.0.1:8080";
+        let addr1_str_1 = "127.000.000.001:8080";
+        let addr1_str_2 = "127.000.0.01:08080";
+
+        let hsa: HostnameSocketAddr = addr1_str_clean.parse().unwrap();
+        assert_eq!(addr1_hostname, hsa.hostname());
+        assert_eq!(addr1, hsa.socket_addr());
+        assert_eq!(&[addr1], hsa.socket_addrs());
+        let hsa: HostnameSocketAddr = addr1_str_1.parse().unwrap();
+        assert_eq!(addr1_hostname, hsa.hostname());
+        assert_eq!(addr1, hsa.socket_addr());
+        assert_eq!(&[addr1], hsa.socket_addrs());
+        let hsa: HostnameSocketAddr = addr1_str_2.parse().unwrap();
+        assert_eq!(addr1_hostname, hsa.hostname());
+        assert_eq!(addr1, hsa.socket_addr());
+        assert_eq!(&[addr1], hsa.socket_addrs());
+
+        let addr2 = SocketAddr::new(
+            IpAddr::V6(Ipv6Addr::new(
+                0xfe80, 0x0123, 0x4567, 0x89ab, 0xcdef, 0x0, 0x0, 0x53,
+            )),
+            853,
+        );
+        let addr2_hostname = "fe80:123:4567:89ab:cdef::53";
+        let addr2_str_clean = "[fe80:123:4567:89ab:cdef::53]:853";
+        let addr2_str_1 = "[fe80:0123:4567:89ab:cdef::0053]:0853";
+        let addr2_str_2 = "[fe80:0123:4567:89ab:cdef:0:0:0053]:0853";
+
+        let hsa: HostnameSocketAddr = addr2_str_clean.parse().unwrap();
+        assert_eq!(addr2_hostname, hsa.hostname());
+        assert_eq!(addr2, hsa.socket_addr());
+        assert_eq!(&[addr2], hsa.socket_addrs());
+        let hsa: HostnameSocketAddr = addr2_str_1.parse().unwrap();
+        assert_eq!(addr2_hostname, hsa.hostname());
+        assert_eq!(addr2, hsa.socket_addr());
+        assert_eq!(&[addr2], hsa.socket_addrs());
+        let hsa: HostnameSocketAddr = addr2_str_2.parse().unwrap();
+        assert_eq!(addr2_hostname, hsa.hostname());
+        assert_eq!(addr2, hsa.socket_addr());
+        assert_eq!(&[addr2], hsa.socket_addrs());
+
+        // Parsing without port should not work
+        assert!(addr1_hostname.parse::<HostnameSocketAddr>().is_err());
+        assert!(addr2_hostname.parse::<HostnameSocketAddr>().is_err());
+    }
+
+    #[test]
+    fn test_simple_network() {
+        let addr1 = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(1, 2, 3, 4)), 53);
+        let addr1_hostname = "www.1-2-3-4.sslip.io";
+        let addr1_str_clean = "www.1-2-3-4.sslip.io:53";
+        let addr1_str_1 = "www.1-2-3-4.sslip.io:0053";
+
+        let hsa: HostnameSocketAddr = addr1_str_clean.parse().unwrap();
+        assert_eq!(addr1_hostname, hsa.hostname());
+        assert_eq!(addr1, hsa.socket_addr());
+        assert_eq!(&[addr1], hsa.socket_addrs());
+        let hsa: HostnameSocketAddr = addr1_str_1.parse().unwrap();
+        assert_eq!(addr1_hostname, hsa.hostname());
+        assert_eq!(addr1, hsa.socket_addr());
+        assert_eq!(&[addr1], hsa.socket_addrs());
+
+        let addr2 = SocketAddr::new(
+            IpAddr::V6(Ipv6Addr::new(
+                0x2001, 0x0123, 0x4567, 0x89ab, 0xcdef, 0x0, 0x0, 0x53,
+            )),
+            443,
+        );
+        let addr2_hostname = "m.2001-123-4567-89ab-cdef--53.sslip.io";
+        let addr2_str_clean = "m.2001-123-4567-89ab-cdef--53.sslip.io:443";
+        let addr2_str_1 = "m.2001-123-4567-89ab-cdef--53.sslip.io:00443";
+
+        let hsa: HostnameSocketAddr = addr2_str_clean.parse().unwrap();
+        assert_eq!(addr2_hostname, hsa.hostname());
+        assert_eq!(addr2, hsa.socket_addr());
+        assert_eq!(&[addr2], hsa.socket_addrs());
+        let hsa: HostnameSocketAddr = addr2_str_1.parse().unwrap();
+        assert_eq!(addr2_hostname, hsa.hostname());
+        assert_eq!(addr2, hsa.socket_addr());
+        assert_eq!(&[addr2], hsa.socket_addrs());
+
+        // Parsing without port should not work
+        assert!(addr1_hostname.parse::<HostnameSocketAddr>().is_err());
+        assert!(addr2_hostname.parse::<HostnameSocketAddr>().is_err());
+    }
 }
 
 #[allow(dead_code)]
