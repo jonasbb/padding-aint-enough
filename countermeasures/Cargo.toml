@@ -10,7 +10,7 @@ env_logger = "0.6.0"
 failure = "0.1.5"
 futures = "0.1.25"
 log = "0.4.6"
-openssl = "0.10.19"
+openssl = { version = "0.10.19", features = [ "vendored" ] }
 openssl-probe = "0.1.2"
 rand = "0.6.5"
 structopt = "0.2.14"
