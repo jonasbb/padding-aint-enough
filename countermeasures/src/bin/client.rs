@@ -7,7 +7,7 @@
 
 use byteorder::{BigEndian, WriteBytesExt};
 use failure::Fail;
-use rustls::KeyLogFile;
+use openssl::ssl::{SslConnector, SslMethod, SslOptions, SslVersion};
 use std::{
     net::SocketAddr,
     path::PathBuf,
@@ -17,7 +17,7 @@ use std::{
 use structopt::StructOpt;
 use tlsproxy::{
     parse_duration_ms, print_error, utils::backward, AdaptivePadding, DnsBytesStream, Error,
-    MyTcpStream, TokioRustlsStream,
+    MyTcpStream, TokioOpensslStream,
 };
 use tokio::{
     await,
@@ -25,6 +25,7 @@ use tokio::{
     net::{TcpListener, TcpStream},
     prelude::*,
 };
+use tokio_openssl::SslConnectorExt;
 
 /// DNS query for `google.com.` with padding
 const DUMMY_DNS: [u8; 128] = [
@@ -119,7 +120,11 @@ fn main() {
 
 fn run() -> Result<(), Error> {
     // generic setup
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("debug")).init();
+    let log_settings = "client=debug,tlsproxy=debug";
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_settings))
+        .default_format_timestamp_nanos(true)
+        .init();
+    openssl_probe::init_ssl_cert_env_vars();
     let cli_args = CliArgs::from_args();
     if let Some(file) = cli_args.sslkeylogfile {
         std::env::set_var("SSLKEYLOGFILE", file.to_path_buf());
@@ -146,19 +151,20 @@ fn run() -> Result<(), Error> {
 }
 
 async fn handle_client(client: TcpStream, server_addr: SocketAddr) -> Result<(), Error> {
-    let server = await!(TcpStream::connect(&server_addr))?;
+    client.set_nodelay(true)?;
 
-    let mut config = rustls::ClientConfig::new();
-    config
-        .root_store
-        .add_server_trust_anchors(&webpki_roots::TLS_SERVER_ROOTS);
-    config.key_log = Arc::new(KeyLogFile::new());
-    let server = await!(tokio_rustls::TlsConnector::from(Arc::new(config))
-        .connect(
-            webpki::DNSNameRef::try_from_ascii_str("cloudflare-dns.com").unwrap(),
-            server
-        )
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err)))?;
+    let server = await!(TcpStream::connect(&server_addr))?;
+    server.set_nodelay(true)?;
+    // maybe call add_extra_chain_cert to always add the cert.pem
+    let mut connector = SslConnector::builder(SslMethod::tls())?;
+    connector.set_min_proto_version(Some(SslVersion::TLS1_2))?;
+    connector.set_options(SslOptions::NO_COMPRESSION);
+    if let Some(logfile) = std::env::var_os("SSLKEYLOGFILE") {
+        let cb = tlsproxy::keylog_to_file(logfile);
+        connector.set_keylog_callback(cb);
+    }
+    let connector = connector.build();
+    let server = await!(connector.connect_async("1.1.1.1", server))?;
 
     // Create separate read/write handles for the TCP clients that we're
     // proxying data between. Note that typically you'd use
@@ -171,7 +177,7 @@ async fn handle_client(client: TcpStream, server_addr: SocketAddr) -> Result<(),
     // use the impls below on our custom `MyTcpStream` type.
     let client_reader = MyTcpStream::new(Arc::new(Mutex::new(client)));
     let client_writer = client_reader.clone();
-    let server_reader = TokioRustlsStream::new(Arc::new(Mutex::new(server)));
+    let server_reader = TokioOpensslStream::new(Arc::new(Mutex::new(server)));
     let server_writer = server_reader.clone();
 
     // Copy the data (in parallel) between the client and the server.
