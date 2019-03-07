@@ -7,7 +7,11 @@
 
 use byteorder::{BigEndian, WriteBytesExt};
 use failure::Fail;
-use openssl::ssl::{SslConnector, SslMethod, SslOptions, SslVersion};
+use log::{trace, warn};
+use openssl::{
+    ssl::{SslConnector, SslMethod, SslOptions, SslVerifyMode, SslVersion},
+    x509::X509,
+};
 use std::{
     net::SocketAddr,
     path::PathBuf,
@@ -17,7 +21,7 @@ use std::{
 use structopt::StructOpt;
 use tlsproxy::{
     parse_duration_ms, print_error, utils::backward, AdaptivePadding, DnsBytesStream, Error,
-    HostnameSocketAddr, MyTcpStream, TokioOpensslStream,
+    HostnameSocketAddr, MyTcpStream, TokioOpensslStream, SERVER_CERT,
 };
 use tokio::{
     await,
@@ -155,10 +159,29 @@ async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Er
 
     let server = await!(TcpStream::connect(&config.server.socket_addr()))?;
     server.set_nodelay(true)?;
-    // maybe call add_extra_chain_cert to always add the cert.pem
     let mut connector = SslConnector::builder(SslMethod::tls())?;
     connector.set_min_proto_version(Some(SslVersion::TLS1_2))?;
     connector.set_options(SslOptions::NO_COMPRESSION);
+    // make the connector always accept my cert
+    connector.set_verify_callback(
+        SslVerifyMode::PEER,
+        |passed_openssl_cert_check, cert_context| {
+            // Extract the signature of our known good cert
+            let cert = X509::from_pem(SERVER_CERT).ok();
+            let good_cert_signature = cert.as_ref().map(|cert| cert.signature().as_slice());
+
+            // get the signature of the certificate from the server
+            let cert_signature = cert_context
+                .current_cert()
+                .map(|cert| cert.signature().as_slice());
+
+            // Log the signatures
+            trace!("{:?}\n\n{:?}", cert_signature, good_cert_signature);
+
+            // allow certificate if either openssl accepts it or if the signature matches our known good
+            passed_openssl_cert_check || (cert_signature == good_cert_signature)
+        },
+    );
     if let Some(logfile) = std::env::var_os("SSLKEYLOGFILE") {
         let cb = tlsproxy::keylog_to_file(logfile);
         connector.set_keylog_callback(cb);
