@@ -18,7 +18,7 @@ use std::{
 use structopt::StructOpt;
 use tlsproxy::{
     parse_duration_ms, print_error, utils::backward, ConstantRate, DnsBytesStream, Error,
-    TokioRustlsStream,
+    TokioRustlsStream, SERVER_CERT, SERVER_KEY,
 };
 use tokio::{
     await,
@@ -28,8 +28,6 @@ use tokio::{
 };
 use tokio_rustls::TlsAcceptor;
 
-const SERVER_CERT: &[u8] = include_bytes!("../../cert.pem");
-const SERVER_KEY: &[u8] = include_bytes!("../../key.pem");
 const DUMMY_DNS_REPLY: [u8; 468] = [
     /*0x01, 0xd4,*/ 0x0a, 0xa6, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
     0x06, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x03, 0x63, 0x6f, 0x6d, 0x00, 0x00, 0x01, 0x00, 0x01,

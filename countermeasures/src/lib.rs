@@ -30,6 +30,11 @@ use std::{
 use tokio::{await, net::TcpStream, prelude::*};
 use tokio_rustls::TlsStream;
 
+/// Self Signed server certificate in PEM format
+pub const SERVER_CERT: &[u8] = include_bytes!("../cert.pem");
+/// Private key for the certificate [`SERVER_CERT`]
+pub const SERVER_KEY: &[u8] = include_bytes!("../key.pem");
+
 /// Parse a string as [`u64`], interpret it as milliseconds, and return a [`Duration`]
 pub fn parse_duration_ms(s: &str) -> Result<Duration, std::num::ParseIntError> {
     let ms: u64 = s.parse()?;
