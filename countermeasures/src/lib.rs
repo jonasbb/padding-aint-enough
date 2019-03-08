@@ -63,6 +63,10 @@ impl HostnameSocketAddr {
         }
     }
 
+    pub fn port(&self) -> u16 {
+        self.socket_addr().port()
+    }
+
     pub fn socket_addr(&self) -> SocketAddr {
         use HostnameSocketAddr::*;
         match self {
