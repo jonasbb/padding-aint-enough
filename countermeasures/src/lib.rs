@@ -331,10 +331,87 @@ impl<T> Payload<Payload<T>> {
     }
 }
 
+#[derive(Debug)]
+pub enum MyStream<S> {
+    Tcp(MyTcpStream),
+    Openssl(TokioOpensslStream<S>),
+}
+
+impl<S> Clone for MyStream<S> {
+    fn clone(&self) -> Self {
+        use MyStream::*;
+        match self {
+            Tcp(stream) => Tcp(stream.clone()),
+            Openssl(stream) => Openssl(stream.clone()),
+        }
+    }
+}
+
+impl<S> Read for MyStream<S>
+where
+    S: Read + Write,
+{
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        use MyStream::*;
+        match self {
+            Tcp(stream) => stream.read(buf),
+            Openssl(stream) => stream.read(buf),
+        }
+    }
+}
+
+impl<S> Write for MyStream<S>
+where
+    S: Read + Write,
+{
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        use MyStream::*;
+        match self {
+            Tcp(stream) => stream.write(buf),
+            Openssl(stream) => stream.write(buf),
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        use MyStream::*;
+        match self {
+            Tcp(stream) => stream.flush(),
+            Openssl(stream) => stream.flush(),
+        }
+    }
+}
+
+impl<S> AsyncRead for MyStream<S> where S: AsyncRead + AsyncWrite {}
+
+impl<S> AsyncWrite for MyStream<S>
+where
+    S: AsyncRead + AsyncWrite,
+{
+    fn shutdown(&mut self) -> Poll<(), io::Error> {
+        use MyStream::*;
+        match self {
+            Tcp(stream) => stream.shutdown(),
+            Openssl(stream) => stream.shutdown(),
+        }
+    }
+}
+
+impl<S> From<MyTcpStream> for MyStream<S> {
+    fn from(stream: MyTcpStream) -> Self {
+        MyStream::Tcp(stream)
+    }
+}
+
+impl<S> From<TokioOpensslStream<S>> for MyStream<S> {
+    fn from(stream: TokioOpensslStream<S>) -> Self {
+        MyStream::Openssl(stream)
+    }
+}
+
 // This is a custom type used to have a custom implementation of the
 // `AsyncWrite::shutdown` method which actually calls `TcpStream::shutdown` to
 // notify the remote end that we're done writing.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct MyTcpStream(Arc<Mutex<TcpStream>>);
 
 impl MyTcpStream {
@@ -432,6 +509,7 @@ where
 // This is a custom type used to have a custom implementation of the
 // `AsyncWrite::shutdown` method which actually calls `TlsStream::shutdown` to
 // notify the remote end that we're done writing.
+#[derive(Debug)]
 pub struct TokioOpensslStream<S>(Arc<Mutex<tokio_openssl::SslStream<S>>>);
 
 impl<S> TokioOpensslStream<S> {
