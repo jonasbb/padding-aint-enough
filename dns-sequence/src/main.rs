@@ -54,7 +54,7 @@ struct CliArgs {
     /// Path to dump a CSV file containing all the wrongly classified data
     #[structopt(long = "misclassifications", parse(from_os_str))]
     misclassifications: Option<PathBuf>,
-    /// Path for the resulting CSV-statistics file and plot/pickle-files
+    /// Path for the resulting CSV-statistics file and plot/json-files
     #[structopt(long = "statistics", parse(from_os_str))]
     statistics: Option<PathBuf>,
     /// The largest `k` to be used for knn. Only odd numbers are tested.

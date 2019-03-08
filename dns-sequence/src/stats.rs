@@ -432,13 +432,13 @@ impl<S: Eq + Hash> StatsCounter<S> {
 
 /// Fake implementation of the plot feature such that this binary can be build without python dependencies
 ///
-/// Instead of plotting this simply pickles the input data, such
+/// Instead of plotting this simply dumps the plotting data as JSON
 #[cfg(not(feature = "plot"))]
 mod plot {
     use failure::Error;
     use log::info;
     use misc_utils::fs::{file_open_write, WriteOptions};
-    use serde_pickle;
+    use serde_json;
     use std::{collections::HashMap, fs::OpenOptions, path::Path};
 
     pub fn percentage_stacked_area_chart<S: ::std::hash::BuildHasher>(
@@ -446,7 +446,7 @@ mod plot {
         output: impl AsRef<Path>,
         config: HashMap<&str, &[&str], S>,
     ) -> Result<(), Error> {
-        // The pickle data will have the following shape:
+        // The JSON data will have the following shape:
         // t.Tuple[
         //     # This is the data to plot. They will be plottet in order
         //     t.List[t.Tuple[
@@ -460,8 +460,8 @@ mod plot {
         //     ]
         // ]
 
-        info!("Pickle plotting data");
-        let path = output.as_ref().with_extension("pickle");
+        info!("Dump json of plotting data");
+        let path = output.as_ref().with_extension("json");
 
         let mut wtr = file_open_write(
             &path,
@@ -471,7 +471,7 @@ mod plot {
             .iter()
             .map(|(label, value)| (label.as_ref(), value.as_ref()))
             .collect();
-        serde_pickle::to_writer(&mut wtr, &(data, config), true)?;
+        serde_json::to_writer(&mut wtr, &(data, config))?;
         Ok(())
     }
 }

@@ -21,7 +21,6 @@ use petgraph_graphml::GraphMl;
 use sequences::{MatchKey, Query, QuerySource, UnmatchedClientQuery};
 use serde::{Deserialize, Serialize};
 use serde_json;
-use serde_pickle;
 use serde_with;
 use std::{
     borrow::Cow,
@@ -44,7 +43,7 @@ lazy_static! {
         .expect("Canonicalizing a path should not fail.");
 }
 
-const DNS_TIMING: &str = "dns-timing.pickle";
+const DNS_TIMING: &str = "dns-timing.json";
 const DEP_GRAPH: &str = "dependencies.graphml";
 
 #[derive(StructOpt, Debug)]
@@ -314,14 +313,14 @@ fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
         }
 
         if !matched.is_empty() {
-            let fname = get_output_dir().join("dns.pickle");
+            let fname = get_output_dir().join("dns.json");
             let mut wtr = file_open_write(
                 &fname,
                 WriteOptions::default()
                     .set_open_options(OpenOptions::new().create(true).truncate(true)),
             )
             .with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
-            serde_pickle::to_writer(&mut wtr, &matched, true)?;
+            serde_json::to_writer(&mut wtr, &matched)?;
         }
     }
 
@@ -388,7 +387,7 @@ fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
         WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
     )
     .with_context(|_| format!("Opening input file '{}' failed", &fname.display(),))?;
-    serde_pickle::to_writer(&mut wtr, &timings, true)?;
+    serde_json::to_writer(&mut wtr, &timings)?;
     // we need to close the writer to flush everything
     drop(wtr);
 
@@ -421,7 +420,6 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
     depgraph.duplicate_domains();
     let graph = depgraph.as_graph();
     export_as_graphml(graph)?;
-    export_as_pickle(graph)?;
 
     Ok(())
 }
@@ -435,18 +433,6 @@ fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     )
     .with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
     graphml.to_writer(wtr)?;
-
-    Ok(())
-}
-
-fn export_as_pickle(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
-    let fname = get_output_dir().join("dependencies.pickle");
-    let mut wtr = file_open_write(
-        &fname,
-        WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    )
-    .with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
-    serde_pickle::to_writer(&mut wtr, graph, true)?;
 
     Ok(())
 }
