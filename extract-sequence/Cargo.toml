@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 chrono = { version = "0.4.6", features = [ "serde" ] }
 colored = "1.7.0"
-env_logger = "0.6.0"
+env_logger = "0.6.1"
 failure = "0.1.5"
 log = "0.4.6"
 pcap = "0.7.0"
