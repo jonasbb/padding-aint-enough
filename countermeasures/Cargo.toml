@@ -19,8 +19,6 @@ tokio-async-await = "0.1.5"
 tokio-openssl = "0.3.0"
 tokio-timer = "0.2.10"
 trust-dns-proto = "0.7.1"
-webpki = "0.19.1"
-webpki-roots = "0.16.0"
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
