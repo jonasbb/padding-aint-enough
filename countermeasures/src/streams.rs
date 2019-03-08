@@ -1,7 +1,5 @@
-pub use crate::{
-    adaptive_padding::AdaptivePadding, constant_rate::ConstantRate, dns_tcp::DnsBytesStream,
-    error::Error,
-};
+//! Contains different stream implementations for TCP or TLS streams
+
 use std::{
     io::{self, Read, Write},
     net::Shutdown,
