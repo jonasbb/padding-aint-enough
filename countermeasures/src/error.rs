@@ -3,24 +3,36 @@ use std::fmt::Debug;
 
 #[derive(Debug, Fail)]
 pub enum Error {
+    /// Unknown error condition
     #[fail(display = "An unknown error occured.")]
     Unknown(Backtrace),
+    /// Errors related to [`tokio_timer`]
     #[fail(display = "Tokio Timer Error: {}", _0)]
     Timer(#[fail(cause)] tokio_timer::Error, Backtrace),
+    /// Errors based on [`std::io`]
     #[fail(display = "{}", _0)]
     Io(#[fail(cause)] std::io::Error, Backtrace),
+    /// Errors for parsing `ip:port` strings
     #[fail(display = "{}", _0)]
     AddrParseError(#[fail(cause)] std::net::AddrParseError, Backtrace),
+    /// Errors from parsing malformed DNS messages
     #[fail(display = "Invalid DNS message: {}", _0)]
     DnsParseError(#[fail(cause)] trust_dns_proto::error::ProtoError, Backtrace),
     /*
     #[fail(display = "TLS error: {}", _0)]
     TlsError(#[fail(cause)] rustls::TLSError, Backtrace),
     */
+    /// General [OpenSSL](openssl) errors
     #[fail(display = "OpenSSL error: {}", _0)]
     OpensslError(#[fail(cause)] openssl::error::ErrorStack, Backtrace),
+    /// [OpenSSL](openssl) errors specific to the handshake. Converted from [`openssl::ssl::HandshakeError`]
+    ///
+    /// This error does not contain the [`HandshakeError`] as this would introduce a generic type parameter
+    ///
+    /// [`HandshakeError`]: openssl::ssl::HandshakeError
     #[fail(display = "OpenSSL Handshake error: {}", _0)]
     OpensslHandshakeError(String, Backtrace),
+    /// Error specific to the `server` binary in how the remote endpoint is choosen.
     #[fail(
         display = r#"No transport protocol can be inferred for port {}. The only recognized options are TCP on port 53 and TLS on port 853.
 

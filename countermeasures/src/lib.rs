@@ -40,6 +40,9 @@ pub fn parse_duration_ms(s: &str) -> Result<Duration, std::num::ParseIntError> {
     Ok(Duration::from_millis(ms))
 }
 
+/// Extension around [`SocketAddr`] and [`ToSocketAddrs`] which additionally stores the hostname
+///
+/// The hostname is an important feature for TLS (e.g., SNI and cert validity), therefore only a [`SocketAddr`] is often not enough
 #[derive(Clone, Eq, PartialEq, Hash, Debug)]
 pub enum HostnameSocketAddr {
     Hostname {
@@ -335,6 +338,7 @@ impl<T> Payload<Payload<T>> {
     }
 }
 
+/// Wrapper around different stream implementations, such that they can be used in a function return type
 #[derive(Debug)]
 pub enum MyStream<S> {
     Tcp(MyTcpStream),
@@ -412,9 +416,11 @@ impl<S> From<TokioOpensslStream<S>> for MyStream<S> {
     }
 }
 
-// This is a custom type used to have a custom implementation of the
-// `AsyncWrite::shutdown` method which actually calls `TcpStream::shutdown` to
-// notify the remote end that we're done writing.
+/// Wrapper around [`TcpStream`]
+///
+/// This is a custom type used to have a custom implementation of the
+/// [`AsyncWrite::shutdown`] method which actually calls [`TcpStream::shutdown`] to
+/// notify the remote end that we're done writing.
 #[derive(Clone, Debug)]
 pub struct MyTcpStream(Arc<Mutex<TcpStream>>);
 
@@ -450,9 +456,12 @@ impl AsyncWrite for MyTcpStream {
 }
 
 /*
-// This is a custom type used to have a custom implementation of the
-// `AsyncWrite::shutdown` method which actually calls `TlsStream::shutdown` to
-// notify the remote end that we're done writing.
+/// Wrapper around [`TlsStream`]
+///
+/// This is a custom type used to have a custom implementation of the
+/// [`AsyncWrite::shutdown`] method which actually calls [`TcpStream::shutdown`] to
+/// notify the remote end that we're done writing.
+#[derive(Debug)]
 pub struct TokioRustlsStream<IO, S>(Arc<Mutex<TlsStream<IO, S>>>);
 
 impl<IO, S> TokioRustlsStream<IO, S> {
@@ -510,9 +519,11 @@ where
 }
 */
 
-// This is a custom type used to have a custom implementation of the
-// `AsyncWrite::shutdown` method which actually calls `TlsStream::shutdown` to
-// notify the remote end that we're done writing.
+/// Wrapper around [`TokioOpensslStream`]
+///
+/// This is a custom type used to have a custom implementation of the
+/// [`AsyncWrite::shutdown`] method which actually calls [`TcpStream::shutdown`] to
+/// notify the remote end that we're done writing.
 #[derive(Debug)]
 pub struct TokioOpensslStream<S>(Arc<Mutex<tokio_openssl::SslStream<S>>>);
 
