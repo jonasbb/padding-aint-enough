@@ -21,6 +21,13 @@ pub enum Error {
     OpensslError(#[fail(cause)] openssl::error::ErrorStack, Backtrace),
     #[fail(display = "OpenSSL Handshake error: {}", _0)]
     OpensslHandshakeError(String, Backtrace),
+    #[fail(
+        display = r#"No transport protocol can be inferred for port {}. The only recognized options are TCP on port 53 and TLS on port 853.
+
+Please, specify the choice explicitly by using either --tcp or --tls."#,
+        _0
+    )]
+    TransportNotInferable(u16, Backtrace),
 }
 
 impl From<()> for Error {
