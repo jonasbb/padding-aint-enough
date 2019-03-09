@@ -16,7 +16,7 @@ ron = "0.4.2"
 rustls = "0.15.1"
 sequences = { path = "../sequences" }
 serde = { version = "1.0.89", features = [ "derive" ] }
-structopt = "0.2.14"
+structopt = "0.2.15"
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
