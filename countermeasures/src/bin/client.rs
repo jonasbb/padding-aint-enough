@@ -192,12 +192,10 @@ async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Er
     // finished by shutting down the connection.
     let client_reader = DnsBytesStream::new(client_reader).from_err();
     let client_reader = wrap_stream(client_reader, &config.strategy);
-    let client_to_server = backward(copy_client_to_server(client_reader, server_writer))
-        .and_then(|(n, server_writer)| shutdown(server_writer).map(move |_| n).from_err());
+    let client_to_server = backward(copy_client_to_server(client_reader, server_writer));
 
     let server_reader = DnsBytesStream::new(server_reader).from_err();
-    let server_to_client = backward(copy_server_to_client(server_reader, client_writer))
-        .and_then(|(n, client_writer)| shutdown(client_writer).map(move |_| n).from_err());
+    let server_to_client = backward(copy_server_to_client(server_reader, client_writer));
 
     let (from_client, from_server) = await!(client_to_server.join(server_to_client))?;
     println!(
@@ -208,7 +206,7 @@ async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Er
     Ok(())
 }
 
-async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> Result<(u64, W), Error>
+async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> Result<u64, Error>
 where
     R: Stream<Item = Payload<Vec<u8>>, Error = Error> + Send + Unpin,
     W: AsyncWrite,
@@ -227,10 +225,14 @@ where
         await!(tokio::io::write_all(&mut server, &mut out))?;
         server.flush()?;
     }
-    Ok((total_bytes, server))
+
+    // We need to shutdown the endpoint before they are closed due to dropping one of the endpoints
+    // hint: server and client access the same underlying TcpStream
+    await!(shutdown(server))?;
+    Ok(total_bytes)
 }
 
-async fn copy_server_to_client<R, W>(mut server: R, mut client: W) -> Result<(u64, W), Error>
+async fn copy_server_to_client<R, W>(mut server: R, mut client: W) -> Result<(u64), Error>
 where
     R: Stream<Item = Vec<u8>, Error = Error> + Send + Unpin,
     W: AsyncWrite,
@@ -257,5 +259,8 @@ where
         client.flush()?;
     }
 
-    Ok((total_bytes, client))
+    // We need to shutdown the endpoint before they are closed due to dropping one of the endpoints
+    // hint: server and client access the same underlying TcpStream
+    await!(shutdown(client))?;
+    Ok(total_bytes)
 }
