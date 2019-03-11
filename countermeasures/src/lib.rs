@@ -6,6 +6,7 @@
 // #![feature(arbitrary_self_types)]
 
 mod adaptive_padding;
+mod pass_through;
 mod constant_rate;
 mod dns_tcp;
 mod error;
@@ -18,6 +19,7 @@ pub use crate::{
     dns_tcp::DnsBytesStream,
     error::Error,
     streams::{MyStream, MyTcpStream, TokioOpensslStream},
+    pass_through::PassThrough,
 };
 use failure::Fail;
 use log::{error, warn};
