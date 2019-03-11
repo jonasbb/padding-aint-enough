@@ -16,12 +16,11 @@ use std::{
     net::SocketAddr,
     path::PathBuf,
     sync::{Arc, Mutex},
-    time::Duration,
 };
 use structopt::StructOpt;
 use tlsproxy::{
-    print_error, utils::backward, ConstantRate, DnsBytesStream, Error, HostnameSocketAddr,
-    MyStream, MyTcpStream, Strategy, TokioOpensslStream, SERVER_CERT, SERVER_KEY,
+    print_error, utils::backward, wrap_stream, DnsBytesStream, Error, HostnameSocketAddr, MyStream,
+    MyTcpStream, Payload, Strategy, TokioOpensslStream, SERVER_CERT, SERVER_KEY,
 };
 use tokio::{
     await,
@@ -124,7 +123,7 @@ struct CliArgs {
     sslkeylogfile: Option<PathBuf>,
 
     #[structopt(subcommand)]
-    strategy: Strategy,
+    strategy: Option<Strategy>,
 }
 
 fn main() {
@@ -230,11 +229,14 @@ async fn handle_client(
     // Copy the data (in parallel) between the client and the server.
     // After the copy is done we indicate to the remote side that we've
     // finished by shutting down the connection.
+    let client_reader = DnsBytesStream::new(client_reader).from_err();
     let client_to_server = backward(copy_client_to_server(client_reader, server_writer))
-        .and_then(|(n, _, server_writer)| shutdown(server_writer).map(move |_| n).from_err());
+        .and_then(|(n, server_writer)| shutdown(server_writer).map(move |_| n).from_err());
 
+    let server_reader = DnsBytesStream::new(server_reader).from_err();
+    let server_reader = wrap_stream(server_reader, &config.args.strategy);
     let server_to_client = backward(copy_server_to_client(server_reader, client_writer))
-        .and_then(|(n, _, client_writer)| shutdown(client_writer).map(move |_| n).from_err());
+        .and_then(|(n, client_writer)| shutdown(client_writer).map(move |_| n).from_err());
 
     let (from_client, from_server) = await!(client_to_server.join(server_to_client))?;
     println!(
@@ -245,16 +247,15 @@ async fn handle_client(
     Ok(())
 }
 
-async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> Result<(u64, R, W), Error>
+async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> Result<(u64, W), Error>
 where
-    R: AsyncRead + Send,
+    R: Stream<Item = Vec<u8>, Error = Error> + Send + Unpin,
     W: AsyncWrite,
 {
     let mut total_bytes = 0;
 
     let mut out = Vec::with_capacity(128 * 5);
-    let mut dnsbytes = DnsBytesStream::new(&mut client);
-    while let Some(dns) = await!(dnsbytes.next()) {
+    while let Some(dns) = await!(client.next()) {
         let dns = dns?;
 
         out.truncate(0);
@@ -267,21 +268,18 @@ where
         server.flush()?;
     }
 
-    Ok((total_bytes, client, server))
+    Ok((total_bytes, server))
 }
 
-async fn copy_server_to_client<R, W>(mut server: R, mut client: W) -> Result<(u64, R, W), Error>
+async fn copy_server_to_client<R, W>(mut server: R, mut client: W) -> Result<(u64, W), Error>
 where
-    R: AsyncRead,
+    R: Stream<Item = Payload<Vec<u8>>, Error = Error> + Send + Unpin,
     W: AsyncWrite,
 {
     let mut total_bytes = 0;
 
     let mut out = Vec::with_capacity(468 * 5);
-    let dnsbytes = DnsBytesStream::new(&mut server);
-    let mut delayed = ConstantRate::new(dnsbytes, Duration::from_millis(400));
-    // let mut delayed = AdaptivePadding::new(dnsbytes);
-    while let Some(dns) = await!(delayed.next()) {
+    while let Some(dns) = await!(server.next()) {
         let dns = dns?.unwrap_or_else(|| DUMMY_DNS_REPLY.to_vec());
 
         out.truncate(0);
@@ -294,7 +292,7 @@ where
         client.flush()?;
     }
 
-    Ok((total_bytes, server, client))
+    Ok((total_bytes, client))
 }
 
 async fn connect_to_server(
