@@ -20,8 +20,8 @@ use std::{
 };
 use structopt::StructOpt;
 use tlsproxy::{
-    parse_duration_ms, print_error, utils::backward, ConstantRate, DnsBytesStream, Error,
-    HostnameSocketAddr, MyStream, MyTcpStream, TokioOpensslStream, SERVER_CERT, SERVER_KEY,
+    print_error, utils::backward, ConstantRate, DnsBytesStream, Error, HostnameSocketAddr,
+    MyStream, MyTcpStream, Strategy, TokioOpensslStream, SERVER_CERT, SERVER_KEY,
 };
 use tokio::{
     await,
@@ -125,21 +125,6 @@ struct CliArgs {
 
     #[structopt(subcommand)]
     strategy: Strategy,
-}
-
-#[derive(Clone, Debug, StructOpt)]
-#[structopt(
-    rename_all = "kebab-case",
-    author = "",
-    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
-)]
-enum Strategy {
-    #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
-    Constant {
-        /// The rate in which packets are send specified in ms between them
-        #[structopt(parse(try_from_str = "parse_duration_ms"))]
-        rate: Duration,
-    },
 }
 
 fn main() {

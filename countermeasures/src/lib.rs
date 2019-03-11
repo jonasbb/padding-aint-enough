@@ -31,12 +31,38 @@ use std::{
     sync::Mutex,
     time::Duration,
 };
+use structopt::StructOpt;
 use tokio::await;
 
 /// Self Signed server certificate in PEM format
 pub const SERVER_CERT: &[u8] = include_bytes!("../cert.pem");
 /// Private key for the certificate [`SERVER_CERT`]
 pub const SERVER_KEY: &[u8] = include_bytes!("../key.pem");
+
+/// Configuration for different sending strategies
+#[derive(Clone, Debug, StructOpt)]
+#[structopt(
+    rename_all = "kebab-case",
+    author = "",
+    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+)]
+pub enum Strategy {
+    /// Use Constant Rate
+    #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
+    Constant {
+        /// The rate in which packets are send specified in ms between them
+        #[structopt(parse(try_from_str = "parse_duration_ms"))]
+        rate: Duration,
+    },
+    /// Use AdaptivePadding
+    #[structopt(
+        name = "ap",
+        raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+    )]
+    AdaptivePadding {
+    },
+}
+
 
 /// Parse a string as [`u64`], interpret it as milliseconds, and return a [`Duration`]
 pub fn parse_duration_ms(s: &str) -> Result<Duration, std::num::ParseIntError> {
