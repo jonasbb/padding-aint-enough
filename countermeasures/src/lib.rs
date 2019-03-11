@@ -6,10 +6,10 @@
 // #![feature(arbitrary_self_types)]
 
 mod adaptive_padding;
-mod pass_through;
 mod constant_rate;
 mod dns_tcp;
 mod error;
+mod pass_through;
 mod streams;
 pub mod utils;
 
@@ -18,10 +18,11 @@ pub use crate::{
     constant_rate::ConstantRate,
     dns_tcp::DnsBytesStream,
     error::Error,
-    streams::{MyStream, MyTcpStream, TokioOpensslStream},
     pass_through::PassThrough,
+    streams::{MyStream, MyTcpStream, TokioOpensslStream},
 };
 use failure::Fail;
+use futures::Stream;
 use log::{error, warn};
 use std::{
     fmt::{self, Display},
@@ -61,10 +62,8 @@ pub enum Strategy {
         name = "ap",
         raw(setting = "structopt::clap::AppSettings::ColoredHelp")
     )]
-    AdaptivePadding {
-    },
+    AdaptivePadding {},
 }
-
 
 /// Parse a string as [`u64`], interpret it as milliseconds, and return a [`Duration`]
 pub fn parse_duration_ms(s: &str) -> Result<Duration, std::num::ParseIntError> {
@@ -367,5 +366,21 @@ impl<T> Payload<Payload<T>> {
             Payload::Payload(Payload::Payload(p)) => Payload::Payload(p),
             _ => Payload::Dummy,
         }
+    }
+}
+
+pub fn wrap_stream<S, T>(
+    stream: S,
+    strategy: &Option<Strategy>,
+) -> impl Stream<Item = Payload<T>, Error = Error> + Send + Unpin
+where
+    S: Stream<Item = T, Error = Error> + Send + Unpin + 'static,
+    T: Send + Sync + Unpin + 'static,
+{
+    match strategy {
+        None => Box::new(PassThrough::new(stream))
+            as Box<dyn Stream<Item = _, Error = _> + Send + Unpin>,
+        Some(Strategy::Constant { rate, .. }) => Box::new(ConstantRate::new(stream, *rate)),
+        Some(Strategy::AdaptivePadding { .. }) => Box::new(AdaptivePadding::new(stream)),
     }
 }
