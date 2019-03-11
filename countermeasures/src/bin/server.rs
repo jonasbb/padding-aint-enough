@@ -148,6 +148,7 @@ fn run() -> Result<(), Error> {
     // generic setup
     let log_settings = "server=debug,tlsproxy=debug";
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_settings))
+        .default_format_timestamp_nanos(true)
         .init();
     let mut config = Config {
         args: CliArgs::from_args(),
