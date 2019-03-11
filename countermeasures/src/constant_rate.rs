@@ -15,7 +15,7 @@ impl<S, T> ConstantRate<S, T>
 where
     S: Stream<Item = T>,
 {
-    pub fn new(interval: Duration, stream: S) -> Self {
+    pub fn new(stream: S, interval: Duration) -> Self {
         Self {
             interval: Interval::new_interval(interval),
             stream,
@@ -68,7 +68,7 @@ mod tests {
     fn test_constant_time_ensure_time_gap() {
         let dur = Duration::new(0, 100_000_000);
         let items = stream::iter_ok::<_, ()>(0..10);
-        let cr = ConstantRate::new(dur, items);
+        let cr = ConstantRate::new(items, dur);
         let mut last = Instant::now();
 
         let fut = cr.map_err(|_err| ()).for_each(move |x| {
@@ -89,8 +89,8 @@ mod tests {
         let dur_long = Duration::new(0, 100_000_000);
 
         let items = stream::iter_ok::<_, Error>(0..10);
-        let cr_slow = ConstantRate::new(dur_long, items);
-        let cr = ConstantRate::new(dur_short, cr_slow);
+        let cr_slow = ConstantRate::new(items, dur_long);
+        let cr = ConstantRate::new(cr_slow, dur_short);
 
         let mut last = Instant::now();
         let mut elements_between_dummies = 0;

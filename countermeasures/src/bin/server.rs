@@ -166,7 +166,9 @@ fn run() -> Result<(), Error> {
         (false, false, 853) => config.transport = Transport::Tls,
         (false, false, port) => return Err(Error::TransportNotInferable(port, Default::default())),
 
-        (true, true, _) => unreachable!("This case is already checked in Clap by having those flags be mutually exclusive.")
+        (true, true, _) => unreachable!(
+            "This case is already checked in Clap by having those flags be mutually exclusive."
+        ),
     }
 
     // Create a TCP listener which will listen for incoming connections.
@@ -208,8 +210,10 @@ async fn handle_client(
     client.set_nodelay(true)?;
     let client = await!(acceptor.accept_async(client))?;
 
-    let (server_reader, server_writer) =
-        await!(connect_to_server(config.args.server.clone(), config.transport))?;
+    let (server_reader, server_writer) = await!(connect_to_server(
+        config.args.server.clone(),
+        config.transport
+    ))?;
 
     // Create separate read/write handles for the TCP clients that we're
     // proxying data between. Note that typically you'd use
@@ -275,7 +279,7 @@ where
 
     let mut out = Vec::with_capacity(468 * 5);
     let dnsbytes = DnsBytesStream::new(&mut server);
-    let mut delayed = ConstantRate::new(Duration::from_millis(400), dnsbytes);
+    let mut delayed = ConstantRate::new(dnsbytes, Duration::from_millis(400));
     // let mut delayed = AdaptivePadding::new(dnsbytes);
     while let Some(dns) = await!(delayed.next()) {
         let dns = dns?.unwrap_or_else(|| DUMMY_DNS_REPLY.to_vec());
