@@ -7,7 +7,6 @@ use rand::{
 };
 use std::{
     collections::BTreeMap,
-    fmt::Debug,
     time::{Duration, Instant},
 };
 use tokio_timer::Delay;
@@ -19,25 +18,23 @@ enum Event<T> {
     PayloadEnd,
 }
 
-pub struct AdaptivePadding<'a, T>
-where
-    T: Send + Sync + 'static,
-{
-    stream: Box<dyn Stream<Item = Event<T>, Error = Error> + Send + 'a>,
+pub struct AdaptivePadding<T> {
+    stream: Box<dyn Stream<Item = Event<T>, Error = Error> + Send + 'static>,
     eipi: Duration,
     deadline: Delay,
     distribution: BTreeMap<Duration, u16>,
     last_created_item: Instant,
 }
 
-impl<'a, T> AdaptivePadding<'a, T>
+impl<T> AdaptivePadding<T>
 where
-    T: Send + Sync + 'static,
+    T: Send,
 {
     pub fn new<S>(stream: S) -> Self
     where
-        S: Stream<Item = T> + Send + 'a,
+        S: Stream<Item = T> + Send + 'static,
         S::Error: Into<Error>,
+        T: 'static,
     {
         let stream = stream
             .map(Event::Payload)
@@ -92,9 +89,9 @@ where
     }
 }
 
-impl<'a, T> Stream for AdaptivePadding<'a, T>
+impl<T> Stream for AdaptivePadding<T>
 where
-    T: Debug + Send + Sync + 'static,
+    T: Send,
 {
     type Item = Payload<T>;
     type Error = Error;
