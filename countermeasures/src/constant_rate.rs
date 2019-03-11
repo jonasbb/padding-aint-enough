@@ -1,6 +1,6 @@
 use crate::{error::Error, Payload};
 use futures::{Async, Poll, Stream};
-use std::{fmt::Debug, time::Duration};
+use std::time::Duration;
 use tokio_timer::Interval;
 
 pub struct ConstantRate<S, T>
@@ -27,7 +27,6 @@ impl<S, T> Stream for ConstantRate<S, T>
 where
     S: Stream<Item = T>,
     S::Error: Into<Error>,
-    T: Debug,
 {
     type Item = Payload<T>;
     type Error = Error;
