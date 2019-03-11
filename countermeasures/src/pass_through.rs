@@ -27,9 +27,7 @@ where
 
     fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
         match self.stream.poll()? {
-            Async::Ready(Some(payload)) => Ok(Async::Ready(Some(Payload::Payload(payload)))),
-            // The timer instance is done, this should never happen
-            Async::Ready(None) => panic!("Timer instance is done. This should never happen."),
+            Async::Ready(payload) => Ok(Async::Ready(payload.map(Payload::Payload))),
             Async::NotReady => Ok(Async::NotReady),
         }
     }
