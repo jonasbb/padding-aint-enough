@@ -85,7 +85,7 @@ struct CliArgs {
     sslkeylogfile: Option<PathBuf>,
 
     #[structopt(subcommand)]
-    strategy: Option<Strategy>,
+    strategy: Strategy,
 }
 
 fn main() {

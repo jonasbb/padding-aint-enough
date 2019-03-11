@@ -50,6 +50,12 @@ pub const SERVER_KEY: &[u8] = include_bytes!("../key.pem");
     raw(setting = "structopt::clap::AppSettings::ColoredHelp")
 )]
 pub enum Strategy {
+    /// Apply no defense mechanism
+    #[structopt(
+        name = "pass",
+        raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+    )]
+    PassThrough,
     /// Use Constant Rate
     #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
     Constant {
@@ -371,16 +377,16 @@ impl<T> Payload<Payload<T>> {
 
 pub fn wrap_stream<S, T>(
     stream: S,
-    strategy: &Option<Strategy>,
+    strategy: &Strategy,
 ) -> impl Stream<Item = Payload<T>, Error = Error> + Send + Unpin
 where
     S: Stream<Item = T, Error = Error> + Send + Unpin + 'static,
     T: Send + Sync + Unpin + 'static,
 {
     match strategy {
-        None => Box::new(PassThrough::new(stream))
+        Strategy::PassThrough => Box::new(PassThrough::new(stream))
             as Box<dyn Stream<Item = _, Error = _> + Send + Unpin>,
-        Some(Strategy::Constant { rate, .. }) => Box::new(ConstantRate::new(stream, *rate)),
-        Some(Strategy::AdaptivePadding { .. }) => Box::new(AdaptivePadding::new(stream)),
+        Strategy::Constant { rate, .. } => Box::new(ConstantRate::new(stream, *rate)),
+        Strategy::AdaptivePadding { .. } => Box::new(AdaptivePadding::new(stream)),
     }
 }
