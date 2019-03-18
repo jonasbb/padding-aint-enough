@@ -60,9 +60,21 @@ What are the most promosing strategies for removing timing sidechannels?
     Also, a latency overhead, as even with empty buffers, payload on average has to wait *x/2* ms before being transmitted.
     This only gets worse if buffers start filling up.
 * **adaptive padding (AP):**
-    AP is a state machine, which switches between idle, burst mode, and gap mode.
-    In burst mode and gap mode, time values are sampled from a distribution and traffic (mostly) adheres to them.
-    Real traffic is always send immediatly, thus minimizing overall latency.
+    AP is a state machine, which switches between idle *S*, burst mode *B*, and gap mode *G*.
+
+    The idle state *S* is the default in which AP waits until new payload has to be send.
+
+    The burst mode *B* models two features:
+    1. Allow burst traffic from the application to pass through, without being interrupted by padding or being delayed.
+    2. Model the timing between bursts.
+    It samples a time *t* ← *H_B*, which represents a time *between the end and the start of the next bursts*.
+    If the timer runs out, then either a padding burst has to be inserted (see gap mode *G*) or AP falls back to idle *S*.
+
+    Lastly, the gap mode *G*, or more descriptive the "long gap avoidance mode", models a single burst and after finishing, returns back to *B*, to wait for the next real or padding burst.
+    It does so by sampling a time *t* ← *H_G*, which represents the *gap between packets of a single burst*.
+    Gap mode creates padding packets every time the timer *t* runs out.
+
+    All states have in common, that teal traffic is always send immediatly, thus minimizing overall latency.
     The WTF-Pad paper describes adaptive padding and their own improvements of it.
     It has to be seen how necessary a burst mode is, as this basically does not happen for DNS.
 * **superset morphing:**
