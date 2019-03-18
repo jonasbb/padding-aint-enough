@@ -122,9 +122,9 @@ pub struct TaskInsert<'a> {
 pub enum TaskState {
     /// No associated data
     Created,
-    /// [`Executor`] as associated data
+    /// No associated data
     SubmittedToVm,
-    /// [`ResultsCollectableData`] as associated data
+    /// No associated data
     ResultsCollectable,
     /// No associated data
     CheckQualitySingle,
