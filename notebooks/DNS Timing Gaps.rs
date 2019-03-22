@@ -115,7 +115,8 @@ pub fn extract_gaps<P: AsRef<Path>>(file: P) -> Vec<Duration> {
                 ..
             } = ev.content;
             match message_type {
-                Message_Type::CLIENT_QUERY => {
+//                 Message_Type::CLIENT_QUERY => {
+                Message_Type::FORWARDER_QUERY => {
                     Some(query_time.expect("Unbound always sets this"))
                 }
 
@@ -228,4 +229,44 @@ for (a, b) in fractions(durations_in_microseconds.clone(), 3) {
 }
 
 // %%
+let burst_lengths: Vec<usize> = {
+    files
+        .iter()
+        .flat_map(|x| {
+            let groups = extract_gaps(x)
+            .into_iter()
+            .map(|d| d.num_microseconds().unwrap())
+            .group_by(|&d| d < 1000);
+            groups
+                .into_iter()
+                .map(|(_key, group)| {
+                    {group.count()}
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect()
+};
+
+// %%
+std::fs::write(
+    "burst_lengths.csv",
+    burst_lengths.iter().cloned().collect::<Counter<_>>()
+        .iter()
+        .sorted()
+        .map(|(d, count)| format!("{},{}", d, count))
+        .collect::<Vec<_>>()
+        .join("\n"),
+);
+
+// %%
 // }
+
+// %%
+:last_error_json
+
+
+// %%
+// :clear
+
+// %%
+
