@@ -4,6 +4,7 @@
 #![feature(await_macro, async_await, futures_api)]
 // // only needed to manually implement a std future:
 // #![feature(arbitrary_self_types)]
+#![feature(duration_float)]
 
 mod adaptive_padding;
 mod constant_rate;
