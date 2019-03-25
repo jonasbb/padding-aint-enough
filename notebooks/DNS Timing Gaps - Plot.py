@@ -30,7 +30,8 @@ import matplotlib.pyplot as plt
 # # %matplotlib notebook
 
 # %%
-def human_time(duration_in_nano_seconds: int) -> str:
+def human_time(duration_in_nano_seconds: float) -> str:
+    duration_in_nano_seconds = int(duration_in_nano_seconds)
     if duration_in_nano_seconds < 1000:
         return f"{duration_in_nano_seconds}ns"
     duration_in_micro_seconds = duration_in_nano_seconds // 1000
@@ -86,7 +87,8 @@ plt.savefig("gaps.svg")
 # %%
 counts: t.Counter[int] = Counter()
 for gap, count in content:
-    gap = int(math.log2(gap)) if gap > 0 else 0
+#     gap = int(math.log2(gap)) if gap > 0 else 0
+    gap = int(math.log(gap, math.sqrt(2))) if gap > 0 else 0
     counts[gap] += count
 # set all other counts to 0
 for key in range(max(counts.keys())):
@@ -103,28 +105,31 @@ counts
 # %%
 plt.plot(counts.keys(), counts.values())
 plt.gcf().set_size_inches(12, 6.75)
-plt.tight_layout()
 xticks = range(0, max(counts.keys()) + 1)
 plt.xlim(0, max(counts.keys()))
 plt.ylim(0, plt.ylim()[1])
-xticks_labels = [human_time((2 ** i) * 1000) for i in xticks]
-_ = plt.xticks(xticks, xticks_labels, rotation="20")
+# xticks_labels = [human_time((2 ** i) * 1000) for i in xticks]
+xticks_labels = [human_time((math.sqrt(2) ** i) * 1000) for i in xticks]
+_ = plt.xticks(xticks, xticks_labels, rotation="90")
+plt.tight_layout()
 plt.savefig("gaps_distribution.svg")
 
 # %%
-# for i in range(1, 100):
-#     plt.close()
-#     tmp = sainte_lague(counts, i)
-#     plt.plot(tmp.keys(), tmp.values())
-#     plt.gcf().set_size_inches(12, 6.75)
-#     xticks = range(0, max(counts.keys()) + 1)
-#     plt.xlim(0, max(counts.keys()))
-#     plt.ylim(0, plt.ylim()[1])
-#     xticks_labels = [human_time((2 ** i) * 1000) for i in xticks]
-#     _ = plt.xticks(xticks, xticks_labels, rotation="20")
-#     plt.title(f"{i:0>3}")
-#     plt.tight_layout()
-#     plt.savefig(f"gaps_distribution_sampled_{i:0>3}.png")
+# for i in range(1, 200):
+i = 1000
+plt.close()
+tmp = sainte_lague(counts, i)
+plt.plot(tmp.keys(), tmp.values())
+plt.gcf().set_size_inches(12, 6.75)
+xticks = range(0, max(counts.keys()) + 1)
+plt.xlim(0, max(counts.keys()))
+plt.ylim(0, plt.ylim()[1])
+# xticks_labels = [human_time((2 ** i) * 1000) for i in xticks]
+xticks_labels = [human_time((math.sqrt(2) ** i) * 1000) for i in xticks]
+_ = plt.xticks(xticks, xticks_labels, rotation="90")
+plt.title(f"{i:0>3}")
+plt.tight_layout()
+# plt.savefig(f"gaps_distribution_sampled_{i:0>3}.png")
 
 # %%
 bursts_ = {int(length): int(count) for (length, count) in csv.reader(open("burst_lengths.csv"))}
