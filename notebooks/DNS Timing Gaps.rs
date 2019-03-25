@@ -150,7 +150,7 @@ let durations_in_microseconds: Vec<i64> = files
 // Convert duration into a exponentally sized buckets of 2^i
 let counts = durations_in_microseconds
     .iter()
-    .map(|d| d / 100 * 100)
+    .cloned()
     .collect::<Counter<_>>();
 
 // %%
@@ -172,12 +172,10 @@ let peaks = counts
         }
     })
     .collect::<Vec<_>>();
-peaks
 
 // %%
 durations_in_microseconds
     .iter()
-    .map(|d| d/100*100)
     .map(|d| 64-d.leading_zeros())
     .collect::<Counter<_>>().iter().sorted()
 
