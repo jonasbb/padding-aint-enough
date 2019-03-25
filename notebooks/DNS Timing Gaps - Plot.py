@@ -25,6 +25,8 @@ from collections import Counter
 
 import matplotlib.pyplot as plt
 
+T = t.TypeVar("T")
+
 # %%
 # %matplotlib inline
 # # %matplotlib notebook
@@ -48,25 +50,27 @@ def human_time(duration_in_nano_seconds: float) -> str:
 
 
 # %%
-def sainte_lague(votes, total_seats):
+def sainte_lague(votes: t.Counter[T], total_seats: int) -> t.Counter[T]:
     """
     https://en.wikipedia.org/wiki/Webster/Sainte-Lagu%C3%AB_method
     """
     votes_and_seats = {
-        party: [votes, 0] for party, votes in votes.items()
+        party: [votes, 0.] for party, votes in votes.items()
     }
     # For each seat we have to distribute, choose one party to distribute them to
     for _ in range(total_seats):
         highest_party = None
-        highest_quotient = 0
-        for party, (votes, seats) in votes_and_seats.items():
-            quotient = votes / (2*seats + 1)
+        highest_quotient = 0.
+        for party, (votescount, seats) in votes_and_seats.items():
+            quotient = votescount / (2*seats + 1)
             if quotient > highest_quotient:
                 highest_party = party
                 highest_quotient = quotient
         # Assign seat to party with highest quotient
+        # This cast is valid, as highest_party will be set in the loop
+        highest_party = t.cast(T, highest_party)
         votes_and_seats[highest_party][1] += 1
-    return {party: seats for party, (_votes, seats) in votes_and_seats.items()}
+    return Counter({party: seats for party, (_votes, seats) in votes_and_seats.items()})
 
 # %%
 content = [(int(gap), int(count)) for (gap, count) in csv.reader(open("gaps.csv"))]
