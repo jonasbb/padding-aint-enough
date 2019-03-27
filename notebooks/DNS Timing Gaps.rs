@@ -108,16 +108,18 @@ pub fn extract_gaps<P: AsRef<Path>>(file: P) -> Vec<Duration> {
         .filter_map(|ev| {
             let DnstapContent::Message {
                 message_type,
-                query_message,
-                response_message,
                 query_time,
                 response_time,
                 ..
             } = ev.content;
             match message_type {
+// //                 Message_Type::CLIENT_QUERY => {
+//                 Message_Type::FORWARDER_QUERY => {
+//                     Some(query_time.expect("Unbound always sets this"))
+//                 }
 //                 Message_Type::CLIENT_QUERY => {
-                Message_Type::FORWARDER_QUERY => {
-                    Some(query_time.expect("Unbound always sets this"))
+                Message_Type::FORWARDER_RESPONSE => {
+                    Some(response_time.expect("Unbound always sets this"))
                 }
 
                 _ => None,
@@ -260,11 +262,8 @@ std::fs::write(
 // }
 
 // %%
-:last_error_json
-
-
-// %%
 // :clear
 
 // %%
+
 
