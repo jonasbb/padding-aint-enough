@@ -37,6 +37,7 @@ use std::{
 };
 use structopt::StructOpt;
 use tokio::await;
+use tokio_timer::throttle::Throttle;
 
 /// Self Signed server certificate in PEM format
 pub const SERVER_CERT: &[u8] = include_bytes!("../cert.pem");
@@ -69,13 +70,20 @@ pub enum Strategy {
         name = "ap",
         raw(setting = "structopt::clap::AppSettings::ColoredHelp")
     )]
-    AdaptivePadding {},
+    AdaptivePadding {
+        /// Throttle the connection to at most 1 real packet every `throttle-in` ms
+        #[structopt(long = "tin", parse(try_from_str = "parse_duration_ms"))]
+        throttle_in: Option<Duration>,
+        /// Throttle the connection to at most 1 outgoing packet every `throttle-out` ms
+        #[structopt(long = "tout", parse(try_from_str = "parse_duration_ms"))]
+        throttle_out: Option<Duration>,
+    },
 }
 
-/// Parse a string as [`u64`], interpret it as milliseconds, and return a [`Duration`]
-pub fn parse_duration_ms(s: &str) -> Result<Duration, std::num::ParseIntError> {
-    let ms: u64 = s.parse()?;
-    Ok(Duration::from_millis(ms))
+/// Parse a string as [`f64`], interpret it as milliseconds, and return a [`Duration`]
+pub fn parse_duration_ms(s: &str) -> Result<Duration, std::num::ParseFloatError> {
+    let ms: f64 = s.parse()?;
+    Ok(Duration::from_micros((ms * 1000.).round() as u64))
 }
 
 /// Extension around [`SocketAddr`] and [`ToSocketAddrs`] which additionally stores the hostname
@@ -388,6 +396,20 @@ where
         Strategy::PassThrough => Box::new(PassThrough::new(stream))
             as Box<dyn Stream<Item = _, Error = _> + Send + Unpin>,
         Strategy::Constant { rate, .. } => Box::new(ConstantRate::new(stream, *rate)),
-        Strategy::AdaptivePadding { .. } => Box::new(AdaptivePadding::new(stream)),
+        Strategy::AdaptivePadding {
+            throttle_in,
+            throttle_out,
+            ..
+        } => match (*throttle_in, *throttle_out) {
+            (Some(tin), Some(tout)) => Box::new(
+                Throttle::new(AdaptivePadding::new(Throttle::new(stream, tin)), tout).from_err(),
+            )
+                as Box<dyn Stream<Item = _, Error = _> + Send + Unpin>,
+            (Some(tin), None) => Box::new(AdaptivePadding::new(Throttle::new(stream, tin))),
+            (None, Some(tout)) => {
+                Box::new(Throttle::new(AdaptivePadding::new(stream), tout).from_err())
+            }
+            (None, None) => Box::new(AdaptivePadding::new(stream)),
+        },
     }
 }
