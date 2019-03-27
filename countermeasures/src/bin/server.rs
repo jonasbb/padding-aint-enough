@@ -290,7 +290,7 @@ where
             }
             Payload::Dummy => {
                 info!("Send dummy");
-                DUMMY_DNS.to_vec()
+                DUMMY_DNS_REPLY.to_vec()
             }
         };
 
