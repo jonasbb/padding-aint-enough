@@ -11,6 +11,8 @@ use tokio_timer::Delay;
 
 const DURATION_MAX: Duration = Duration::from_secs(3600 * 24 * 365);
 const DURATION_ONE_MS: Duration = Duration::from_millis(1);
+const MEDIAN_BURST_LENGTH: u32 = 2;
+const PROBABILITY_FAKE_BURST: f64 = 0.3;
 
 lazy_static! {
     static ref DISTRIBUTION_BASE_VALUE: f64 = 2f64.sqrt();
@@ -82,10 +84,6 @@ enum State {
     Burst,
     Gap,
 }
-
-// let dist = Uniform::new(Duration::new(1, 0), Duration::new(2,999_999_999));
-// for _ in 0..20 {
-// let d: Duration = dist.sample(&mut rng);
 
 pub struct AdaptivePadding<T> {
     stream: Box<dyn Stream<Item = Event<T>, Error = Error> + Send + 'static>,
@@ -166,12 +164,13 @@ where
 
         // Now that we have a base duration, we need to pick a duration uniformly between this bucket and the next bucket
         if duration == DURATION_MAX {
+            debug!("Sampled infinity token");
             return duration;
         }
         let uniform = Uniform::new(duration, duration.mul_f64(*DISTRIBUTION_BASE_VALUE));
         let duration = uniform.sample(&mut rand::thread_rng());
 
-        debug!("Sampled {:?} as EIPI", duration);
+        debug!("Sampled {:?} token", duration);
         duration
     }
 
@@ -206,14 +205,13 @@ where
         // Pn = 1 - propability_fake_burst
         // Pn propability to choose bucket n
         // K: tokens for all other buckets
-        let probability_fake_burst: f64 = 0.9;
         let sum_tokens: u32 = self
             .inter_burst_gaps
             .iter()
             .filter(|(gap, _)| *gap != DURATION_MAX)
             .map(|(_, count)| u32::from(*count))
             .sum();
-        let kn = ((1. - probability_fake_burst) / probability_fake_burst * f64::from(sum_tokens))
+        let kn = ((1. - PROBABILITY_FAKE_BURST) / PROBABILITY_FAKE_BURST * f64::from(sum_tokens))
             .round() as u16;
         let len = self.inter_burst_gaps.len();
         self.inter_burst_gaps[len - 1].1 = kn;
@@ -249,15 +247,14 @@ where
         // kn = (K + µL + 1) / (µL - 1)
         // K: tokens for all other buckets
         // µL: Median burst length
-        let median_burst_length = 2;
         let sum_tokens: u32 = self
             .intra_burst_gaps
             .iter()
             .filter(|(gap, _)| *gap != DURATION_MAX)
             .map(|(_, count)| u32::from(*count))
             .sum();
-        let kn = (f64::from(sum_tokens + median_burst_length + 1)
-            / f64::from(median_burst_length - 1))
+        let kn = (f64::from(sum_tokens + MEDIAN_BURST_LENGTH + 1)
+            / f64::from(MEDIAN_BURST_LENGTH - 1))
         .round() as u16;
         let len = self.intra_burst_gaps.len();
         self.intra_burst_gaps[len - 1].1 = kn;
@@ -277,10 +274,7 @@ where
             }
         };
         // Put token back into bucket
-        if let Some((_gap, count)) = dist
-            .iter_mut()
-            .find(|(gap, _count)| (2 * *gap) > duration)
-        {
+        if let Some((_gap, count)) = dist.iter_mut().find(|(gap, _count)| (2 * *gap) > duration) {
             *count += 1;
         }
     }
@@ -344,40 +338,12 @@ where
             self.remove_token(dur);
         }
         self.state = State::Burst;
-
-        // Sample new token
-        // The function samples a new token and performs the state transitions and setting up the new deadline
-        self.handle_timeout();
+        let duration = self.sample_token();
+        self.set_deadline(duration);
     }
 
-    /// Callback if a timeout occured
-    fn handle_timeout(&mut self) {
-        let duration = self.sample_token();
-
-        if duration == DURATION_MAX {
-            // Move 1 step towards idle
-            match self.state {
-                State::Idle => unreachable!("We never choose a timeout in idle state"),
-                State::Burst => self.state = State::Idle,
-                State::Gap => {
-                    self.state = State::Burst;
-                    // Sample a new timeout fitting for the new state
-                    return self.handle_timeout();
-                }
-            }
-        } else {
-            match self.state {
-                State::Idle => unreachable!("We never choose a timeout in idle state"),
-                State::Burst => {
-                    self.put_back_token(duration);
-                    self.state = State::Gap;
-                    // Sample a new timeout fitting for the new state
-                    return self.handle_timeout();
-                }
-                State::Gap => self.state = State::Gap,
-            }
-        }
-
+    /// Set the new deadline to [`Instant::now`]` + duration`
+    fn set_deadline(&mut self, duration: Duration) {
         self.eipi = duration;
         let now = Instant::now();
         let deadline = now + duration;
@@ -387,6 +353,34 @@ where
             "New Deadline {:?}, Duration {:?}, State {:?}",
             deadline, duration, self.state
         );
+    }
+
+    /// Callback if a timeout occured
+    fn handle_timeout(&mut self) {
+        match self.state {
+            State::Idle => unreachable!("We never choose a timeout in idle state"),
+            State::Burst => {
+                self.state = State::Gap;
+                // Sample a new timeout fitting for the new state
+                self.handle_timeout();
+            }
+            State::Gap => {
+                let mut duration = self.sample_token();
+                if duration == DURATION_MAX {
+                    debug!("Infinity Token: Fallback to Burst");
+                    self.state = State::Burst;
+                    duration = self.sample_token();
+                    if duration == DURATION_MAX {
+                        debug!("Infinity Token: Fallback to Idle");
+                        self.state = State::Idle;
+                        // Make sure to disable the timeout
+                        self.set_deadline(DURATION_MAX);
+                        return;
+                    }
+                }
+                self.set_deadline(duration);
+            }
+        }
     }
 }
 
