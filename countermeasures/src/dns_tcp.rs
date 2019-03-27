@@ -1,5 +1,5 @@
 use byteorder::{BigEndian, ByteOrder};
-use log::{debug, trace};
+use log::trace;
 use std::io;
 use tokio::prelude::*;
 
@@ -74,7 +74,7 @@ impl<R: AsyncRead> Stream for DnsBytesStream<R> {
                     let len = BigEndian::read_u16(&self.buf[0..self.expected_bytes]) as usize;
                     // remove the bytes
                     self.buf.drain(0..self.expected_bytes);
-                    debug!("Read length field: {}", len);
+                    trace!("Read length field: {}", len);
 
                     // init next state
                     self.expected_bytes = len;
@@ -86,7 +86,7 @@ impl<R: AsyncRead> Stream for DnsBytesStream<R> {
                     let ret = self.buf[0..self.expected_bytes].to_vec();
                     // remove the bytes
                     self.buf.drain(0..self.expected_bytes);
-                    debug!("Read DNS message of {} bytes", ret.len());
+                    trace!("Read DNS message of {} bytes", ret.len());
 
                     // init next state
                     self.expected_bytes = 2;
