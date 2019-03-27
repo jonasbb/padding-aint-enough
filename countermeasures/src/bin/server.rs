@@ -7,6 +7,7 @@
 
 use byteorder::{BigEndian, WriteBytesExt};
 use failure::Fail;
+use log::info;
 use openssl::{
     pkey::PKey,
     ssl::{SslAcceptor, SslConnector, SslMethod, SslOptions, SslVerifyMode, SslVersion},
@@ -282,7 +283,16 @@ where
 
     let mut out = Vec::with_capacity(468 * 5);
     while let Some(dns) = await!(server.next()) {
-        let dns = dns?.unwrap_or_else(|| DUMMY_DNS_REPLY.to_vec());
+        let dns = match dns? {
+            Payload::Payload(p) => {
+                info!("Send payload");
+                p
+            }
+            Payload::Dummy => {
+                info!("Send dummy");
+                DUMMY_DNS.to_vec()
+            }
+        };
 
         out.truncate(0);
         out.write_u16::<BigEndian>(dns.len() as u16)?;

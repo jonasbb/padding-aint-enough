@@ -7,7 +7,7 @@
 
 use byteorder::{BigEndian, WriteBytesExt};
 use failure::Fail;
-use log::{trace, warn};
+use log::{info, trace, warn};
 use openssl::{
     ssl::{SslConnector, SslMethod, SslOptions, SslVerifyMode, SslVersion},
     x509::X509,
@@ -215,7 +215,16 @@ where
 
     let mut out = Vec::with_capacity(128 * 5);
     while let Some(dns) = await!(client.next()) {
-        let dns = dns?.unwrap_or_else(|| DUMMY_DNS.to_vec());
+        let dns = match dns? {
+            Payload::Payload(p) => {
+                info!("Send payload");
+                p
+            }
+            Payload::Dummy => {
+                info!("Send dummy");
+                DUMMY_DNS.to_vec()
+            }
+        };
         out.truncate(0);
         out.write_u16::<BigEndian>(dns.len() as u16)?;
         out.extend_from_slice(&*dns);
@@ -246,8 +255,10 @@ where
 
         // Remove all dummy messages from the responses
         if msg.id() == 47255 {
+            info!("Received dummy");
             continue;
         }
+        info!("Received payload");
 
         out.truncate(0);
         out.write_u16::<BigEndian>(dns.len() as u16)?;
