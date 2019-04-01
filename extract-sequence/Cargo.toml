@@ -12,7 +12,7 @@ failure = "0.1.5"
 log = "0.4.6"
 pcap = "0.7.0"
 pnet = "0.22.0"
-ron = "0.4.2"
+ron = "0.5.0"
 rustls = "0.15.1"
 sequences = { path = "../sequences" }
 serde = { version = "1.0.89", features = [ "derive" ] }
