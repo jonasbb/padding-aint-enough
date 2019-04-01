@@ -3,7 +3,9 @@
 
 use encrypted_dns::ErrorExt;
 use failure::Error;
-use pyo3::{self, exceptions::Exception, prelude::*, CompareOp, PyObjectProtocol};
+use pyo3::{
+    self, basic::CompareOp, exceptions::Exception, prelude::*, types::PyType, PyObjectProtocol,
+};
 use sequences::{load_all_dnstap_files_from_dir, OneHotEncoding, Sequence};
 use std::path::Path;
 
@@ -12,7 +14,7 @@ fn error2py(err: Error) -> PyErr {
 }
 
 // Function name is module name
-#[pymodinit]
+#[pymodule]
 fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PySequence>()?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
@@ -21,7 +23,7 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     #[pyfn(m, "load_file")]
     fn load_file(path: String) -> PyResult<PySequence> {
         let seq = Sequence::from_path(Path::new(&path)).map_err(error2py)?;
-        Ok(PySequence::new(seq))
+        Ok(seq.into())
     }
 
     /// Load a whole folder of dnstap files
@@ -32,12 +34,7 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
             .map_err(error2py)?;
         Ok(seqs
             .into_iter()
-            .map(|(domain, seqs)| {
-                (
-                    domain,
-                    seqs.into_iter().map(|seq| PySequence::new(seq)).collect(),
-                )
-            })
+            .map(|(domain, seqs)| (domain, seqs.into_iter().map(Into::into).collect()))
             .collect())
     }
 
@@ -50,19 +47,13 @@ pub struct PySequence {
     sequence: Sequence,
 }
 
-impl PySequence {
-    pub fn new(sequence: Sequence) -> PySequence {
-        PySequence { sequence }
-    }
-}
-
 #[pymethods]
 impl PySequence {
     /// Create a new class of type `Sequence` by loading the dnstap file
-    #[new]
-    pub fn __new__(obj: &PyRawObject, path: String) -> PyResult<()> {
+    #[classmethod]
+    pub fn from_path(_cls: &PyType, path: String) -> PyResult<PySequence> {
         let seq = Sequence::from_path(Path::new(&path)).map_err(error2py)?;
-        obj.init(|_| PySequence::new(seq))
+        Ok(seq.into())
     }
 
     /// Returns a unique identifier for this sequence
@@ -97,6 +88,12 @@ impl PySequence {
     /// Returns the complexity score of this sequence
     pub fn complexity(&self) -> usize {
         self.sequence.complexity()
+    }
+}
+
+impl From<Sequence> for PySequence {
+    fn from(other: Sequence) -> Self {
+        PySequence { sequence: other }
     }
 }
 
