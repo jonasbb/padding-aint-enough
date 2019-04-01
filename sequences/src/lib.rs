@@ -13,7 +13,12 @@ use failure::{self, Error};
 use lazy_static::lazy_static;
 pub use load_sequence::convert_to_sequence;
 use misc_utils::{self, Min};
-use serde::{self, Deserialize, Serialize};
+use serde::{
+    self,
+    de::{MapAccess, Visitor},
+    ser::SerializeMap,
+    Deserialize, Deserializer, Serialize, Serializer,
+};
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     collections::HashMap,
@@ -92,7 +97,6 @@ impl From<&AbstractQueryResponse> for AbstractQueryResponse {
     }
 }
 
-
 impl From<&Query> for AbstractQueryResponse {
     fn from(other: &Query) -> Self {
         AbstractQueryResponse {
@@ -119,7 +123,7 @@ pub enum LoadDnstapConfig {
 // Gap + S1-S15
 pub type OneHotEncoding = Vec<u8>;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct Sequence(Vec<SequenceElement>, String);
 
 #[allow(clippy::len_without_is_empty)]
@@ -474,7 +478,50 @@ impl PartialOrd for Sequence {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
+impl Serialize for Sequence {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map_ser = serializer.serialize_map(Some(1))?;
+        map_ser.serialize_entry(&self.1, &self.0)?;
+        map_ser.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Sequence {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct Helper;
+        use serde::de::Error;
+
+        impl<'de> Visitor<'de> for Helper where {
+            type Value = Sequence;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "valid JSON object")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: MapAccess<'de>,
+            {
+                let entry = map.next_entry()?;
+                if let Some(entry) = entry {
+                    Ok(Sequence(entry.1, entry.0))
+                } else {
+                    Err(Error::custom("The map must contain one element."))
+                }
+            }
+        }
+
+        deserializer.deserialize_map(Helper)
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum SequenceElement {
     Size(u8),
     Gap(u8),
@@ -555,6 +602,74 @@ impl Debug for SequenceElement {
             Gap(v) => ("G", v),
         };
         write!(f, "{}{:>2}", l, v)
+    }
+}
+
+impl Serialize for SequenceElement {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let res = match self {
+            SequenceElement::Gap(g) => format!("G{:0>2}", g),
+            SequenceElement::Size(s) => format!("S{:0>2}", s),
+        };
+        serializer.serialize_str(&res)
+    }
+}
+
+impl<'de> Deserialize<'de> for SequenceElement {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct Helper;
+        use serde::de::Error;
+
+        impl<'de> Visitor<'de> for Helper where {
+            type Value = SequenceElement;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "string in format `S00` or `G00`")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: Error,
+            {
+                let chars = value.chars().count();
+                if chars != 3 {
+                    return Err(Error::custom(format!("The string must be of length 3 (but got {}), in the format `S00` or `G00`.", chars)));
+                }
+                let start = value.chars().next().expect("String is 3 chars large.");
+                match start {
+                    'G' => {
+                        let v = value[1..].parse::<u8>().map_err(|_| {
+                            Error::custom(format!(
+                                "The string must end in two digits, but got `{:?}`.",
+                                &value[1..]
+                            ))
+                        })?;
+                        Ok(SequenceElement::Gap(v))
+                    }
+                    'S' => {
+                        let v = value[1..].parse::<u8>().map_err(|_| {
+                            Error::custom(format!(
+                                "The string must end in two digits, but got `{:?}`.",
+                                &value[1..]
+                            ))
+                        })?;
+                        Ok(SequenceElement::Size(v))
+                    }
+                    _ => Err(Error::custom(format!(
+                        "The string must start with `G` or `S` but got `{}`.",
+                        start
+                    ))),
+                }
+            }
+        }
+
+        deserializer.deserialize_str(Helper)
     }
 }
 
