@@ -13,7 +13,7 @@ use failure::{bail, format_err, Error};
 use log::{debug, info};
 use std::{collections::BTreeMap, path::Path};
 
-enum Padding {
+pub(crate) enum Padding {
     Q128R468,
 }
 
@@ -267,7 +267,7 @@ fn sanity_check_matched_queries(matched: &[Query]) -> Result<(), Error> {
     Ok(())
 }
 
-fn gap_size(gap: Duration, base: Duration) -> Option<SequenceElement> {
+pub(crate) fn gap_size(gap: Duration, base: Duration) -> Option<SequenceElement> {
     if gap <= base {
         return None;
     }
@@ -285,7 +285,7 @@ fn gap_size(gap: Duration, base: Duration) -> Option<SequenceElement> {
     }
 }
 
-fn pad_size(size: u32, is_query: bool, padding: Padding) -> SequenceElement {
+pub(crate) fn pad_size(size: u32, is_query: bool, padding: Padding) -> SequenceElement {
     use self::Padding::*;
     SequenceElement::Size(match (padding, is_query) {
         (Q128R468, true) => block_padding(size, 128) / 128,
