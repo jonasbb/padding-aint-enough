@@ -2,7 +2,9 @@ use chrono::NaiveDateTime;
 use failure::{bail, format_err, Error, ResultExt};
 use log::debug;
 use pcap::{Capture, Packet as PcapPacket};
-use pnet::packet::{ethernet::EthernetPacket, ipv4::Ipv4Packet, tcp::TcpPacket, Packet};
+use pnet::packet::{
+    ethernet::EthernetPacket, ip::IpNextHeaderProtocols, ipv4::Ipv4Packet, tcp::TcpPacket, Packet,
+};
 use rustls::internal::msgs::{
     codec::Codec, enums::ContentType as TlsContentType, message::Message as TlsMessage,
 };
@@ -136,6 +138,12 @@ pub fn extract_tls_records(file: impl AsRef<Path>) -> Result<Vec<TlsRecord>, Err
 
             let ipv4 =
                 Ipv4Packet::new(eth.payload()).ok_or_else(|| format_err!("Expect IPv4 Packet"))?;
+
+            // Check for TCP in next layer
+            if ipv4.get_next_level_protocol() != IpNextHeaderProtocols::Tcp {
+                continue;
+            }
+
             // Bit 0 => Reserved
             // Bit 1 => DF Don't Fragment
             // Bit 2 => MF More Fragments
