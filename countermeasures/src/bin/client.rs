@@ -6,16 +6,19 @@
 // #![feature(arbitrary_self_types)]
 
 use byteorder::{BigEndian, WriteBytesExt};
+use chrono::{SecondsFormat, Utc};
 use failure::Fail;
 use log::{info, trace, warn};
 use openssl::{
     ssl::{SslConnector, SslMethod, SslOptions, SslVerifyMode, SslVersion},
     x509::X509,
 };
+use sequences::Sequence;
 use std::{
     net::SocketAddr,
     path::PathBuf,
     sync::{Arc, Mutex},
+    time::Instant,
 };
 use structopt::StructOpt;
 use tlsproxy::{
@@ -24,7 +27,8 @@ use tlsproxy::{
 };
 use tokio::{
     await,
-    io::shutdown,
+    fs::File,
+    io::{self, shutdown},
     net::{TcpListener, TcpStream},
     prelude::*,
 };
@@ -81,8 +85,12 @@ struct CliArgs {
     server: HostnameSocketAddr,
 
     /// Log all TLS keys into this file
-    #[structopt(long = "sslkeylogfile", env = "SSLKEYLOGFILE")]
+    #[structopt(long = "sslkeylogfile", env = "SSLKEYLOGFILE", value_name = "FILE")]
     sslkeylogfile: Option<PathBuf>,
+
+    /// Dump sequence files off all connections of this client.
+    #[structopt(long = "dump-sequences", value_name = "DIR")]
+    dump_sequences: Option<PathBuf>,
 
     #[structopt(subcommand)]
     strategy: Strategy,
@@ -114,6 +122,7 @@ fn run() -> Result<(), Error> {
         .init();
     openssl_probe::init_ssl_cert_env_vars();
     let cli_args = CliArgs::from_args();
+    eprintln!("{:?}", cli_args);
     if let Some(file) = &cli_args.sslkeylogfile {
         std::env::set_var("SSLKEYLOGFILE", file.to_path_buf());
     }
@@ -139,6 +148,7 @@ fn run() -> Result<(), Error> {
 }
 
 async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Error> {
+    let connection_start = Utc::now();
     client.set_nodelay(true)?;
 
     let server = await!(TcpStream::connect(&config.server.socket_addr()))?;
@@ -187,6 +197,7 @@ async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Er
     let server_reader = TokioOpensslStream::new(Arc::new(Mutex::new(server)));
     let server_writer = server_reader.clone();
 
+    let mut sequence_raw = Vec::new();
     // Copy the data (in parallel) between the client and the server.
     // After the copy is done we indicate to the remote side that we've
     // finished by shutting down the connection.
@@ -194,7 +205,9 @@ async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Er
     let client_reader = wrap_stream(client_reader, &config.strategy);
     let client_to_server = backward(copy_client_to_server(client_reader, server_writer));
 
-    let server_reader = DnsBytesStream::new(server_reader).from_err();
+    let server_reader = DnsBytesStream::new(server_reader)
+        .from_err()
+        .inspect(|payload| sequence_raw.push((payload.len() as u16, Instant::now())));
     let server_to_client = backward(copy_server_to_client(server_reader, client_writer));
 
     let (from_client, from_server) = await!(client_to_server.join(server_to_client))?;
@@ -202,6 +215,22 @@ async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Er
         "client wrote {} bytes and received {} bytes",
         from_client, from_server
     );
+
+    if let Some(dir) = config.dump_sequences.as_ref() {
+        let filepath = dir.join(format!(
+            "sequence-{}.json",
+            connection_start.to_rfc3339_opts(SecondsFormat::Secs, true)
+        ));
+        let mut file = await!(File::create(filepath.clone()))?;
+        let seq =
+            Sequence::from_sizes_and_times(filepath.to_string_lossy().to_string(), &*sequence_raw)
+                .unwrap();
+        await!(io::write_all(
+            &mut file,
+            serde_json::to_string(&seq).unwrap()
+        ))?;
+        await!(io::flush(&mut file))?;
+    }
 
     Ok(())
 }
