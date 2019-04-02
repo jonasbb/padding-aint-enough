@@ -15,7 +15,6 @@ members = [
     "dns-sequence",
     "extract-sequence",
     "framestream",
-    "plot",
     "pylib",
     "sequences",
     "taskmanager",

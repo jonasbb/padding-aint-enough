@@ -433,7 +433,6 @@ impl<S: Eq + Hash> StatsCounter<S> {
 /// Fake implementation of the plot feature such that this binary can be build without python dependencies
 ///
 /// Instead of plotting this simply dumps the plotting data as JSON
-#[cfg(not(feature = "plot"))]
 mod plot {
     use failure::Error;
     use log::info;
