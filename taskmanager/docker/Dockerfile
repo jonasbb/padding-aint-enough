@@ -1,4 +1,4 @@
-FROM fedora:28
+FROM fedora:29
 
 # Copy modified unbound rpms
 COPY rpms /rpms
@@ -32,7 +32,9 @@ RUN dnf -y --setopt=tsflags=nodocs update \
         python3-requests \
         python3-websocket-client \
         sudo \
-        /rpms/unbound*.rpm \
+        /rpms/unbound-1*.rpm \
+        /rpms/unbound-libs-1*.rpm \
+        /rpms/python?-unbound-1*.rpm \
     && dnf clean all
 
 # Add a non-privileged user to run chrome with
