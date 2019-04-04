@@ -15,7 +15,7 @@ pnet = "0.22.0"
 ron = "0.5.0"
 rustls = "0.15.2"
 sequences = { path = "../sequences" }
-serde = { version = "1.0.89", features = [ "derive" ] }
+serde = { version = "1.0.90", features = [ "derive" ] }
 structopt = "0.2.15"
 
 [dev-dependencies]
