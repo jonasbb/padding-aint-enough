@@ -213,7 +213,7 @@ async fn handle_client(
 
     let (server_reader, server_writer) = await!(connect_to_server(
         config.args.server.clone(),
-        config.transport
+        &*config
     ))?;
 
     // Create separate read/write handles for the TCP clients that we're
@@ -312,21 +312,21 @@ where
 
 async fn connect_to_server(
     server_addr: HostnameSocketAddr,
-    transport: Transport,
+    config: &Config
 ) -> Result<(impl AsyncRead, impl AsyncWrite), Error> {
     // Open a tcp connection. This is always needed
     let server = await!(TcpStream::connect(&server_addr.socket_addr()))?;
     server.set_nodelay(true)?;
 
-    let server: MyStream<_> = match transport {
+    let server: MyStream<_> = match config.transport {
         Transport::Tcp => MyTcpStream::new(Arc::new(Mutex::new(server))).into(),
 
         Transport::Tls => {
             let mut connector = SslConnector::builder(SslMethod::tls())?;
             connector.set_min_proto_version(Some(SslVersion::TLS1_2))?;
             connector.set_options(SslOptions::NO_COMPRESSION);
-            if let Some(logfile) = std::env::var_os("SSLKEYLOGFILE") {
-                let cb = tlsproxy::keylog_to_file(logfile);
+            if let Some(logfile) = &config.args.sslkeylogfile {
+                let cb = tlsproxy::keylog_to_file(logfile.clone());
                 connector.set_keylog_callback(cb);
             }
             let connector = connector.build();
