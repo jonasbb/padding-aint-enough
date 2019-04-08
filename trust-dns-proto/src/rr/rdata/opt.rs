@@ -248,6 +248,17 @@ pub fn read(decoder: &mut BinDecoder, rdata_length: Restrict<u16>) -> ProtoResul
         }
     }
 
+    // If the last option in the OPT record has a length of 0, then the while loop will exit in the
+    // `OptReadState::Data` read state. However, if we expect to read 0 bytes, then we read all the
+    // bytes we need and we can create an option out of it.
+    if let OptReadState::Data {
+        code, length: 0, ..
+    } = state
+    {
+        options.insert(code, (code, &[] as &[u8]).into());
+        state = OptReadState::ReadCode;
+    }
+
     if state != OptReadState::ReadCode {
         // there was some problem parsing the data for the options, ignoring them
         // TODO: should we ignore all of the EDNS data in this case?
