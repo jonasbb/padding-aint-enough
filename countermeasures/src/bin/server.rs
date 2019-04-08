@@ -5,7 +5,7 @@
 // // only needed to manually implement a std future:
 // #![feature(arbitrary_self_types)]
 
-use byteorder::{BigEndian, WriteBytesExt};
+use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
 use failure::Fail;
 use log::info;
 use openssl::{
@@ -20,8 +20,9 @@ use std::{
 };
 use structopt::StructOpt;
 use tlsproxy::{
-    print_error, utils::backward, wrap_stream, DnsBytesStream, Error, HostnameSocketAddr, MyStream,
-    MyTcpStream, Payload, Strategy, TokioOpensslStream, SERVER_CERT, SERVER_KEY,
+    print_error, utils::backward, wrap_stream, DnsBytesStream, EnsurePadding, Error,
+    HostnameSocketAddr, MyStream, MyTcpStream, Payload, Strategy, TokioOpensslStream, SERVER_CERT,
+    SERVER_KEY,
 };
 use tokio::{
     await,
@@ -30,6 +31,10 @@ use tokio::{
     prelude::*,
 };
 use tokio_openssl::{SslAcceptorExt, SslConnectorExt};
+use trust_dns_proto::{
+    op::message::Message,
+    serialize::binary::{BinEncodable, BinEncoder},
+};
 
 const DUMMY_DNS_REPLY: [u8; 468] = [
     /*0x01, 0xd4,*/ 0xb8, 0x97, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
@@ -183,6 +188,10 @@ fn run() -> Result<(), Error> {
     acceptor.set_verify(SslVerifyMode::NONE);
     acceptor.set_certificate(X509::from_pem(SERVER_CERT)?.as_ref())?;
     acceptor.set_private_key(PKey::private_key_from_pem(SERVER_KEY)?.as_ref())?;
+    if let Some(logfile) = &config.args.sslkeylogfile {
+        let cb = tlsproxy::keylog_to_file(logfile.clone());
+        acceptor.set_keylog_callback(cb);
+    }
     let acceptor = acceptor.build();
 
     let config = Arc::new(config);
@@ -211,10 +220,8 @@ async fn handle_client(
     client.set_nodelay(true)?;
     let client = await!(acceptor.accept_async(client))?;
 
-    let (server_reader, server_writer) = await!(connect_to_server(
-        config.args.server.clone(),
-        &*config
-    ))?;
+    let (server_reader, server_writer) =
+        await!(connect_to_server(config.args.server.clone(), &*config))?;
 
     // Create separate read/write handles for the TCP clients that we're
     // proxying data between. Note that typically you'd use
@@ -232,6 +239,7 @@ async fn handle_client(
     // After the copy is done we indicate to the remote side that we've
     // finished by shutting down the connection.
     let client_reader = DnsBytesStream::new(client_reader).from_err();
+    let client_reader = EnsurePadding::new(client_reader);
     let client_to_server = backward(copy_client_to_server(client_reader, server_writer));
 
     let server_reader = DnsBytesStream::new(server_reader).from_err();
@@ -249,7 +257,7 @@ async fn handle_client(
 
 async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> Result<u64, Error>
 where
-    R: Stream<Item = Vec<u8>, Error = Error> + Send + Unpin,
+    R: Stream<Item = Message, Error = Error> + Send + Unpin,
     W: AsyncWrite,
 {
     let mut total_bytes = 0;
@@ -259,8 +267,17 @@ where
         let dns = dns?;
 
         out.truncate(0);
-        out.write_u16::<BigEndian>(dns.len() as u16)?;
-        out.extend_from_slice(&*dns);
+        // write placeholder length, replaced later
+        out.write_u16::<BigEndian>(0)?;
+        {
+            let mut encoder = BinEncoder::new(&mut out);
+            encoder.set_offset(2);
+            dns.emit(&mut encoder)?;
+        }
+        let len = (out.len() - 2) as u16;
+        BigEndian::write_u16(&mut out[..], len);
+
+        info!("C->S {}B", len);
 
         // Add 2 for the length of the length header
         total_bytes += out.len() as u64;
@@ -285,12 +302,13 @@ where
     while let Some(dns) = await!(server.next()) {
         let dns = match dns? {
             Payload::Payload(p) => {
-                info!("Send payload");
+                info!("C<-S payload {}B", p.len());
                 p
             }
             Payload::Dummy => {
-                info!("Send dummy");
-                DUMMY_DNS_REPLY.to_vec()
+                let res = DUMMY_DNS_REPLY.to_vec();
+                info!("C<-S dummy {}B", res.len());
+                res
             }
         };
 
@@ -312,7 +330,7 @@ where
 
 async fn connect_to_server(
     server_addr: HostnameSocketAddr,
-    config: &Config
+    config: &Config,
 ) -> Result<(impl AsyncRead, impl AsyncWrite), Error> {
     // Open a tcp connection. This is always needed
     let server = await!(TcpStream::connect(&server_addr.socket_addr()))?;

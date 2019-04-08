@@ -5,7 +5,7 @@
 // // only needed to manually implement a std future:
 // #![feature(arbitrary_self_types)]
 
-use byteorder::{BigEndian, WriteBytesExt};
+use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
 use chrono::{SecondsFormat, Utc};
 use failure::Fail;
 use log::{info, trace, warn};
@@ -22,8 +22,8 @@ use std::{
 };
 use structopt::StructOpt;
 use tlsproxy::{
-    print_error, utils::backward, wrap_stream, DnsBytesStream, Error, HostnameSocketAddr,
-    MyTcpStream, Payload, Strategy, TokioOpensslStream, SERVER_CERT,
+    print_error, utils::backward, wrap_stream, DnsBytesStream, EnsurePadding, Error,
+    HostnameSocketAddr, MyTcpStream, Payload, Strategy, TokioOpensslStream, SERVER_CERT,
 };
 use tokio::{
     await,
@@ -33,6 +33,10 @@ use tokio::{
     prelude::*,
 };
 use tokio_openssl::SslConnectorExt;
+use trust_dns_proto::{
+    op::message::Message,
+    serialize::binary::{BinEncodable, BinEncoder},
+};
 
 /// DNS query for `google.com.` with padding
 const DUMMY_DNS: [u8; 128] = [
@@ -202,6 +206,7 @@ async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Er
     // After the copy is done we indicate to the remote side that we've
     // finished by shutting down the connection.
     let client_reader = DnsBytesStream::new(client_reader).from_err();
+    let client_reader = EnsurePadding::new(client_reader);
     let client_reader = wrap_stream(client_reader, &config.strategy);
     let client_to_server = backward(copy_client_to_server(client_reader, server_writer));
 
@@ -237,28 +242,31 @@ async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Er
 
 async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> Result<u64, Error>
 where
-    R: Stream<Item = Payload<Vec<u8>>, Error = Error> + Send + Unpin,
+    R: Stream<Item = Payload<Message>, Error = Error> + Send + Unpin,
     W: AsyncWrite,
 {
     let mut total_bytes = 0;
 
     let mut out = Vec::with_capacity(128 * 5);
     while let Some(dns) = await!(client.next()) {
-        let dns = match dns? {
+        out.truncate(0);
+        // write placeholder length, replaced later
+        out.write_u16::<BigEndian>(0)?;
+        match dns? {
             Payload::Payload(p) => {
                 info!("Send payload");
-                p
+                let mut encoder = BinEncoder::new(&mut out);
+                encoder.set_offset(2);
+                p.emit(&mut encoder)?;
             }
             Payload::Dummy => {
                 info!("Send dummy");
-                DUMMY_DNS.to_vec()
+                out.extend_from_slice(&DUMMY_DNS);
             }
         };
-        out.truncate(0);
-        out.write_u16::<BigEndian>(dns.len() as u16)?;
-        out.extend_from_slice(&*dns);
+        let len = (out.len() - 2) as u16;
+        BigEndian::write_u16(&mut out[..], len);
 
-        // Add 2 for the length of the length header
         total_bytes += out.len() as u64;
         await!(tokio::io::write_all(&mut server, &mut out))?;
         server.flush()?;

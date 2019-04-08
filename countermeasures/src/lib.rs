@@ -9,6 +9,7 @@
 mod adaptive_padding;
 mod constant_rate;
 mod dns_tcp;
+mod ensure_padding;
 mod error;
 mod pass_through;
 mod streams;
@@ -18,6 +19,7 @@ pub use crate::{
     adaptive_padding::AdaptivePadding,
     constant_rate::ConstantRate,
     dns_tcp::DnsBytesStream,
+    ensure_padding::EnsurePadding,
     error::Error,
     pass_through::PassThrough,
     streams::{MyStream, MyTcpStream, TokioOpensslStream},
