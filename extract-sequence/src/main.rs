@@ -1,6 +1,8 @@
 use colored::Colorize;
 use extract_sequence::{build_sequence, extract_tls_records, filter_tls_records};
 use failure::Error;
+use itertools::Itertools;
+use std::{mem, net::Ipv4Addr};
 use structopt::StructOpt;
 
 #[derive(Clone, Debug, StructOpt)]
@@ -65,9 +67,16 @@ fn run() -> Result<(), Error> {
         }
 
         // Filter to only those records containing DNS
-        records = filter_tls_records(records);
+        records.values_mut().for_each(|records| {
+            // `filter_tls_records` takes the Vec by value, which is why we first need to move it out
+            // of the HashMap and back it afterwards.
+            let mut tmp = Vec::new();
+            mem::swap(records, &mut tmp);
+            tmp = filter_tls_records(tmp, (Ipv4Addr::new(1, 0, 0, 1), 853));
+            mem::swap(records, &mut tmp);
+        });
         println!("{}", "TLS Records with DNS responses:".underline());
-        for r in &records {
+        for r in records.values().flat_map(std::convert::identity).sorted() {
             println!("{:?}", r);
         }
 

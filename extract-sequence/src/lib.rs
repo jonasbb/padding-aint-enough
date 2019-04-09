@@ -1,5 +1,8 @@
 use chrono::NaiveDateTime;
+use core::cmp::Ordering;
 use failure::{bail, format_err, Error, ResultExt};
+use hashbrown::HashMap;
+use itertools::Itertools;
 use log::debug;
 use pcap::{Capture, Packet as PcapPacket};
 use pnet::packet::{
@@ -10,10 +13,42 @@ use rustls::internal::msgs::{
 };
 use sequences::{AbstractQueryResponse, Sequence};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, net::Ipv4Addr, path::Path};
+use std::{mem, net::Ipv4Addr, path::Path};
 
-/// Identifier for a one-way TCP flow
-type FlowId = (Ipv4Addr, u16);
+/// Identifier for a two-way TCP flow
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct FlowId {
+    pub ip0: Ipv4Addr,
+    pub port0: u16,
+    pub ip1: Ipv4Addr,
+    pub port1: u16,
+}
+
+impl FlowId {
+    pub fn from_pairs(p0: (Ipv4Addr, u16), p1: (Ipv4Addr, u16)) -> Self {
+        let ((ip0, port0), (ip1, port1)) = if p0 <= p1 { (p0, p1) } else { (p1, p0) };
+        Self {
+            ip0,
+            port0,
+            ip1,
+            port1,
+        }
+    }
+
+    pub fn from_ip_and_tcp(ipv4: &Ipv4Packet, tcp: &TcpPacket) -> Self {
+        let p0 = (ipv4.get_source(), tcp.get_source());
+        let p1 = (ipv4.get_destination(), tcp.get_destination());
+        Self::from_pairs(p0, p1)
+    }
+}
+
+impl From<&TlsRecord> for FlowId {
+    fn from(other: &TlsRecord) -> Self {
+        let p0 = (other.sender, other.sender_port);
+        let p1 = (other.receiver, other.receiver_port);
+        Self::from_pairs(p0, p1)
+    }
+}
 
 /// Enum representing the different TLS record types.
 ///
@@ -54,7 +89,11 @@ pub struct TlsRecord {
     /// IPv4 Address of the sender
     pub sender: Ipv4Addr,
     /// TCP port of the sender
-    pub port: u16,
+    pub sender_port: u16,
+    /// IPv4 Address of the receiver
+    pub receiver: Ipv4Addr,
+    /// TCP port of the receiver
+    pub receiver_port: u16,
     /// Time in Utc when the packet was captures
     pub time: NaiveDateTime,
     /// The TLS record type
@@ -73,13 +112,35 @@ impl Into<AbstractQueryResponse> for &TlsRecord {
     }
 }
 
+impl PartialOrd for TlsRecord {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(&other))
+    }
+}
+
+impl Ord for TlsRecord {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.time.cmp(&other.time)
+    }
+}
+
 /// Extract a [`Sequence`] from the path to a pcap file.
 ///
 /// Error conditions include unsupported pcaps, e.g., too fragmented records, or pcaps without DNS content.
-pub fn pcap_to_sequence(file: impl AsRef<Path>) -> Result<Sequence, Error> {
+pub fn pcap_to_sequence(
+    file: impl AsRef<Path>,
+    server: (Ipv4Addr, u16),
+) -> Result<Sequence, Error> {
     let file = file.as_ref();
     let mut records = extract_tls_records(&file)?;
-    records = filter_tls_records(records);
+    records.values_mut().for_each(|records| {
+        // `filter_tls_records` takes the Vec by value, which is why we first need to move it out
+        // of the HashMap and back it afterwards.
+        let mut tmp = Vec::new();
+        mem::swap(records, &mut tmp);
+        tmp = filter_tls_records(tmp, server);
+        mem::swap(records, &mut tmp);
+    });
 
     let seq = build_sequence(records, file.to_string_lossy());
     seq.ok_or_else(|| {
@@ -93,14 +154,16 @@ pub fn pcap_to_sequence(file: impl AsRef<Path>) -> Result<Sequence, Error> {
 /// First step in processing a pcap file, extracting *all* Tls records
 ///
 /// This extracts all Tls records from the pcap file, from both client and server.
-pub fn extract_tls_records(file: impl AsRef<Path>) -> Result<Vec<TlsRecord>, Error> {
+pub fn extract_tls_records(
+    file: impl AsRef<Path>,
+) -> Result<HashMap<FlowId, Vec<TlsRecord>>, Error> {
     let file = file.as_ref();
     let mut capture = Capture::from_file(file)?;
     // ID of the packet with in the pcap file.
     // Makes it easier to map it to the same packet within wireshark
     let mut packet_id = 0;
     // List of all parsed TLS records
-    let mut tls_records = Vec::default();
+    let mut tls_records: HashMap<FlowId, Vec<TlsRecord>> = HashMap::default();
     // Buffer all unprocessed bytes.
     //
     // It needs to be a HashMap, because it needs to be stored per direction.
@@ -154,7 +217,7 @@ pub fn extract_tls_records(file: impl AsRef<Path>) -> Result<Vec<TlsRecord>, Err
             let tcp =
                 TcpPacket::new(ipv4.payload()).ok_or_else(|| format_err!("Expect TCP Segment"))?;
 
-            let flowid = (ipv4.get_source(), tcp.get_source());
+            let flowid = FlowId::from_ip_and_tcp(&ipv4, &tcp);
 
             // It seems that pnet 0.22 has a problem determining the TCP payload as it includes padding
             // See issue here: https://github.com/libpnet/libpnet/issues/346
@@ -195,15 +258,21 @@ pub fn extract_tls_records(file: impl AsRef<Path>) -> Result<Vec<TlsRecord>, Err
                     ipv4.get_source(),
                     tls.payload.length()
                 );
-                tls_records.push(TlsRecord {
+                let record = TlsRecord {
                     packet_in_pcap: packet_id,
                     sender: ipv4.get_source(),
-                    port: tcp.get_source(),
+                    sender_port: tcp.get_source(),
+                    receiver: ipv4.get_destination(),
+                    receiver_port: tcp.get_destination(),
                     // next_time is never None here
                     time: next_time[&flowid].unwrap(),
                     message_type: tls.typ.into(),
                     message_length: tls.payload.length() as u32,
-                });
+                };
+                tls_records
+                    .entry((&record).into())
+                    .or_default()
+                    .push(record);
 
                 // Now that we build the TLS record, we can update the time
                 next_time.insert(flowid, Some(time));
@@ -220,9 +289,10 @@ pub fn extract_tls_records(file: impl AsRef<Path>) -> Result<Vec<TlsRecord>, Err
 ///
 /// The interesting TLS records are those needed to build the feature set.
 /// This means only those containing DNS traffic and maybe only the client or server.
-pub fn filter_tls_records(records: Vec<TlsRecord>) -> Vec<TlsRecord> {
-    let server = Ipv4Addr::new(1, 1, 1, 1);
-    let server_port = 853;
+pub fn filter_tls_records(
+    records: Vec<TlsRecord>,
+    (server, server_port): (Ipv4Addr, u16),
+) -> Vec<TlsRecord> {
     let min_client_query_size = 128;
 
     // First we ignore everything until we have seen the ChangeCipherSpec message from sever and client
@@ -242,7 +312,7 @@ pub fn filter_tls_records(records: Vec<TlsRecord>) -> Vec<TlsRecord> {
         .into_iter()
         .skip_while(|rec| {
             if rec.message_type == MessageType::ChangeCipherSpec {
-                if rec.sender == server && rec.port == server_port {
+                if rec.sender == server && rec.sender_port == server_port {
                     has_seen_server_change_cipher_spec = true;
                 } else {
                     has_seen_client_change_cipher_spec = true;
@@ -252,7 +322,7 @@ pub fn filter_tls_records(records: Vec<TlsRecord>) -> Vec<TlsRecord> {
             !(has_seen_server_change_cipher_spec && has_seen_client_change_cipher_spec)
         })
         .skip_while(|rec| {
-            if !(rec.sender == server && rec.port == server_port)
+            if !(rec.sender == server && rec.sender_port == server_port)
                 && rec.message_length >= min_client_query_size
             {
                 has_seen_first_client_query = true;
@@ -260,17 +330,25 @@ pub fn filter_tls_records(records: Vec<TlsRecord>) -> Vec<TlsRecord> {
 
             !has_seen_first_client_query
         })
-        .filter(|rec| rec.sender == server && rec.port == server_port)
+        .filter(|rec| rec.sender == server && rec.sender_port == server_port)
         .collect()
 }
 
 /// Given a list of pre-filtered TLS records, build a [`Sequence`] with them
 ///
 /// For filtering the list of [`TlsRecord`]s see the [`filter_tls_records`].
-pub fn build_sequence<S>(records: Vec<TlsRecord>, identifier: S) -> Option<Sequence>
+pub fn build_sequence<S, H>(
+    records: HashMap<FlowId, Vec<TlsRecord>, H>,
+    identifier: S,
+) -> Option<Sequence>
 where
     S: Into<String>,
 {
+    let records: Vec<_> = records
+        .into_iter()
+        .flat_map(|(_id, recs)| recs)
+        .sorted()
+        .collect();
     sequences::convert_to_sequence(
         &records,
         identifier.into(),

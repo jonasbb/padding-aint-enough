@@ -1,19 +1,28 @@
 use extract_sequence::{
-    build_sequence, extract_tls_records, filter_tls_records, pcap_to_sequence, TlsRecord,
+    build_sequence, extract_tls_records, filter_tls_records, pcap_to_sequence, FlowId, TlsRecord,
 };
 use pretty_assertions::assert_eq;
 use sequences::{
     Sequence,
     SequenceElement::{Gap, Size},
 };
+use std::{mem, net::Ipv4Addr};
 
 #[test]
 fn test_parse_and_filter_basic() {
     let file = "./tests/data/CF-constant-rate-400ms-2packets.pcap".to_string();
+    let server = (Ipv4Addr::new(1, 1, 1, 1), 853);
 
     // Test basic parsing of pcap
     let mut expected_records: Vec<TlsRecord> = ron::de::from_str(&PCAP_BASIC_ALL).unwrap();
-    let mut records = extract_tls_records(&*file).unwrap();
+    let mut records_map = extract_tls_records(&*file).unwrap();
+    let mut records = records_map[&FlowId {
+        ip0: Ipv4Addr::new(1, 1, 1, 1),
+        port0: 853,
+        ip1: Ipv4Addr::new(134, 96, 225, 146),
+        port1: 59920,
+    }]
+        .clone();
     assert_eq!(
         expected_records.len(),
         records.len(),
@@ -26,7 +35,15 @@ fn test_parse_and_filter_basic() {
         .iter()
         .map(|&i| expected_records[i])
         .collect();
-    records = filter_tls_records(records);
+    records = filter_tls_records(records, server);
+    records_map.values_mut().for_each(|records| {
+        // `filter_tls_records` takes the Vec by value, which is why we first need to move it out
+        // of the HashMap and back it afterwards.
+        let mut tmp = Vec::new();
+        mem::swap(records, &mut tmp);
+        tmp = filter_tls_records(tmp, server);
+        mem::swap(records, &mut tmp);
+    });
     assert_eq!(
         expected_records.len(),
         records.len(),
@@ -41,20 +58,28 @@ fn test_parse_and_filter_basic() {
     );
     assert_eq!(
         expected_sequence,
-        build_sequence(records, file.clone()).unwrap()
+        build_sequence(records_map, file.clone()).unwrap()
     );
 
     // End to end test
-    assert_eq!(expected_sequence, pcap_to_sequence(file).unwrap());
+    assert_eq!(expected_sequence, pcap_to_sequence(file, server).unwrap());
 }
 
 #[test]
 fn test_parse_and_filter_with_split_tls_record() {
     let file = "./tests/data/CF-constant-rate-400ms-2packets-with-fragment.pcap".to_string();
+    let server = (Ipv4Addr::new(1, 1, 1, 1), 853);
 
     // Test basic parsing of pcap
     let mut expected_records: Vec<TlsRecord> = ron::de::from_str(&PCAP_SPLIT_ALL).unwrap();
-    let mut records = extract_tls_records(&*file).unwrap();
+    let mut records_map = extract_tls_records(&*file).unwrap();
+    let mut records = records_map[&FlowId {
+        ip0: Ipv4Addr::new(1, 1, 1, 1),
+        port0: 853,
+        ip1: Ipv4Addr::new(134, 96, 225, 146),
+        port1: 58800,
+    }]
+        .clone();
     assert_eq!(
         expected_records.len(),
         records.len(),
@@ -67,7 +92,15 @@ fn test_parse_and_filter_with_split_tls_record() {
         .iter()
         .map(|&i| expected_records[i])
         .collect();
-    records = filter_tls_records(records);
+    records = filter_tls_records(records, server);
+    records_map.values_mut().for_each(|records| {
+        // `filter_tls_records` takes the Vec by value, which is why we first need to move it out
+        // of the HashMap and back it afterwards.
+        let mut tmp = Vec::new();
+        mem::swap(records, &mut tmp);
+        tmp = filter_tls_records(tmp, server);
+        mem::swap(records, &mut tmp);
+    });
     assert_eq!(
         expected_records.len(),
         records.len(),
@@ -82,11 +115,11 @@ fn test_parse_and_filter_with_split_tls_record() {
     );
     assert_eq!(
         expected_sequence,
-        build_sequence(records, file.clone()).unwrap()
+        build_sequence(records_map, file.clone()).unwrap()
     );
 
     // End to end test
-    assert_eq!(expected_sequence, pcap_to_sequence(file).unwrap());
+    assert_eq!(expected_sequence, pcap_to_sequence(file, server).unwrap());
 }
 
 /// All TLS records contained in `CF-constant-rate-400ms-2packets.pcap`
@@ -96,7 +129,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 4,
     sender: "134.96.225.146",
-    port: 59920,
+    sender_port: 59920,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T11:05:35.190368",
     message_type: Handshake,
     message_length: 206,
@@ -104,7 +139,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 6,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 59920,
     time: "2019-02-28T11:05:35.196718",
     message_type: Handshake,
     message_length: 90,
@@ -112,7 +149,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 6,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 59920,
     time: "2019-02-28T11:05:35.196718",
     message_type: ChangeCipherSpec,
     message_length: 1,
@@ -120,7 +159,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 8,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 59920,
     time: "2019-02-28T11:05:35.197205",
     message_type: ApplicationData,
     message_length: 23,
@@ -128,7 +169,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 8,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 59920,
     time: "2019-02-28T11:05:35.197205",
     message_type: ApplicationData,
     message_length: 2461,
@@ -136,7 +179,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 8,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 59920,
     time: "2019-02-28T11:05:35.197205",
     message_type: ApplicationData,
     message_length: 95,
@@ -144,7 +189,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 8,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 59920,
     time: "2019-02-28T11:05:35.197205",
     message_type: ApplicationData,
     message_length: 53,
@@ -152,7 +199,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 10,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 59920,
     time: "2019-02-28T11:05:35.197342",
     message_type: ApplicationData,
     message_length: 220,
@@ -160,7 +209,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 12,
     sender: "134.96.225.146",
-    port: 59920,
+    sender_port: 59920,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T11:05:35.199539",
     message_type: ChangeCipherSpec,
     message_length: 1,
@@ -168,7 +219,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 14,
     sender: "134.96.225.146",
-    port: 59920,
+    sender_port: 59920,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T11:05:35.245369",
     message_type: ApplicationData,
     message_length: 53,
@@ -176,7 +229,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 16,
     sender: "134.96.225.146",
-    port: 59920,
+    sender_port: 59920,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T11:05:35.603667",
     message_type: ApplicationData,
     message_length: 147,
@@ -184,7 +239,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 18,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 59920,
     time: "2019-02-28T11:05:35.610312",
     message_type: ApplicationData,
     message_length: 487,
@@ -192,7 +249,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 20,
     sender: "134.96.225.146",
-    port: 59920,
+    sender_port: 59920,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T11:05:36.004011",
     message_type: ApplicationData,
     message_length: 147,
@@ -200,7 +259,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 21,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 59920,
     time: "2019-02-28T11:05:36.010081",
     message_type: ApplicationData,
     message_length: 487,
@@ -208,7 +269,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 23,
     sender: "134.96.225.146",
-    port: 59920,
+    sender_port: 59920,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T11:05:36.402797",
     message_type: ApplicationData,
     message_length: 147,
@@ -216,7 +279,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 24,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 59920,
     time: "2019-02-28T11:05:36.408922",
     message_type: ApplicationData,
     message_length: 487,
@@ -224,7 +289,9 @@ const PCAP_BASIC_ALL: &str = r#"[
 (
     packet_in_pcap: 26,
     sender: "134.96.225.146",
-    port: 59920,
+    sender_port: 59920,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T11:05:36.802888",
     message_type: ApplicationData,
     message_length: 19,
@@ -240,7 +307,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 4,
     sender: "134.96.225.146",
-    port: 58800,
+    sender_port: 58800,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T10:48:48.129180",
     message_type: Handshake,
     message_length: 206,
@@ -248,7 +317,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 6,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 58800,
     time: "2019-02-28T10:48:48.135276",
     message_type: Handshake,
     message_length: 90,
@@ -256,7 +327,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 6,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 58800,
     time: "2019-02-28T10:48:48.135276",
     message_type: ChangeCipherSpec,
     message_length: 1,
@@ -264,7 +337,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 8,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 58800,
     time: "2019-02-28T10:48:48.135607",
     message_type: ApplicationData,
     message_length: 23,
@@ -272,7 +347,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 10,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 58800,
     time: "2019-02-28T10:48:48.135634",
     message_type: ApplicationData,
     message_length: 2461,
@@ -280,7 +357,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 10,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 58800,
     time: "2019-02-28T10:48:48.135634",
     message_type: ApplicationData,
     message_length: 95,
@@ -288,7 +367,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 10,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 58800,
     time: "2019-02-28T10:48:48.135634",
     message_type: ApplicationData,
     message_length: 53,
@@ -296,7 +377,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 11,
     sender: "134.96.225.146",
-    port: 58800,
+    sender_port: 58800,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T10:48:48.135645",
     message_type: ChangeCipherSpec,
     message_length: 1,
@@ -304,7 +387,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 12,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 58800,
     time: "2019-02-28T10:48:48.135687",
     message_type: ApplicationData,
     message_length: 220,
@@ -312,7 +397,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 15,
     sender: "134.96.225.146",
-    port: 58800,
+    sender_port: 58800,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T10:48:48.182400",
     message_type: ApplicationData,
     message_length: 53,
@@ -320,7 +407,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 17,
     sender: "134.96.225.146",
-    port: 58800,
+    sender_port: 58800,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T10:48:48.539666",
     message_type: ApplicationData,
     message_length: 147,
@@ -328,7 +417,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 19,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 58800,
     time: "2019-02-28T10:48:48.548103",
     message_type: ApplicationData,
     message_length: 487,
@@ -336,7 +427,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 21,
     sender: "134.96.225.146",
-    port: 58800,
+    sender_port: 58800,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T10:48:48.939153",
     message_type: ApplicationData,
     message_length: 147,
@@ -344,7 +437,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 22,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 58800,
     time: "2019-02-28T10:48:48.945785",
     message_type: ApplicationData,
     message_length: 487,
@@ -352,7 +447,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 24,
     sender: "134.96.225.146",
-    port: 58800,
+    sender_port: 58800,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T10:48:49.339112",
     message_type: ApplicationData,
     message_length: 147,
@@ -360,7 +457,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 25,
     sender: "1.1.1.1",
-    port: 853,
+    sender_port: 853,
+    receiver: "134.96.225.146",
+    receiver_port: 58800,
     time: "2019-02-28T10:48:49.345236",
     message_type: ApplicationData,
     message_length: 487,
@@ -368,7 +467,9 @@ const PCAP_SPLIT_ALL: &str = r#"[
 (
     packet_in_pcap: 27,
     sender: "134.96.225.146",
-    port: 58800,
+    sender_port: 58800,
+    receiver: "1.1.1.1",
+    receiver_port: 853,
     time: "2019-02-28T10:48:49.740813",
     message_type: ApplicationData,
     message_length: 19,
