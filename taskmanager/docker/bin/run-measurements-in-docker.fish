@@ -41,7 +41,9 @@ function run
 
     # Start fstrm_capture
     start_fstrm
-    # Start Unbound
+    # Start DNS services
+    echo "Starting stubby"
+    stubby -g -C /output/stubby.yml &
     echo "Starting unbound"
     sudo unbound-control start
 

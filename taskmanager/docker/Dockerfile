@@ -19,15 +19,21 @@ RUN dnf -y --setopt=tsflags=nodocs update \
         fedora-workstation-repositories \
     && dnf config-manager --set-enabled google-chrome \
     && dnf -y --setopt=tsflags=nodocs install \
+        autoconf \
         bind-utils \
         fish \
         fstrm-devel \
+        git \
         google-chrome-stable \
         iproute \
         libglvnd-glx \
+        libtool \
+        libyaml-devel \
+        make \
         mesa-dri-drivers \
         moreutils \
         nmap-ncat \
+        openssl-devel \
         psmisc \
         python3-requests \
         python3-websocket-client \
@@ -36,6 +42,23 @@ RUN dnf -y --setopt=tsflags=nodocs update \
         /rpms/unbound-libs-1*.rpm \
         /rpms/python?-unbound-1*.rpm \
     && dnf clean all
+
+# Install stubby
+RUN true \
+    && cd /tmp \
+    && git clone https://github.com/getdnsapi/getdns.git \
+    && cd getdns \
+    && git checkout master \
+    && git submodule update --init \
+    && libtoolize -ci \
+    && autoreconf -fi \
+    && mkdir build \
+    && cd build \
+    && ../configure --without-libidn --without-libidn2 --enable-stub-only --with-stubby \
+    && make \
+    && make install \
+    && ldconfig \
+    && true
 
 # Add a non-privileged user to run chrome with
 # But give it sudo permissions

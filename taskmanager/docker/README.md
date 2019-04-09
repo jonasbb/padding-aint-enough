@@ -16,6 +16,7 @@ docker run \
     --dns=127.0.0.1 \
     --shm-size=2g \
     --rm \
+    --name dnscapture \
     dnscapture
 ```
 
