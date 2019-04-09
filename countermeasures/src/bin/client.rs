@@ -15,6 +15,7 @@ use openssl::{
 };
 use sequences::Sequence;
 use std::{
+    mem,
     net::SocketAddr,
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -65,7 +66,6 @@ client -> proxy -> resolver
 
 #[derive(Clone, Debug, StructOpt)]
 #[structopt(
-    // name = "crossvalidate",
     author = "",
     raw(setting = "structopt::clap::AppSettings::ColoredHelp")
 )]
@@ -98,6 +98,21 @@ struct CliArgs {
 
     #[structopt(subcommand)]
     strategy: Strategy,
+}
+
+#[derive(Debug)]
+struct Config {
+    args: CliArgs,
+    message: Mutex<Vec<(u16, Instant)>>,
+}
+
+impl From<CliArgs> for Config {
+    fn from(args: CliArgs) -> Self {
+        Self {
+            args,
+            message: Mutex::default(),
+        }
+    }
 }
 
 fn main() {
@@ -138,7 +153,7 @@ fn run() -> Result<(), Error> {
         cli_args.listen, cli_args.server
     );
 
-    let config = Arc::new(cli_args);
+    let config: Arc<Config> = Arc::new(cli_args.into());
     let done = socket
         .incoming()
         .map_err(|e| println!("error accepting socket; error = {:?}", e))
@@ -151,11 +166,10 @@ fn run() -> Result<(), Error> {
     Ok(())
 }
 
-async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Error> {
-    let connection_start = Utc::now();
+async fn handle_client(config: Arc<Config>, client: TcpStream) -> Result<(), Error> {
     client.set_nodelay(true)?;
 
-    let server = await!(TcpStream::connect(&config.server.socket_addr()))?;
+    let server = await!(TcpStream::connect(&config.args.server.socket_addr()))?;
     server.set_nodelay(true)?;
     let mut connector = SslConnector::builder(SslMethod::tls())?;
     connector.set_min_proto_version(Some(SslVersion::TLS1_2))?;
@@ -185,7 +199,7 @@ async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Er
         connector.set_keylog_callback(cb);
     }
     let connector = connector.build();
-    let server = await!(connector.connect_async(&config.server.hostname(), server))?;
+    let server = await!(connector.connect_async(&config.args.server.hostname(), server))?;
 
     // Create separate read/write handles for the TCP clients that we're
     // proxying data between. Note that typically you'd use
@@ -201,18 +215,40 @@ async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Er
     let server_reader = TokioOpensslStream::new(Arc::new(Mutex::new(server)));
     let server_writer = server_reader.clone();
 
-    let mut sequence_raw = Vec::new();
     // Copy the data (in parallel) between the client and the server.
     // After the copy is done we indicate to the remote side that we've
     // finished by shutting down the connection.
     let client_reader = DnsBytesStream::new(client_reader).from_err();
     let client_reader = EnsurePadding::new(client_reader);
-    let client_reader = wrap_stream(client_reader, &config.strategy);
+    let client_reader = wrap_stream(client_reader, &config.args.strategy);
     let client_to_server = backward(copy_client_to_server(client_reader, server_writer));
 
     let server_reader = DnsBytesStream::new(server_reader)
         .from_err()
-        .inspect(|payload| sequence_raw.push((payload.len() as u16, Instant::now())));
+        .map(|dns| {
+            let msg = trust_dns_proto::op::message::Message::from_vec(&*dns).unwrap();
+            (dns, msg)
+        })
+        .inspect(|(dns, msg)| {
+            let qname = msg.queries()[0].name().to_utf8();
+            let mut msgs = config.message.lock().unwrap();
+            match &*qname {
+                "start.example." => {
+                    msgs.truncate(0);
+                }
+                "end.example." => {
+                    let mut tmp = Vec::default();
+                    mem::swap(&mut tmp, &mut msgs);
+                    tokio::spawn_async(print_error(write_sequence(
+                        config.args.dump_sequences.clone(),
+                        tmp,
+                    )));
+                }
+                _ => {
+                    msgs.push((dns.len() as u16, Instant::now()));
+                }
+            }
+        });
     let server_to_client = backward(copy_server_to_client(server_reader, client_writer));
 
     let (from_client, from_server) = await!(client_to_server.join(server_to_client))?;
@@ -220,22 +256,6 @@ async fn handle_client(config: Arc<CliArgs>, client: TcpStream) -> Result<(), Er
         "client wrote {} bytes and received {} bytes",
         from_client, from_server
     );
-
-    if let Some(dir) = config.dump_sequences.as_ref() {
-        let filepath = dir.join(format!(
-            "sequence-{}.json",
-            connection_start.to_rfc3339_opts(SecondsFormat::Secs, true)
-        ));
-        let mut file = await!(File::create(filepath.clone()))?;
-        let seq =
-            Sequence::from_sizes_and_times(filepath.to_string_lossy().to_string(), &*sequence_raw)
-                .unwrap();
-        await!(io::write_all(
-            &mut file,
-            serde_json::to_string(&seq).unwrap()
-        ))?;
-        await!(io::flush(&mut file))?;
-    }
 
     Ok(())
 }
@@ -280,15 +300,14 @@ where
 
 async fn copy_server_to_client<R, W>(mut server: R, mut client: W) -> Result<(u64), Error>
 where
-    R: Stream<Item = Vec<u8>, Error = Error> + Send + Unpin,
+    R: Stream<Item = (Vec<u8>, Message), Error = Error> + Send + Unpin,
     W: AsyncWrite,
 {
     let mut total_bytes = 0;
 
     let mut out = Vec::with_capacity(468 * 5);
-    while let Some(dns) = await!(server.next()) {
-        let dns = dns?;
-        let msg = trust_dns_proto::op::message::Message::from_vec(&*dns)?;
+    while let Some(x) = await!(server.next()) {
+        let (dns, msg) = x?;
 
         // Remove all dummy messages from the responses
         if msg.id() == 47255 {
@@ -311,4 +330,27 @@ where
     // hint: server and client access the same underlying TcpStream
     await!(shutdown(client))?;
     Ok(total_bytes)
+}
+
+async fn write_sequence(
+    dir: Option<PathBuf>,
+    mut sequence_raw: Vec<(u16, Instant)>,
+) -> Result<(), Error> {
+    if let Some(dir) = dir {
+        let filepath = dir.join(format!(
+            "sequence-{}.json",
+            Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true)
+        ));
+        let mut file = await!(File::create(filepath.clone()))?;
+        sequence_raw.sort_unstable_by_key(|x| x.1);
+        let seq =
+            Sequence::from_sizes_and_times(filepath.to_string_lossy().to_string(), &*sequence_raw)
+                .unwrap();
+        await!(io::write_all(
+            &mut file,
+            serde_json::to_string(&seq).unwrap()
+        ))?;
+        await!(io::flush(&mut file))?;
+    }
+    Ok(())
 }
