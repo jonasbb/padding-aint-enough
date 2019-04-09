@@ -82,7 +82,7 @@ function run
     dig @127.0.0.1 +tries=1 A "end.example." >/dev/null 2>&1
     sleep 2
     # Chrome should have exited by now
-    killall google-chrome chrome
+    killall google-chrome chrome stubby
     sudo killall fstrm_capture
     echo "Kill: " $status
     wait
