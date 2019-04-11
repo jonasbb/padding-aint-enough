@@ -21,8 +21,8 @@ use std::{
 use structopt::StructOpt;
 use tlsproxy::{
     print_error, utils::backward, wrap_stream, DnsBytesStream, EnsurePadding, Error,
-    HostnameSocketAddr, MyStream, MyTcpStream, Payload, Strategy, TokioOpensslStream, SERVER_CERT,
-    SERVER_KEY,
+    HostnameSocketAddr, MyStream, MyTcpStream, Payload, Strategy, TokioOpensslStream, Transport,
+    SERVER_CERT, SERVER_KEY,
 };
 use tokio::{
     await,
@@ -73,15 +73,6 @@ const DUMMY_DNS_REPLY: [u8; 468] = [
 struct Config {
     args: CliArgs,
     transport: Transport,
-}
-
-/// Specify the transport protocol to be used while connecting to a remote endpoint
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-enum Transport {
-    /// Use TCP
-    Tcp,
-    /// Use TLS
-    Tls,
 }
 
 #[derive(Clone, Debug, StructOpt)]

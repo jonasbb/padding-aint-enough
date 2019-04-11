@@ -415,3 +415,12 @@ where
         },
     }
 }
+
+/// Specify the transport protocol to be used while connecting to a remote endpoint
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub enum Transport {
+    /// Use TCP
+    Tcp,
+    /// Use TLS
+    Tls,
+}
