@@ -79,7 +79,9 @@ function run
     echo
     # after experiment
     echo "After Experiment"
+    date +%s.%N >>"/output/dns-times"
     dig @127.0.0.1 +tries=1 A "end.example." >/dev/null 2>&1
+    dig @127.0.0.1 +tries=1 A "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz." >/dev/null 2>&1
     sleep 2
     # Chrome should have exited by now
     killall google-chrome chrome stubby

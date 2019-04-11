@@ -14,4 +14,6 @@ echo "Load cache file"
 cat /output/cache.dump | sudo unbound-control load_cache
 
 echo "start.example marker query"
+dig @127.0.0.1 +tries=1 A "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa." >/dev/null 2>&1
 dig @127.0.0.1 +tries=1 start.example. >/dev/null 2>&1
+date +%s.%N >"/output/dns-times"
