@@ -10,7 +10,8 @@ use chrono::{SecondsFormat, Utc};
 use failure::Fail;
 use log::{info, trace, warn};
 use openssl::{
-    ssl::{SslConnector, SslMethod, SslOptions, SslVerifyMode, SslVersion},
+    pkey::PKey,
+    ssl::{SslAcceptor, SslConnector, SslMethod, SslOptions, SslVerifyMode, SslVersion},
     x509::X509,
 };
 use sequences::Sequence;
@@ -24,7 +25,8 @@ use std::{
 use structopt::StructOpt;
 use tlsproxy::{
     print_error, utils::backward, wrap_stream, DnsBytesStream, EnsurePadding, Error,
-    HostnameSocketAddr, MyTcpStream, Payload, Strategy, TokioOpensslStream, SERVER_CERT,
+    HostnameSocketAddr, MyStream, MyTcpStream, Payload, Strategy, TokioOpensslStream, Transport,
+    SERVER_CERT, SERVER_KEY,
 };
 use tokio::{
     await,
@@ -33,10 +35,10 @@ use tokio::{
     net::{TcpListener, TcpStream},
     prelude::*,
 };
-use tokio_openssl::SslConnectorExt;
+use tokio_openssl::{SslAcceptorExt, SslConnectorExt};
 use trust_dns_proto::{
     op::message::Message,
-    serialize::binary::{BinEncodable, BinEncoder},
+    serialize::binary::{BinDecodable, BinEncodable, BinEncoder},
 };
 
 /// DNS query for `google.com.` with padding
@@ -96,23 +98,28 @@ struct CliArgs {
     #[structopt(long = "dump-sequences", value_name = "DIR")]
     dump_sequences: Option<PathBuf>,
 
+    /// Force the connection to use TCP. Conflicts with `--tls`.
+    ///
+    /// If unspecified infer transport from `server` port.
+    #[structopt(long = "tcp", conflicts_with = "tls")]
+    tcp: bool,
+
+    /// Force the connection to use TLS. Conflicts with `--tcp`.
+    ///
+    /// If unspecified infer transport from `server` port.
+    #[structopt(long = "tls", conflicts_with = "tcp")]
+    tls: bool,
+
     #[structopt(subcommand)]
     strategy: Strategy,
 }
 
-#[derive(Debug)]
+// #[derive(Debug)]
 struct Config {
     args: CliArgs,
     message: Mutex<Vec<(u16, Instant)>>,
-}
-
-impl From<CliArgs> for Config {
-    fn from(args: CliArgs) -> Self {
-        Self {
-            args,
-            message: Mutex::default(),
-        }
-    }
+    transport: Transport,
+    acceptor: Option<SslAcceptor>,
 }
 
 fn main() {
@@ -153,7 +160,34 @@ fn run() -> Result<(), Error> {
         cli_args.listen, cli_args.server
     );
 
-    let config: Arc<Config> = Arc::new(cli_args.into());
+    let transport = if cli_args.tcp {
+        Transport::Tcp
+    } else if cli_args.tls {
+        Transport::Tls
+    } else {
+        Transport::Tcp
+    };
+
+    let acceptor = if transport == Transport::Tls {
+        let mut acceptor = SslAcceptor::mozilla_intermediate(SslMethod::tls())?;
+        acceptor.set_verify(SslVerifyMode::NONE);
+        acceptor.set_certificate(X509::from_pem(SERVER_CERT)?.as_ref())?;
+        acceptor.set_private_key(PKey::private_key_from_pem(SERVER_KEY)?.as_ref())?;
+        if let Some(logfile) = &cli_args.sslkeylogfile {
+            let cb = tlsproxy::keylog_to_file(logfile.clone());
+            acceptor.set_keylog_callback(cb);
+        }
+        Some(acceptor.build())
+    } else {
+        None
+    };
+
+    let config: Arc<Config> = Arc::new(Config {
+        args: cli_args,
+        message: Mutex::default(),
+        transport,
+        acceptor,
+    });
     let done = socket
         .incoming()
         .map_err(|e| println!("error accepting socket; error = {:?}", e))
@@ -210,7 +244,15 @@ async fn handle_client(config: Arc<Config>, client: TcpStream) -> Result<(), Err
     //
     // As a result, we wrap up our client/server manually in arcs and
     // use the impls below on our custom `MyTcpStream` type.
-    let client_reader = MyTcpStream::new(Arc::new(Mutex::new(client)));
+    let client_reader: MyStream<_> = match config.transport {
+        Transport::Tcp => MyTcpStream::new(Arc::new(Mutex::new(client))).into(),
+        Transport::Tls => TokioOpensslStream::new(Arc::new(Mutex::new(await!(config
+            .acceptor
+            .clone()
+            .unwrap()
+            .accept_async(client))?)))
+        .into(),
+    };
     let client_writer = client_reader.clone();
     let server_reader = TokioOpensslStream::new(Arc::new(Mutex::new(server)));
     let server_writer = server_reader.clone();
