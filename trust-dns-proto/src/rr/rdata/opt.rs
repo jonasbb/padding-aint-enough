@@ -219,12 +219,21 @@ pub fn read(decoder: &mut BinDecoder, rdata_length: Restrict<u16>) -> ProtoResul
                     .map(|u| u as usize)
                     .verify_unwrap(|u| *u <= rdata_length)
                     .map_err(|_| ProtoError::from("OPT value length exceeds rdata length"))?;
-                state = OptReadState::Data {
-                    code,
-                    length,
-                    // TODO: this cean be replaced with decoder.read_vec(), right?
-                    //  the current version allows for malformed opt to be skipped...
-                    collected: Vec::<u8>::with_capacity(length),
+                // If we know that the length is 0, we can avoid the `OptReadState::Data` state
+                // and directly add the option to the map.
+                // The data state does not process 0-length correctly, since it always reads at
+                // least 1 byte, thus making the length check fail.
+                state = if length == 0 {
+                    options.insert(code, (code, &[] as &[u8]).into());
+                    OptReadState::ReadCode
+                } else {
+                    OptReadState::Data {
+                        code,
+                        length,
+                        // TODO: this cean be replaced with decoder.read_vec(), right?
+                        //  the current version allows for malformed opt to be skipped...
+                        collected: Vec::<u8>::with_capacity(length),
+                    }
                 };
             }
             OptReadState::Data {
@@ -246,17 +255,6 @@ pub fn read(decoder: &mut BinDecoder, rdata_length: Restrict<u16>) -> ProtoResul
                 }
             }
         }
-    }
-
-    // If the last option in the OPT record has a length of 0, then the while loop will exit in the
-    // `OptReadState::Data` read state. However, if we expect to read 0 bytes, then we read all the
-    // bytes we need and we can create an option out of it.
-    if let OptReadState::Data {
-        code, length: 0, ..
-    } = state
-    {
-        options.insert(code, (code, &[] as &[u8]).into());
-        state = OptReadState::ReadCode;
     }
 
     if state != OptReadState::ReadCode {
