@@ -596,7 +596,7 @@ where
 {
     fn transitive_closure(&mut self) {
         // based on https://github.com/bluss/petgraph/pull/151
-        use petgraph::visit::{Dfs, IntoNodeIdentifiers};
+        use petgraph::visit::IntoNodeIdentifiers;
 
         let mut dfs = Dfs::empty(&*self);
 

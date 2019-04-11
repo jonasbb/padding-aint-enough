@@ -124,7 +124,7 @@ struct CliArgs {
 }
 
 fn main() {
-    use std::io::{self, Write};
+    use std::io;
 
     if let Err(err) = run() {
         let stderr = io::stderr();
@@ -319,6 +319,7 @@ where
     Ok(total_bytes)
 }
 
+#[allow(clippy::needless_lifetimes)]
 async fn connect_to_server(
     server_addr: HostnameSocketAddr,
     config: &Config,

@@ -38,7 +38,7 @@ use tokio::{
 use tokio_openssl::{SslAcceptorExt, SslConnectorExt};
 use trust_dns_proto::{
     op::message::Message,
-    serialize::binary::{BinDecodable, BinEncodable, BinEncoder},
+    serialize::binary::{BinEncodable, BinEncoder},
 };
 
 /// DNS query for `google.com.` with padding
@@ -123,7 +123,7 @@ struct Config {
 }
 
 fn main() {
-    use std::io::{self, Write};
+    use std::io;
 
     if let Err(err) = run() {
         let stderr = io::stderr();

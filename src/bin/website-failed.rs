@@ -27,7 +27,7 @@ struct CliArgs {
 }
 
 fn main() {
-    use std::io::{self, Write};
+    use std::io::Write;
 
     if let Err(err) = run() {
         let stderr = io::stderr();

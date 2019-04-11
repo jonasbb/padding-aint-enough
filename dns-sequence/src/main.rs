@@ -128,7 +128,7 @@ enum SubCommand {
 }
 
 fn main() {
-    use std::io::{self, Write};
+    use std::io;
 
     if let Err(err) = run() {
         let stderr = io::stderr();

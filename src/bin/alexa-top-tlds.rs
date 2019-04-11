@@ -24,8 +24,6 @@ struct CliArgs {
 }
 
 fn main() {
-    use std::io::{self, Write};
-
     if let Err(err) = run() {
         let stderr = io::stderr();
         let mut out = stderr.lock();

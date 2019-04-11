@@ -1,4 +1,4 @@
-use crate::{knn::ClassifierData, Sequence, LoadDnstapConfig};
+use crate::{knn::ClassifierData, LoadDnstapConfig, Sequence};
 use failure::{Error, ResultExt};
 use log::{debug, warn};
 use rayon::prelude::*;
@@ -73,9 +73,9 @@ pub fn load_all_dnstap_files_from_dir_with_config(
                 .into_iter()
                 .filter_map(|dnstap_file| {
                     debug!("Processing dnstap file '{}'", dnstap_file.display());
-                    match Sequence::from_path_with_config(&*dnstap_file, config).with_context(|_| {
-                        format!("Processing dnstap file '{}'", dnstap_file.display())
-                    }) {
+                    match Sequence::from_path_with_config(&*dnstap_file, config).with_context(
+                        |_| format!("Processing dnstap file '{}'", dnstap_file.display()),
+                    ) {
                         Ok(seq) => Some(seq),
                         Err(err) => {
                             warn!("{}", err);
