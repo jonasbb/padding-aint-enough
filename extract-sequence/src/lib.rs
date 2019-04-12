@@ -318,7 +318,7 @@ pub fn filter_tls_records(
     records: Vec<TlsRecord>,
     (server, server_port): (Ipv4Addr, u16),
 ) -> Vec<TlsRecord> {
-    let min_client_query_size = 128;
+    let client_marker_query_size = 128 * 3;
 
     // First we ignore everything until we have seen the ChangeCipherSpec message from sever and client
     // This tells us that the initial unencrypted part of the handshake is done.
@@ -332,8 +332,9 @@ pub fn filter_tls_records(
 
     let mut has_seen_server_change_cipher_spec = false;
     let mut has_seen_client_change_cipher_spec = false;
-    let mut has_seen_first_client_query = false;
-    records
+    let mut has_seen_first_marker_query = false;
+    let mut has_seen_second_marker_query = false;
+    let mut records: Vec<_> = records
         .into_iter()
         .skip_while(|rec| {
             if rec.message_type == MessageType::ChangeCipherSpec {
@@ -348,15 +349,31 @@ pub fn filter_tls_records(
         })
         .skip_while(|rec| {
             if !(rec.sender == server && rec.sender_port == server_port)
-                && rec.message_length >= min_client_query_size
+                && rec.message_length >= client_marker_query_size
             {
-                has_seen_first_client_query = true;
+                has_seen_first_marker_query = true;
             }
 
-            !has_seen_first_client_query
+            !has_seen_first_marker_query
+        })
+        // Skip the first marker query
+        .skip(1)
+        .take_while(|rec| {
+            if !(rec.sender == server && rec.sender_port == server_port)
+                && rec.message_length >= client_marker_query_size
+            {
+                has_seen_second_marker_query = true;
+            }
+
+            !has_seen_second_marker_query
         })
         .filter(|rec| rec.sender == server && rec.sender_port == server_port)
-        .collect()
+        // Skip both marker query responses
+        .skip(2)
+        .collect();
+    // Remove the additional marker query to `end.example.`, which is at the very end before we stopped collecting.
+    records.truncate(records.len() - 1);
+    records
 }
 
 /// Given a list of pre-filtered TLS records, build a [`Sequence`] with them
