@@ -4,7 +4,7 @@ use failure::{bail, format_err, Error, ResultExt};
 use hashbrown::HashMap;
 use itertools::Itertools;
 use log::debug;
-use pcap::{Capture, Packet as PcapPacket};
+use pcap::{Capture, Linktype, Packet as PcapPacket};
 use pnet::packet::{
     ethernet::EthernetPacket, ip::IpNextHeaderProtocols, ipv4::Ipv4Packet, tcp::TcpPacket, Packet,
 };
@@ -159,6 +159,7 @@ pub fn extract_tls_records(
 ) -> Result<HashMap<FlowId, Vec<TlsRecord>>, Error> {
     let file = file.as_ref();
     let mut capture = Capture::from_file(file)?;
+    let datalink_type = capture.get_datalink();
     // ID of the packet with in the pcap file.
     // Makes it easier to map it to the same packet within wireshark
     let mut packet_id = 0;
@@ -196,11 +197,35 @@ pub fn extract_tls_records(
                 bail!("Cannot process packets, as they are truncated");
             }
 
-            let eth =
-                EthernetPacket::new(data).ok_or_else(|| format_err!("Expect Ethernet Packet"))?;
-
-            let ipv4 =
-                Ipv4Packet::new(eth.payload()).ok_or_else(|| format_err!("Expect IPv4 Packet"))?;
+            // Try extracting an IPv4 packet from the raw bytes we have
+            // Linktypes are described here: https://www.tcpdump.org/linktypes.html
+            let ipv4;
+            let eth; // only for extending the lifetime
+            match datalink_type {
+                Linktype(1) => {
+                    // Normal Ethernet
+                    eth = EthernetPacket::new(data)
+                        .ok_or_else(|| format_err!("Expect Ethernet Packet"))?;
+                    ipv4 = Ipv4Packet::new(eth.payload())
+                        // ipv4 = Ipv4Packet::new(eth.payload())
+                        .ok_or_else(|| format_err!("Expect IPv4 Packet"))?;
+                }
+                Linktype(113) => {
+                    // Linux cooked capture
+                    // Used for capturing the `any` device
+                    ipv4 = Ipv4Packet::new(&data[16..])
+                        .ok_or_else(|| format_err!("Expect IPv4 Packet"))?;
+                }
+                _ => bail!(
+                    "The datalink type is unknown and cannot be process: {} \"{}\"",
+                    datalink_type
+                        .get_name()
+                        .unwrap_or_else(|_| format!("ID: {}", datalink_type.0)),
+                    datalink_type
+                        .get_description()
+                        .unwrap_or_else(|_| "".to_string())
+                ),
+            }
 
             // Check for TCP in next layer
             if ipv4.get_next_level_protocol() != IpNextHeaderProtocols::Tcp {
