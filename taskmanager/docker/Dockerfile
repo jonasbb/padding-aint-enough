@@ -38,6 +38,7 @@ RUN dnf -y --setopt=tsflags=nodocs update \
         python3-requests \
         python3-websocket-client \
         sudo \
+        tcpdump \
         /rpms/unbound-1*.rpm \
         /rpms/unbound-libs-1*.rpm \
         /rpms/python?-unbound-1*.rpm \

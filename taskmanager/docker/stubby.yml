@@ -10,8 +10,8 @@ resolution_type: GETDNS_RESOLUTION_STUB
 # Fallback transport options are specified by including multiple values in the
 # list.  Strict mode (see below) should use only GETDNS_TRANSPORT_TLS.
 dns_transport_list:
-#  - GETDNS_TRANSPORT_TLS
-  - GETDNS_TRANSPORT_TCP
+  - GETDNS_TRANSPORT_TLS
+#  - GETDNS_TRANSPORT_TCP
 
 # Selects Strict or Opportunistic Usage profile as described in
 # https://datatracker.ietf.org/doc/draft-ietf-dprive-dtls-and-tls-profiles/

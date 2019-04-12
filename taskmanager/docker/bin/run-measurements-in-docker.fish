@@ -41,6 +41,7 @@ function run
 
     # Start fstrm_capture
     start_fstrm
+    sudo tcpdump -i any -f "host 172.17.0.1 and port 8853" -w "/output/capture.pcap" &
     # Start DNS services
     echo "Starting stubby"
     stubby -g -C /output/stubby.yml &
@@ -58,6 +59,7 @@ function run
     # Disable the NXDOMAIN hijacking checks (7-15 random TLD lookups)
     google-chrome \
         --disable-background-networking \
+        --headless \
         --user-data-dir="$CHROME_TMPDIR" \
         --remote-debugging-port="$CHROME_DEBUG_PORT" \
         "$SPECIAL_URL" \
@@ -85,7 +87,7 @@ function run
     sleep 2
     # Chrome should have exited by now
     killall google-chrome chrome stubby
-    sudo killall fstrm_capture
+    sudo killall fstrm_capture tcpdump
     echo "Kill: " $status
     wait
     sleep 1
