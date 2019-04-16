@@ -29,6 +29,9 @@ lazy_static! {
     static ref DNSTAP_FILE_NAME: &'static Path = &Path::new("website-log.dnstap.xz");
     static ref LOG_FILE: &'static Path = &Path::new("website-log.log.xz");
     static ref CHROME_LOG_FILE_NAME: &'static Path = &Path::new("website-log.json.xz");
+    static ref PCAP_FILE_NAME: &'static Path = &Path::new("website-log.pcap.xz");
+    static ref TIMING_FILE_NAME: &'static Path = &Path::new("website-log.dnstimes.txt.xz");
+    static ref TLSKEYS_FILE_NAME: &'static Path = &Path::new("website-log.tlskeys.txt.xz");
 }
 
 #[derive(StructOpt)]
@@ -358,7 +361,15 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 let local_path: PathBuf = config.get_collected_results_path().join(task.name());
                 ensure_path_exists(&local_path)?;
 
-                for fname in &[&*DNSTAP_FILE_NAME, &*LOG_FILE, &*CHROME_LOG_FILE_NAME] {
+                for fname in &[
+                    &*DNSTAP_FILE_NAME,
+                    &*LOG_FILE,
+                    &*CHROME_LOG_FILE_NAME,
+                    &*PCAP_FILE_NAME,
+                    &*TIMING_FILE_NAME,
+                    &*TLSKEYS_FILE_NAME,
+                ] {
+                    // strip the .xz extension
                     let fname = fname.with_extension("");
                     fs::copy(tmp_dir.path().join(&fname), local_path.join(&fname)).with_context(
                         |_| {
@@ -517,6 +528,9 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                     (&*DNSTAP_FILE_NAME, "dnstap.xz"),
                     (&*LOG_FILE, "log.xz"),
                     (&*CHROME_LOG_FILE_NAME, "json.xz"),
+                    (&*PCAP_FILE_NAME, "pcap.xz"),
+                    (&*TIMING_FILE_NAME, "dnstimes.txt.xz"),
+                    (&*TLSKEYS_FILE_NAME, "tlskeys.txt.xz"),
                 ] {
                     let src = old_task_dir.join(filename);
                     let dst = results_path.join(task.domain()).join(format!(

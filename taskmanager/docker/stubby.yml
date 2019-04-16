@@ -110,7 +110,7 @@ listen_addresses:
 #              key
 #   tls_port: Port for TLS (default is 853)
 upstream_recursive_servers:
-  - address_data: 172.17.0.1
+  - address_data: 127.0.0.1
     port: 8853
     tls_port: 8853
     tls_pubkey_pinset:

@@ -41,8 +41,10 @@ function run
 
     # Start fstrm_capture
     start_fstrm
-    sudo tcpdump -i any -f "host 172.17.0.1 and port 8853" -w "/output/capture.pcap" &
+    sudo tcpdump -i any -f "port 853" -w "/output/website-log.pcap" &
     # Start DNS services
+    echo "Starting client proxy"
+    env SSLKEYLOGFILE=/output/website-log.tlskeys.txt RUST_LOG=info /usr/bin/client -l127.0.0.1:8853 -s1.0.0.1:853 --tls pass &
     echo "Starting stubby"
     stubby -g -C /output/stubby.yml &
     echo "Starting unbound"
@@ -81,12 +83,12 @@ function run
     echo
     # after experiment
     echo "After Experiment"
-    date +%s.%N >>"/output/dns-times"
+    date +%s.%N >>"/output/website-log.dnstimes.txt"
     dig @127.0.0.1 +tries=1 A "end.example." >/dev/null 2>&1
     dig @127.0.0.1 +tries=1 A "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz." >/dev/null 2>&1
     sleep 2
     # Chrome should have exited by now
-    killall google-chrome chrome stubby
+    killall google-chrome chrome stubby client
     sudo killall fstrm_capture tcpdump
     echo "Kill: " $status
     wait
