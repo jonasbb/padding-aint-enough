@@ -26,4 +26,3 @@ structopt = "0.2.15"
 tempfile = "3.0.7"
 toml = "0.5.0"
 wait-timeout = "0.2"
-xvfb = { path = "../xvfb" }

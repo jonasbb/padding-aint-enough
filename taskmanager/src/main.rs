@@ -24,7 +24,6 @@ use std::{
 use structopt::{self, StructOpt};
 use taskmanager::{models::Task, AddDomainConfig, Config, TaskManager};
 use tempfile::{Builder as TempDirBuilder, TempDir};
-use xvfb::{ProcessStatus, Xvfb};
 
 lazy_static! {
     static ref DNSTAP_FILE_NAME: &'static Path = &Path::new("website-log.dnstap.xz");
@@ -326,16 +325,9 @@ where
 /// This function is responsible for all the steps related to capturing the measurement data from
 /// the VMs.
 fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> {
-    let mut xvfb = None;
     loop {
         if let Some(mut task) = taskmgr.get_task_for_vm()? {
-            if xvfb.is_none() {
-                debug!("{}: Start new xvfb", task.name());
-                xvfb = Some(Xvfb::new().context("Failed to spawn virtual frame buffer")?);
-            }
-
-            let taskstatus = execute_or_restart_task(&mut task, taskmgr, |mut task| {
-                let xvfb = xvfb.as_ref().expect("xvfb must always exist and be Some()");
+            let _taskstatus = execute_or_restart_task(&mut task, taskmgr, |mut task| {
                 let tmp_dir = TempDirBuilder::new().prefix("docker").tempdir()?;
                 info!(
                     "Process task {} ({}), step Docker, tmp dir {}",
@@ -353,11 +345,6 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                     &format!("http://{}", task.domain()),
                 )
                 .with_context(|_| format!("{}: Failed to create file `domain`", task.name()))?;
-                fs::write(
-                    tmp_dir.path().join("display"),
-                    &xvfb.get_display().to_string(),
-                )
-                .with_context(|_| format!("{}: Failed to create file `display`", task.name()))?;
 
                 debug!("{}: Run docker container", task.name());
                 let _status = docker_run(
@@ -388,20 +375,6 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 debug!("Finished task {} ({})", task.name(), task.id());
                 taskmgr.finished_task_for_vm(&mut task)
             })?;
-
-            // Perform tests to see if we need to restart xvfb
-            if taskstatus != TaskStatus::Completed {
-                debug!("Kill xvfb due to error in task execution");
-                xvfb = None;
-            }
-            let is_xvfb_alive = xvfb.as_mut().map(|xvfb| match xvfb.process_status() {
-                ProcessStatus::Alive => true,
-                _ => false,
-            });
-            if is_xvfb_alive != Some(true) {
-                debug!("Reset xvfb, as it is no longer alive");
-                xvfb = None;
-            }
         } else {
             info!("No tasks left for Docker");
             thread::sleep(Duration::new(10, 0));
