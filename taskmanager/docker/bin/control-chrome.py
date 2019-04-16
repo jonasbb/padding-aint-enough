@@ -16,13 +16,13 @@ from websocket import (
 
 # Wait this many seconds after every browser event before a browser close can occur
 WAIT_SECONDS = 7
-WEBPAGE_TOTAL_TIME = 30.
+WEBPAGE_TOTAL_TIME = 30.0
 
 
 def handle_url(url: str, special_url: str, chrome_debug_port: int) -> None:
     wsurl = get_wsurl_for_url(special_url, chrome_debug_port)
     ws = create_ws_connection(wsurl, timeout=2)
-    ws.settimeout(2)
+    ws.settimeout(WAIT_SECONDS + 1)
     # Enable Network module
     ws.send(json.dumps({"id": 0, "method": "Debugger.enable"}))
     ws.send(
@@ -83,6 +83,7 @@ def handle_url(url: str, special_url: str, chrome_debug_port: int) -> None:
     # close browser if SIGALRM is received
     def close_browser_timeout(signum: int, _frame: t.Any) -> None:
         if signum == signal.SIGALRM:
+            print("Close Chrome due to extended inactivity")
             ws.send(json.dumps({"id": 1000, "method": "Browser.close"}))
 
     signal.signal(signal.SIGALRM, close_browser_timeout)
@@ -92,15 +93,17 @@ def handle_url(url: str, special_url: str, chrome_debug_port: int) -> None:
     try:
         for msg in ws:
             if time.monotonic() - start > WEBPAGE_TOTAL_TIME:
-                print("Total wall time reached")
+                print("Close Chrome due to total wall time limit")
                 break
             signal.alarm(WAIT_SECONDS)
             data = json.loads(msg)
             if "id" in data:
                 continue
             msglist.append(data)
+        else:
+            print("No more websocket messages from Chrome")
     except WebSocketTimeoutException:
-        pass
+        print("WEBSOCKET TIMEOUT EXCEPTION")
     finally:
         json.dump(msglist, open("website-log.json", "w"))
 
