@@ -366,7 +366,7 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                     None,
                     Duration::new(60, 0),
                 )
-                .with_context(|_| format!("{}: Failed to start the measuremetns", task.name()))?;
+                .with_context(|_| format!("{}: Failed to start the measurements", task.name()))?;
                 debug!("{}: Copy files from mount point to local back", task.name());
                 let local_path: PathBuf = config.get_collected_results_path().join(task.name());
                 ensure_path_exists(&local_path)?;

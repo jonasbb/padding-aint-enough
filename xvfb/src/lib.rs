@@ -71,7 +71,7 @@ impl Xvfb {
                 return self.process.wait();
             }
         };
-        debug!("Xbfn({}) stopped", self.process.id());
+        debug!("Xvfb({}) stopped", self.process.id());
         let res = self.process.wait();
         if let Err(err) = &res {
             warn!(
