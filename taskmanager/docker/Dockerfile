@@ -70,6 +70,7 @@ RUN useradd --create-home docker \
     && chmod -R 700 /run/user/`id -u docker` \
     && chown -R docker:docker /run/user/`id -u docker`
 
+COPY stubby.yml /etc/stubby/stubby.yml
 # Configure unbound
 COPY unbound.conf /etc/unbound/
 # Create server certificates for unbound-control to work
