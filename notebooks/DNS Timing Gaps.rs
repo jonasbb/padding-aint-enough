@@ -42,7 +42,7 @@ use std::path::{Path, PathBuf};
 // fn main() {
 
 // %%
-pub fn extract_gaps<P: AsRef<Path>>(file: P) -> Vec<Duration> {
+pub fn extract_gaps<P: AsRef<Path>>(file: P) -> Vec<(Duration, String)> {
     let file = file.as_ref();
     let mut events: Vec<protos::Dnstap> = process_dnstap(&*file)
         .unwrap()
@@ -110,6 +110,7 @@ pub fn extract_gaps<P: AsRef<Path>>(file: P) -> Vec<Duration> {
                 message_type,
                 query_time,
                 response_time,
+                response_message,
                 ..
             } = ev.content;
             match message_type {
@@ -119,7 +120,12 @@ pub fn extract_gaps<P: AsRef<Path>>(file: P) -> Vec<Duration> {
 //                 }
 //                 Message_Type::CLIENT_QUERY => {
                 Message_Type::FORWARDER_RESPONSE => {
-                    Some(response_time.expect("Unbound always sets this"))
+                    let response_time = response_time.expect("Unbound always sets this");
+                    let (dnsmsg, _size) = response_message.expect("Unbound always sets this");
+//                     let type_ = dnsmsg.queries()[0].query_type();
+                    let type_ = dnsmsg.queries()[0].name().to_string();
+//                     let type_ = dnsmsg.answers().get(0).map(|x| x.rr_type());
+                    Some((response_time, type_))
                 }
 
                 _ => None,
@@ -130,7 +136,11 @@ pub fn extract_gaps<P: AsRef<Path>>(file: P) -> Vec<Duration> {
     client_timings
         .windows(2)
         .map(|w| match w {
-            &[a, b] => b - a,
+            &[ref a, ref b] => {
+                let dur = b.0 - a.0;
+                (dur, b.1.to_string())
+//                 (dur, b.1.map(|x| x.to_string()).unwrap_or_else(|| "".to_string()))
+            },
             _ => unreachable!(),
         })
         .collect()
@@ -141,12 +151,35 @@ let files: Vec<PathBuf> =
     glob::glob("/home/jbushart/projects/data/dnscaptures-main-group/*/*.xz")
         .map(|paths| paths.filter_map(|p| p.ok()).collect())
         .unwrap_or_else(|_| Vec::new());
-let durations_in_microseconds: Vec<i64> = files
+let durations_in_microseconds: Vec<(i64, String)> = files
     .iter()
     .flat_map(extract_gaps)
-    .map(|d| d.num_microseconds().unwrap())
+    .map(|d| (d.0.num_microseconds().unwrap(), d.1))
     .sorted()
     .collect();
+
+// %%
+let mut short_count = Counter::<String>::new();
+let mut long_count = Counter::<String>::new();
+durations_in_microseconds
+    .iter()
+    .for_each(|&(micros, ref type_)| {
+        if micros >= 27000 && micros <= 29000 {
+            short_count += Some(type_.clone());
+        } else if micros >= 67000 && micros <= 108000 {
+            long_count += Some(type_.clone());
+        }
+    }
+);
+
+// %%
+for (a,b) in short_count.most_common_ordered().iter().take(30) {
+    println!("{}: {}", a, b);
+}
+println!();
+for (a,b) in long_count.most_common_ordered().iter().take(30) {
+    println!("{}: {}", a, b);
+}
 
 // %%
 // Convert duration into a exponentally sized buckets of 2^i
@@ -156,16 +189,21 @@ let counts = durations_in_microseconds
     .collect::<Counter<_>>();
 
 // %%
-let peaks = counts
+let peaks = durations_in_microseconds
+    .iter()
+    .cloned()
+    .map(|dur| dur / 1000 * 1000)
+    .collect::<Counter<i64>>()
     .iter()
     .sorted()
+    .inspect(|x| eprintln!("{:?}", x))
     .collect::<Vec<_>>()
-    .windows(500)
+    .windows(100)
     .filter_map(|w| -> Option<(u64, usize)> {
         // Select element, if larger than all the other
         let (&value, &count) = w[w.len() / 2];
         if !(w.iter().any(|(v, &c)| c > count)) {
-            // round value to 1000s
+            // round value to 1ms
             let round_to = 1000.;
             let value = ((value as f64 / round_to).round() * round_to) as u64;
             Some((value, count))
@@ -174,6 +212,9 @@ let peaks = counts
         }
     })
     .collect::<Vec<_>>();
+
+// %%
+peaks
 
 // %%
 durations_in_microseconds
@@ -265,5 +306,6 @@ std::fs::write(
 // :clear
 
 // %%
+
 
 
