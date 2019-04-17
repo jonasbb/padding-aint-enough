@@ -95,9 +95,14 @@ pub enum ChromeDebuggerMessage<S = String> {
 
     // Everything Inspector
     #[serde(rename = "Inspector.detached", rename_all = "camelCase")]
-    InspectorDetached {
-        reason: S,
-    },
+    InspectorDetached { reason: S },
+    #[serde(rename = "Inspector.targetCrashed", rename_all = "camelCase")]
+    InspectorTargetCrashed {},
+    #[serde(
+        rename = "Inspector.targetReloadedAfterCrash",
+        rename_all = "camelCase"
+    )]
+    InspectorTargetReloadedAfterCrash {},
 }
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
