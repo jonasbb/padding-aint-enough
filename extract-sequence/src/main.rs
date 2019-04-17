@@ -1,8 +1,8 @@
 use colored::Colorize;
 use extract_sequence::{build_sequence, extract_tls_records, filter_tls_records};
-use failure::Error;
+use failure::{bail, Error};
 use itertools::Itertools;
-use std::{mem, net::Ipv4Addr};
+use std::{collections::HashSet, mem, net::SocketAddrV4};
 use structopt::StructOpt;
 
 #[derive(Clone, Debug, StructOpt)]
@@ -16,8 +16,14 @@ use structopt::StructOpt;
     )
 )]
 struct CliArgs {
+    /// Print a list of all parsed TLS records
     #[structopt(short = "v", long = "verbose")]
     verbose: bool,
+    /// Specify the IP and port of the DNS server
+    ///
+    /// The program tries its best to determine this automatically.
+    #[structopt(short = "f", long = "filter")]
+    filter: Option<SocketAddrV4>,
     /// List of PCAP files
     #[structopt(name = "PCAPS")]
     pcap_files: Vec<String>,
@@ -37,6 +43,15 @@ fn main() {
         let _ = writeln!(out, "{}", err.backtrace());
         std::process::exit(1);
     }
+}
+
+fn make_error(iter: impl IntoIterator<Item = SocketAddrV4>) -> String {
+    let mut error =
+        "Multiple server candidates found.\nSelect a server with -f/--filter:".to_string();
+    for cand in iter {
+        error += &format!("\n  {}", cand);
+    }
+    error
 }
 
 fn run() -> Result<(), Error> {
@@ -66,13 +81,52 @@ fn run() -> Result<(), Error> {
             );
         }
 
+        let mut filter = cli_args.filter;
+        if filter.is_none() {
+            filter = (|| -> Result<Option<SocketAddrV4>, Error> {
+                // Try to guess what the sever might have been
+                let endpoints: HashSet<_> = records
+                    .values()
+                    .flat_map(std::convert::identity)
+                    .map(|record| SocketAddrV4::new(record.sender, record.sender_port))
+                    .collect();
+
+                // Check different ports I use for DoT
+                let candidates: Vec<_> = endpoints
+                    .iter()
+                    .cloned()
+                    .filter(|sa| sa.port() == 853)
+                    .collect();
+                if candidates.len() == 1 {
+                    return Ok(Some(candidates[0]));
+                } else if candidates.len() > 1 {
+                    bail!(make_error(candidates))
+                }
+
+                let candidates: Vec<_> = endpoints
+                    .iter()
+                    .cloned()
+                    .filter(|sa| sa.port() == 8853)
+                    .collect();
+                if candidates.len() == 1 {
+                    return Ok(Some(candidates[0]));
+                } else if candidates.len() > 1 {
+                    bail!(make_error(candidates))
+                }
+
+                bail!(make_error(endpoints))
+            })()?;
+        }
+        // Filter was set to Some() in the snippet above
+        let filter = filter.unwrap();
+
         // Filter to only those records containing DNS
         records.values_mut().for_each(|records| {
             // `filter_tls_records` takes the Vec by value, which is why we first need to move it out
             // of the HashMap and back it afterwards.
             let mut tmp = Vec::new();
             mem::swap(records, &mut tmp);
-            tmp = filter_tls_records(tmp, (Ipv4Addr::new(172, 17, 0, 1), 8853));
+            tmp = filter_tls_records(tmp, (*filter.ip(), filter.port()));
             mem::swap(records, &mut tmp);
         });
         println!("{}", "TLS Records with DNS responses:".underline());
