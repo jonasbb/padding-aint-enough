@@ -372,7 +372,9 @@ pub fn filter_tls_records(
         .skip(2)
         .collect();
     // Remove the additional marker query to `end.example.`, which is at the very end before we stopped collecting.
-    records.truncate(records.len() - 1);
+    if !records.is_empty() {
+        records.truncate(records.len() - 1);
+    }
     records
 }
 
