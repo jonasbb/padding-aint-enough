@@ -9,7 +9,7 @@ chrono = { version = "0.4.6", features = [ "serde" ] }
 colored = "1.7.0"
 env_logger = "0.6.1"
 failure = "0.1.5"
-hashbrown = { version = "0.2.0", features = [ "serde" ] }
+hashbrown = { version = "0.2.2", features = [ "serde" ] }
 itertools = "0.8.0"
 log = "0.4.6"
 pcap = "0.7.0"
