@@ -12,7 +12,7 @@ use tokio_timer::Delay;
 const DURATION_MAX: Duration = Duration::from_secs(3600 * 24 * 365);
 const DURATION_ONE_MS: Duration = Duration::from_millis(1);
 const MEDIAN_BURST_LENGTH: u32 = 2;
-const PROBABILITY_FAKE_BURST: f64 = 0.3;
+const PROBABILITY_FAKE_BURST: f64 = 0.9;
 
 lazy_static! {
     static ref DISTRIBUTION_BASE_VALUE: f64 = 2f64.sqrt();

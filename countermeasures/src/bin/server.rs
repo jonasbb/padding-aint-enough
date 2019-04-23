@@ -91,9 +91,6 @@ struct CliArgs {
     )]
     listen: SocketAddr,
 
-    // FIXME add --tcp and --tls options to force the remote endpoint to those protocols
-    // Otherwise guess from port number 53/853
-    // Otherwise error out
     /// Remote DNS over TCP / DNS over TLS endpoint
     #[structopt(
         short = "s",
