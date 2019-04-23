@@ -1,6 +1,6 @@
 [package]
 name = "pylib"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Jonas Bushart <jonas@bushart.org>"]
 edition = "2018"
 
@@ -11,7 +11,7 @@ crate-type = [ "cdylib" ]
 [dependencies]
 encrypted-dns = { path = ".." }
 failure = "0.1.5"
-sequences = { path = "../sequences" }
+sequences = { path = "../sequences", features = [ "read_pcap" ] }
 
 [dependencies.pyo3]
 version = "0.6.0"

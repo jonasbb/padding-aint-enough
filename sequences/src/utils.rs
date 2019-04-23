@@ -3,6 +3,7 @@ use failure::{Error, ResultExt};
 use log::{debug, warn};
 use rayon::prelude::*;
 use std::{
+    ffi::OsStr,
     fs,
     path::{Path, PathBuf},
 };
@@ -294,3 +295,30 @@ where
 //     );
 //     res
 // }
+
+pub struct PathExtensions<'a>(&'a Path);
+
+impl<'a> PathExtensions<'a> {
+    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &'a P) -> Self {
+        Self(Path::new(path))
+    }
+}
+
+impl<'a> Iterator for PathExtensions<'a> {
+    type Item = &'a OsStr;
+
+    fn next(&mut self) -> Option<&'a OsStr> {
+        let (new_filestem, new_extension) = (self.0.file_stem(), self.0.extension());
+        if new_extension.is_none() {
+            self.0 = Path::new("");
+            None
+        } else {
+            if let Some(new_filestem) = new_filestem {
+                self.0 = Path::new(new_filestem);
+            } else {
+                self.0 = Path::new("")
+            };
+            new_extension
+        }
+    }
+}

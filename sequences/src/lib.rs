@@ -137,6 +137,21 @@ impl Sequence {
 
     /// Load a [`Sequence`] from a file path. The file has to be a dnstap file.
     pub fn from_path(path: &Path) -> Result<Sequence, Error> {
+        // Iterate over all file extensions, from last to first.
+        for ext in PathExtensions::new(path) {
+            match ext.to_str() {
+                Some("dnstap") => return load_sequence::dnstap_to_sequence(path),
+                Some("json") => {
+                    let seq_json = fs::read_to_string(path)
+                        .with_context(|_| format!("Cannot read file `{}`", path.display()))?;
+                    return Ok(serde_json::from_str(&seq_json)?);
+                }
+                #[cfg(feature = "read_pcap")]
+                Some("pcap") => return crate::pcap::load_pcap_file(path, None),
+                _ => {}
+            }
+        }
+        // Fallback to the old behavior
         load_sequence::dnstap_to_sequence(path)
     }
 
