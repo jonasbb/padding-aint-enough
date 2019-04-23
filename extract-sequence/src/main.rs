@@ -1,8 +1,6 @@
-use colored::Colorize;
-use extract_sequence::{build_sequence, extract_tls_records, filter_tls_records};
-use failure::{bail, Error};
-use itertools::Itertools;
-use std::{collections::HashSet, mem, net::SocketAddrV4};
+use sequences::pcap::load_pcap_file_real;
+use failure::Error;
+use std::{net::SocketAddrV4, path::Path};
 use structopt::StructOpt;
 
 #[derive(Clone, Debug, StructOpt)]
@@ -45,21 +43,15 @@ fn main() {
     }
 }
 
-fn make_error(iter: impl IntoIterator<Item = SocketAddrV4>) -> String {
-    let mut error =
-        "Multiple server candidates found.\nSelect a server with -f/--filter:".to_string();
-    for cand in iter {
-        error += &format!("\n  {}", cand);
-    }
-    error
-}
-
 fn run() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let cli_args = CliArgs::from_args();
 
     for file in cli_args.pcap_files {
+        let _ = load_pcap_file_real(Path::new(&file), cli_args.filter, true, cli_args.verbose)?;
+
+        /*
         println!("{}{}", "Processing file: ".bold(), file);
 
         // let file = "./tests/data/CF-constant-rate-400ms-2packets.pcap";
@@ -142,6 +134,7 @@ fn run() -> Result<(), Error> {
         }
 
         println!();
+        */
     }
 
     Ok(())

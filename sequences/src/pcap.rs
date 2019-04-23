@@ -1,5 +1,6 @@
+use crate::{AbstractQueryResponse, Sequence};
 use chrono::NaiveDateTime;
-use core::cmp::Ordering;
+use colored::Colorize;
 use failure::{bail, format_err, Error, ResultExt};
 use hashbrown::HashMap;
 use itertools::Itertools;
@@ -11,9 +12,14 @@ use pnet::packet::{
 use rustls::internal::msgs::{
     codec::Codec, enums::ContentType as TlsContentType, message::Message as TlsMessage,
 };
-use sequences::{AbstractQueryResponse, Sequence};
 use serde::{Deserialize, Serialize};
-use std::{mem, net::Ipv4Addr, path::Path};
+use std::{
+    cmp::Ordering,
+    collections::HashSet,
+    mem,
+    net::{Ipv4Addr, SocketAddrV4},
+    path::Path,
+};
 
 /// Identifier for a two-way TCP flow
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
@@ -393,9 +399,125 @@ where
         .flat_map(|(_id, recs)| recs)
         .sorted()
         .collect();
-    sequences::convert_to_sequence(
-        &records,
-        identifier.into(),
-        sequences::LoadDnstapConfig::Normal,
-    )
+    crate::convert_to_sequence(&records, identifier.into(), crate::LoadDnstapConfig::Normal)
+}
+
+fn make_error(iter: impl IntoIterator<Item = SocketAddrV4>) -> String {
+    let mut error =
+        "Multiple server candidates found.\nSelect a server with -f/--filter:".to_string();
+    for cand in iter {
+        error += &format!("\n  {}", cand);
+    }
+    error
+}
+
+/// Perform all the steps to generate a [`Sequence`] from a pcap-file
+pub fn load_pcap_file<P: AsRef<Path>>(
+    file: P,
+    filter: Option<SocketAddrV4>,
+) -> Result<Sequence, Error> {
+    load_pcap_file_real(file.as_ref(), filter, false, false)
+}
+
+/// Internally used function
+#[doc(hidden)]
+pub fn load_pcap_file_real(
+    file: &Path,
+    mut filter: Option<SocketAddrV4>,
+    interative: bool,
+    verbose: bool,
+) -> Result<Sequence, Error> {
+    if interative {
+        println!("{}{}", "Processing file: ".bold(), file.display());
+    }
+
+    // let file = "./tests/data/CF-constant-rate-400ms-2packets.pcap";
+    let mut records = extract_tls_records(&file)?;
+
+    // If verbose show all records in RON notation
+    if verbose {
+        println!(
+            "{}\n{}\n",
+            "List of all TLS records in RON notation:".underline(),
+            ron::ser::to_string_pretty(
+                &records,
+                ron::ser::PrettyConfig {
+                    enumerate_arrays: true,
+                    ..Default::default()
+                }
+            )
+            .unwrap()
+        );
+    }
+
+    if filter.is_none() {
+        filter = (|| -> Result<Option<SocketAddrV4>, Error> {
+            // Try to guess what the sever might have been
+            let endpoints: HashSet<_> = records
+                .values()
+                .flat_map(std::convert::identity)
+                .map(|record| SocketAddrV4::new(record.sender, record.sender_port))
+                .collect();
+
+            // Check different ports I use for DoT
+            let candidates: Vec<_> = endpoints
+                .iter()
+                .cloned()
+                .filter(|sa| sa.port() == 853)
+                .collect();
+            if candidates.len() == 1 {
+                return Ok(Some(candidates[0]));
+            } else if candidates.len() > 1 {
+                bail!(make_error(candidates))
+            }
+
+            let candidates: Vec<_> = endpoints
+                .iter()
+                .cloned()
+                .filter(|sa| sa.port() == 8853)
+                .collect();
+            if candidates.len() == 1 {
+                return Ok(Some(candidates[0]));
+            } else if candidates.len() > 1 {
+                bail!(make_error(candidates))
+            }
+
+            bail!(make_error(endpoints))
+        })()?;
+    }
+    // Filter was set to Some() in the snippet above
+    let filter = filter.unwrap();
+
+    // Filter to only those records containing DNS
+    records.values_mut().for_each(|records| {
+        // `filter_tls_records` takes the Vec by value, which is why we first need to move it out
+        // of the HashMap and back it afterwards.
+        let mut tmp = Vec::new();
+        mem::swap(records, &mut tmp);
+        tmp = filter_tls_records(tmp, (*filter.ip(), filter.port()));
+        mem::swap(records, &mut tmp);
+    });
+    if interative {
+        println!("{}", "TLS Records with DNS responses:".underline());
+        for r in records.values().flat_map(std::convert::identity).sorted() {
+            println!("{:?}", r);
+        }
+    }
+
+    // Build final Sequence
+    let seq = build_sequence(records, file.to_string_lossy());
+
+    if interative {
+        println!("\n{}", "Final DNS Sequence:".underline());
+        if let Some(seq) = &seq {
+            println!("{:?}", seq);
+        }
+        println!();
+    }
+
+    if let Some(seq) = seq {
+        Ok(seq)
+    } else {
+        bail!("Could not build a sequence from the list of filtered records.")
+    }
 }

@@ -1,18 +1,20 @@
 mod constants;
 pub mod knn;
 mod load_sequence;
+#[cfg(feature = "read_pcap")]
+pub mod pcap;
 mod serialization;
 mod utils;
 
 pub use crate::utils::{
-    load_all_dnstap_files_from_dir, load_all_dnstap_files_from_dir_with_config,
+    load_all_dnstap_files_from_dir, load_all_dnstap_files_from_dir_with_config, PathExtensions,
 };
 use crate::{common_sequence_classifications::*, constants::*, load_sequence::Padding};
 use chrono::{self, DateTime, Duration, NaiveDateTime, Utc};
-use failure::{self, Error};
+use failure::{self, Error, ResultExt};
 use lazy_static::lazy_static;
 pub use load_sequence::convert_to_sequence;
-use misc_utils::{self, Min};
+use misc_utils::{self, fs, Min};
 use serde::{
     self,
     de::{MapAccess, Visitor},
