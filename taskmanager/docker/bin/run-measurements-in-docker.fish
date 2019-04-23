@@ -44,7 +44,7 @@ function run
     sudo tcpdump -i any -f "port 853" -w "/output/website-log.pcap" &
     # Start DNS services
     echo "Starting client proxy"
-    env SSLKEYLOGFILE=/output/website-log.tlskeys.txt RUST_LOG=info /usr/bin/client -l127.0.0.1:8853 -s1.0.0.1:853 --tls pass &
+    env SSLKEYLOGFILE=/output/website-log.tlskeys.txt RUST_LOG=info /usr/bin/client -l127.0.0.1:8853 -s1.0.0.1:853 --tls ap &
     echo "Starting stubby"
     stubby -g -C /etc/stubby/stubby.yml &
     echo "Starting unbound"
