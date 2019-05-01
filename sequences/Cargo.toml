@@ -17,7 +17,7 @@ harness = false
 
 [dependencies]
 chrono = { version = "0.4.6", features = [ "serde" ] }
-colored = { version = "1.7.0", optional = true }
+colored = { version = "1.8.0", optional = true }
 dnstap = { path = "../dnstap" }
 failure = "0.1.5"
 hashbrown = { version = "0.3.0", features = [ "serde" ], optional = true }
