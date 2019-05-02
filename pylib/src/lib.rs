@@ -89,6 +89,11 @@ impl PySequence {
     pub fn complexity(&self) -> usize {
         self.sequence.complexity()
     }
+
+    /// Returns a [`String`] with the JSON representation of this Sequence
+    pub fn to_json(&self) -> PyResult<String> {
+        self.sequence.to_json().map_err(error2py)
+    }
 }
 
 impl From<Sequence> for PySequence {

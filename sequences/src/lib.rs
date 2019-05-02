@@ -490,6 +490,10 @@ impl Sequence {
             }
         }
     }
+
+    pub fn to_json(&self) -> Result<String, Error> {
+        Ok(serde_json::to_string(self)?)
+    }
 }
 
 impl PartialEq for Sequence {
