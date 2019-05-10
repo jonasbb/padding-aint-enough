@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Serializer as JsonSerializer;
 use std::{
     collections::HashMap,
+    ffi::{OsStr, OsString},
     fs::OpenOptions,
     io::{BufReader, Write},
     path::{Path, PathBuf},
@@ -63,6 +64,16 @@ struct CliArgs {
     /// Only test a single k. Overwrites `-k` option.
     #[structopt(long = "exact-k", value_name = "k")]
     exact_k: Option<usize>,
+    /// File extension which must be available in the file to be recognized as a Sequence file
+    ///
+    /// This can be `pcap`, `dnstap`, `json`
+    #[structopt(
+        long = "extension",
+        value_name = "ext",
+        default_value = "dnstap",
+        parse(from_os_str)
+    )]
+    file_extension: OsString,
 }
 
 arg_enum! {
@@ -182,7 +193,7 @@ fn run() -> Result<(), Error> {
         Some(SubCommand::Crossvalidate { simulate, .. }) => *simulate,
         Some(SubCommand::Classify { simulate, .. }) => *simulate,
     };
-    let training_data = load_all_dnstap_files(&cli_args.base_dir, simulate)?;
+    let training_data = load_all_files(&cli_args.base_dir, &cli_args.file_extension, simulate)?;
     info!(
         "Done loading dnstap files. Found {} domains.",
         training_data.len()
@@ -281,7 +292,7 @@ fn run_classify(
     }) = cli_args.cmd.clone()
     {
         info!("Start loading test data dnstap files...");
-        let test_data = load_all_dnstap_files(&test_data, simulate)?;
+        let test_data = load_all_files(&test_data, &cli_args.file_extension, simulate)?;
         info!(
             "Done loading test data dnstap files. Found {} domains.",
             test_data.len()
@@ -501,19 +512,24 @@ fn make_check_confusion_domains() -> impl Fn(&Atom) -> Atom {
     }
 }
 
-fn load_all_dnstap_files(
+fn load_all_files(
     base_dir: &Path,
+    file_extension: &OsStr,
     simulate: SimulateOption,
 ) -> Result<Vec<LabelledSequences>, Error> {
     let check_confusion_domains = make_check_confusion_domains();
 
-    let seqs = sequences::load_all_dnstap_files_from_dir_with_config(base_dir, simulate.into())
-        .with_context(|_| {
-            format!(
-                "Could not load some sequence files from dir: {}",
-                base_dir.display()
-            )
-        })?;
+    let seqs = sequences::load_all_files_with_extension_from_dir_with_config(
+        base_dir,
+        file_extension,
+        simulate.into(),
+    )
+    .with_context(|_| {
+        format!(
+            "Could not load some sequence files from dir: {}",
+            base_dir.display()
+        )
+    })?;
     info!("Start creating LabelledSequences");
     Ok(seqs
         .into_iter()
