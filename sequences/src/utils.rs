@@ -18,6 +18,14 @@ pub fn load_all_dnstap_files_from_dir_with_config(
     base_dir: &Path,
     config: LoadDnstapConfig,
 ) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
+    load_all_files_with_extension_from_dir_with_config(base_dir, &OsStr::new("dnstap"), config)
+}
+
+pub fn load_all_files_with_extension_from_dir_with_config(
+    base_dir: &Path,
+    file_extension: &OsStr,
+    config: LoadDnstapConfig,
+) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
     // Get a list of directories
     // Each directory corresponds to a label
     let mut directories: Vec<PathBuf> = fs::read_dir(base_dir)?
@@ -56,7 +64,7 @@ pub fn load_all_dnstap_files_from_dir_with_config(
                         // Result<Option<PathBuf>>
                         entry.file_type().map(|ft| {
                             if ft.is_file()
-                                && entry.file_name().to_string_lossy().contains(".dnstap")
+                                && PathExtensions(&entry.path()).any(|ext| ext == file_extension)
                             {
                                 Some(entry.path())
                             } else {

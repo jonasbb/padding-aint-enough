@@ -7,7 +7,8 @@ mod serialization;
 mod utils;
 
 pub use crate::utils::{
-    load_all_dnstap_files_from_dir, load_all_dnstap_files_from_dir_with_config, PathExtensions,
+    load_all_dnstap_files_from_dir, load_all_dnstap_files_from_dir_with_config,
+    load_all_files_with_extension_from_dir_with_config, PathExtensions,
 };
 use crate::{common_sequence_classifications::*, constants::*, load_sequence::Padding};
 use chrono::{self, DateTime, Duration, NaiveDateTime, Utc};
