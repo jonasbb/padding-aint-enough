@@ -1,6 +1,10 @@
-use sequences::pcap::load_pcap_file_real;
 use failure::Error;
-use std::{net::SocketAddrV4, path::Path};
+use misc_utils::fs;
+use sequences::pcap::load_pcap_file_real;
+use std::{
+    net::SocketAddrV4,
+    path::{Path, PathBuf},
+};
 use structopt::StructOpt;
 
 #[derive(Clone, Debug, StructOpt)]
@@ -25,6 +29,9 @@ struct CliArgs {
     /// List of PCAP files
     #[structopt(name = "PCAPS")]
     pcap_files: Vec<String>,
+    // Creates a `.json.xz` file for each pcap in the same directory
+    #[structopt(long = "convert-to-json")]
+    convert_to_json: bool,
 }
 
 fn main() {
@@ -49,7 +56,12 @@ fn run() -> Result<(), Error> {
     let cli_args = CliArgs::from_args();
 
     for file in cli_args.pcap_files {
-        let _ = load_pcap_file_real(Path::new(&file), cli_args.filter, true, cli_args.verbose)?;
+        let seq = load_pcap_file_real(Path::new(&file), cli_args.filter, true, cli_args.verbose)?;
+        if cli_args.convert_to_json {
+            let mut path = PathBuf::from(&file);
+            path.set_extension("pcap.json.xz");
+            let _ = fs::write(&path, seq.to_json()?);
+        }
 
         /*
         println!("{}{}", "Processing file: ".bold(), file);
