@@ -1,0 +1,20 @@
+knn with k=7:
+       Quality        │   #   │ #With Prob. │ Total 
+══════════════════════╪═══════╪═════════════╪═══════
+ Exact                │     0 │           0 │     0 
+ Majority             │    23 │           0 │    23 
+ Plurality            │   335 │           0 │   335 
+ PluralityThenMinDist │   358 │           2 │   360 
+ Contains             │  1823 │           6 │  1829 
+ Wrong                │ 89522 │         468 │ 89990 
+ NoResult             │     0 │           0 │     0 
+
+#Domains with at least x classification results of quality or higher:
+        Method        │  0   │  1   │  2  │  3  │  4  │  5  │ 6  │ 7  │ 8  │ 9 │ 10 
+══════════════════════╪══════╪══════╪═════╪═════╪═════╪═════╪════╪════╪════╪═══╪════
+ Contains             │ 9261 │ 1121 │ 581 │ 319 │ 208 │ 147 │ 95 │ 48 │ 19 │ 6 │  3 
+ PluralityThenMinDist │ 9261 │  403 │ 184 │  72 │  27 │  15 │  9 │  4 │  2 │ 1 │  1 
+ Plurality            │ 9261 │  208 │  92 │  31 │  11 │   8 │  3 │  2 │  2 │ 1 │  0 
+ Majority             │ 9261 │   19 │   3 │   1 │   0 │   0 │  0 │  0 │  0 │ 0 │  0 
+ Exact                │ 9261 │    0 │   0 │   0 │   0 │   0 │  0 │  0 │  0 │ 0 │  0 
+
