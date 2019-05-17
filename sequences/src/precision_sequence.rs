@@ -40,6 +40,16 @@ impl PrecisionSequence {
         for ext in PathExtensions::new(path) {
             match ext.to_str() {
                 Some("dnstap") => return crate::load_sequence::dnstap_to_precision_sequence(path),
+                #[cfg(feature = "read_pcap")]
+                Some("pcap") => {
+                    let records = crate::pcap::process_pcap(path, None, false, false)?;
+                    return crate::pcap::build_precision_sequence(records, path.to_string_lossy())
+                        .ok_or_else(|| {
+                            failure::format_err!(
+                                "Could not build a sequence from the list of filtered records."
+                            )
+                        });
+                }
                 Some("json") => {
                     let s = fs::read_to_string(path)?;
                     return Ok(serde_json::from_str(&s)?);

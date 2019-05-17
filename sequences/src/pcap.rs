@@ -1,4 +1,4 @@
-use crate::{AbstractQueryResponse, Sequence};
+use crate::{AbstractQueryResponse, PrecisionSequence, Sequence};
 use chrono::NaiveDateTime;
 use colored::Colorize;
 use failure::{bail, format_err, Error, ResultExt};
@@ -402,6 +402,27 @@ where
     crate::convert_to_sequence(&records, identifier.into(), crate::LoadDnstapConfig::Normal)
 }
 
+/// Given a list of pre-filtered TLS records, build a [`PrecisionSequence`] with them
+///
+/// For filtering the list of [`TlsRecord`]s see the [`filter_tls_records`].
+pub fn build_precision_sequence<S, H>(
+    records: HashMap<FlowId, Vec<TlsRecord>, H>,
+    identifier: S,
+) -> Option<PrecisionSequence>
+where
+    S: Into<String>,
+{
+    let records: Vec<_> = records
+        .into_iter()
+        .flat_map(|(_id, recs)| recs)
+        .sorted()
+        .collect();
+    crate::load_sequence::convert_to_precision_sequence(
+        &records,
+        identifier.into(),
+    )
+}
+
 fn make_error(iter: impl IntoIterator<Item = SocketAddrV4>) -> String {
     let mut error =
         "Multiple server candidates found.\nSelect a server with -f/--filter:".to_string();
@@ -423,10 +444,38 @@ pub fn load_pcap_file<P: AsRef<Path>>(
 #[doc(hidden)]
 pub fn load_pcap_file_real(
     file: &Path,
-    mut filter: Option<SocketAddrV4>,
+    filter: Option<SocketAddrV4>,
     interative: bool,
     verbose: bool,
 ) -> Result<Sequence, Error> {
+    let records = process_pcap(file, filter, interative, verbose)?;
+
+    // Build final Sequence
+    let seq = build_sequence(records, file.to_string_lossy());
+
+    if interative {
+        println!("\n{}", "Final DNS Sequence:".underline());
+        if let Some(seq) = &seq {
+            println!("{:?}", seq);
+        }
+        println!();
+    }
+
+    if let Some(seq) = seq {
+        Ok(seq)
+    } else {
+        bail!("Could not build a sequence from the list of filtered records.")
+    }
+}
+
+/// Internally used function
+#[doc(hidden)]
+pub fn process_pcap(
+    file: &Path,
+    mut filter: Option<SocketAddrV4>,
+    interative: bool,
+    verbose: bool,
+) -> Result<HashMap<FlowId, Vec<TlsRecord>>, Error> {
     if interative {
         println!("{}{}", "Processing file: ".bold(), file.display());
     }
@@ -504,20 +553,5 @@ pub fn load_pcap_file_real(
         }
     }
 
-    // Build final Sequence
-    let seq = build_sequence(records, file.to_string_lossy());
-
-    if interative {
-        println!("\n{}", "Final DNS Sequence:".underline());
-        if let Some(seq) = &seq {
-            println!("{:?}", seq);
-        }
-        println!();
-    }
-
-    if let Some(seq) = seq {
-        Ok(seq)
-    } else {
-        bail!("Could not build a sequence from the list of filtered records.")
-    }
+    Ok(records)
 }
