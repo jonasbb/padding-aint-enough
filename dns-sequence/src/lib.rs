@@ -1,5 +1,5 @@
 use csv::ReaderBuilder;
-use failure::{Error, ResultExt};
+use failure::{format_err, Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{error, info, warn};
 use misc_utils::fs::file_open_read;
@@ -82,6 +82,20 @@ pub fn load_all_files(
     file_extension: &OsStr,
     simulate: SimulateOption,
 ) -> Result<Vec<LabelledSequences>, Error> {
+    // Support to read a pre-processed JSON file instead of reading many directories from disk
+    // Implementing this here means this works in all cases
+    if base_dir.is_file() {
+        let s = misc_utils::fs::read_to_string(base_dir).with_context(|_| {
+            format_err!("Could not open {} to read from it.", base_dir.display())
+        })?;
+        return Ok(serde_json::from_str(&s).with_context(|_| {
+            format_err!(
+                "The file {} could not be deserialized into LabelledSequences",
+                base_dir.display()
+            )
+        })?);
+    }
+
     let check_confusion_domains = make_check_confusion_domains();
 
     let seqs = sequences::load_all_files_with_extension_from_dir_with_config(
