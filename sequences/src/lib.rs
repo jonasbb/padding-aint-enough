@@ -731,6 +731,7 @@ pub struct LabelledSequence<S = Atom> {
     pub sequence: Sequence,
 }
 
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct LabelledSequences<S = Atom> {
     pub true_domain: S,
     pub mapped_domain: S,
