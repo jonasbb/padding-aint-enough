@@ -3,14 +3,18 @@ pub mod knn;
 mod load_sequence;
 #[cfg(feature = "read_pcap")]
 pub mod pcap;
+mod precision_sequence;
 mod serialization;
 mod utils;
 
-pub use crate::utils::{
-    load_all_dnstap_files_from_dir, load_all_dnstap_files_from_dir_with_config,
-    load_all_files_with_extension_from_dir_with_config, PathExtensions,
-};
 use crate::{common_sequence_classifications::*, constants::*, load_sequence::Padding};
+pub use crate::{
+    precision_sequence::PrecisionSequence,
+    utils::{
+        load_all_dnstap_files_from_dir, load_all_dnstap_files_from_dir_with_config,
+        load_all_files_with_extension_from_dir_with_config, PathExtensions, Probability,
+    },
+};
 use chrono::{self, DateTime, Duration, NaiveDateTime, Utc};
 use failure::{self, Error, ResultExt};
 use lazy_static::lazy_static;
@@ -136,7 +140,7 @@ impl Sequence {
         Sequence(sequence, identifier)
     }
 
-    /// Load a [`Sequence`] from a file path. The file has to be a dnstap file.
+    /// Load a [`Sequence`] from a file path.
     pub fn from_path(path: &Path) -> Result<Sequence, Error> {
         // Iterate over all file extensions, from last to first.
         for ext in PathExtensions::new(path) {

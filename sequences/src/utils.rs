@@ -1,11 +1,14 @@
 use crate::{knn::ClassifierData, LoadDnstapConfig, Sequence};
-use failure::{Error, ResultExt};
+use failure::{bail, Error, ResultExt};
 use log::{debug, warn};
 use rayon::prelude::*;
+use serde::Serialize;
 use std::{
+    cmp,
     ffi::OsStr,
-    fs,
+    fmt, fs,
     path::{Path, PathBuf},
+    str::FromStr,
 };
 
 pub fn load_all_dnstap_files_from_dir(
@@ -24,7 +27,7 @@ pub fn load_all_dnstap_files_from_dir_with_config(
 pub fn load_all_files_with_extension_from_dir_with_config(
     base_dir: &Path,
     file_extension: &OsStr,
-    config: LoadDnstapConfig,
+    _config: LoadDnstapConfig,
 ) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
     // Get a list of directories
     // Each directory corresponds to a label
@@ -80,11 +83,13 @@ pub fn load_all_files_with_extension_from_dir_with_config(
 
             let sequences: Vec<Sequence> = filenames
                 .into_iter()
-                .filter_map(|dnstap_file| {
-                    debug!("Processing dnstap file '{}'", dnstap_file.display());
-                    match Sequence::from_path_with_config(&*dnstap_file, config).with_context(
-                        |_| format!("Processing dnstap file '{}'", dnstap_file.display()),
-                    ) {
+                .filter_map(|file| {
+                    debug!("Processing {:?} file '{}'", file_extension, file.display());
+                    // FIXME have a way to load arbitrary files BUT with a config
+                    // match Sequence::from_path_with_config(&*dnstap_file, config).with_context(
+                    match Sequence::from_path(&file).with_context(|_| {
+                        format!("Processing {:?} file '{}'", file_extension, file.display())
+                    }) {
                         Ok(seq) => Some(seq),
                         Err(err) => {
                             warn!("{}", err);
@@ -328,5 +333,53 @@ impl<'a> Iterator for PathExtensions<'a> {
             };
             new_extension
         }
+    }
+}
+
+/// Represents an arbitraty propability value
+#[derive(Copy, Clone, PartialEq, PartialOrd, Debug, Default, Serialize)]
+pub struct Probability(f32);
+
+impl Probability {
+    /// Create a new probability value
+    ///
+    /// Returns an Error if the value is negative, larger than 1, or NaN.
+    pub fn new(pb: f32) -> Result<Self, Error> {
+        if !pb.is_finite() || pb < 0. || pb > 1. {
+            bail!(
+                "A probability has to be finite, not NaN and 0 <= x <= 1, but value was: {}",
+                pb
+            )
+        } else {
+            Ok(Probability(pb))
+        }
+    }
+
+    pub fn to_float(self) -> f32 {
+        self.0
+    }
+}
+
+// Implementing `Eq` is fine, as the internal float cannot be `NaN` or infinite.
+impl Eq for Probability {}
+
+impl Ord for Probability {
+    fn cmp(&self, other: &Self) -> cmp::Ordering {
+        self.partial_cmp(other).unwrap_or(cmp::Ordering::Equal)
+    }
+}
+
+impl FromStr for Probability {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Error> {
+        let pb = f32::from_str(s)?;
+        Ok(Self::new(pb)?)
+    }
+}
+
+impl fmt::Display for Probability {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(f)
     }
 }

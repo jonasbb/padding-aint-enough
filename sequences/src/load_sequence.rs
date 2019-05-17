@@ -1,6 +1,6 @@
 use crate::{
-    AbstractQueryResponse, LoadDnstapConfig, MatchKey, Query, QuerySource, Sequence,
-    SequenceElement, UnmatchedClientQuery,
+    precision_sequence::PrecisionSequence, AbstractQueryResponse, LoadDnstapConfig, MatchKey,
+    Query, QuerySource, Sequence, SequenceElement, UnmatchedClientQuery,
 };
 use chrono::Duration;
 use dnstap::{
@@ -32,6 +32,13 @@ pub fn dnstap_to_sequence_with_config(
     let matched = load_matching_query_responses_from_dnstap(dnstap_file)?;
     let seq = convert_to_sequence(&matched, dnstap_file.to_string_lossy().to_string(), config);
     Ok(seq.ok_or_else(|| format_err!("Sequence is empty"))?)
+}
+
+/// Load a dnstap file and generate a [`PrecisionSequence`] from it
+pub fn dnstap_to_precision_sequence(dnstap_file: &Path) -> Result<PrecisionSequence, Error> {
+    let matched = load_matching_query_responses_from_dnstap(dnstap_file)?;
+    let seq = convert_to_precision_sequence(&matched, dnstap_file.to_string_lossy().to_string());
+    Ok(seq.ok_or_else(|| format_err!("PrecisionSequence is empty"))?)
 }
 
 fn load_matching_query_responses_from_dnstap(dnstap_file: &Path) -> Result<Vec<Query>, Error> {
@@ -247,6 +254,28 @@ where
                 gap.into_iter().chain(size)
             })
             .collect(),
+        identifier,
+    ))
+}
+
+/// Takes a list of Queries and returns a [`PrecisionSequence`]
+///
+/// The functions abstracts over some details of [`Query`]s, such as absolute size and absolute time.
+/// The function only returns [`None`], if the input sequence is empty.
+pub fn convert_to_precision_sequence<'a, QR>(
+    data: &'a [QR],
+    identifier: String,
+) -> Option<PrecisionSequence>
+where
+    QR: 'a,
+    &'a QR: Into<AbstractQueryResponse>,
+{
+    if data.is_empty() {
+        return None;
+    }
+
+    Some(PrecisionSequence::new(
+        data.iter().map(|x| x.into()),
         identifier,
     ))
 }
