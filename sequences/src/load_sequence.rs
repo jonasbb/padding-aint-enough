@@ -29,6 +29,12 @@ pub fn dnstap_to_sequence_with_config(
     dnstap_file: &Path,
     config: LoadDnstapConfig,
 ) -> Result<Sequence, Error> {
+    let matched = load_matching_query_responses_from_dnstap(dnstap_file)?;
+    let seq = convert_to_sequence(&matched, dnstap_file.to_string_lossy().to_string(), config);
+    Ok(seq.ok_or_else(|| format_err!("Sequence is empty"))?)
+}
+
+fn load_matching_query_responses_from_dnstap(dnstap_file: &Path) -> Result<Vec<Query>, Error> {
     // process dnstap if available
     let mut events: Vec<protos::Dnstap> =
         process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
@@ -182,12 +188,10 @@ pub fn dnstap_to_sequence_with_config(
     matched.sort_by_key(|x| x.end);
 
     sanity_check_matched_queries(&matched)?;
-
-    let seq = convert_to_sequence(&matched, dnstap_file.to_string_lossy().to_string(), config);
-    Ok(seq.ok_or_else(|| format_err!("Sequence is empty"))?)
+    Ok(matched)
 }
 
-/// Takes a list of Queries and returns a Sequence
+/// Takes a list of Queries and returns a [`Sequence`]
 ///
 /// The functions abstracts over some details of Queries, such as absolute size and absolute time.
 /// The function only returns [`None`], if the input sequence is empty.
