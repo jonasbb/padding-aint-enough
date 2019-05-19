@@ -257,7 +257,7 @@ impl Sequence {
 
     /// Return the distance to the `other` [`Sequence`].
     pub fn distance(&self, other: &Self) -> usize {
-        self.distance_with_limit(other, usize::max_value(), false)
+        self.distance_with_limit(other, usize::max_value(), false, false)
     }
 
     /// Same as [`Sequence::distance`] but with an early exit criteria
@@ -279,6 +279,7 @@ impl Sequence {
         other: &Self,
         max_distance: usize,
         use_length_prefilter: bool,
+        use_cr_mode: bool,
     ) -> usize {
         let mut larger = self;
         let mut smaller = other;
@@ -287,6 +288,20 @@ impl Sequence {
             mem::swap(&mut larger, &mut smaller);
         }
         // smaller is always shorter or equal sized
+
+        // if we are in CR simulation mode, we can skip most of the calculation
+        // we can assume that the sequences are equal except for the length
+        // (this is not quite true, as sometimes the sizes also differ)
+        // and both sequences follow the same structure of:
+        // S (G S)*
+        // therefore, we only need to add the cost of additional length of the longer one
+        if use_cr_mode {
+            let mut cost: usize = 0;
+            for x in &larger.0[smaller.0.len()..] {
+                cost = cost.saturating_add(x.insert_cost());
+            }
+            return cost;
+        }
 
         const ABSOLUTE_LENGTH_DIFF: usize = 40;
         const RELATIVE_LENGTH_DIFF_FACTOR: usize = 5;

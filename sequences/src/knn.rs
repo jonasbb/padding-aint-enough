@@ -209,6 +209,7 @@ pub fn knn<S>(
     trainings_data: &[LabelledSequences<S>],
     validation_data: &[Sequence],
     k: u8,
+    use_cr_mode: bool,
 ) -> Vec<ClassificationResult>
 where
     S: AsRef<str> + Clone + Display + Sync,
@@ -228,7 +229,7 @@ where
                     .flat_map(|tlseq| {
                         tlseq.sequences.iter().map(move |s| {
                             move |max_dist: usize| {
-                                let distance = vsample.distance_with_limit(s, max_dist, true);
+                                let distance = vsample.distance_with_limit(s, max_dist, true, use_cr_mode);
                                 // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
                                 let distance_norm = if distance == 0 {
                                     NotNan::new(0.).unwrap()
@@ -263,6 +264,7 @@ pub fn knn_with_threshold<S>(
     validation_data: &[Sequence],
     k: u8,
     distance_threshold: f32,
+    use_cr_mode: bool,
 ) -> Vec<ClassificationResult>
 where
     S: AsRef<str> + Clone + Display + Sync,
@@ -290,6 +292,7 @@ where
                                     s,
                                     max_dist.min(abs_threshold),
                                     true,
+                                    use_cr_mode,
                                 );
 
                                 if (real_distance as f32 / length_of_longer_sequence as f32)
@@ -302,6 +305,7 @@ where
                                         s,
                                         max_dist.min(abs_threshold),
                                         true,
+                                        use_cr_mode,
                                     );
                                     // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
                                     let distance_norm =

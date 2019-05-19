@@ -78,6 +78,8 @@ enum SubCommand {
     Crossvalidate {
         #[structopt(long = "dist-thres")]
         distance_threshold: Option<f32>,
+        #[structopt(long = "use-cr-mode")]
+        use_cr_mode: bool,
         #[structopt(
             long = "simulate",
             default_value = "Normal",
@@ -99,6 +101,8 @@ enum SubCommand {
         test_data: PathBuf,
         #[structopt(long = "dist-thres")]
         distance_threshold: Option<f32>,
+        #[structopt(long = "use-cr-mode")]
+        use_cr_mode: bool,
         #[structopt(
             long = "simulate",
             default_value = "Normal",
@@ -180,6 +184,7 @@ fn run() -> Result<(), Error> {
             // In case of `None` overwrite it to make sure the individual functions never have to handle a `None`.
             cli_args.cmd = Some(SubCommand::Crossvalidate {
                 distance_threshold: None,
+                use_cr_mode: false,
                 simulate: SimulateOption::Normal,
             });
             run_crossvalidation(&cli_args, training_data, &mut stats, &mut mis_writer)
@@ -210,7 +215,9 @@ fn run_crossvalidation(
     mis_writer: &mut JsonSerializer<impl Write, impl serde_json::ser::Formatter>,
 ) {
     if let Some(SubCommand::Crossvalidate {
-        distance_threshold, ..
+        distance_threshold,
+        use_cr_mode,
+        ..
     }) = cli_args.cmd.clone()
     {
         for fold in 0..10 {
@@ -239,6 +246,7 @@ fn run_crossvalidation(
                 classify_and_evaluate(
                     k,
                     distance_threshold,
+                    use_cr_mode,
                     &*training_data,
                     &*test_data,
                     &*test_labels,
@@ -261,6 +269,7 @@ fn run_classify(
     if let Some(SubCommand::Classify {
         test_data,
         distance_threshold,
+        use_cr_mode,
         simulate,
     }) = cli_args.cmd.clone()
     {
@@ -295,6 +304,7 @@ fn run_classify(
             classify_and_evaluate(
                 k,
                 distance_threshold,
+                use_cr_mode,
                 &*data,
                 &*test_sequences,
                 &*test_labels,
@@ -322,6 +332,7 @@ fn classify_and_evaluate(
     // The `k` for k-NN
     k: usize,
     distance_threshold: Option<f32>,
+    use_cr_mode: bool,
     training_data: &[LabelledSequences],
     test_data: &[Sequence],
     test_labels: &[(Atom, Atom)],
@@ -332,9 +343,9 @@ fn classify_and_evaluate(
     let classification;
     if let Some(distance_threshold) = distance_threshold {
         classification =
-            knn::knn_with_threshold(&*training_data, &*test_data, k as u8, distance_threshold)
+            knn::knn_with_threshold(&*training_data, &*test_data, k as u8, distance_threshold, use_cr_mode)
     } else {
-        classification = knn::knn(&*training_data, &*test_data, k as u8)
+        classification = knn::knn(&*training_data, &*test_data, k as u8, use_cr_mode)
     }
     assert_eq!(classification.len(), test_labels.len());
     info!("Done classification for k={}, start evaluation...", k);
