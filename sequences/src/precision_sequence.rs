@@ -1,3 +1,6 @@
+mod adaptive_padding;
+
+use self::adaptive_padding::AdaptivePadding;
 use crate::{
     utils::{PathExtensions, Probability},
     AbstractQueryResponse, LoadDnstapConfig, Sequence,
@@ -119,6 +122,65 @@ impl PrecisionSequence {
             need_more_dummy_elements = rng.sample::<f32, _>(Open01) < timeout_prob.to_float();
         }
 
+        Self(events, self.1.clone())
+    }
+
+    #[must_use]
+    pub fn apply_adaptive_padding(
+        &self,
+        median_burst_length: u32,
+        probability_fake_burst: Probability,
+    ) -> Self {
+        // Setup a predictable RNG to randomly determine the ends
+        let path = Path::new(&self.1);
+        let filename = path.file_name().unwrap();
+        let mut hasher = FnvHasher::with_key(0);
+        filename.hash(&mut hasher);
+        let rng = XorShiftRng::seed_from_u64(hasher.finish());
+
+        // Internal state
+        let mut events = vec![];
+        // Tracks the current simulated time
+        let mut now;
+        let mut ap = AdaptivePadding::new(
+            rng,
+            self.0[0].time,
+            median_burst_length,
+            probability_fake_burst,
+        );
+
+        for event in self.0.iter().cloned() {
+            // This loop handles all timeouts which happen BEFORE the current packet can be send
+            // Each timeout generates a dummy packet
+            while event.time > ap.deadline {
+                now = ap.deadline;
+                events.push(PrecisionSequenceEvent {
+                    time: now,
+                    size: 128,
+                    is_dummy_event: true,
+                });
+                ap.handle_timeout(now);
+            }
+
+            // Now that the time out this packet came send it
+            now = event.time;
+            ap.handle_application_payload(now);
+            events.push(event);
+        }
+
+        // AP continues after the last real packet.
+        // This processes all timeouts at the very end
+        while !ap.has_terminated() {
+            now = ap.deadline;
+            events.push(PrecisionSequenceEvent {
+                time: now,
+                size: 128,
+                is_dummy_event: true,
+            });
+            ap.handle_timeout(now);
+        }
+
+        assert!(self.0.len() <= events.len());
         Self(events, self.1.clone())
     }
 

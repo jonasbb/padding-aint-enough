@@ -1,3 +1,5 @@
+#![feature(duration_float)]
+
 mod constants;
 pub mod knn;
 mod load_sequence;
