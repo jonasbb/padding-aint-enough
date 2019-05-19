@@ -339,6 +339,7 @@ where
         }
         self.state = State::Burst;
         let duration = self.sample_token();
+        /// FIXME doesn't handle the case of duration == DURATION_MAX
         self.set_deadline(duration);
     }
 
