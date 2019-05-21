@@ -23,6 +23,6 @@ sequences = { path = "../sequences" }
 serde = { version = "1.0.91", features = [ "derive" ] }
 serde_json = "1.0.39"
 structopt = "0.2.15"
-tempfile = "3.0.7"
+tempfile = "3.0.8"
 toml = "0.5.1"
 wait-timeout = "0.2"
