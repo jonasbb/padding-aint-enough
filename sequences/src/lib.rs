@@ -5,7 +5,7 @@ pub mod knn;
 mod load_sequence;
 #[cfg(feature = "read_pcap")]
 pub mod pcap;
-mod precision_sequence;
+pub mod precision_sequence;
 mod serialization;
 mod utils;
 

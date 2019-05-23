@@ -1,5 +1,6 @@
 mod adaptive_padding;
 
+use std::cmp::min;
 use self::adaptive_padding::AdaptivePadding;
 use crate::{
     utils::{PathExtensions, Probability},
@@ -61,6 +62,11 @@ impl PrecisionSequence {
             }
         }
         bail!("No supported path extension could be found.")
+    }
+
+    /// Return the [`PrecisionSequence`]'s identifier. Normally, the file name.
+    pub fn id(&self) -> &str {
+        &*self.1
     }
 
     #[must_use]
@@ -213,14 +219,18 @@ Total Duration: {}
     }
 
     pub fn overhead(&self, other: &Self) -> Overhead {
+        let queries_baseline = min(self.count_queries() as isize, other.count_queries() as isize);
         let queries = (self.count_queries() as isize - other.count_queries() as isize).abs();
-        let mut duration = self.duration() - other.duration();
-        if duration < Duration::zero() {
-            duration = Duration::zero() - duration;
+        let time_baseline = min(self.duration(), other.duration());
+        let mut time = self.duration() - other.duration();
+        if time < Duration::zero() {
+            time = Duration::zero() - time;
         }
         Overhead {
+            queries_baseline,
             queries,
-            time: duration,
+            time_baseline,
+            time,
         }
     }
 }
@@ -272,9 +282,25 @@ impl Into<AbstractQueryResponse> for &PrecisionSequenceEvent {
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Overhead {
+    pub queries_baseline: isize,
     pub queries: isize,
     #[serde(with = "serde_duration")]
+    pub time_baseline: Duration,
+    #[serde(with = "serde_duration")]
     pub time: Duration,
+}
+
+impl std::ops::Add for Overhead {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self::Output {
+        Self {
+            queries_baseline: self.queries_baseline + other.queries_baseline,
+            queries: self.queries + other.queries,
+            time_baseline: self.time_baseline + other.time_baseline,
+            time: self.time + other.time,
+        }
+    }
 }
 
 impl fmt::Display for Overhead {
