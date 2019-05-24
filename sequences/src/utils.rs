@@ -1,6 +1,7 @@
 use crate::{knn::ClassifierData, LoadDnstapConfig, Sequence};
 use failure::{bail, Error, ResultExt};
 use log::{debug, warn};
+use misc_utils::path::PathExt;
 use rayon::prelude::*;
 use serde::Serialize;
 use std::{
@@ -67,7 +68,7 @@ pub fn load_all_files_with_extension_from_dir_with_config(
                         // Result<Option<PathBuf>>
                         entry.file_type().map(|ft| {
                             if ft.is_file()
-                                && PathExtensions(&entry.path()).any(|ext| ext == file_extension)
+                                && entry.path().extensions().any(|ext| ext == file_extension)
                             {
                                 Some(entry.path())
                             } else {
@@ -308,33 +309,6 @@ where
 //     );
 //     res
 // }
-
-pub struct PathExtensions<'a>(&'a Path);
-
-impl<'a> PathExtensions<'a> {
-    pub fn new<P: AsRef<OsStr> + ?Sized>(path: &'a P) -> Self {
-        Self(Path::new(path))
-    }
-}
-
-impl<'a> Iterator for PathExtensions<'a> {
-    type Item = &'a OsStr;
-
-    fn next(&mut self) -> Option<&'a OsStr> {
-        let (new_filestem, new_extension) = (self.0.file_stem(), self.0.extension());
-        if new_extension.is_none() {
-            self.0 = Path::new("");
-            None
-        } else {
-            if let Some(new_filestem) = new_filestem {
-                self.0 = Path::new(new_filestem);
-            } else {
-                self.0 = Path::new("")
-            };
-            new_extension
-        }
-    }
-}
 
 /// Represents an arbitraty propability value
 #[derive(Copy, Clone, PartialEq, PartialOrd, Debug, Default, Serialize)]

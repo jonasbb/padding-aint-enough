@@ -1,20 +1,16 @@
 mod adaptive_padding;
 
-use std::cmp::min;
 use self::adaptive_padding::AdaptivePadding;
-use crate::{
-    utils::{PathExtensions, Probability},
-    AbstractQueryResponse, LoadDnstapConfig, Sequence,
-};
+use crate::{utils::Probability, AbstractQueryResponse, LoadDnstapConfig, Sequence};
 use chrono::{Duration, NaiveDateTime};
 use failure::{bail, Error};
 use fnv::FnvHasher;
-use misc_utils::fs;
+use misc_utils::{fs, path::PathExt};
 use rand::{distributions::Open01, Rng, SeedableRng};
 use rand_xorshift::XorShiftRng;
 use serde::{Deserialize, Serialize};
 use std::{
-    cmp::max,
+    cmp::{max, min},
     fmt,
     hash::{Hash, Hasher},
     path::Path,
@@ -41,7 +37,7 @@ impl PrecisionSequence {
     /// Load a [`PrecisionSequence`] from a file path.
     pub fn from_path(path: &Path) -> Result<Self, Error> {
         // Iterate over all file extensions, from last to first.
-        for ext in PathExtensions::new(path) {
+        for ext in path.extensions() {
             match ext.to_str() {
                 Some("dnstap") => return crate::load_sequence::dnstap_to_precision_sequence(path),
                 #[cfg(feature = "read_pcap")]
@@ -219,7 +215,10 @@ Total Duration: {}
     }
 
     pub fn overhead(&self, other: &Self) -> Overhead {
-        let queries_baseline = min(self.count_queries() as isize, other.count_queries() as isize);
+        let queries_baseline = min(
+            self.count_queries() as isize,
+            other.count_queries() as isize,
+        );
         let queries = (self.count_queries() as isize - other.count_queries() as isize).abs();
         let time_baseline = min(self.duration(), other.duration());
         let mut time = self.duration() - other.duration();

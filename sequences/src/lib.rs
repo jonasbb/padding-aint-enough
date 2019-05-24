@@ -14,14 +14,14 @@ pub use crate::{
     precision_sequence::PrecisionSequence,
     utils::{
         load_all_dnstap_files_from_dir, load_all_dnstap_files_from_dir_with_config,
-        load_all_files_with_extension_from_dir_with_config, PathExtensions, Probability,
+        load_all_files_with_extension_from_dir_with_config, Probability,
     },
 };
 use chrono::{self, DateTime, Duration, NaiveDateTime, Utc};
 use failure::{self, Error, ResultExt};
 use lazy_static::lazy_static;
 pub use load_sequence::convert_to_sequence;
-use misc_utils::{self, fs, Min};
+use misc_utils::{self, fs, path::PathExt, Min};
 use serde::{
     self,
     de::{MapAccess, Visitor},
@@ -145,7 +145,7 @@ impl Sequence {
     /// Load a [`Sequence`] from a file path.
     pub fn from_path(path: &Path) -> Result<Sequence, Error> {
         // Iterate over all file extensions, from last to first.
-        for ext in PathExtensions::new(path) {
+        for ext in path.extensions() {
             match ext.to_str() {
                 Some("dnstap") => return load_sequence::dnstap_to_sequence(path),
                 Some("json") => {
