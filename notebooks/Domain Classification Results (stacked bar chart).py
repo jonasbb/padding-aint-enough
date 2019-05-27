@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.2'
-#       jupytext_version: 0.8.6
+#       jupytext_version: 1.1.2
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -24,44 +24,7 @@ from itertools import cycle
 import matplotlib.cm
 import matplotlib.pyplot as plt
 
-from common_functions import autolabel, label2good_label
-
-
-# %%
-def parse_log_data(fname: str) -> t.List[t.List[t.Tuple[str, t.List[int]]]]:
-    """
-    Returned the parsed data of the domain classification results from the log file
-
-    The Data is structured like:
-    * The outer list contains data per `k` value, in the order of the log file
-    * There is only Tuple, per result quality
-    * The list in the tuple are the number of domains for the given result quality
-    """
-    with open(fname) as f:
-        content = f.read()
-    # This marks the start of the table we are interested in
-    separator = (
-        "#Domains with at least x classification results of quality or higher:\n"
-    )
-    # Drop everyting before the first table
-    datas = content.split(separator)[1:]
-    res = []
-    for data in datas:
-        # Only keep the lines we are interested in of the table
-        lines = data.splitlines()[3:7]
-        tmp = []
-        for line in lines:
-            elements = [x.strip() for x in line.split("│")]
-            quality = elements[0]
-            values = [int(x) for x in elements[1:]]
-            assert (
-                len(values) == 11 or len(values) == 21
-            ), f"Values must be 11 or 21 entries long but is only {len(values)}. For n/10 domains and n 0 to 10 (inclusive)."
-            tmp.append((quality, values))
-        tmp = tmp[::-1]
-        res.append(tmp)
-    return res
-
+from common_functions import autolabel, label2good_label, parse_log_data
 
 # %%
 pdatas_err: t.Optional[t.List[t.List[float]]] = None
