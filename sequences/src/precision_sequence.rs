@@ -289,6 +289,17 @@ pub struct Overhead {
     pub time: Duration,
 }
 
+impl Overhead {
+    pub fn new() -> Self {
+        Self {
+            queries_baseline: 0,
+            queries: 0,
+            time_baseline: Duration::zero(),
+            time: Duration::zero(),
+        }
+    }
+}
+
 impl std::ops::Add for Overhead {
     type Output = Self;
 
@@ -299,6 +310,12 @@ impl std::ops::Add for Overhead {
             time_baseline: self.time_baseline + other.time_baseline,
             time: self.time + other.time,
         }
+    }
+}
+
+impl Default for Overhead {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
