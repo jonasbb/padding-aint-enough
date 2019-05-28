@@ -17,10 +17,9 @@ setup(
     version="1.1.0",
     rust_extensions=[
         RustExtension(
-            "pylib.pylib", "Cargo.toml", binding=Binding.PyO3, debug=force_debug
+            "pylib", "Cargo.toml", binding=Binding.PyO3, debug=force_debug
         )
     ],
-    packages=["pylib"],
     # rust extensions are not zip safe, just like C-extensions.
     zip_safe=False,
 )
