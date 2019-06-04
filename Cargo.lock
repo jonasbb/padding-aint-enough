@@ -467,7 +467,7 @@ dependencies = [
  "framestream 0.1.2",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "misc_utils 2.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "protobuf 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "protobuf 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "trust-dns-proto 0.7.2 (git+https://github.com/jonasbb/trust-dns?branch=fix-empty-option-at-end-of-edns)",
 ]
 
@@ -499,7 +499,7 @@ dependencies = [
  "misc_utils 2.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "petgraph 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "petgraph-graphml 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "protoc-rust 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "protoc-rust 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "sequences 0.1.0",
  "serde 1.0.92 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1273,20 +1273,20 @@ dependencies = [
 
 [[package]]
 name = "protobuf"
-version = "2.6.1"
+version = "2.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "protobuf-codegen"
-version = "2.6.1"
+version = "2.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "protobuf 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "protobuf 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "protoc"
-version = "2.6.1"
+version = "2.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1294,12 +1294,12 @@ dependencies = [
 
 [[package]]
 name = "protoc-rust"
-version = "2.6.1"
+version = "2.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "protobuf 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "protobuf-codegen 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "protoc 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "protobuf 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "protobuf-codegen 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "protoc 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tempfile 3.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -2665,10 +2665,10 @@ dependencies = [
 "checksum proc-macro-hack 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2c725b36c99df7af7bf9324e9c999b9e37d92c8f8caf106d82e1d7953218d2d8"
 "checksum proc-macro-hack-impl 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2b753ad9ed99dd8efeaa7d2fb8453c8f6bc3e54b97966d35f1bc77ca6865254a"
 "checksum proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)" = "cf3d2011ab5c909338f7887f4fc896d35932e29146c12c8d01da6b22a80ba759"
-"checksum protobuf 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)" = "a151c11a92df0059d6ab446fafa3b21a1210aad4bc2293e1c946e8132b10db01"
-"checksum protobuf-codegen 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)" = "cf279ea7b2d578b46ec1fdbc481b7a12089be1802fd593a55c6d0460f42196b8"
-"checksum protoc 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)" = "c1d7828337236cb0dda6acf58c787ae4f1e9787d5a67ebd035e5e6ad17c80794"
-"checksum protoc-rust 2.6.1 (registry+https://github.com/rust-lang/crates.io-index)" = "79002792952311da7e13b435703e4c4a1386776ada38efb121154c1198084ef6"
+"checksum protobuf 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7e9076cae823584ab4d8fab3a111658d1232faf106611dc8378161b7d062b628"
+"checksum protobuf-codegen 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1f96ce6931cb5fd16eb33cc2a29444831a85409c66dc82ee60ac6a660fa9fa6b"
+"checksum protoc 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "3af92747f855ff848a46713c8207642609287422f9b27d51d86e0e9a32cac26d"
+"checksum protoc-rust 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "b9af858379329935cd15c11ebcc4d1a28c8aa8fd234483a89e72bf3869937bd9"
 "checksum pyo3 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d09e6e2d3fa5ae1a8af694f865e03e763e730768b16e3097851ff0b7f2276086"
 "checksum pyo3-derive-backend 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "d9d7ae8ab3017515cd7c82d88ce49b55e12a56c602dc69993e123da45c91b186"
 "checksum pyo3cls 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c494f8161f5b73096cc50f00fbb90fe670f476cde5e59c1decff39b546d54f40"
