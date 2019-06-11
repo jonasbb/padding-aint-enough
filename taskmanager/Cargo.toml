@@ -22,7 +22,7 @@ rayon = "1.0.3"
 sequences = { path = "../sequences" }
 serde = { version = "1.0.92", features = [ "derive" ] }
 serde_json = "1.0.39"
-structopt = "0.2.17"
+structopt = "0.2.16"
 tempfile = "3.0.8"
 toml = "0.5.1"
 wait-timeout = "0.2"
