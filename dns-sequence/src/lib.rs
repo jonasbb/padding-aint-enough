@@ -12,7 +12,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 use string_cache::DefaultAtom as Atom;
-use structopt::clap::{_clap_count_exprs, arg_enum};
+use structopt::clap::arg_enum;
 
 lazy_static! {
     static ref CONFUSION_DOMAINS: RwLock<Arc<HashMap<Atom, Atom>>> = RwLock::default();
