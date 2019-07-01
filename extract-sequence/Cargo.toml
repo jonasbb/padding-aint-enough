@@ -5,7 +5,7 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 edition = "2018"
 
 [dependencies]
-env_logger = "0.6.1"
+env_logger = "0.6.2"
 failure = "0.1.5"
 misc_utils = "2.4.0"
 sequences = { path = "../sequences", features = [ "read_pcap" ] }
