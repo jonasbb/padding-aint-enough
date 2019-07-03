@@ -5,7 +5,7 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 edition = "2018"
 
 [dependencies]
-csv = "1.1.0"
+csv = "1.1.1"
 dnstap = { path = "../dnstap" }
 env_logger = "0.6.2"
 failure = "0.1.5"
