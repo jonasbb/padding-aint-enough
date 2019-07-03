@@ -12,3 +12,6 @@ log = "0.4.6"
 misc_utils = "2.4.0"
 protobuf = "2.0.5"
 trust-dns-proto = "0.7.1"
+
+# [build-dependencies]
+# protoc-rust = "2.7.0"
