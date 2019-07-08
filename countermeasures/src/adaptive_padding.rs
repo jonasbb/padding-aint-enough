@@ -11,8 +11,6 @@ use tokio_timer::Delay;
 
 const DURATION_MAX: Duration = Duration::from_secs(3600 * 24 * 365);
 const DURATION_ONE_MS: Duration = Duration::from_millis(1);
-const MEDIAN_BURST_LENGTH: u32 = 2;
-const PROBABILITY_FAKE_BURST: f64 = 0.9;
 
 lazy_static! {
     static ref DISTRIBUTION_BASE_VALUE: f64 = 2f64.sqrt();
@@ -95,6 +93,10 @@ pub struct AdaptivePadding<T> {
     inter_burst_gaps: Vec<(Duration, u16)>,
     last_created_item: Instant,
     state: State,
+    /// Median length of burst generated
+    median_burst_length: u32,
+    /// Probability of creating a fake burst
+    probability_fake_burst: f64,
 }
 
 impl<T> AdaptivePadding<T>
@@ -119,6 +121,8 @@ where
             inter_burst_gaps: Vec::default(),
             last_created_item: Instant::now(),
             state: State::Idle,
+            median_burst_length: 2,
+            probability_fake_burst: 0.9,
         };
         res.refill_inter_distribution();
         res.refill_intra_distribution();
@@ -211,8 +215,9 @@ where
             .filter(|(gap, _)| *gap != DURATION_MAX)
             .map(|(_, count)| u32::from(*count))
             .sum();
-        let kn = ((1. - PROBABILITY_FAKE_BURST) / PROBABILITY_FAKE_BURST * f64::from(sum_tokens))
-            .round() as u16;
+        let kn = ((1. - self.probability_fake_burst) / self.probability_fake_burst
+            * f64::from(sum_tokens))
+        .round() as u16;
         let len = self.inter_burst_gaps.len();
         self.inter_burst_gaps[len - 1].1 = kn;
     }
@@ -253,8 +258,8 @@ where
             .filter(|(gap, _)| *gap != DURATION_MAX)
             .map(|(_, count)| u32::from(*count))
             .sum();
-        let kn = (f64::from(sum_tokens + MEDIAN_BURST_LENGTH + 1)
-            / f64::from(MEDIAN_BURST_LENGTH - 1))
+        let kn = (f64::from(sum_tokens + self.median_burst_length + 1)
+            / f64::from(self.median_burst_length - 1))
         .round() as u16;
         let len = self.intra_burst_gaps.len();
         self.intra_burst_gaps[len - 1].1 = kn;
