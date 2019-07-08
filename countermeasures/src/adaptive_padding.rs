@@ -446,32 +446,6 @@ mod tests {
     const MS_100: Duration = Duration::from_millis(100);
 
     #[test]
-    fn test_adaptive_padding_ensure_fill_long_gaps() {
-        let items = stream::iter_ok::<_, ()>(0..10);
-        let throttle = Throttle::new(items, MS_100).map_err(|err| {
-            if err.is_timer_error() {
-                panic!("{}", err.into_timer_error().unwrap());
-            } else {
-                err.into_stream_error().unwrap()
-            }
-        });
-
-        let cr = AdaptivePadding::new(throttle);
-        let mut last = Instant::now();
-
-        let fut = cr.map_err(|_err| ()).for_each(move |x| {
-            let now = Instant::now();
-            eprintln!("{:>5} µs: {:?}", (now - last).as_micros(), x);
-            // Ensure that the adaptive padding produces items quicker than the throttle
-            assert!(now - last < MS_100);
-            last = now;
-            future::ok(())
-        });
-
-        tokio::run(fut);
-    }
-
-    #[test]
     fn test_adaptive_padding_reset_gap_after_payload() {
         // Ensure that a new gap is sampled after each payload entry,
         // by checking that the time between payload and the first dummy is at least the minimum time (modulo timer resolution)
