@@ -169,7 +169,22 @@ where
         // Now that we have a base duration, we need to pick a duration uniformly between this bucket and the next bucket
         if duration == DURATION_MAX {
             debug!("Sampled infinity token");
-            return duration;
+            match self.state {
+                State::Idle => unreachable!("We do not sample tokens in this state"),
+                State::Burst => {
+                    debug!("Infinity Token: Fallback to Idle");
+                    // Make sure to disable the timeout
+                    self.set_deadline(DURATION_MAX);
+                    self.state = State::Idle;
+                    return duration;
+                }
+                State::Gap => {
+                    debug!("Infinity Token: Fallback to Burst");
+                    self.state = State::Burst;
+                    return self.sample_token();
+                }
+            };
+            // This is unreachable
         }
         let uniform = Uniform::new(duration, duration.mul_f64(*DISTRIBUTION_BASE_VALUE));
         let duration = uniform.sample(&mut rand::thread_rng());
@@ -344,7 +359,6 @@ where
         }
         self.state = State::Burst;
         let duration = self.sample_token();
-        /// FIXME doesn't handle the case of duration == DURATION_MAX
         self.set_deadline(duration);
     }
 
@@ -371,19 +385,7 @@ where
                 self.handle_timeout();
             }
             State::Gap => {
-                let mut duration = self.sample_token();
-                if duration == DURATION_MAX {
-                    debug!("Infinity Token: Fallback to Burst");
-                    self.state = State::Burst;
-                    duration = self.sample_token();
-                    if duration == DURATION_MAX {
-                        debug!("Infinity Token: Fallback to Idle");
-                        self.state = State::Idle;
-                        // Make sure to disable the timeout
-                        self.set_deadline(DURATION_MAX);
-                        return;
-                    }
-                }
+                let duration = self.sample_token();
                 self.set_deadline(duration);
             }
         }
