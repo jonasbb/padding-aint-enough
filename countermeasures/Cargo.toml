@@ -9,19 +9,21 @@ byteorder = "1.3.2"
 chrono = "0.4.7"
 env_logger = "0.6.2"
 failure = "0.1.5"
-futures = "0.1.28"
+futures-preview = { version = "=0.3.0-alpha.17", features =  ["async-await", "compat", "io-compat", "nightly"] }
 lazy_static = "1.3.0"
 log = "0.4.6"
 openssl = { version = "0.10.23", features = [ "vendored" ] }
+# Temporary workaround until tokio-openssl works with the new futures 0.3
+# openssl-async = { version = "0.3.0-alpha.3", git = "https://github.com/jonasbb/openssl-async", rev = "e14183a6850cf408e62ec36bfdf4c1b1e8bd8393" }
 openssl-probe = "0.1.2"
 rand = "0.6.5"
 sequences = { path = "../sequences" }
 serde_json = "1.0.40"
 structopt = "0.2.18"
-tokio = { version = "=0.1.18", features = [ "async-await-preview" ] }
-tokio-async-await = "=0.1.6"
+tokio = "0.2.0"
+tokio-futures = "0.2.0"
 tokio-openssl = "0.3.0"
-tokio-timer = "0.2.11"
+tokio-timer = { version = "0.3.0", features = [ "async-traits" ] }
 trust-dns-proto = "0.7.1"
 
 [dev-dependencies]

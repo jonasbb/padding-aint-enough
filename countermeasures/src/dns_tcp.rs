@@ -1,6 +1,7 @@
 use byteorder::{BigEndian, ByteOrder};
+use futures::{task::Context, Poll, Stream};
 use log::trace;
-use std::io;
+use std::{io, pin::Pin};
 use tokio::prelude::*;
 
 /// Defines what element the stream is expecting to read next
@@ -12,7 +13,10 @@ enum DnsBytesReadState {
 }
 
 /// Stream which reads a DNS over TCP style communication.
-pub struct DnsBytesStream<R> {
+pub struct DnsBytesStream<R>
+where
+    R: Unpin,
+{
     /// Underlying reader to read a byte stream.
     read: R,
     /// Internal buffer to parse and assemble individual DNS messages.
@@ -25,7 +29,10 @@ pub struct DnsBytesStream<R> {
     read_state: DnsBytesReadState,
 }
 
-impl<R> DnsBytesStream<R> {
+impl<R> DnsBytesStream<R>
+where
+    R: Unpin,
+{
     pub fn new(read: R) -> Self {
         Self {
             read,
@@ -37,65 +44,69 @@ impl<R> DnsBytesStream<R> {
     }
 }
 
-impl<R: AsyncRead> Stream for DnsBytesStream<R> {
+impl<R> Stream for DnsBytesStream<R>
+where
+    R: AsyncRead + Unpin,
+{
     // The same as our future above:
-    type Item = Vec<u8>;
-    type Error = io::Error;
+    type Item = Result<Vec<u8>, io::Error>;
 
     // poll is very similar to our Future implementation, except that
     // it returns an `Option<u8>` instead of a `u8`. This is so that the
     // Stream can signal that it's finished by returning `None`:
-    fn poll(&mut self) -> Result<Async<Option<Self::Item>>, io::Error> {
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = &mut *self;
         trace!(
             "Read {} bytes, expects {} bytes, missing {} bytes",
-            self.buf.len(),
-            self.expected_bytes,
-            self.expected_bytes.saturating_sub(self.buf.len()),
+            this.buf.len(),
+            this.expected_bytes,
+            this.expected_bytes.saturating_sub(this.buf.len()),
         );
-        if self.buf.len() < self.expected_bytes {
-            match self.read.read_buf(&mut self.buf) {
-                Ok(Async::Ready(n)) => {
+
+        if this.buf.len() < this.expected_bytes {
+            match Pin::new(&mut this.read).poll_read(cx, &mut this.buf) {
+                Poll::Ready(Ok(n)) => {
                     // By convention, if an AsyncRead says that it read 0 bytes,
                     // we should assume that it has got to the end, so we signal that
                     // the Stream is done in this case by returning None:
                     if n == 0 {
-                        return Ok(Async::Ready(None));
+                        return Poll::Ready(None);
                     }
                 }
-                Ok(Async::NotReady) => return Ok(Async::NotReady),
-                Err(e) => return Err(e),
+                Poll::Ready(Err(err)) => return Poll::Ready(Some(Err(err))),
+                Poll::Pending => return Poll::Pending,
             }
         }
 
         // now that we read more, we may be able to process it
-        if self.buf.len() >= self.expected_bytes {
-            match self.read_state {
+        if this.buf.len() >= this.expected_bytes {
+            match this.read_state {
                 DnsBytesReadState::Length => {
-                    let len = BigEndian::read_u16(&self.buf[0..self.expected_bytes]) as usize;
+                    let len = BigEndian::read_u16(&this.buf[0..this.expected_bytes]) as usize;
                     // remove the bytes
-                    self.buf.drain(0..self.expected_bytes);
+                    this.buf.drain(0..this.expected_bytes);
                     trace!("Read length field: {}", len);
 
                     // init next state
-                    self.expected_bytes = len;
-                    self.read_state = DnsBytesReadState::DnsMessage;
+                    this.expected_bytes = len;
+                    this.read_state = DnsBytesReadState::DnsMessage;
                     // poll again, since we might be able to make progress
-                    self.poll()
+                    Pin::new(this).poll_next(cx)
                 }
                 DnsBytesReadState::DnsMessage => {
-                    let ret = self.buf[0..self.expected_bytes].to_vec();
+                    let ret = this.buf[0..this.expected_bytes].to_vec();
                     // remove the bytes
-                    self.buf.drain(0..self.expected_bytes);
+                    this.buf.drain(0..this.expected_bytes);
                     trace!("Read DNS message of {} bytes", ret.len());
 
                     // init next state
-                    self.expected_bytes = 2;
-                    self.read_state = DnsBytesReadState::Length;
-                    Ok(Async::Ready(Some(ret)))
+                    this.expected_bytes = 2;
+                    this.read_state = DnsBytesReadState::Length;
+                    Poll::Ready(Some(Ok(ret)))
                 }
             }
         } else {
-            Ok(Async::NotReady)
+            Poll::Pending
         }
     }
 }

@@ -1,7 +1,7 @@
 #![deny(rust_2018_compatibility)]
 #![warn(rust_2018_idioms)]
-// enable the await! macro, async support, and the new std::Futures api.
-#![feature(await_macro, async_await, futures_api)]
+// enable the await! macro, async support
+#![feature(await_macro, async_await)]
 // // only needed to manually implement a std future:
 // #![feature(arbitrary_self_types)]
 
@@ -20,13 +20,11 @@ use std::{
 };
 use structopt::StructOpt;
 use tlsproxy::{
-    print_error, utils::backward, wrap_stream, DnsBytesStream, EnsurePadding, Error,
+    print_error, wrap_stream, DnsBytesStream, EnsurePadding, Error,
     HostnameSocketAddr, MyStream, MyTcpStream, Payload, Strategy, TokioOpensslStream, Transport,
     SERVER_CERT, SERVER_KEY,
 };
 use tokio::{
-    await,
-    io::shutdown,
     net::{TcpListener, TcpStream},
     prelude::*,
 };
@@ -35,6 +33,8 @@ use trust_dns_proto::{
     op::message::Message,
     serialize::binary::{BinEncodable, BinEncoder},
 };
+use futures::Stream;
+use futures::StreamExt;
 
 const DUMMY_DNS_REPLY: [u8; 468] = [
     /*0x01, 0xd4,*/ 0xb8, 0x97, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
@@ -187,7 +187,7 @@ fn run() -> Result<(), Error> {
         .incoming()
         .map_err(|e| println!("error accepting socket; error = {:?}", e))
         .for_each(move |client| {
-            tokio::spawn_async(print_error(handle_client(
+            tokio::spawn(print_error(handle_client(
                 config.clone(),
                 client,
                 acceptor.clone(),
@@ -226,7 +226,7 @@ async fn handle_client(
     // Copy the data (in parallel) between the client and the server.
     // After the copy is done we indicate to the remote side that we've
     // finished by shutting down the connection.
-    let client_reader = DnsBytesStream::new(client_reader).from_err();
+    let client_reader = DnsBytesStream::new(client_reader);
     let client_reader = EnsurePadding::new(client_reader);
     let client_to_server = backward(copy_client_to_server(client_reader, server_writer));
 
@@ -245,7 +245,7 @@ async fn handle_client(
 
 async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> Result<u64, Error>
 where
-    R: Stream<Item = Message, Error = Error> + Send + Unpin,
+    R: Stream<Item = Message> + Send + Unpin,
     W: AsyncWrite,
 {
     let mut total_bytes = 0;
@@ -281,7 +281,7 @@ where
 
 async fn copy_server_to_client<R, W>(mut server: R, mut client: W) -> Result<u64, Error>
 where
-    R: Stream<Item = Payload<Vec<u8>>, Error = Error> + Send + Unpin,
+    R: Stream<Item = Payload<Vec<u8>>> + Send + Unpin,
     W: AsyncWrite,
 {
     let mut total_bytes = 0;

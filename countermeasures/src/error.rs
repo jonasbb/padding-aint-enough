@@ -102,17 +102,3 @@ where
     }
 }
 
-impl From<tokio_timer::throttle::ThrottleError<Error>> for Error {
-    fn from(error: tokio_timer::throttle::ThrottleError<Error>) -> Self {
-        if error.is_stream_error() {
-            error
-                .into_stream_error()
-                .expect("We just checked for stream error")
-        } else {
-            error
-                .into_timer_error()
-                .expect("There are only two throttle errors")
-                .into()
-        }
-    }
-}

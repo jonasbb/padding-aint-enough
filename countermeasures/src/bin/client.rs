@@ -24,14 +24,13 @@ use std::{
 };
 use structopt::StructOpt;
 use tlsproxy::{
-    print_error, utils::backward, wrap_stream, DnsBytesStream, EnsurePadding, Error,
+    print_error, wrap_stream, DnsBytesStream, EnsurePadding, Error,
     HostnameSocketAddr, MyStream, MyTcpStream, Payload, Strategy, TokioOpensslStream, Transport,
     SERVER_CERT, SERVER_KEY,
 };
 use tokio::{
-    await,
     fs::File,
-    io::{self, shutdown},
+    io,
     net::{TcpListener, TcpStream},
     prelude::*,
 };
@@ -40,6 +39,8 @@ use trust_dns_proto::{
     op::message::Message,
     serialize::binary::{BinEncodable, BinEncoder},
 };
+use futures::Stream;
+use futures::StreamExt;
 
 /// DNS query for `google.com.` with padding
 const DUMMY_DNS: [u8; 128] = [
@@ -192,7 +193,7 @@ fn run() -> Result<(), Error> {
         .incoming()
         .map_err(|e| println!("error accepting socket; error = {:?}", e))
         .for_each(move |client| {
-            tokio::spawn_async(print_error(handle_client(config.clone(), client)));
+            tokio::spawn(print_error(handle_client(config.clone(), client)));
             Ok(())
         });
 
@@ -260,13 +261,12 @@ async fn handle_client(config: Arc<Config>, client: TcpStream) -> Result<(), Err
     // Copy the data (in parallel) between the client and the server.
     // After the copy is done we indicate to the remote side that we've
     // finished by shutting down the connection.
-    let client_reader = DnsBytesStream::new(client_reader).from_err();
+    let client_reader = DnsBytesStream::new(client_reader);
     let client_reader = EnsurePadding::new(client_reader);
     let client_reader = wrap_stream(client_reader, &config.args.strategy);
     let client_to_server = backward(copy_client_to_server(client_reader, server_writer));
 
     let server_reader = DnsBytesStream::new(server_reader)
-        .from_err()
         .map(|dns| {
             let msg = trust_dns_proto::op::message::Message::from_vec(&*dns).unwrap();
             (dns, msg)
@@ -281,7 +281,7 @@ async fn handle_client(config: Arc<Config>, client: TcpStream) -> Result<(), Err
                 "end.example." => {
                     let mut tmp = Vec::default();
                     mem::swap(&mut tmp, &mut msgs);
-                    tokio::spawn_async(print_error(write_sequence(
+                    tokio::spawn(print_error(write_sequence(
                         config.args.dump_sequences.clone(),
                         tmp,
                     )));
@@ -304,7 +304,7 @@ async fn handle_client(config: Arc<Config>, client: TcpStream) -> Result<(), Err
 
 async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> Result<u64, Error>
 where
-    R: Stream<Item = Payload<Message>, Error = Error> + Send + Unpin,
+    R: Stream<Item = Payload<Message>> + Send + Unpin,
     W: AsyncWrite,
 {
     let mut total_bytes = 0;
@@ -342,7 +342,7 @@ where
 
 async fn copy_server_to_client<R, W>(mut server: R, mut client: W) -> Result<(u64), Error>
 where
-    R: Stream<Item = (Vec<u8>, Message), Error = Error> + Send + Unpin,
+    R: Stream<Item = (Vec<u8>, Message)> + Send + Unpin,
     W: AsyncWrite,
 {
     let mut total_bytes = 0;

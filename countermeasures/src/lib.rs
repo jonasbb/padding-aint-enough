@@ -1,7 +1,7 @@
 #![deny(rust_2018_compatibility)]
 #![warn(rust_2018_idioms)]
-// enable the await! macro, async support, and the new std::Futures api.
-#![feature(await_macro, async_await, futures_api)]
+// enable the await! macro, async support
+#![feature(await_macro, async_await)]
 // // only needed to manually implement a std future:
 // #![feature(arbitrary_self_types)]
 #![feature(duration_float)]
@@ -13,7 +13,6 @@ mod ensure_padding;
 mod error;
 mod pass_through;
 mod streams;
-pub mod utils;
 
 pub use crate::{
     adaptive_padding::AdaptivePadding,
@@ -38,7 +37,6 @@ use std::{
     time::Duration,
 };
 use structopt::StructOpt;
-use tokio::await;
 use tokio_timer::throttle::Throttle;
 
 /// Self Signed server certificate in PEM format
@@ -389,28 +387,27 @@ impl<T> Payload<Payload<T>> {
 pub fn wrap_stream<S, T>(
     stream: S,
     strategy: &Strategy,
-) -> impl Stream<Item = Payload<T>, Error = Error> + Send + Unpin
+) -> impl Stream<Item = Payload<T>> + Send + Unpin
 where
-    S: Stream<Item = T, Error = Error> + Send + Unpin + 'static,
+    S: Stream<Item = T> + Send + Unpin + 'static,
     T: Send + Sync + Unpin + 'static,
 {
     match strategy {
-        Strategy::PassThrough => Box::new(PassThrough::new(stream))
-            as Box<dyn Stream<Item = _, Error = _> + Send + Unpin>,
+        Strategy::PassThrough => {
+            Box::new(PassThrough::new(stream)) as Box<dyn Stream<Item = _> + Send + Unpin>
+        }
         Strategy::Constant { rate, .. } => Box::new(ConstantRate::new(stream, *rate)),
         Strategy::AdaptivePadding {
             throttle_in,
             throttle_out,
             ..
         } => match (*throttle_in, *throttle_out) {
-            (Some(tin), Some(tout)) => Box::new(
-                Throttle::new(AdaptivePadding::new(Throttle::new(stream, tin)), tout).from_err(),
-            )
-                as Box<dyn Stream<Item = _, Error = _> + Send + Unpin>,
+            (Some(tin), Some(tout)) => Box::new(Throttle::new(
+                AdaptivePadding::new(Throttle::new(stream, tin)),
+                tout,
+            )) as Box<dyn Stream<Item = _> + Send + Unpin>,
             (Some(tin), None) => Box::new(AdaptivePadding::new(Throttle::new(stream, tin))),
-            (None, Some(tout)) => {
-                Box::new(Throttle::new(AdaptivePadding::new(stream), tout).from_err())
-            }
+            (None, Some(tout)) => Box::new(Throttle::new(AdaptivePadding::new(stream), tout)),
             (None, None) => Box::new(AdaptivePadding::new(stream)),
         },
     }

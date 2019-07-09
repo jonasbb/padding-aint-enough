@@ -1,11 +1,16 @@
 //! Contains different stream implementations for TCP or TLS streams
 
 use std::{
-    io::{self, Read, Write},
-    net::Shutdown,
+    io,
     sync::{Arc, Mutex},
 };
-use tokio::{net::TcpStream, prelude::*};
+use tokio::io::AsyncRead;
+use tokio::io::AsyncWrite;
+use tokio::{net::TcpStream};
+use std::pin::Pin;
+use futures::task::Context;
+use futures::task::Poll;
+use futures::io::Error;
 
 /// Wrapper around different stream implementations, such that they can be used in a function return type
 #[derive(Debug)]
@@ -24,51 +29,82 @@ impl<S> Clone for MyStream<S> {
     }
 }
 
-impl<S> Read for MyStream<S>
-where
-    S: Read + Write,
-{
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+// impl<S> Read for MyStream<S>
+// where
+//     S: Read + Write,
+// {
+//     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+//         use MyStream::*;
+//         match self {
+//             Tcp(stream) => stream.read(buf),
+//             Openssl(stream) => stream.read(buf),
+//         }
+//     }
+// }
+
+// impl<S> Write for MyStream<S>
+// where
+//     S: Read + Write,
+// {
+//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+//         use MyStream::*;
+//         match self {
+//             Tcp(stream) => stream.write(buf),
+//             Openssl(stream) => stream.write(buf),
+//         }
+//     }
+
+//     fn flush(&mut self) -> io::Result<()> {
+//         use MyStream::*;
+//         match self {
+//             Tcp(stream) => stream.flush(),
+//             Openssl(stream) => stream.flush(),
+//         }
+//     }
+// }
+
+impl<S> AsyncRead for MyStream<S> where S: AsyncRead + AsyncWrite + Unpin {
+    fn poll_read(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<Result<usize, Error>>{
         use MyStream::*;
-        match self {
-            Tcp(stream) => stream.read(buf),
-            Openssl(stream) => stream.read(buf),
+        match self.get_mut() {
+            Tcp(stream) => Pin::new(stream).poll_read(cx, buf),
+            Openssl(stream) => Pin::new(stream).poll_read(cx, buf),
         }
     }
 }
-
-impl<S> Write for MyStream<S>
-where
-    S: Read + Write,
-{
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        use MyStream::*;
-        match self {
-            Tcp(stream) => stream.write(buf),
-            Openssl(stream) => stream.write(buf),
-        }
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        use MyStream::*;
-        match self {
-            Tcp(stream) => stream.flush(),
-            Openssl(stream) => stream.flush(),
-        }
-    }
-}
-
-impl<S> AsyncRead for MyStream<S> where S: AsyncRead + AsyncWrite {}
 
 impl<S> AsyncWrite for MyStream<S>
 where
-    S: AsyncRead + AsyncWrite,
+    S: AsyncRead + AsyncWrite + Unpin,
 {
-    fn shutdown(&mut self) -> Poll<(), io::Error> {
+    fn poll_write(
+    self: Pin<&mut Self>,
+    cx: &mut Context<'_>,
+    buf: &[u8]
+    ) -> Poll<Result<usize, Error>> {
         use MyStream::*;
-        match self {
-            Tcp(stream) => stream.shutdown(),
-            Openssl(stream) => stream.shutdown(),
+        match self.get_mut() {
+            Tcp(stream) => Pin::new(stream).poll_write(cx, buf),
+            Openssl(stream) => Pin::new(stream).poll_write(cx, buf),
+        }
+    }
+
+    fn poll_flush(
+    self: Pin<&mut Self>,
+    cx: &mut Context<'_>
+    ) -> Poll<Result<(), Error>> {
+        use MyStream::*;
+        match self.get_mut() {
+            Tcp(stream) => Pin::new(stream).poll_flush(cx),
+            Openssl(stream) => Pin::new(stream).poll_flush(cx),
+        }
+    }
+
+    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
+        use MyStream::*;
+        match self.get_mut() {
+            Tcp(stream) => Pin::new(stream).poll_shutdown(cx),
+            Openssl(stream) => Pin::new(stream).poll_shutdown(cx),
         }
     }
 }
@@ -99,94 +135,48 @@ impl MyTcpStream {
     }
 }
 
-impl Read for MyTcpStream {
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().read(buf)
+// impl Read for MyTcpStream {
+//     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+//         self.0.lock().unwrap().read(buf)
+//     }
+// }
+
+// impl Write for MyTcpStream {
+//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+//         self.0.lock().unwrap().write(buf)
+//     }
+
+//     fn flush(&mut self) -> io::Result<()> {
+//         self.0.lock().unwrap().flush()
+//     }
+// }
+
+impl AsyncRead for MyTcpStream {
+    fn poll_read(mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<Result<usize, Error>>{
+        Pin::new(&mut *self.0.lock().unwrap()).poll_read(cx, buf)
     }
 }
-
-impl Write for MyTcpStream {
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().write(buf)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.0.lock().unwrap().flush()
-    }
-}
-
-impl AsyncRead for MyTcpStream {}
 
 impl AsyncWrite for MyTcpStream {
-    fn shutdown(&mut self) -> Poll<(), io::Error> {
-        self.0.lock().unwrap().shutdown(Shutdown::Write)?;
-        Ok(().into())
-    }
-}
-
-/*
-/// Wrapper around [`TlsStream`]
-///
-/// This is a custom type used to have a custom implementation of the
-/// [`AsyncWrite::shutdown`] method which actually calls [`TcpStream::shutdown`] to
-/// notify the remote end that we're done writing.
-#[derive(Debug)]
-pub struct TokioRustlsStream<IO, S>(Arc<Mutex<TlsStream<IO, S>>>);
-
-impl<IO, S> TokioRustlsStream<IO, S> {
-    pub fn new(stream: Arc<Mutex<TlsStream<IO, S>>>) -> Self {
-        Self(stream)
-    }
-}
-
-impl<IO, S> Clone for TokioRustlsStream<IO, S> {
-    fn clone(&self) -> Self {
-        TokioRustlsStream(self.0.clone())
-    }
-}
-
-impl<IO, S> Read for TokioRustlsStream<IO, S>
-where
-    IO: Read + Write,
-    S: Session,
-{
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().read(buf)
-    }
-}
-
-impl<IO, S> Write for TokioRustlsStream<IO, S>
-where
-    IO: Read + Write,
-    S: Session,
-{
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().write(buf)
+    fn poll_write(
+    mut self: Pin<&mut Self>,
+    cx: &mut Context<'_>,
+    buf: &[u8]
+    ) -> Poll<Result<usize, Error>> {
+        Pin::new(&mut *self.0.lock().unwrap()).poll_write(cx, buf)
     }
 
-    fn flush(&mut self) -> io::Result<()> {
-        self.0.lock().unwrap().flush()
+    fn poll_flush(
+    mut self: Pin<&mut Self>,
+    cx: &mut Context<'_>
+    ) -> Poll<Result<(), Error>> {
+        Pin::new(&mut *self.0.lock().unwrap()).poll_flush(cx)
+    }
+
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
+        Pin::new(&mut *self.0.lock().unwrap()).poll_shutdown(cx)
     }
 }
-
-impl<IO, S> AsyncRead for TokioRustlsStream<IO, S>
-where
-    IO: AsyncRead + AsyncWrite,
-    S: Session,
-{
-}
-
-impl<IO, S> AsyncWrite for TokioRustlsStream<IO, S>
-where
-    IO: AsyncRead + AsyncWrite,
-    S: Session,
-{
-    fn shutdown(&mut self) -> Poll<(), io::Error> {
-        self.0.lock().unwrap().shutdown()?;
-        Ok(().into())
-    }
-}
-*/
 
 /// Wrapper around [`TokioOpensslStream`]
 ///
@@ -194,9 +184,10 @@ where
 /// [`AsyncWrite::shutdown`] method which actually calls [`TcpStream::shutdown`] to
 /// notify the remote end that we're done writing.
 #[derive(Debug)]
-pub struct TokioOpensslStream<S>(Arc<Mutex<tokio_openssl::SslStream<S>>>);
+pub struct TokioOpensslStream<S>
+(Arc<Mutex<tokio_openssl::SslStream<S>>>);
 
-impl<S> TokioOpensslStream<S> {
+impl<S> TokioOpensslStream<S> where S: AsyncWrite + AsyncRead + Unpin{
     pub fn new(stream: Arc<Mutex<tokio_openssl::SslStream<S>>>) -> Self {
         Self(stream)
     }
@@ -208,36 +199,53 @@ impl<S> Clone for TokioOpensslStream<S> {
     }
 }
 
-impl<S> Read for TokioOpensslStream<S>
-where
-    S: Read + Write,
-{
-    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().read(buf)
+// impl<S> Read for TokioOpensslStream<S>
+// where
+//     S: Read + Write,
+// {
+//     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+//         self.0.lock().unwrap().read(buf)
+//     }
+// }
+
+// impl<S> Write for TokioOpensslStream<S>
+// where
+//     S: Read + Write,
+// {
+//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+//         self.0.lock().unwrap().write(buf)
+//     }
+
+//     fn flush(&mut self) -> io::Result<()> {
+//         self.0.lock().unwrap().flush()
+//     }
+// }
+
+impl<S> AsyncRead for TokioOpensslStream<S> where S: AsyncRead + AsyncWrite + Unpin {
+    fn poll_read(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<Result<usize, Error>>{
+        // Pin::new(&mut **self.0.lock().unwrap()).poll_read(cx, buf)
+        unimplemented!()
     }
 }
-
-impl<S> Write for TokioOpensslStream<S>
-where
-    S: Read + Write,
-{
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.0.lock().unwrap().write(buf)
-    }
-
-    fn flush(&mut self) -> io::Result<()> {
-        self.0.lock().unwrap().flush()
-    }
-}
-
-impl<S> AsyncRead for TokioOpensslStream<S> where S: AsyncRead + AsyncWrite {}
 
 impl<S> AsyncWrite for TokioOpensslStream<S>
 where
-    S: AsyncRead + AsyncWrite,
+    S: AsyncWrite + AsyncRead + Unpin,
 {
-    fn shutdown(&mut self) -> Poll<(), io::Error> {
-        self.0.lock().unwrap().shutdown()?;
-        Ok(().into())
+    fn poll_write(    self: Pin<&mut Self>,
+    cx: &mut Context<'_>,
+    buf: &[u8]) -> Poll<Result<usize, Error>>{
+        // Pin::new(&mut *self.0.lock().unwrap()).poll_write(cx, buf)
+        unimplemented!()
+    }
+
+    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Error>>{
+        // Pin::new(&mut *self.0.lock().unwrap()).poll_flush(cx)
+        unimplemented!()
+    }
+
+    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
+        // Pin::new(&mut *self.0.lock().unwrap()).poll_close(cx)
+        unimplemented!()
     }
 }

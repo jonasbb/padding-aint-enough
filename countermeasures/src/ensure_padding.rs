@@ -1,37 +1,43 @@
 use crate::Error;
-use tokio::prelude::*;
+use futures::{Poll, Stream};
 use trust_dns_proto::{
     op::message::Message,
     rr::rdata::opt::{EdnsCode, EdnsOption},
     serialize::binary::BinDecodable,
 };
+use std::pin::Pin;
+use futures::task::Context;
+use std::io;
 
 const BLOCK_SIZE: usize = 128;
 static PADDING_BYTES: [u8; 2 * BLOCK_SIZE] = [0; 2 * BLOCK_SIZE];
 
 /// Ensure that each message gets padded appropriatly
-pub struct EnsurePadding<S> {
+pub struct EnsurePadding<S>
+where
+    S: Stream<Item = Result<Vec<u8>, io::Error>> + Unpin, {
     /// Underlying reader to read a byte stream.
     stream: S,
 }
 
-impl<S> EnsurePadding<S> {
-    pub fn new(stream: S) -> Self {
+impl<S> EnsurePadding<S>
+    where
+    S: Stream<Item = Result<Vec<u8>, io::Error>> + Unpin, {
+    pub fn new(stream: S) -> Self{
         Self { stream }
     }
 }
 
 impl<S> Stream for EnsurePadding<S>
 where
-    S: Stream<Item = Vec<u8>, Error = Error>,
+    S: Stream<Item = Result<Vec<u8>, io::Error>> + Unpin,
 {
     // The same as our future above:
-    type Item = Message;
-    type Error = Error;
+    type Item = Result<Message, Error>;
 
-    fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Error> {
-        match self.stream.poll() {
-            Ok(Async::Ready(Some(bytes))) => {
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        match Pin::new(&mut self.stream).poll_next(cx) {
+            Poll::Ready(Some(Ok(bytes))) => {
                 let len = bytes.len();
                 // Round to next multiple of BLOCK_SIZE
                 let padded_len = (len + BLOCK_SIZE - 1) / BLOCK_SIZE * BLOCK_SIZE;
@@ -69,12 +75,12 @@ where
                     &PADDING_BYTES[0..missing_padding],
                 )));
 
-                Ok(Async::Ready(Some(msg)))
+                Poll::Ready(Some(Ok(msg)))
             }
-            Ok(Async::Ready(None)) => Ok(Async::Ready(None)),
+            Poll::Ready(Some(Err(err))) => Poll::Ready(Some(Err(err.into()))),
 
-            Ok(Async::NotReady) => Ok(Async::NotReady),
-            Err(e) => Err(e),
+            Poll::Ready(None) => Poll::Ready(None),
+            Poll::Pending => Poll::Pending,
         }
     }
 }

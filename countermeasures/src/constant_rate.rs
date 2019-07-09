@@ -1,11 +1,11 @@
-use crate::{error::Error, Payload};
-use futures::{Async, Poll, Stream};
-use std::time::Duration;
+use crate::{Payload};
+use futures::{task::Context, Poll, Stream};
+use std::{pin::Pin, time::Duration};
 use tokio_timer::Interval;
 
 pub struct ConstantRate<S, T>
 where
-    S: Stream<Item = T>,
+    S: Stream<Item = T> + Unpin,
 {
     interval: Interval,
     stream: S,
@@ -13,7 +13,7 @@ where
 
 impl<S, T> ConstantRate<S, T>
 where
-    S: Stream<Item = T>,
+    S: Stream<Item = T> + Unpin,
 {
     pub fn new(stream: S, interval: Duration) -> Self {
         Self {
@@ -25,31 +25,28 @@ where
 
 impl<S, T> Stream for ConstantRate<S, T>
 where
-    S: Stream<Item = T>,
-    S::Error: Into<Error>,
+    S: Stream<Item = T> + Unpin,
 {
     type Item = Payload<T>;
-    type Error = Error;
 
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        match self.interval.poll()? {
-            Async::Ready(Some(_)) => {
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = &mut *self;
+
+        match Pin::new(&mut this.interval).poll_next(cx) {
+            Poll::Ready(Some(_)) => {
                 // Time to send a new packet
-                match self.stream.poll() {
-                    Ok(x) => match x {
-                        Async::Ready(Some(t)) => Ok(Async::Ready(Some(Payload::Payload(t)))),
-                        Async::Ready(None) => Ok(Async::Ready(None)),
-                        Async::NotReady => {
-                            // No packet to send, send dummy
-                            Ok(Async::Ready(Some(Payload::Dummy)))
-                        }
-                    },
-                    Err(err) => Err(err.into()),
+                match Pin::new(&mut this.stream).poll_next(cx) {
+                    Poll::Ready(Some(t)) => Poll::Ready(Some(Payload::Payload(t))),
+                    Poll::Ready(None) => Poll::Ready(None),
+                    Poll::Pending => {
+                        // No packet to send, send dummy
+                        Poll::Ready(Some(Payload::Dummy))
+                    }
                 }
             }
             // The timer instance is done, this should never happen
-            Async::Ready(None) => panic!("Timer instance is done. This should never happen."),
-            Async::NotReady => Ok(Async::NotReady),
+            Poll::Ready(None) => panic!("Timer instance is done. This should never happen."),
+            Poll::Pending => Poll::Pending,
         }
     }
 }
