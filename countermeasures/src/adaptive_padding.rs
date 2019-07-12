@@ -156,8 +156,11 @@ where
                 self.refill_current_distribution();
                 WeightedIndex::new(get_dist(self).iter().map(|item| item.1)).unwrap()
             }
-            Err(WeightedError::NegativeWeight) => {
+            Err(WeightedError::InvalidWeight) => {
                 panic!("Negative weights are impossible due to the type being u16")
+            }
+            Err(WeightedError::TooMany) => {
+                panic!("We never have more than `u32::MAX` buckets")
             }
         };
         // Get the index of the value

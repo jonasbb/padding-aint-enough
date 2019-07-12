@@ -1,5 +1,5 @@
 # https://doc.rust-lang.org/nightly/cargo/reference/unstable.html#profile-overrides
-cargo-features = ["profile-overrides"]
+# cargo-features = ["profile-overrides"]
 
 [package]
 name = "encrypted-dns"
@@ -25,14 +25,14 @@ members = [
 [profile.dev]
 opt-level = 1
 
-# This applies to all dependencies, but not this crate or any workspace member
-[profile.dev.overrides."*"]
-opt-level = 3
+# # This applies to all dependencies, but not this crate or any workspace member
+# [profile.dev.overrides."*"]
+# opt-level = 3
 
-# Build scripts and their dependencies will be compiled with -Copt-level=3
-# By default, build scripts use the same rules as the rest of the profile
-[profile.dev.build-override]
-opt-level = 3
+# # Build scripts and their dependencies will be compiled with -Copt-level=3
+# # By default, build scripts use the same rules as the rest of the profile
+# [profile.dev.build-override]
+# opt-level = 3
 
 [profile.release]
 debug = true
