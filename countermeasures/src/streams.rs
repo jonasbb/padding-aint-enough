@@ -221,10 +221,16 @@ impl<S> Clone for TokioOpensslStream<S> {
 //     }
 // }
 
-impl<S> AsyncRead for TokioOpensslStream<S> where S: AsyncRead + AsyncWrite + Unpin {
-    fn poll_read(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8]) -> Poll<Result<usize, Error>>{
-        // Pin::new(&mut **self.0.lock().unwrap()).poll_read(cx, buf)
-        unimplemented!()
+impl<S> AsyncRead for TokioOpensslStream<S>
+where
+    S: AsyncRead + AsyncWrite + Unpin,
+{
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<Result<usize, Error>> {
+        Pin::new(&mut *self.0.lock().unwrap()).poll_read(cx, buf)
     }
 }
 
@@ -232,20 +238,22 @@ impl<S> AsyncWrite for TokioOpensslStream<S>
 where
     S: AsyncWrite + AsyncRead + Unpin,
 {
-    fn poll_write(    self: Pin<&mut Self>,
-    cx: &mut Context<'_>,
-    buf: &[u8]) -> Poll<Result<usize, Error>>{
-        // Pin::new(&mut *self.0.lock().unwrap()).poll_write(cx, buf)
-        unimplemented!()
+    fn poll_write(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &[u8],
+    ) -> Poll<Result<usize, Error>> {
+        Pin::new(&mut *self.0.lock().unwrap()).poll_write(cx, buf)
     }
 
-    fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Error>>{
-        // Pin::new(&mut *self.0.lock().unwrap()).poll_flush(cx)
-        unimplemented!()
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Error>> {
+        Pin::new(&mut *self.0.lock().unwrap()).poll_flush(cx)
     }
 
-    fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), io::Error>> {
-        // Pin::new(&mut *self.0.lock().unwrap()).poll_close(cx)
-        unimplemented!()
+    fn poll_shutdown(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Result<(), io::Error>> {
+        Pin::new(&mut *self.0.lock().unwrap()).poll_shutdown(cx)
     }
 }
