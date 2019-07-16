@@ -1,10 +1,5 @@
-use crate::{ Payload};
-use futures::{
-    future::{self, },
-    stream,
-    task::Context,
-    FutureExt, Poll, Stream, StreamExt,
-};
+use crate::Payload;
+use futures::{future::self, stream, task::Context, FutureExt, Poll, Stream, StreamExt};
 use lazy_static::lazy_static;
 use log::debug;
 use rand::{

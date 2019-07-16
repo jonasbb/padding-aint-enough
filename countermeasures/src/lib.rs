@@ -334,7 +334,7 @@ where
 {
     use std::fmt::Write;
 
-    if let Err(err) = await!(future) {
+    if let Err(err) = future.await {
         let mut msg = String::new();
         for fail in Fail::iter_chain(&err) {
             let _ = writeln!(&mut msg, "{}", fail);
@@ -380,6 +380,16 @@ impl<T> Payload<Payload<T>> {
         match self {
             Payload::Payload(Payload::Payload(p)) => Payload::Payload(p),
             _ => Payload::Dummy,
+        }
+    }
+}
+
+impl<T> Payload<Result<T, Error>> {
+    pub fn transpose_error(self) -> Result<Payload<T>, Error> {
+        match self {
+            Payload::Payload(Ok(p)) => Ok(Payload::Payload(p)),
+            Payload::Payload(Err(e)) => Err(e),
+            Payload::Dummy => Ok(Payload::Dummy),
         }
     }
 }

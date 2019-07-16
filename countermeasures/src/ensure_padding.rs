@@ -1,13 +1,11 @@
 use crate::Error;
-use futures::{Poll, Stream};
+use futures::{task::Context, Poll, Stream};
+use std::{io, pin::Pin};
 use trust_dns_proto::{
     op::message::Message,
     rr::rdata::opt::{EdnsCode, EdnsOption},
     serialize::binary::BinDecodable,
 };
-use std::pin::Pin;
-use futures::task::Context;
-use std::io;
 
 const BLOCK_SIZE: usize = 128;
 static PADDING_BYTES: [u8; 2 * BLOCK_SIZE] = [0; 2 * BLOCK_SIZE];
@@ -15,15 +13,17 @@ static PADDING_BYTES: [u8; 2 * BLOCK_SIZE] = [0; 2 * BLOCK_SIZE];
 /// Ensure that each message gets padded appropriatly
 pub struct EnsurePadding<S>
 where
-    S: Stream<Item = Result<Vec<u8>, io::Error>> + Unpin, {
+    S: Stream<Item = Result<Vec<u8>, io::Error>> + Unpin,
+{
     /// Underlying reader to read a byte stream.
     stream: S,
 }
 
 impl<S> EnsurePadding<S>
-    where
-    S: Stream<Item = Result<Vec<u8>, io::Error>> + Unpin, {
-    pub fn new(stream: S) -> Self{
+where
+    S: Stream<Item = Result<Vec<u8>, io::Error>> + Unpin,
+{
+    pub fn new(stream: S) -> Self {
         Self { stream }
     }
 }

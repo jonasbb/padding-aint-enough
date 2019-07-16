@@ -40,6 +40,8 @@ Please, specify the choice explicitly by using either --tcp or --tls."#,
         _0
     )]
     TransportNotInferable(u16, Backtrace),
+    #[fail(display = "Tokio OpenSSL Handshake error: {}", _0)]
+    TokioOpensslHandshakeError(String, Backtrace),
 }
 
 impl From<()> for Error {
@@ -102,3 +104,11 @@ where
     }
 }
 
+impl<S> From<tokio_openssl::HandshakeError<S>> for Error
+where
+    S: Debug,
+{
+    fn from(error: tokio_openssl::HandshakeError<S>) -> Self {
+        Error::TokioOpensslHandshakeError(error.to_string(), Backtrace::default())
+    }
+}

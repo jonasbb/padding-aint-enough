@@ -1,4 +1,4 @@
-use crate::{Payload};
+use crate::Payload;
 use futures::{task::Context, Poll, Stream};
 use std::{pin::Pin, time::Duration};
 use tokio_timer::Interval;
