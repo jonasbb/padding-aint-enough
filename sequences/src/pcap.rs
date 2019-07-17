@@ -417,10 +417,7 @@ where
         .flat_map(|(_id, recs)| recs)
         .sorted()
         .collect();
-    crate::load_sequence::convert_to_precision_sequence(
-        &records,
-        identifier.into(),
-    )
+    crate::load_sequence::convert_to_precision_sequence(&records, identifier.into())
 }
 
 fn make_error(iter: impl IntoIterator<Item = SocketAddrV4>) -> String {

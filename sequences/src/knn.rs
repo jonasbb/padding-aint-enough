@@ -229,7 +229,8 @@ where
                     .flat_map(|tlseq| {
                         tlseq.sequences.iter().map(move |s| {
                             move |max_dist: usize| {
-                                let distance = vsample.distance_with_limit(s, max_dist, true, use_cr_mode);
+                                let distance =
+                                    vsample.distance_with_limit(s, max_dist, true, use_cr_mode);
                                 // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
                                 let distance_norm = if distance == 0 {
                                     NotNan::new(0.).unwrap()

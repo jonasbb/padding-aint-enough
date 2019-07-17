@@ -1,4 +1,3 @@
-
 use crate::utils::Probability;
 use chrono::{Duration, NaiveDateTime};
 use lazy_static::lazy_static;

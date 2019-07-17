@@ -454,18 +454,12 @@ mod tests {
     fn test_adaptive_padding_reset_gap_after_payload() {
         // Ensure that a new gap is sampled after each payload entry,
         // by checking that the time between payload and the first dummy is at least the minimum time (modulo timer resolution)
-        let items = stream::iter_ok::<_, ()>(0..10);
-        let throttle = Throttle::new(items, MS_100).map_err(|err| {
-            if err.is_timer_error() {
-                panic!("{}", err.into_timer_error().unwrap());
-            } else {
-                err.into_stream_error().unwrap()
-            }
-        });
+        let items = stream::iter(0..10);
+        let throttle = Throttle::new(items, MS_100);
 
         let cr = AdaptivePadding::new(throttle);
         let mut last_payload = Some(Instant::now());
-        let fut = cr.map_err(|_err| ()).for_each(move |x| {
+        let fut = cr.for_each(move |x| {
             match (x, { last_payload }) {
                 (Payload::Payload(_), _) => {
                     last_payload = Some(Instant::now());
@@ -481,9 +475,10 @@ mod tests {
                     // We do not care about this case
                 }
             };
-            future::ok(())
+            future::ready(())
         });
 
-        tokio::run(fut);
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(fut);
     }
 }
