@@ -1,12 +1,11 @@
 #![deny(rust_2018_compatibility)]
 #![warn(rust_2018_idioms)]
-// enable the await! macro, async support
-#![feature(await_macro, async_await)]
-// // only needed to manually implement a std future:
-// #![feature(arbitrary_self_types)]
+// enable async/await support
+#![feature(async_await)]
 
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
 use failure::Fail;
+use futures::{future, Stream, StreamExt};
 use log::info;
 use openssl::{
     pkey::PKey,
@@ -14,27 +13,26 @@ use openssl::{
     x509::X509,
 };
 use std::{
+    io::Write,
     net::SocketAddr,
     path::PathBuf,
     sync::{Arc, Mutex},
 };
 use structopt::StructOpt;
 use tlsproxy::{
-    print_error, wrap_stream, DnsBytesStream, EnsurePadding, Error,
-    HostnameSocketAddr, MyStream, MyTcpStream, Payload, Strategy, TokioOpensslStream, Transport,
-    SERVER_CERT, SERVER_KEY,
+    print_error, wrap_stream, DnsBytesStream, EnsurePadding, Error, HostnameSocketAddr, MyStream,
+    MyTcpStream, Payload, Strategy, TokioOpensslStream, Transport, SERVER_CERT, SERVER_KEY,
 };
 use tokio::{
+    io::AsyncWriteExt,
     net::{TcpListener, TcpStream},
     prelude::*,
 };
-use tokio_openssl::{SslAcceptorExt, SslConnectorExt};
+use tokio_openssl;
 use trust_dns_proto::{
     op::message::Message,
     serialize::binary::{BinEncodable, BinEncoder},
 };
-use futures::Stream;
-use futures::StreamExt;
 
 const DUMMY_DNS_REPLY: [u8; 468] = [
     /*0x01, 0xd4,*/ 0xb8, 0x97, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
@@ -185,31 +183,34 @@ fn run() -> Result<(), Error> {
     let config = Arc::new(config);
     let done = socket
         .incoming()
-        .map_err(|e| println!("error accepting socket; error = {:?}", e))
-        .for_each(move |client| {
+        // conver the Error to tlsproxy::Error
+        .map(|x| Ok(x?))
+        .for_each_concurrent(100, move |client| {
             tokio::spawn(print_error(handle_client(
                 config.clone(),
                 client,
                 acceptor.clone(),
             )));
-            Ok(())
+            future::ready(())
         });
 
-    tokio::run(done);
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    rt.block_on(done);
     Ok(())
 }
 
 async fn handle_client(
     config: Arc<Config>,
-    client: TcpStream,
+    client: Result<TcpStream, Error>,
     acceptor: SslAcceptor,
 ) -> Result<(), Error> {
+    let client = client?;
     // Setup TLS to client
     client.set_nodelay(true)?;
-    let client = await!(acceptor.accept_async(client))?;
+    let client = tokio_openssl::accept(&acceptor, client).await?;
 
     let (server_reader, server_writer) =
-        await!(connect_to_server(config.args.server.clone(), &*config))?;
+        connect_to_server(config.args.server.clone(), &*config).await?;
 
     // Create separate read/write handles for the TCP clients that we're
     // proxying data between. Note that typically you'd use
@@ -228,13 +229,15 @@ async fn handle_client(
     // finished by shutting down the connection.
     let client_reader = DnsBytesStream::new(client_reader);
     let client_reader = EnsurePadding::new(client_reader);
-    let client_to_server = backward(copy_client_to_server(client_reader, server_writer));
+    let client_to_server = copy_client_to_server(client_reader, server_writer);
 
-    let server_reader = DnsBytesStream::new(server_reader).from_err();
+    let server_reader = DnsBytesStream::new(server_reader).map(|x| Ok(x?));
     let server_reader = wrap_stream(server_reader, &config.args.strategy);
-    let server_to_client = backward(copy_server_to_client(server_reader, client_writer));
+    let server_to_client = copy_server_to_client(server_reader, client_writer);
 
-    let (from_client, from_server) = await!(client_to_server.join(server_to_client))?;
+    let (from_client, from_server) = future::join(client_to_server, server_to_client).await;
+    let from_client = from_client?;
+    let from_server = from_server?;
     println!(
         "client wrote {} bytes and received {} bytes",
         from_client, from_server
@@ -245,13 +248,13 @@ async fn handle_client(
 
 async fn copy_client_to_server<R, W>(mut client: R, mut server: W) -> Result<u64, Error>
 where
-    R: Stream<Item = Message> + Send + Unpin,
-    W: AsyncWrite,
+    R: Stream<Item = Result<Message, Error>> + Send + Unpin,
+    W: AsyncWrite + Unpin,
 {
     let mut total_bytes = 0;
 
     let mut out = Vec::with_capacity(128 * 5);
-    while let Some(dns) = await!(client.next()) {
+    while let Some(dns) = client.next().await {
         let dns = dns?;
 
         out.truncate(0);
@@ -269,26 +272,28 @@ where
 
         // Add 2 for the length of the length header
         total_bytes += out.len() as u64;
-        await!(tokio::io::write_all(&mut server, &mut out))?;
-        server.flush()?;
+        server.write_all(&out).await?;
+        // TODO Flush not yet implemented: https://github.com/tokio-rs/tokio/issues/1203
+        // server.flush()?;
     }
 
-    // We need to shutdown the endpoint before they are closed due to dropping one of the endpoints
-    // hint: server and client access the same underlying TcpStream
-    await!(shutdown(server))?;
+    // TODO Why do we need the shutdown again?
+    // // We need to shutdown the endpoint before they are closed due to dropping one of the endpoints
+    // // hint: server and client access the same underlying TcpStream
+    // await!(shutdown(server))?;
     Ok(total_bytes)
 }
 
 async fn copy_server_to_client<R, W>(mut server: R, mut client: W) -> Result<u64, Error>
 where
-    R: Stream<Item = Payload<Vec<u8>>> + Send + Unpin,
-    W: AsyncWrite,
+    R: Stream<Item = Payload<Result<Vec<u8>, Error>>> + Send + Unpin,
+    W: AsyncWrite + Unpin,
 {
     let mut total_bytes = 0;
 
     let mut out = Vec::with_capacity(468 * 5);
-    while let Some(dns) = await!(server.next()) {
-        let dns = match dns? {
+    while let Some(dns) = server.next().await {
+        let dns = match dns.transpose_error()? {
             Payload::Payload(p) => {
                 info!("C<-S payload {}B", p.len());
                 p
@@ -306,13 +311,15 @@ where
 
         // Add 2 for the length of the length header
         total_bytes += out.len() as u64;
-        await!(tokio::io::write_all(&mut client, &mut out))?;
-        client.flush()?;
+        client.write_all(&out).await?;
+        // TODO Flush not yet implemented: https://github.com/tokio-rs/tokio/issues/1203
+        // client.flush()?;
     }
 
-    // We need to shutdown the endpoint before they are closed due to dropping one of the endpoints
-    // hint: server and client access the same underlying TcpStream
-    await!(shutdown(client))?;
+    // TODO Why do we need the shutdown again?
+    // // We need to shutdown the endpoint before they are closed due to dropping one of the endpoints
+    // // hint: server and client access the same underlying TcpStream
+    // await!(shutdown(client))?;
     Ok(total_bytes)
 }
 
@@ -322,7 +329,7 @@ async fn connect_to_server(
     config: &Config,
 ) -> Result<(impl AsyncRead, impl AsyncWrite), Error> {
     // Open a tcp connection. This is always needed
-    let server = await!(TcpStream::connect(&server_addr.socket_addr()))?;
+    let server = TcpStream::connect(&server_addr.socket_addr()).await?;
     server.set_nodelay(true)?;
 
     let server: MyStream<_> = match config.transport {
@@ -337,7 +344,9 @@ async fn connect_to_server(
                 connector.set_keylog_callback(cb);
             }
             let connector = connector.build();
-            let server = await!(connector.connect_async(&server_addr.hostname(), server))?;
+            let connector_config = connector.configure()?;
+            let hostname = server_addr.hostname();
+            let server = tokio_openssl::connect(connector_config, &hostname, server).await?;
 
             TokioOpensslStream::new(Arc::new(Mutex::new(server))).into()
         }

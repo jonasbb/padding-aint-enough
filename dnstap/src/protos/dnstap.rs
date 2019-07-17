@@ -7,6 +7,7 @@
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
+#![allow(bare_trait_objects)]
 #![allow(box_pointers)]
 #![allow(dead_code)]
 #![allow(missing_docs)]

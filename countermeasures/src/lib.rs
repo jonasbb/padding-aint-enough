@@ -1,7 +1,7 @@
 #![deny(rust_2018_compatibility)]
 #![warn(rust_2018_idioms)]
-// enable the await! macro, async support
-#![feature(await_macro, async_await)]
+// enable async/await support
+#![feature(async_await)]
 // // only needed to manually implement a std future:
 // #![feature(arbitrary_self_types)]
 #![feature(duration_float)]

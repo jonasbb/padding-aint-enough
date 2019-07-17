@@ -188,7 +188,7 @@ fn run() -> Result<(), Error> {
         .incoming()
         // conver the Error to tlsproxy::Error
         .map(|x| Ok(x?))
-        .for_each_concurrent(10, move |client| {
+        .for_each_concurrent(100, move |client| {
             tokio::spawn(print_error(handle_client(config.clone(), client)));
             future::ready(())
         });
