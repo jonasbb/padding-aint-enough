@@ -79,6 +79,4 @@ misc_utils = "2.4.0"
 serde_json = "1.0.40"
 
 [patch.crates-io]
-tokio = { git = "https://github.com/tokio-rs/tokio", rev = "b4fe517a16f1596f5c483256a4bd36551812d16d" }
-tokio-async-await = { git = "https://github.com/tokio-rs/tokio", rev = "b4fe517a16f1596f5c483256a4bd36551812d16d" }
 trust-dns-proto = { git = "https://github.com/jonasbb/trust-dns", branch = "fix-empty-option-at-end-of-edns" }

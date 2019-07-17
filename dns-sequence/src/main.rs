@@ -342,8 +342,13 @@ fn classify_and_evaluate(
     info!("Start classification for k={}...", k);
     let classification;
     if let Some(distance_threshold) = distance_threshold {
-        classification =
-            knn::knn_with_threshold(&*training_data, &*test_data, k as u8, distance_threshold, use_cr_mode)
+        classification = knn::knn_with_threshold(
+            &*training_data,
+            &*test_data,
+            k as u8,
+            distance_threshold,
+            use_cr_mode,
+        )
     } else {
         classification = knn::knn(&*training_data, &*test_data, k as u8, use_cr_mode)
     }

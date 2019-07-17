@@ -1,16 +1,17 @@
-use crate::{error::Error, Payload};
-use futures::{Async, Poll, Stream};
+use crate::Payload;
+use futures::{task::Context, Poll, Stream};
+use std::pin::Pin;
 
 pub struct PassThrough<S, T>
 where
-    S: Stream<Item = T>,
+    S: Stream<Item = T> + Unpin,
 {
     stream: S,
 }
 
 impl<S, T> PassThrough<S, T>
 where
-    S: Stream<Item = T>,
+    S: Stream<Item = T> + Unpin,
 {
     pub fn new(stream: S) -> Self {
         PassThrough { stream }
@@ -19,16 +20,14 @@ where
 
 impl<S, T> Stream for PassThrough<S, T>
 where
-    S: Stream<Item = T>,
-    Error: From<S::Error>,
+    S: Stream<Item = T> + Unpin,
 {
     type Item = Payload<T>;
-    type Error = Error;
 
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        match self.stream.poll()? {
-            Async::Ready(payload) => Ok(Async::Ready(payload.map(Payload::Payload))),
-            Async::NotReady => Ok(Async::NotReady),
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        match Pin::new(&mut self.stream).poll_next(cx) {
+            Poll::Ready(payload) => Poll::Ready(payload.map(Payload::Payload)),
+            Poll::Pending => Poll::Pending,
         }
     }
 }

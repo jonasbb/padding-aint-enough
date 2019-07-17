@@ -1,12 +1,15 @@
-use crate::{error::Error, Payload};
-use futures::{future::Future, stream, Async, Poll, Stream};
+use crate::Payload;
+use futures::{future, stream, task::Context, FutureExt, Poll, Stream, StreamExt};
 use lazy_static::lazy_static;
 use log::debug;
 use rand::{
     distributions::{Distribution, Uniform, WeightedError, WeightedIndex},
     thread_rng,
 };
-use std::time::{Duration, Instant};
+use std::{
+    pin::Pin,
+    time::{Duration, Instant},
+};
 use tokio_timer::Delay;
 
 const DURATION_MAX: Duration = Duration::from_secs(3600 * 24 * 365);
@@ -84,7 +87,7 @@ enum State {
 }
 
 pub struct AdaptivePadding<T> {
-    stream: Box<dyn Stream<Item = Event<T>, Error = Error> + Send + 'static>,
+    stream: Box<dyn Stream<Item = Event<T>> + Send + Unpin + 'static>,
     eipi: Duration,
     deadline: Delay,
     /// Relevant for Gap mode
@@ -105,14 +108,12 @@ where
 {
     pub fn new<S>(stream: S) -> Self
     where
-        S: Stream<Item = T> + Send + 'static,
-        S::Error: Into<Error>,
+        S: Stream<Item = T> + Send + Unpin + 'static,
         T: 'static,
     {
         let stream = stream
             .map(Event::Payload)
-            .map_err(Into::into)
-            .chain(stream::once(Ok(Event::PayloadEnd)));
+            .chain(stream::once(future::ready(Event::PayloadEnd)));
         let mut res = Self {
             stream: Box::new(stream),
             eipi: DURATION_MAX,
@@ -400,17 +401,14 @@ where
     T: Send,
 {
     type Item = Payload<T>;
-    type Error = Error;
 
-    fn poll(&mut self) -> Poll<Option<Self::Item>, Self::Error> {
-        let delay_stream = (&mut self.deadline)
-            .map(|_| Event::Timeout)
-            .from_err()
-            .into_stream();
-        let mut stream = delay_stream.select(&mut self.stream);
+    fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = &mut *self;
 
-        match stream.poll()? {
-            Async::Ready(Some(event)) => {
+        let delay_stream = (&mut this.deadline).map(|_| Event::Timeout).into_stream();
+
+        match Pin::new(&mut stream::select(delay_stream, &mut this.stream)).poll_next(cx) {
+            Poll::Ready(Some(event)) => {
                 let res = match event {
                     Event::Timeout => {
                         debug!("Timeout received, State {:?}", self.state);
@@ -432,11 +430,11 @@ where
                     self.last_created_item = Instant::now();
                 }
 
-                Ok(Async::Ready(res))
+                Poll::Ready(res)
             }
             // The timer instance is done, this should never happen
-            Async::Ready(None) => panic!("Timer instance is done. This should never happen."),
-            Async::NotReady => Ok(Async::NotReady),
+            Poll::Ready(None) => panic!("Timer instance is done. This should never happen."),
+            Poll::Pending => Poll::Pending,
         }
     }
 }
@@ -459,18 +457,12 @@ mod tests {
     fn test_adaptive_padding_reset_gap_after_payload() {
         // Ensure that a new gap is sampled after each payload entry,
         // by checking that the time between payload and the first dummy is at least the minimum time (modulo timer resolution)
-        let items = stream::iter_ok::<_, ()>(0..10);
-        let throttle = Throttle::new(items, MS_100).map_err(|err| {
-            if err.is_timer_error() {
-                panic!("{}", err.into_timer_error().unwrap());
-            } else {
-                err.into_stream_error().unwrap()
-            }
-        });
+        let items = stream::iter(0..10);
+        let throttle = Throttle::new(items, MS_100);
 
         let cr = AdaptivePadding::new(throttle);
         let mut last_payload = Some(Instant::now());
-        let fut = cr.map_err(|_err| ()).for_each(move |x| {
+        let fut = cr.for_each(move |x| {
             match (x, { last_payload }) {
                 (Payload::Payload(_), _) => {
                     last_payload = Some(Instant::now());
@@ -486,9 +478,10 @@ mod tests {
                     // We do not care about this case
                 }
             };
-            future::ok(())
+            future::ready(())
         });
 
-        tokio::run(fut);
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(fut);
     }
 }
