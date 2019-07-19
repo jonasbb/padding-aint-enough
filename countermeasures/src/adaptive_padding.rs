@@ -160,9 +160,7 @@ where
             Err(WeightedError::InvalidWeight) => {
                 panic!("Negative weights are impossible due to the type being u16")
             }
-            Err(WeightedError::TooMany) => {
-                panic!("We never have more than `u32::MAX` buckets")
-            }
+            Err(WeightedError::TooMany) => panic!("We never have more than `u32::MAX` buckets"),
         };
         // Get the index of the value
         let idx = dist.sample(&mut thread_rng());
@@ -446,8 +444,6 @@ mod tests {
     use std::time::Instant;
     use tokio_timer::throttle::Throttle;
 
-    /// The minimum [`Duration`] which can be sampled for EIPI
-    const MS_MIN: Duration = Duration::from_millis(8);
     /// [`Duration`] of exactly 1 ms
     const MS_1: Duration = Duration::from_millis(1);
     /// [`Duration`] of exactly 100 ms
@@ -455,33 +451,45 @@ mod tests {
 
     #[test]
     fn test_adaptive_padding_reset_gap_after_payload() {
-        // Ensure that a new gap is sampled after each payload entry,
-        // by checking that the time between payload and the first dummy is at least the minimum time (modulo timer resolution)
-        let items = stream::iter(0..10);
-        let throttle = Throttle::new(items, MS_100);
-
-        let cr = AdaptivePadding::new(throttle);
-        let mut last_payload = Some(Instant::now());
-        let fut = cr.for_each(move |x| {
-            match (x, { last_payload }) {
-                (Payload::Payload(_), _) => {
-                    last_payload = Some(Instant::now());
-                }
-                (Payload::Dummy, Some(last_p)) => {
-                    let dur = Instant::now() - last_p;
-                    eprintln!("{:>5} µs: {:?}", dur.as_micros(), x);
-                    // Ensure that the adaptive padding produces items quicker than the throttle
-                    assert!(dur > (MS_MIN - MS_1));
-                    last_payload = None;
-                }
-                (Payload::Dummy, None) => {
-                    // We do not care about this case
-                }
-            };
-            future::ready(())
-        });
-
         let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(fut);
+
+        // This test is non-deterministic, so run it multiple times
+        for _ in 0..20 {
+            // Ensure that a new gap is sampled after each payload entry,
+            // by checking that the time between payload and the first dummy is at least the minimum time (modulo timer resolution)
+            let items = stream::iter(0..10);
+            let throttle = Throttle::new(items, MS_100);
+
+            let cr = AdaptivePadding::new(throttle);
+            // The minimum [`Duration`] which can be sampled for EIPI
+            let ms_min = *cr
+                .inter_burst_gaps
+                .iter()
+                .map(|(gap, _)| gap)
+                .min()
+                .unwrap();
+
+            let mut last_payload = Some(Instant::now());
+            let fut = cr.for_each(move |x| {
+                match (x, { last_payload }) {
+                    (Payload::Payload(_), _) => {
+                        last_payload = Some(Instant::now());
+                    }
+                    (Payload::Dummy, Some(last_p)) => {
+                        let dur = Instant::now() - last_p;
+                        eprintln!("{:>5} µs: {:?}", dur.as_micros(), x);
+                        // Ensure that the adaptive padding produces items quicker than the throttle
+                        assert!(dur > (ms_min - MS_1));
+                        last_payload = None;
+                    }
+                    (Payload::Dummy, None) => {
+                        // We do not care about this case
+                    }
+                };
+                future::ready(())
+            });
+
+            rt.block_on(fut);
+        }
     }
 }
