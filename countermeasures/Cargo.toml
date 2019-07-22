@@ -23,7 +23,6 @@ structopt = "0.2.18"
 # tokio-openssl = "0.3.0"
 # tokio-timer = { version = "0.3.0", features = [ "async-traits" ] }
 tokio = { git = "https://github.com/tokio-rs/tokio" }
-tokio-futures = { git = "https://github.com/tokio-rs/tokio" }
 tokio-openssl = { git = "https://github.com/sfackler/tokio-openssl", branch = "tokio-02" }
 tokio-timer = { git = "https://github.com/tokio-rs/tokio", features = [ "async-traits" ] }
 trust-dns-proto = "0.7.1"

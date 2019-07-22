@@ -10,8 +10,8 @@ pub enum Error {
     #[fail(display = "Tokio Timer Error: {}", _0)]
     Timer(#[fail(cause)] tokio_timer::Error, Backtrace),
     /// Errors based on [`std::io`]
-    #[fail(display = "{}", _0)]
-    Io(#[fail(cause)] std::io::Error, Backtrace),
+    #[fail(display = "{}: Kind: {:?}", _0, _1)]
+    Io(#[fail(cause)] std::io::Error, std::io::ErrorKind, Backtrace),
     /// Errors for parsing `ip:port` strings
     #[fail(display = "{}", _0)]
     AddrParseError(#[fail(cause)] std::net::AddrParseError, Backtrace),
@@ -47,7 +47,8 @@ impl From<tokio_timer::Error> for Error {
 
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
-        Error::Io(error, Backtrace::default())
+        let kind = error.kind();
+        Error::Io(error, kind, Backtrace::default())
     }
 }
 
