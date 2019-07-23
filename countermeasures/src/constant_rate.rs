@@ -74,22 +74,31 @@ mod tests {
             let begin = Instant::now();
             let mut element_count = 0;
             let mut elements_between_dummies = 0;
-            let fut = cr.for_each(move |x| {
-                // Remove one layer of the douple payload
-                let x = x.flatten();
-                element_count += 1;
-                if x == Payload::Dummy {
-                    elements_between_dummies = 0
-                } else {
-                    elements_between_dummies += 1;
-                    assert!(elements_between_dummies <= 3);
-                }
-                future::ready(())
-            });
+            let mut dummies_between_elements = 0;
+            {
+                let element_count = &mut element_count;
+                let fut = cr.for_each(move |x| {
+                    // Remove one layer of the douple payload
+                    let x = dbg!(x.flatten());
+                    *element_count += 1;
+                    if x == Payload::Dummy {
+                        elements_between_dummies = 0;
+                        dummies_between_elements += 1;
+                        assert!(dummies_between_elements <= 3);
+                    } else {
+                        elements_between_dummies += 1;
+                        dummies_between_elements = 0;
+                        assert_eq!(elements_between_dummies, 1);
+                    }
+                    future::ready(())
+                });
+                rt.block_on(fut);
+            }
+
             let end = Instant::now();
             // The precision of the timer wheel is only up to 1 ms
             // The average time should be around 33ms, ensure that it lies in the tolerance range
-            let avg_gap = (end - last) / element_count;
+            let avg_gap = (end - begin) / element_count;
             assert!(
                 avg_gap > dur_short - DUR_TOLERANCE,
                 "The average gap is {:?}, but should be larger than {:?}",
@@ -102,8 +111,6 @@ mod tests {
                 avg_gap,
                 dur_short + DUR_TOLERANCE
             );
-
-            rt.block_on(fut);
         }
     }
 }
