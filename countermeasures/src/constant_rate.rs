@@ -57,32 +57,7 @@ mod tests {
     use futures::{future, stream, StreamExt};
     use std::time::Instant;
 
-    /// [`Duration`] of exactly 5 ms
-    const MS_5: Duration = Duration::from_millis(5);
-
-    #[test]
-    fn test_constant_time_ensure_time_gap() {
-        let dur = Duration::new(0, 100_000_000);
-        let rt = tokio::runtime::Runtime::new().unwrap();
-
-        // This test is non-deterministic, so run it multiple times
-        for _ in 0..20 {
-            let items = stream::iter(0..10);
-            let cr = ConstantRate::new(items, dur);
-            let mut last = Instant::now();
-
-            let fut = cr.for_each(move |x| {
-                let now = Instant::now();
-                eprintln!("{:?}: {:?}", now - last, x);
-                // The precision of the timer wheel is only up to 1 ms
-                assert!(now - last > (dur - MS_5), "Measured gap is lower than minimal value for constant-rate. Expected: {:?}, Found {:?}", dur-MS_5, now-last);
-                last = now;
-                future::ready(())
-            });
-
-            rt.block_on(fut);
-        }
-    }
+    const DUR_TOLERANCE: Duration = Duration::from_millis(3);
 
     #[test]
     fn test_constant_time_insert_dummy() {
@@ -96,16 +71,13 @@ mod tests {
             let cr_slow = ConstantRate::new(items, dur_long);
             let cr = ConstantRate::new(cr_slow, dur_short);
 
-            let mut last = Instant::now();
+            let begin = Instant::now();
+            let mut element_count = 0;
             let mut elements_between_dummies = 0;
             let fut = cr.for_each(move |x| {
                 // Remove one layer of the douple payload
                 let x = x.flatten();
-                let now = Instant::now();
-                eprintln!("{:?}: {:?}", now - last, x);
-                // The precision of the timer wheel is only up to 1 ms
-                assert!(now - last > (dur_short - MS_5), "Measured gap is lower than minimal value for constant-rate. Expected: {:?}, Found {:?}", dur_short-MS_5, now-last);
-                last = now;
+                element_count += 1;
                 if x == Payload::Dummy {
                     elements_between_dummies = 0
                 } else {
@@ -114,6 +86,22 @@ mod tests {
                 }
                 future::ready(())
             });
+            let end = Instant::now();
+            // The precision of the timer wheel is only up to 1 ms
+            // The average time should be around 33ms, ensure that it lies in the tolerance range
+            let avg_gap = (end - last) / element_count;
+            assert!(
+                avg_gap > dur_short - DUR_TOLERANCE,
+                "The average gap is {:?}, but should be larger than {:?}",
+                avg_gap,
+                dur_short - DUR_TOLERANCE
+            );
+            assert!(
+                avg_gap < dur_short + DUR_TOLERANCE,
+                "The average gap is {:?}, but should be smaller than {:?}",
+                avg_gap,
+                dur_short + DUR_TOLERANCE
+            );
 
             rt.block_on(fut);
         }
