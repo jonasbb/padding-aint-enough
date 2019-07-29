@@ -14,7 +14,7 @@ encrypted-dns = { path = ".." }
 env_logger = "0.6.2"
 failure = "0.1.5"
 lazy_static = "1.3.0"
-log = "0.4.7"
+log = "0.4.8"
 misc_utils = "2.4.0"
 # Needed for Postgres. https://github.com/emk/rust-musl-builder#making-diesel-work
 openssl = "*"
