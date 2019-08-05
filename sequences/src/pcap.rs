@@ -2,7 +2,6 @@ use crate::{AbstractQueryResponse, PrecisionSequence, Sequence};
 use chrono::NaiveDateTime;
 use colored::Colorize;
 use failure::{bail, format_err, Error, ResultExt};
-use hashbrown::HashMap;
 use itertools::Itertools;
 use log::debug;
 use pcap::{Capture, Linktype, Packet as PcapPacket};
@@ -15,7 +14,7 @@ use rustls::internal::msgs::{
 use serde::{Deserialize, Serialize};
 use std::{
     cmp::Ordering,
-    collections::HashSet,
+    collections::{HashMap, HashSet},
     mem,
     net::{Ipv4Addr, SocketAddrV4},
     path::Path,

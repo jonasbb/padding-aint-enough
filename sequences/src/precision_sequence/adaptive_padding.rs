@@ -142,9 +142,7 @@ impl AdaptivePadding {
             Err(WeightedError::InvalidWeight) => {
                 panic!("Negative weights are impossible due to the type being u16")
             }
-            Err(WeightedError::TooMany) => {
-                panic!("We never have more than `u32::MAX` buckets")
-            }
+            Err(WeightedError::TooMany) => panic!("We never have more than `u32::MAX` buckets"),
         };
         // Get the index of the value
         let idx = dist.sample(&mut self.rng);
