@@ -5,7 +5,7 @@
 
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
 use failure::Fail;
-use futures::{future, Stream, StreamExt};
+use futures::{future, Stream};
 use log::info;
 use openssl::{
     pkey::PKey,
@@ -273,14 +273,14 @@ where
         // Add 2 for the length of the length header
         total_bytes += out.len() as u64;
         server.write_all(&out).await?;
-        // TODO Flush not yet implemented: https://github.com/tokio-rs/tokio/issues/1203
-        // server.flush()?;
+        server.flush().await?;
     }
 
-    // TODO Why do we need the shutdown again?
-    // // We need to shutdown the endpoint before they are closed due to dropping one of the endpoints
-    // // hint: server and client access the same underlying TcpStream
-    // await!(shutdown(server))?;
+    // We need to pass the shutdown from client to server, that the server sees that the client shut
+    // down the connection. Automatic shutdown does not work in this case, as the reading and
+    // writing part access the same underlying TcpStream, thus the drop based shutdown would be too
+    // late.
+    server.shutdown().await?;
     Ok(total_bytes)
 }
 
@@ -312,14 +312,14 @@ where
         // Add 2 for the length of the length header
         total_bytes += out.len() as u64;
         client.write_all(&out).await?;
-        // TODO Flush not yet implemented: https://github.com/tokio-rs/tokio/issues/1203
-        // client.flush()?;
+        client.flush().await?;
     }
 
-    // TODO Why do we need the shutdown again?
-    // // We need to shutdown the endpoint before they are closed due to dropping one of the endpoints
-    // // hint: server and client access the same underlying TcpStream
-    // await!(shutdown(client))?;
+    // We need to pass the shutdown from client to server, that the server sees that the client shut
+    // down the connection. Automatic shutdown does not work in this case, as the reading and
+    // writing part access the same underlying TcpStream, thus the drop based shutdown would be too
+    // late.
+    client.shutdown().await?;
     Ok(total_bytes)
 }
 
