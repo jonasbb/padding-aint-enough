@@ -31,40 +31,6 @@ impl<S> Clone for MyStream<S> {
     }
 }
 
-// impl<S> Read for MyStream<S>
-// where
-//     S: Read + Write,
-// {
-//     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-//         use MyStream::*;
-//         match self {
-//             Tcp(stream) => stream.read(buf),
-//             Openssl(stream) => stream.read(buf),
-//         }
-//     }
-// }
-
-// impl<S> Write for MyStream<S>
-// where
-//     S: Read + Write,
-// {
-//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-//         use MyStream::*;
-//         match self {
-//             Tcp(stream) => stream.write(buf),
-//             Openssl(stream) => stream.write(buf),
-//         }
-//     }
-
-//     fn flush(&mut self) -> io::Result<()> {
-//         use MyStream::*;
-//         match self {
-//             Tcp(stream) => stream.flush(),
-//             Openssl(stream) => stream.flush(),
-//         }
-//     }
-// }
-
 impl<S> AsyncRead for MyStream<S>
 where
     S: AsyncRead + AsyncWrite + Unpin,
@@ -141,22 +107,6 @@ impl MyTcpStream {
     }
 }
 
-// impl Read for MyTcpStream {
-//     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-//         self.0.lock().unwrap().read(buf)
-//     }
-// }
-
-// impl Write for MyTcpStream {
-//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-//         self.0.lock().unwrap().write(buf)
-//     }
-
-//     fn flush(&mut self) -> io::Result<()> {
-//         self.0.lock().unwrap().flush()
-//     }
-// }
-
 impl AsyncRead for MyTcpStream {
     fn poll_read(
         mut self: Pin<&mut Self>,
@@ -210,28 +160,6 @@ impl<S> Clone for TokioOpensslStream<S> {
         TokioOpensslStream(self.0.clone())
     }
 }
-
-// impl<S> Read for TokioOpensslStream<S>
-// where
-//     S: Read + Write,
-// {
-//     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-//         self.0.lock().unwrap().read(buf)
-//     }
-// }
-
-// impl<S> Write for TokioOpensslStream<S>
-// where
-//     S: Read + Write,
-// {
-//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-//         self.0.lock().unwrap().write(buf)
-//     }
-
-//     fn flush(&mut self) -> io::Result<()> {
-//         self.0.lock().unwrap().flush()
-//     }
-// }
 
 impl<S> AsyncRead for TokioOpensslStream<S>
 where
