@@ -156,7 +156,6 @@ pub struct RedirectResponse<S> {
 ///     "url": "http://example.com/",
 ///     "lineNumber": 2
 /// }
-///
 
 #[serde(tag = "type", rename_all = "lowercase")]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]

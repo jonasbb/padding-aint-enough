@@ -570,7 +570,7 @@ impl<'de> Deserialize<'de> for Sequence {
         struct Helper;
         use serde::de::Error;
 
-        impl<'de> Visitor<'de> for Helper where {
+        impl<'de> Visitor<'de> for Helper {
             type Value = Sequence;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -699,7 +699,7 @@ impl<'de> Deserialize<'de> for SequenceElement {
         struct Helper;
         use serde::de::Error;
 
-        impl<'de> Visitor<'de> for Helper where {
+        impl<'de> Visitor<'de> for Helper {
             type Value = SequenceElement;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

@@ -1,0 +1,4 @@
+ignore = [
+    "framestream",
+    "taskmanager/src/schema.rs",
+]
