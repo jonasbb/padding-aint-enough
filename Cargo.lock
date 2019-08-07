@@ -2315,10 +2315,11 @@ dependencies = [
 [[package]]
 name = "tokio"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures-sink-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-util-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-codec 0.2.0 (git+https://github.com/tokio-rs/tokio)",
@@ -2350,7 +2351,7 @@ dependencies = [
 [[package]]
 name = "tokio-codec"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2362,7 +2363,7 @@ dependencies = [
 [[package]]
 name = "tokio-current-thread"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "crossbeam-channel 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "tokio-executor 0.2.0 (git+https://github.com/tokio-rs/tokio)",
@@ -2380,7 +2381,7 @@ dependencies = [
 [[package]]
 name = "tokio-executor"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "crossbeam-utils 0.6.5 (git+https://github.com/stjepang/crossbeam?branch=raw-parker)",
 ]
@@ -2388,7 +2389,7 @@ dependencies = [
 [[package]]
 name = "tokio-fs"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-util-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2409,7 +2410,7 @@ dependencies = [
 [[package]]
 name = "tokio-io"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2420,7 +2421,7 @@ dependencies = [
 [[package]]
 name = "tokio-macros"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.6.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2457,7 +2458,7 @@ dependencies = [
 [[package]]
 name = "tokio-reactor"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "crossbeam-utils 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2484,12 +2485,12 @@ dependencies = [
 [[package]]
 name = "tokio-sync"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
- "async-util 0.1.0 (git+https://github.com/tokio-rs/async)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-sink-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures-util-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2508,7 +2509,7 @@ dependencies = [
 [[package]]
 name = "tokio-tcp"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "async-util 0.1.0 (git+https://github.com/tokio-rs/async)",
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2522,7 +2523,7 @@ dependencies = [
 [[package]]
 name = "tokio-threadpool"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "arc-waker 0.1.0 (git+https://github.com/tokio-rs/async)",
  "crossbeam-deque 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2551,7 +2552,7 @@ dependencies = [
 [[package]]
 name = "tokio-timer"
 version = "0.3.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "async-util 0.1.0 (git+https://github.com/tokio-rs/async)",
  "crossbeam-utils 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2578,7 +2579,7 @@ dependencies = [
 [[package]]
 name = "tokio-udp"
 version = "0.2.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-util-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2590,7 +2591,7 @@ dependencies = [
 [[package]]
 name = "tokio-uds"
 version = "0.3.0"
-source = "git+https://github.com/tokio-rs/tokio#05d00aebb7b8b467571a8cf58cb18ee4de8658c1"
+source = "git+https://github.com/tokio-rs/tokio#47e2ff48d9f1daac7dba9f136b24eed64c87cf40"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-core-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
