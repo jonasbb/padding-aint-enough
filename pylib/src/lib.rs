@@ -6,8 +6,8 @@ use failure::Error;
 use pyo3::{
     self, basic::CompareOp, exceptions::Exception, prelude::*, types::PyType, PyObjectProtocol,
 };
-use sequences::{load_all_dnstap_files_from_dir, OneHotEncoding, Sequence};
-use std::path::Path;
+use sequences::{load_all_dnstap_files_from_dir, CostTracker, OneHotEncoding, Sequence};
+use std::{collections::BTreeMap, path::Path};
 
 fn error2py(err: Error) -> PyErr {
     PyErr::new::<Exception, _>(format!("{}", err.display_causes()))
@@ -64,6 +64,20 @@ impl PySequence {
     /// Calculate the distance between two sequences
     pub fn distance(&self, other: &PySequence) -> PyResult<usize> {
         Ok(self.sequence.distance(&other.sequence))
+    }
+
+    /// Calculate the distance between two sequences
+    pub fn distance_with_details(
+        &self,
+        other: &PySequence,
+    ) -> PyResult<(usize, BTreeMap<&'static str, usize>)> {
+        let (cost, cost_info) = self.sequence.distance_with_limit::<CostTracker>(
+            &other.sequence,
+            usize::max_value(),
+            false,
+            false,
+        );
+        Ok((cost, cost_info.as_btreemap()))
     }
 
     /// Try to classify the sequence, if it belongs to one of a couple of common categories
