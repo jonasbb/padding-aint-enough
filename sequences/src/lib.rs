@@ -30,7 +30,7 @@ use serde::{
 };
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
-    collections::HashMap,
+    collections::{BTreeMap, HashMap},
     fmt::{self, Debug},
     hash::Hash,
     mem,
@@ -257,7 +257,8 @@ impl Sequence {
 
     /// Return the distance to the `other` [`Sequence`].
     pub fn distance(&self, other: &Self) -> usize {
-        self.distance_with_limit(other, usize::max_value(), false, false)
+        self.distance_with_limit::<()>(other, usize::max_value(), false, false)
+            .0
     }
 
     /// Same as [`Sequence::distance`] but with an early exit criteria
@@ -274,13 +275,16 @@ impl Sequence {
     /// * they differ by less than 40, which allows for at least 20 new requests to appear
     /// * OR they differ by less than 20% of the larger sequence
     /// whichever of those two is larger.
-    pub fn distance_with_limit(
+    pub fn distance_with_limit<DCI>(
         &self,
         other: &Self,
         max_distance: usize,
         use_length_prefilter: bool,
         use_cr_mode: bool,
-    ) -> usize {
+    ) -> (usize, DCI)
+    where
+        DCI: DistanceCostInfo,
+    {
         let mut larger = self;
         let mut smaller = other;
 
@@ -297,10 +301,12 @@ impl Sequence {
         // therefore, we only need to add the cost of additional length of the longer one
         if use_cr_mode {
             let mut cost: usize = 0;
-            for x in &larger.0[smaller.0.len()..] {
+            let mut cost_info = DCI::default();
+            for &x in &larger.0[smaller.0.len()..] {
                 cost = cost.saturating_add(x.insert_cost());
+                cost_info = cost_info.insert(cost, x);
             }
-            return cost;
+            return (cost, cost_info);
         }
 
         const ABSOLUTE_LENGTH_DIFF: usize = 40;
@@ -310,57 +316,79 @@ impl Sequence {
             && length_diff > ABSOLUTE_LENGTH_DIFF
             && length_diff > (larger.0.len() / RELATIVE_LENGTH_DIFF_FACTOR)
         {
-            return usize::max_value();
+            let cost_info = DCI::default().abort();
+            return (usize::max_value(), cost_info);
         }
 
         if smaller.0.is_empty() {
             let mut cost: usize = 0;
-            for x in &larger.0 {
+            let mut cost_info = DCI::default();
+            for &x in &larger.0 {
                 cost = cost.saturating_add(x.insert_cost());
+                cost_info = cost_info.insert(cost, x);
             }
-            return cost;
+            return (cost, cost_info);
         }
 
-        let mut prev_prev_row = vec![0usize; smaller.0.len() + 1];
-        // let mut previous_row: Vec<usize> = (0..(smaller.0.len() + 1)).into_iter().collect();
+        let mut prev_prev_row: Vec<(usize, DCI)> =
+            vec![(0usize, DCI::default()); smaller.0.len() + 1];
         let mut cost = 0;
-        let mut previous_row: Vec<usize> = Some(0)
+        let mut previous_row: Vec<(usize, DCI)> = Some((0, DCI::default()))
             .into_iter()
-            .chain(smaller.0.iter().cloned().map(SequenceElement::insert_cost))
-            .map(|c| {
-                cost += c;
-                cost
-            })
+            .chain(smaller.0.iter().map(|&elem| {
+                cost += elem.insert_cost();
+                let cost_info = DCI::default().insert(cost, elem);
+                (cost, cost_info)
+            }))
             .collect();
-        let mut current_row = vec![0usize; smaller.0.len() + 1];
+        let mut current_row = vec![(0usize, DCI::default()); smaller.0.len() + 1];
         debug_assert_eq!(
             previous_row.len(),
             current_row.len(),
             "Row length must be equal"
         );
 
-        for (i, elem1) in larger.0.iter().enumerate() {
+        for (i, &elem1) in larger.0.iter().enumerate() {
             current_row.clear();
-            current_row.push(previous_row[0] + elem1.delete_cost());
+            let p = previous_row[0].0 + elem1.delete_cost();
+            let p_info = previous_row[0].1.delete(p, elem1);
+            current_row.push((p, p_info));
             let mut min_cost_current_row: Min<usize> = Default::default();
 
             for (j, &elem2) in smaller.0.iter().enumerate() {
-                let insertions = previous_row[j + 1] + elem1.insert_cost();
-                let deletions = current_row[j] + elem2.delete_cost();
-                let substitutions = previous_row[j] + elem1.substitute_cost(elem2);
-                let swapping = if i > 0
+                let insertions = previous_row[j + 1].0 + elem1.insert_cost();
+                let insertions_info = previous_row[j + 1].1.insert(insertions, elem1);
+                let deletions = current_row[j].0 + elem2.delete_cost();
+                let deletions_info = current_row[j].1.delete(deletions, elem2);
+                let substitutions = previous_row[j].0 + elem1.substitute_cost(elem2);
+                let substitutions_info = previous_row[j].1.substitute(substitutions, elem1, elem2);
+                let (swapping, swapping_info) = if i > 0
                     && j > 0
                     && larger.0[i] == smaller.0[j - 1]
                     && larger.0[i - 1] == smaller.0[j]
                 {
-                    prev_prev_row[j - 1] + elem1.swap_cost(elem2)
+                    let swapping = prev_prev_row[j - 1].0 + elem1.swap_cost(elem2);
+                    let swapping_info = prev_prev_row[j - 1].1.swap(swapping, elem1, elem2);
+                    (swapping, swapping_info)
                 } else {
                     // generate a large value but not so large, that an overflow might happen while performing some addition
-                    usize::max_value() / 4
+                    (usize::max_value() / 4, DCI::default().abort())
                 };
-                let cost = insertions.min(deletions).min(substitutions).min(swapping);
+                let (a, a_info) = if insertions < deletions {
+                    (insertions, insertions_info)
+                } else {
+                    (deletions, deletions_info)
+                };
+                let (b, b_info) = if substitutions < swapping {
+                    (substitutions, substitutions_info)
+                } else {
+                    (swapping, swapping_info)
+                };
+                let (cost, cost_info) = if a < b { (a, a_info) } else { (b, b_info) };
+
+                // let cost = insertions.min(deletions).min(substitutions).min(swapping);
                 min_cost_current_row.update(cost);
-                current_row.push(cost);
+                current_row.push((cost, cost_info));
             }
 
             // See whether we can abort early
@@ -369,7 +397,8 @@ impl Sequence {
             // If we see that `min_cost_current_row > max_distance`, then we know that this function can never return a result smaller than `max_distance`,
             // because there is always a cost added to the value of the previous row.
             if min_cost_current_row.get_min_extreme() > max_distance {
-                return usize::max_value();
+                let cost_info = DCI::default().abort();
+                return (usize::max_value(), cost_info);
             }
 
             mem::swap(&mut prev_prev_row, &mut previous_row);
@@ -833,6 +862,119 @@ pub struct UnmatchedClientQuery {
     pub qtype: String,
     pub start: DateTime<Utc>,
     pub size: u32,
+}
+
+pub trait DistanceCostInfo: Copy + Default {
+    /// Indicates that the insert operation was the cheapest and the current cost is `cost`.
+    #[must_use]
+    fn insert(&self, cost: usize, elem1: SequenceElement) -> Self;
+    /// Indicates that the delete operation was the cheapest and the current cost is `cost`.
+    #[must_use]
+    fn delete(&self, cost: usize, elem1: SequenceElement) -> Self;
+    /// Indicates that the substitute operation was the cheapest and the current cost is `cost`.
+    #[must_use]
+    fn substitute(&self, cost: usize, elem1: SequenceElement, elem2: SequenceElement) -> Self;
+    /// Indicates that the swap operation was the cheapest and the current cost is `cost`.
+    #[must_use]
+    fn swap(&self, cost: usize, elem1: SequenceElement, elem2: SequenceElement) -> Self;
+    /// Indicates that the distance computation was aborted early.
+    ///
+    /// This occurs, if the current distance is already larger than any distance in the kNN set.
+    #[must_use]
+    fn abort(&self) -> Self;
+}
+
+impl DistanceCostInfo for () {
+    fn insert(&self, _cost: usize, _elem1: SequenceElement) -> Self {}
+    fn delete(&self, _cost: usize, _elem1: SequenceElement) -> Self {}
+    fn substitute(&self, _cost: usize, _elem1: SequenceElement, _elem2: SequenceElement) -> Self {}
+    fn swap(&self, _cost: usize, _elem1: SequenceElement, _elem2: SequenceElement) -> Self {}
+    fn abort(&self) -> Self {}
+}
+
+#[derive(Debug, Copy, Clone, Default)]
+pub struct CostTracker {
+    pub insert_gap: usize,
+    pub insert_size: usize,
+    pub delete_gap: usize,
+    pub delete_size: usize,
+    pub substitute_gap_gap: usize,
+    pub substitute_gap_size: usize,
+    pub substitute_size_gap: usize,
+    pub substitute_size_size: usize,
+    pub swap_gap_gap: usize,
+    pub swap_gap_size: usize,
+    pub swap_size_gap: usize,
+    pub swap_size_size: usize,
+    pub is_abort: bool,
+    current_cost: usize,
+}
+
+impl CostTracker {
+    pub fn as_btreemap(&self) -> BTreeMap<&'static str, usize> {
+        let mut res = BTreeMap::default();
+        res.insert("insert_gap", self.insert_gap);
+        res.insert("insert_size", self.insert_size);
+        res.insert("delete_gap", self.delete_gap);
+        res.insert("delete_size", self.delete_size);
+        res.insert("substitute_gap_gap", self.substitute_gap_gap);
+        res.insert("substitute_gap_size", self.substitute_gap_size);
+        res.insert("substitute_size_gap", self.substitute_size_gap);
+        res.insert("substitute_size_size", self.substitute_size_size);
+        res.insert("swap_gap_gap", self.swap_gap_gap);
+        res.insert("swap_gap_size", self.swap_gap_size);
+        res.insert("swap_size_gap", self.swap_size_gap);
+        res.insert("swap_size_size", self.swap_size_size);
+        res.insert("is_abort", self.is_abort as usize);
+        res
+    }
+
+    fn update<F>(&self, cost: usize, f: F) -> Self
+    where
+        F: Fn(&mut Self, usize),
+    {
+        let mut res = *self;
+        let diff = cost - self.current_cost;
+        res.current_cost = cost;
+        f(&mut res, diff);
+        res
+    }
+}
+
+impl DistanceCostInfo for CostTracker {
+    fn insert(&self, cost: usize, elem1: SequenceElement) -> Self {
+        self.update(cost, |x, diff| match elem1 {
+            SequenceElement::Gap(_) => x.insert_gap += diff,
+            SequenceElement::Size(_) => x.insert_size += diff,
+        })
+    }
+    fn delete(&self, cost: usize, elem1: SequenceElement) -> Self {
+        self.update(cost, |x, diff| match elem1 {
+            SequenceElement::Gap(_) => x.delete_gap += diff,
+            SequenceElement::Size(_) => x.delete_size += diff,
+        })
+    }
+    fn substitute(&self, cost: usize, elem1: SequenceElement, elem2: SequenceElement) -> Self {
+        self.update(cost, |x, diff| match (elem1, elem2) {
+            (SequenceElement::Gap(_), SequenceElement::Gap(_)) => x.substitute_gap_gap += diff,
+            (SequenceElement::Gap(_), SequenceElement::Size(_)) => x.substitute_gap_size += diff,
+            (SequenceElement::Size(_), SequenceElement::Gap(_)) => x.substitute_size_gap += diff,
+            (SequenceElement::Size(_), SequenceElement::Size(_)) => x.substitute_size_size += diff,
+        })
+    }
+    fn swap(&self, cost: usize, elem1: SequenceElement, elem2: SequenceElement) -> Self {
+        self.update(cost, |x, diff| match (elem1, elem2) {
+            (SequenceElement::Gap(_), SequenceElement::Gap(_)) => x.swap_gap_gap += diff,
+            (SequenceElement::Gap(_), SequenceElement::Size(_)) => x.swap_gap_size += diff,
+            (SequenceElement::Size(_), SequenceElement::Gap(_)) => x.swap_size_gap += diff,
+            (SequenceElement::Size(_), SequenceElement::Size(_)) => x.swap_size_size += diff,
+        })
+    }
+    fn abort(&self) -> Self {
+        let mut res = *self;
+        res.is_abort = true;
+        res
+    }
 }
 
 #[cfg(test)]

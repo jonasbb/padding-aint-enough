@@ -229,8 +229,9 @@ where
                     .flat_map(|tlseq| {
                         tlseq.sequences.iter().map(move |s| {
                             move |max_dist: usize| {
-                                let distance =
-                                    vsample.distance_with_limit(s, max_dist, true, use_cr_mode);
+                                let distance = vsample
+                                    .distance_with_limit::<()>(s, max_dist, true, use_cr_mode)
+                                    .0;
                                 // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
                                 let distance_norm = if distance == 0 {
                                     NotNan::new(0.).unwrap()
@@ -289,12 +290,14 @@ where
 
                             move |max_dist: usize| {
                                 // this is the distance as determined by the DNS sequence distance function
-                                let real_distance = vsample.distance_with_limit(
-                                    s,
-                                    max_dist.min(abs_threshold),
-                                    true,
-                                    use_cr_mode,
-                                );
+                                let real_distance = vsample
+                                    .distance_with_limit::<()>(
+                                        s,
+                                        max_dist.min(abs_threshold),
+                                        true,
+                                        use_cr_mode,
+                                    )
+                                    .0;
 
                                 if (real_distance as f32 / length_of_longer_sequence as f32)
                                     > distance_threshold
@@ -302,12 +305,14 @@ where
                                     // In case the distance reaches our threshold, we do not want any result
                                     None
                                 } else {
-                                    let distance = vsample.distance_with_limit(
-                                        s,
-                                        max_dist.min(abs_threshold),
-                                        true,
-                                        use_cr_mode,
-                                    );
+                                    let distance = vsample
+                                        .distance_with_limit::<()>(
+                                            s,
+                                            max_dist.min(abs_threshold),
+                                            true,
+                                            use_cr_mode,
+                                        )
+                                        .0;
                                     // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
                                     let distance_norm =
                                         if distance == 0 {
