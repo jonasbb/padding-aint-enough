@@ -6,6 +6,9 @@ src/protos
 tensorboardlogs
 # Code coverate reports
 cobertura.xml
+notebooks/*.svg
+notebooks/*.pdf
+notebooks/*.png
 
 # Created by https://www.gitignore.io/api/python,rust
 # Edit at https://www.gitignore.io/?templates=python,rust
