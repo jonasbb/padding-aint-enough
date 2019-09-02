@@ -18,10 +18,10 @@ struct Record {
 }
 
 #[derive(StructOpt, Debug)]
-#[structopt(
-    author = "",
-    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
-)]
+#[structopt(global_settings(&[
+    structopt::clap::AppSettings::ColoredHelp,
+    structopt::clap::AppSettings::VersionlessSubcommands
+]))]
 struct CliArgs {
     files_to_check: Vec<String>,
 }

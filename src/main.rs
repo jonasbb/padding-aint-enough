@@ -47,10 +47,10 @@ const DNS_TIMING: &str = "dns-timing.json";
 const DEP_GRAPH: &str = "dependencies.graphml";
 
 #[derive(StructOpt, Debug)]
-#[structopt(
-    author = "",
-    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
-)]
+#[structopt(global_settings(&[
+    structopt::clap::AppSettings::ColoredHelp,
+    structopt::clap::AppSettings::VersionlessSubcommands
+]))]
 struct CliArgs {
     #[structopt(parse(from_os_str))]
     webpage_log: PathBuf,

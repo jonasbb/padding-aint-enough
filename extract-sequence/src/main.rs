@@ -8,15 +8,12 @@ use std::{
 use structopt::StructOpt;
 
 #[derive(Clone, Debug, StructOpt)]
-#[structopt(
-    author = "",
-    raw(
-        // Enable color output for the help
-        setting = "structopt::clap::AppSettings::ColoredHelp",
-        // Print help, if no arguments are given
-        setting = "structopt::clap::AppSettings::ArgRequiredElseHelp"
-    )
-)]
+#[structopt(global_settings(&[
+    structopt::clap::AppSettings::ColoredHelp,
+    structopt::clap::AppSettings::VersionlessSubcommands,
+    // Print help, if no arguments are given
+    structopt::clap::AppSettings::ArgRequiredElseHelp
+]))]
 struct CliArgs {
     /// Print a list of all parsed TLS records
     #[structopt(short = "v", long = "verbose")]

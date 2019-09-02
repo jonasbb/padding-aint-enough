@@ -35,16 +35,16 @@ lazy_static! {
 }
 
 #[derive(StructOpt)]
-#[structopt(
-    author = "",
-    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
-)]
+#[structopt(global_settings(&[
+    structopt::clap::AppSettings::ColoredHelp,
+    structopt::clap::AppSettings::VersionlessSubcommands
+]))]
 struct CliArgs {
     /// Config file for all advanced settings
     #[structopt(
         short = "c",
         long = "config",
-        parse(try_from_os_str = "path_is_file_exists")
+        parse(try_from_os_str = path_is_file_exists)
     )]
     config: PathBuf,
 
@@ -68,7 +68,7 @@ enum SubCommand {
         #[structopt(
             short = "d",
             long = "domain",
-            parse(try_from_os_str = "path_file_exists_and_readable_open")
+            parse(try_from_os_str = path_file_exists_and_readable_open)
         )]
         domain_list: (Box<dyn Read>, PathBuf),
     },
@@ -84,7 +84,7 @@ enum SubCommand {
         #[structopt(
             short = "d",
             long = "domain",
-            parse(try_from_os_str = "path_file_exists_and_readable_open")
+            parse(try_from_os_str = path_file_exists_and_readable_open)
         )]
         domain_list: (Box<dyn Read>, PathBuf),
     },

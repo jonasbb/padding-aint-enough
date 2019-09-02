@@ -74,11 +74,10 @@ struct Config {
 }
 
 #[derive(Clone, Debug, StructOpt)]
-#[structopt(
-    // name = "crossvalidate",
-    author = "",
-    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
-)]
+#[structopt(global_settings(&[
+    structopt::clap::AppSettings::ColoredHelp,
+    structopt::clap::AppSettings::VersionlessSubcommands
+]))]
 struct CliArgs {
     /// Local TLS port
     #[structopt(

@@ -24,10 +24,10 @@ lazy_static! {
 }
 
 #[derive(StructOpt, Debug)]
-#[structopt(
-    author = "",
-    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
-)]
+#[structopt(global_settings(&[
+    structopt::clap::AppSettings::ColoredHelp,
+    structopt::clap::AppSettings::VersionlessSubcommands
+]))]
 struct CliArgs {
     /// Base directory containing per domain a folder which contains the dnstap files
     #[structopt(parse(from_os_str))]

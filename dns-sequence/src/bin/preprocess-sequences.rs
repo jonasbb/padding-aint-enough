@@ -5,10 +5,10 @@ use std::{ffi::OsString, io::Write, path::PathBuf};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(
-    author = "",
-    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
-)]
+#[structopt(global_settings(&[
+    structopt::clap::AppSettings::ColoredHelp,
+    structopt::clap::AppSettings::VersionlessSubcommands
+]))]
 struct CliArgs {
     /// Base directory containing per domain a folder which contains the dnstap files
     #[structopt(parse(from_os_str))]
@@ -30,10 +30,8 @@ struct CliArgs {
     #[structopt(
         long = "simulate",
         default_value = "Normal",
-        raw(
-            possible_values = "&SimulateOption::variants()",
-            case_insensitive = "true"
-        )
+        possible_values = &SimulateOption::variants(),
+        case_insensitive = true
     )]
     simulate: SimulateOption,
     #[structopt(short = "o", long = "out", value_name = "FILE", parse(from_os_str))]

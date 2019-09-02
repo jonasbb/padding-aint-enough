@@ -25,10 +25,10 @@ use string_cache::DefaultAtom as Atom;
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
-#[structopt(
-    author = "",
-    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
-)]
+#[structopt(global_settings(&[
+    structopt::clap::AppSettings::ColoredHelp,
+    structopt::clap::AppSettings::VersionlessSubcommands
+]))]
 struct CliArgs {
     /// Subcommand to execute: Command is more specific set
     #[structopt(subcommand)]
@@ -73,7 +73,10 @@ enum SubCommand {
     /// Perform crossvalidation within the trainings data
     #[structopt(
         name = "crossvalidate",
-        raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+        global_settings(&[
+            structopt::clap::AppSettings::ColoredHelp,
+            structopt::clap::AppSettings::VersionlessSubcommands
+        ])
     )]
     Crossvalidate {
         #[structopt(long = "dist-thres")]
@@ -83,17 +86,18 @@ enum SubCommand {
         #[structopt(
             long = "simulate",
             default_value = "Normal",
-            raw(
-                possible_values = "&SimulateOption::variants()",
-                case_insensitive = "true"
-            )
+            possible_values = &SimulateOption::variants(),
+            case_insensitive = true
         )]
         simulate: SimulateOption,
     },
     /// Perform classification of the test data against the trainings data
     #[structopt(
         name = "classify",
-        raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+        global_settings(&[
+            structopt::clap::AppSettings::ColoredHelp,
+            structopt::clap::AppSettings::VersionlessSubcommands
+        ])
     )]
     Classify {
         /// Data to be classified. Directory containing a folder per domain, like `base_dir`.
@@ -106,10 +110,8 @@ enum SubCommand {
         #[structopt(
             long = "simulate",
             default_value = "Normal",
-            raw(
-                possible_values = "&SimulateOption::variants()",
-                case_insensitive = "true"
-            )
+                possible_values = &SimulateOption::variants(),
+                case_insensitive = true
         )]
         simulate: SimulateOption,
     },

@@ -46,36 +46,44 @@ pub const SERVER_KEY: &[u8] = include_bytes!("../key.pem");
 
 /// Configuration for different sending strategies
 #[derive(Clone, Debug, StructOpt)]
-#[structopt(
-    rename_all = "kebab-case",
-    author = "",
-    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
-)]
+#[structopt(global_settings(&[
+    structopt::clap::AppSettings::ColoredHelp,
+    structopt::clap::AppSettings::VersionlessSubcommands
+]))]
 pub enum Strategy {
     /// Apply no defense mechanism
     #[structopt(
         name = "pass",
-        raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+        global_settings(&[
+            structopt::clap::AppSettings::ColoredHelp,
+            structopt::clap::AppSettings::VersionlessSubcommands
+        ])
     )]
     PassThrough,
     /// Use Constant Rate
-    #[structopt(raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
+    #[structopt(global_settings(&[
+        structopt::clap::AppSettings::ColoredHelp,
+        structopt::clap::AppSettings::VersionlessSubcommands
+    ]))]
     Constant {
         /// The rate in which packets are send specified in ms between them
-        #[structopt(parse(try_from_str = "parse_duration_ms"))]
+        #[structopt(parse(try_from_str = parse_duration_ms))]
         rate: Duration,
     },
     /// Use AdaptivePadding
     #[structopt(
         name = "ap",
-        raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+        global_settings(&[
+            structopt::clap::AppSettings::ColoredHelp,
+            structopt::clap::AppSettings::VersionlessSubcommands
+        ])
     )]
     AdaptivePadding {
         /// Throttle the connection to at most 1 real packet every `throttle-in` ms
-        #[structopt(long = "tin", parse(try_from_str = "parse_duration_ms"))]
+        #[structopt(long = "tin", parse(try_from_str = parse_duration_ms))]
         throttle_in: Option<Duration>,
         /// Throttle the connection to at most 1 outgoing packet every `throttle-out` ms
-        #[structopt(long = "tout", parse(try_from_str = "parse_duration_ms"))]
+        #[structopt(long = "tout", parse(try_from_str = parse_duration_ms))]
         throttle_out: Option<Duration>,
     },
 }
