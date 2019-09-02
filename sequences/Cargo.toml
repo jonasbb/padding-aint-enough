@@ -16,7 +16,7 @@ name = "u8_abs"
 harness = false
 
 [dependencies]
-chrono = { version = "0.4.7", features = [ "serde" ] }
+chrono = { version = "0.4.8", features = [ "serde" ] }
 colored = { version = "1.8.0", optional = true }
 dnstap = { path = "../dnstap" }
 failure = "0.1.5"
