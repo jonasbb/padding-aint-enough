@@ -44,7 +44,7 @@ function run
     sudo tcpdump -i any -f "port 853" -w "/output/website-log.pcap" &
     # Start DNS services
     echo "Starting client proxy"
-    env SSLKEYLOGFILE=/output/website-log.tlskeys.txt RUST_LOG=info /usr/bin/client -l127.0.0.1:8853 -s1.0.0.1:853 --tls ap &
+    env SSLKEYLOGFILE=/output/website-log.tlskeys.txt RUST_LOG=info /usr/bin/client -l127.0.0.1:8853 -s1.0.0.1:853 --tls pass &
     echo "Starting stubby"
     stubby -g -C /etc/stubby/stubby.yml &
     echo "Starting unbound"
@@ -59,7 +59,8 @@ function run
     touch "$CHROME_TMPDIR/First Run"
     echo "Starting Chrome..."
     # Disable the NXDOMAIN hijacking checks (7-15 random TLD lookups)
-    google-chrome \
+    /usr/lib64/chromium-browser/headless_shell \
+        --disable-gpu \
         --disable-background-networking \
         --headless \
         --user-data-dir="$CHROME_TMPDIR" \
@@ -88,7 +89,7 @@ function run
     dig @127.0.0.1 +tries=1 A "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz." >/dev/null 2>&1
     sleep 2
     # Chrome should have exited by now
-    killall google-chrome chrome stubby client
+    killall headless_shell stubby client
     sudo killall fstrm_capture tcpdump
     echo "Kill: " $status
     wait

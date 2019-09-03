@@ -11,20 +11,16 @@ COPY rpms /rpms
 # `libglvnd-glx` to fix the missing libGL.so
 # `mesa-dri-drivers` to fix a missing DRI library
 # `moreutils` for `ts`
-# `nmap-ncat` for nc
+# `nmap-ncat` for `nc`
 # `psmisc` for `killall`
 RUN dnf -y --setopt=tsflags=nodocs update \
     && dnf -y --setopt=tsflags=nodocs install \
-        dnf-plugins-core \
-        fedora-workstation-repositories \
-    && dnf config-manager --set-enabled google-chrome \
-    && dnf -y --setopt=tsflags=nodocs install \
         autoconf \
         bind-utils \
+        chromium-headless \
         fish \
         fstrm-devel \
         git \
-        google-chrome-stable \
         iproute \
         libglvnd-glx \
         libtool \
@@ -80,7 +76,7 @@ RUN sg unbound /usr/sbin/unbound-control-setup -d /etc/unbound/
 COPY bin /usr/bin/
 
 # Mount point to export all data
-VOLUME [ "/output", "/tmp/.X11-unix" ]
+VOLUME [ "/output" ]
 
 # configure the docker user
 USER docker

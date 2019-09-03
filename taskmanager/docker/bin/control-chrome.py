@@ -10,6 +10,7 @@ import typing as t
 # import IPython
 import requests
 from websocket import (
+    WebSocketConnectionClosedException,
     WebSocketTimeoutException,
     create_connection as create_ws_connection,
 )
@@ -104,6 +105,8 @@ def handle_url(url: str, special_url: str, chrome_debug_port: int) -> None:
             print("No more websocket messages from Chrome")
     except WebSocketTimeoutException:
         print("WEBSOCKET TIMEOUT EXCEPTION")
+    except WebSocketConnectionClosedException:
+        pass
     finally:
         json.dump(msglist, open("website-log.json", "w"))
 
