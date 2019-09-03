@@ -24,7 +24,6 @@ use tlsproxy::{
     MyTcpStream, Payload, Strategy, TokioOpensslStream, Transport, SERVER_CERT, SERVER_KEY,
 };
 use tokio::{
-    io::AsyncWriteExt,
     net::{TcpListener, TcpStream},
     prelude::*,
 };
