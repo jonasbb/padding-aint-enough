@@ -59,7 +59,12 @@ function run
     touch "$CHROME_TMPDIR/First Run"
     echo "Starting Chrome..."
     # Disable the NXDOMAIN hijacking checks (7-15 random TLD lookups)
+    # https://superuser.com/questions/1447761/google-chrome-headless-disable-gpu-gives-a-network-error-on-centos
+    # Chromium seems to require user namespaces which are not available in stretch
+    # https://github.com/brave/brave-browser/issues/1986
     /usr/lib64/chromium-browser/headless_shell \
+        --no-sandbox \
+        --disable-features=NetworkService \
         --disable-gpu \
         --disable-background-networking \
         --headless \
