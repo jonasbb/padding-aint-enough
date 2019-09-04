@@ -45,6 +45,26 @@
                 "showReuseMessage": false,
                 "clear": true
             }
+        },
+        {
+            "type": "shell",
+            "label": "Build `dnscapture` Docker Container",
+            "command": "docker build -t projects.cispa.saarland:5005/bushart/encrypted-dns/dnscapture --rm . && docker push projects.cispa.saarland:5005/bushart/encrypted-dns/dnscapture",
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/taskmanager/docker",
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Build `debian-rust-nightly` Docker Container",
+            "command": "docker build -t debian-rust-nightly --rm .",
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/docker",
+            },
+            "problemMatcher": []
         }
     ]
 }
