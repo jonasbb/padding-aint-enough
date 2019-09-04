@@ -1,7 +1,7 @@
 FROM debian:9
 
 # The Rust toolchain to use when building our image.  Set by `hooks/build`.
-ARG TOOLCHAIN=nightly-2019-04-11
+ARG TOOLCHAIN=nightly-2019-08-10
 
 RUN apt-get update && \
     apt-get install -y \
