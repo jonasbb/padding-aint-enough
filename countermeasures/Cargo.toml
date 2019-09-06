@@ -21,7 +21,7 @@ structopt = "0.3.0"
 tokio = "0.2.0-alpha.2"
 tokio-openssl = "0.4.0-alpha.2"
 tokio-timer = { version = "0.3.0-alpha.2", features = [ "async-traits" ] }
-trust-dns-proto = "0.8.0"
+trust-dns-proto = { version = "0.8.0", default-features = false }
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"
