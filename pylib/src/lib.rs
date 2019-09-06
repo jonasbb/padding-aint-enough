@@ -70,7 +70,7 @@ impl PySequence {
     pub fn distance_with_details(
         &self,
         other: &PySequence,
-    ) -> PyResult<(usize, BTreeMap<&'static str, usize>)> {
+    ) -> PyResult<(usize, BTreeMap<String, usize>)> {
         let (cost, cost_info) = self.sequence.distance_with_limit::<CostTracker>(
             &other.sequence,
             usize::max_value(),

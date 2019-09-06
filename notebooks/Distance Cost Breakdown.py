@@ -21,6 +21,10 @@ import matplotlib.pyplot as plt
 import pylib
 
 # %%
+from collections import OrderedDict
+from natsort import natsorted
+
+# %%
 K = t.TypeVar("K")
 V = t.TypeVar("V")
 
@@ -77,22 +81,47 @@ for domain, seqs in sequences[:]:
         costs = normalize_dict(mc[1], l)
         merge_costs_to_lists(lists, costs)
         total.append(mc[0] / l)
+list_backup = lists
 lists.keys(), len(total)
 
 # %%
+lists_distances = {
+    key: value
+    for key, value in list_backup.items()
+    if "_to_" not in key
+}
+lists_counts = OrderedDict({
+    key: value
+    for key, value in list_backup.items()
+    if "_to_" in key
+})
+
+# %%
+lists = lists_distances
 lists["total"] = total
-labels = lists.keys()
-values = lists.values()
+labels = natsorted(list(lists.keys()))
+values = [lists[l] for l in labels]
 plt.plot([0, len(values)+1], [0, 0], color="black", alpha=0.2)
 plt.boxplot(values, labels=labels)
 plt.ylim(bottom=-0.1, top=6)
+plt.xticks(rotation=90)
 plt.title("Normalized Distances")
 plt.savefig(f"distance-cost-distribution-{len(total)}.svg")
 plt.savefig(f"distance-cost-distribution-{len(total)}.png")
 plt.show()
 
 # %%
-a = 1
+lists = lists_counts
+labels = natsorted(list(lists.keys()))
+values = [lists[l] for l in labels]
+plt.plot([0, len(values)+1], [0, 0], color="black", alpha=0.2)
+plt.boxplot(values, labels=labels)
+plt.ylim(bottom=-0.1)
 
+plt.xticks(rotation=90)
+plt.title("Normalized Distances")
+plt.savefig(f"distance-cost-distribution-{len(total)}.svg")
+plt.savefig(f"distance-cost-distribution-{len(total)}.png")
+plt.show()
 
 # %%

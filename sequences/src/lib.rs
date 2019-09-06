@@ -328,10 +328,13 @@ impl Sequence {
             return (cost, cost_info);
         }
 
-        let mut prev_prev_row: Vec<(usize, DCI)> =
-            vec![(0usize, DCI::default()); smaller.0.len() + 1];
+        type RowType<DCI> = Vec<(usize, DCI)>;
+
+        let mut prev_prev_row: RowType<DCI> = (0..smaller.0.len() + 1)
+            .map(|_| (0, DCI::default()))
+            .collect();
         let mut cost = 0;
-        let mut previous_row: Vec<(usize, DCI)> = Some((0, DCI::default()))
+        let mut previous_row: RowType<DCI> = Some((0, DCI::default()))
             .into_iter()
             .chain(smaller.0.iter().map(|&elem| {
                 cost += elem.insert_cost();
@@ -339,7 +342,9 @@ impl Sequence {
                 (cost, cost_info)
             }))
             .collect();
-        let mut current_row = vec![(0usize, DCI::default()); smaller.0.len() + 1];
+        let mut current_row: RowType<DCI> = (0..smaller.0.len() + 1)
+            .map(|_| (0, DCI::default()))
+            .collect();
         debug_assert_eq!(
             previous_row.len(),
             current_row.len(),
@@ -403,8 +408,9 @@ impl Sequence {
             mem::swap(&mut previous_row, &mut current_row);
         }
 
-        *previous_row
+        previous_row
             .last()
+            .cloned()
             .expect("The rows are never empty, thus there is a last.")
     }
 
@@ -862,7 +868,7 @@ pub struct UnmatchedClientQuery {
     pub size: u32,
 }
 
-pub trait DistanceCostInfo: Copy + Default {
+pub trait DistanceCostInfo: Clone + Default {
     /// Indicates that the insert operation was the cheapest and the current cost is `cost`.
     #[must_use]
     fn insert(&self, cost: usize, elem1: SequenceElement) -> Self;
@@ -890,7 +896,7 @@ impl DistanceCostInfo for () {
     fn abort(&self) -> Self {}
 }
 
-#[derive(Debug, Copy, Clone, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct CostTracker {
     pub insert_gap: usize,
     pub insert_size: usize,
@@ -905,25 +911,32 @@ pub struct CostTracker {
     pub swap_size_gap: usize,
     pub swap_size_size: usize,
     pub is_abort: bool,
+    pub from_gap_to_gap: Arc<BTreeMap<(u8, u8), usize>>,
     current_cost: usize,
 }
 
 impl CostTracker {
-    pub fn as_btreemap(&self) -> BTreeMap<&'static str, usize> {
+    pub fn as_btreemap(&self) -> BTreeMap<String, usize> {
         let mut res = BTreeMap::default();
-        res.insert("insert_gap", self.insert_gap);
-        res.insert("insert_size", self.insert_size);
-        res.insert("delete_gap", self.delete_gap);
-        res.insert("delete_size", self.delete_size);
-        res.insert("substitute_gap_gap", self.substitute_gap_gap);
-        res.insert("substitute_gap_size", self.substitute_gap_size);
-        res.insert("substitute_size_gap", self.substitute_size_gap);
-        res.insert("substitute_size_size", self.substitute_size_size);
-        res.insert("swap_gap_gap", self.swap_gap_gap);
-        res.insert("swap_gap_size", self.swap_gap_size);
-        res.insert("swap_size_gap", self.swap_size_gap);
-        res.insert("swap_size_size", self.swap_size_size);
-        res.insert("is_abort", self.is_abort as usize);
+
+        // Convert all the gap-to-gap counts
+        for ((from, to), &count) in &*self.from_gap_to_gap {
+            res.insert(format!("gap({})_to_gap({})", from, to), count);
+        }
+
+        res.insert("insert_gap".into(), self.insert_gap);
+        res.insert("insert_size".into(), self.insert_size);
+        res.insert("delete_gap".into(), self.delete_gap);
+        res.insert("delete_size".into(), self.delete_size);
+        res.insert("substitute_gap_gap".into(), self.substitute_gap_gap);
+        res.insert("substitute_gap_size".into(), self.substitute_gap_size);
+        res.insert("substitute_size_gap".into(), self.substitute_size_gap);
+        res.insert("substitute_size_size".into(), self.substitute_size_size);
+        res.insert("swap_gap_gap".into(), self.swap_gap_gap);
+        res.insert("swap_gap_size".into(), self.swap_gap_size);
+        res.insert("swap_size_gap".into(), self.swap_size_gap);
+        res.insert("swap_size_size".into(), self.swap_size_size);
+        res.insert("is_abort".into(), self.is_abort as usize);
         res
     }
 
@@ -931,7 +944,7 @@ impl CostTracker {
     where
         F: Fn(&mut Self, usize),
     {
-        let mut res = *self;
+        let mut res = self.clone();
         let diff = cost - self.current_cost;
         res.current_cost = cost;
         f(&mut res, diff);
@@ -953,7 +966,14 @@ impl DistanceCostInfo for CostTracker {
         })
     }
     fn substitute(&self, cost: usize, elem1: SequenceElement, elem2: SequenceElement) -> Self {
-        self.update(cost, |x, diff| match (elem1, elem2) {
+        let mut this = self.clone();
+        if self.current_cost != cost {
+            if let (SequenceElement::Gap(g1), SequenceElement::Gap(g2)) = (elem1, elem2) {
+                let bmap = Arc::make_mut(&mut this.from_gap_to_gap);
+                *bmap.entry((g1, g2)).or_insert(0) += 1;
+            }
+        }
+        this.update(cost, |x, diff| match (elem1, elem2) {
             (SequenceElement::Gap(_), SequenceElement::Gap(_)) => x.substitute_gap_gap += diff,
             (SequenceElement::Gap(_), SequenceElement::Size(_)) => x.substitute_gap_size += diff,
             (SequenceElement::Size(_), SequenceElement::Gap(_)) => x.substitute_size_gap += diff,
@@ -969,7 +989,7 @@ impl DistanceCostInfo for CostTracker {
         })
     }
     fn abort(&self) -> Self {
-        let mut res = *self;
+        let mut res = self.clone();
         res.is_abort = true;
         res
     }
