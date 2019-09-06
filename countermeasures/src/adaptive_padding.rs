@@ -10,7 +10,7 @@ use std::{
     pin::Pin,
     time::{Duration, Instant},
 };
-use tokio_timer::Delay;
+use tokio_timer::{delay, Delay};
 
 const DURATION_MAX: Duration = Duration::from_secs(3600 * 24 * 365);
 const DURATION_ONE_MS: Duration = Duration::from_millis(1);
@@ -117,7 +117,7 @@ where
         let mut res = Self {
             stream: Box::new(stream),
             eipi: DURATION_MAX,
-            deadline: Delay::new(Instant::now() + DURATION_MAX),
+            deadline: delay(Instant::now() + DURATION_MAX),
             intra_burst_gaps: Vec::default(),
             inter_burst_gaps: Vec::default(),
             last_created_item: Instant::now(),

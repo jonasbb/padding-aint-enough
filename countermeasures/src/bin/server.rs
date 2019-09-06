@@ -1,7 +1,5 @@
 #![deny(rust_2018_compatibility)]
 #![warn(rust_2018_idioms)]
-// enable async/await support
-#![feature(async_await)]
 
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
 use failure::Fail;
@@ -161,8 +159,13 @@ fn run() -> Result<(), Error> {
         ),
     }
 
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    rt.block_on(async_run(config))
+}
+
+async fn async_run(    config: Config) -> Result<(), Error> {
     // Create a TCP listener which will listen for incoming connections.
-    let socket = TcpListener::bind(&config.args.listen)?;
+    let socket = TcpListener::bind(&config.args.listen).await?;
     println!(
         "Listening on: {}\nProxying to: {}\n",
         config.args.listen, config.args.server
@@ -191,9 +194,7 @@ fn run() -> Result<(), Error> {
             )));
             future::ready(())
         });
-
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    rt.block_on(done);
+    done.await;
     Ok(())
 }
 
@@ -327,7 +328,8 @@ async fn connect_to_server(
     config: &Config,
 ) -> Result<(impl AsyncRead, impl AsyncWrite), Error> {
     // Open a tcp connection. This is always needed
-    let server = TcpStream::connect(&server_addr.socket_addr()).await?;
+    let server_socket_addr = server_addr.socket_addr();
+    let server = TcpStream::connect(&server_socket_addr).await?;
     server.set_nodelay(true)?;
 
     let server: MyStream<_> = match config.transport {

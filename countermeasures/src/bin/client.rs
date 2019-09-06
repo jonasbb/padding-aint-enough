@@ -1,7 +1,5 @@
 #![deny(rust_2018_compatibility)]
 #![warn(rust_2018_idioms)]
-// Enable async/await support
-#![feature(async_await)]
 
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
 use chrono::{SecondsFormat, Utc};
@@ -149,8 +147,13 @@ fn run() -> Result<(), Error> {
         std::env::set_var("SSLKEYLOGFILE", file.to_path_buf());
     }
 
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    rt.block_on(async_run(cli_args))
+}
+
+async fn async_run(cli_args: CliArgs) -> Result<(), Error> {
     // Create a TCP listener which will listen for incoming connections.
-    let socket = TcpListener::bind(&cli_args.listen)?;
+    let socket = TcpListener::bind(&cli_args.listen).await?;
     println!(
         "Listening on: {}\nProxying to: {}\n",
         cli_args.listen, cli_args.server
@@ -192,9 +195,7 @@ fn run() -> Result<(), Error> {
             tokio::spawn(print_error(handle_client(config.clone(), client)));
             future::ready(())
         });
-
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    rt.block_on(done);
+    done.await;
     Ok(())
 }
 
@@ -202,7 +203,8 @@ async fn handle_client(config: Arc<Config>, client: Result<TcpStream, Error>) ->
     let client = client?;
     client.set_nodelay(true)?;
 
-    let server = TcpStream::connect(&config.args.server.socket_addr()).await?;
+    let server_socket_addr = config.args.server.socket_addr();
+    let server = TcpStream::connect(&server_socket_addr).await?;
     server.set_nodelay(true)?;
     let mut connector = SslConnector::builder(SslMethod::tls())?;
     connector.set_min_proto_version(Some(SslVersion::TLS1_2))?;
