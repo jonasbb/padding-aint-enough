@@ -17,20 +17,25 @@ The order in which steps are executed often matters, therefore this shall includ
 ### Collecting a single trace
 
 1. First `fstrm_capture` needs to be started to provide the dnstap logging socket in the system.
-2. Restarting Unbound is necessary to make it use the new socket directly, otherwise it may take some time until Unbound connnects.
-3. Chrome needs to be started next.
+    Likewise `tcpdump` should be started early to capture all outgoing DNS traffic.
+2. Proxies like `stubby` and our countermeasure proxies are started next, such that they are availble before `Unbound` is started.
+3. Now `Unbound can be started which can directly connect to the internet via the proxies and log via dnstap.
+4. Chrome(ium) needs to be started next.
     Chromes startup procedure triggers domain lookups to some Google domains.
+    This is less of a problem with Chromium.
     Since Google domains are widespread on the internet, we need to make sure to flush these domains from the cache.
     A new user data dir should be created to ensure that the profile is empty and does not contain data from previous runs.
     We already start the configuration of Chrome, like enabeling all the debug tools we will use later.
-4. Now all the processes are initializes to an empty running state.
+5. Now all the processes are initializes to an empty running state.
     Next is to flush Unbounds cache and pre-load the TLD list.
     We can speed up the pre-loading step, by loading a cache dump of an already pre-loaded Unbound instance.
-5. Now all the initialization is done.
-    We need to mark this in the dnstap file somehow, as we need to split the initializatio from the actual data later.
+6. Now all the initialization is done.
+    We need to mark this in the dnstap file somehow, as we need to split the initialization from the actual data later.
     A query to a non-existing domain like `start.example.` works well.
-6. Now we navigate Chrome to the webpage we want to record and wait until the webpage is finished loading or until the wall-clock timer runns out.
-7. The end of the experiment phase can be marked analoge to step 5.
+    Using pcap files requires that we can also identify the start and end in them.
+    Here the easiest is to use a very long domain name, e.g., 255 characters, as these never appear in the wild and are therefore easily identifyable in the pcap by their size.
+7. Now we navigate Chrome(ium) to the webpage we want to record and wait until the webpage is finished loading or until the wall-clock timer runns out.
+8. The end of the experiment phase can be marked analoge to step 5.
 
 ### Collecting multiple traces
 
