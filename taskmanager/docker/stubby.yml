@@ -110,9 +110,13 @@ listen_addresses:
 #              key
 #   tls_port: Port for TLS (default is 853)
 upstream_recursive_servers:
-  - address_data: 127.0.0.1
-    port: 8853
-    tls_port: 8853
-    tls_pubkey_pinset:
-      - digest: "sha256"
-        value: oixODonr6ILicbNOh3u66wOsOJRFZ9+c1pC3uT4txpg=
+  # - address_data: 127.0.0.1
+  #   port: 8853
+  #   tls_port: 8853
+  #   tls_pubkey_pinset:
+  #     - digest: "sha256"
+  #       value: oixODonr6ILicbNOh3u66wOsOJRFZ9+c1pC3uT4txpg=
+  - address_data: 1.1.1.1
+    port: 853
+    tls_port: 853
+    tls_auth_name: "onedotonedotonedotone.cloudflare-dns.com"
