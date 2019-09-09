@@ -48,6 +48,17 @@ def handle_url(url: str, special_url: str, chrome_debug_port: int) -> None:
     ws.send(
         json.dumps(
             {
+                "id": 31,
+                "method": "Network.setUserAgentOverride",
+                "params": {
+                    "userAgent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
+                },
+            }
+        )
+    )
+    ws.send(
+        json.dumps(
+            {
                 "id": 32,
                 "method": "Target.setAutoAttach",
                 "params": {"autoAttach": True, "waitForDebuggerOnStart": True},
