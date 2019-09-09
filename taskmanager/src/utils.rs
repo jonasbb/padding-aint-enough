@@ -63,7 +63,7 @@ pub fn docker_run(
         "run",
         "--privileged",
         "--cpus",
-        "1",
+        "4",
         &format!("--cidfile={}/cidfile", host_dir.to_string_lossy()),
         "-v",
         &format!("{}:/output", host_dir.to_string_lossy()),

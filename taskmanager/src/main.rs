@@ -345,7 +345,7 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                     .with_context(|_| format!("{}: Failed to copy cache.dump", task.name()))?;
                 fs::write(
                     tmp_dir.path().join("domain"),
-                    &format!("http://{}", task.domain()),
+                    &format!("http://www.{}", task.domain()),
                 )
                 .with_context(|_| format!("{}: Failed to create file `domain`", task.name()))?;
 
