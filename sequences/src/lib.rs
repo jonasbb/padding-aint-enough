@@ -970,7 +970,9 @@ impl DistanceCostInfo for CostTracker {
         if self.current_cost != cost {
             if let (SequenceElement::Gap(g1), SequenceElement::Gap(g2)) = (elem1, elem2) {
                 let bmap = Arc::make_mut(&mut this.from_gap_to_gap);
-                *bmap.entry((g1, g2)).or_insert(0) += 1;
+                let min = g1.min(g2);
+                let max = g1.max(g2);
+                *bmap.entry((min, max)).or_insert(0) += 1;
             }
         }
         this.update(cost, |x, diff| match (elem1, elem2) {
