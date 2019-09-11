@@ -60,5 +60,6 @@ test:cargo:
 
 shellcheck:
   image: koalaman/shellcheck-alpine
+  cache: {}
   script:
-    - find -name \*.sh -exec shellcheck --color=always {} \;
+    - shellcheck --color=always $(find . -name \*.sh)
