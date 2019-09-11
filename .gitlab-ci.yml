@@ -57,3 +57,8 @@ test:cargo:
   - python3 -c "import pylib; help(pylib)"
 
   - sccache --show-stats
+
+shellcheck:
+  image: koalaman/shellcheck-alpine
+  script:
+    - find -name \*.sh -exec shellcheck --color=always {} \;
