@@ -1,4 +1,4 @@
-use crate::{AbstractQueryResponse, PrecisionSequence, Sequence};
+use crate::{bounded_buffer::BoundedBuffer, AbstractQueryResponse, PrecisionSequence, Sequence};
 use chrono::NaiveDateTime;
 use colored::Colorize;
 use failure::{bail, format_err, Error, ResultExt};
@@ -186,6 +186,8 @@ pub fn extract_tls_records(
     // r2: t2
     // Therefore, we cannot update the time until after we successfully parsed r.
     let mut next_time: HashMap<FlowId, Option<NaiveDateTime>> = HashMap::default();
+    // Keep a list of flowids and processed sequence numbers to be able to detect retransmissions
+    let mut seen_sequences: BoundedBuffer<(FlowId, u32)> = BoundedBuffer::new(30);
 
     (|| {
         'packet: loop {
@@ -257,6 +259,12 @@ pub fn extract_tls_records(
             let payload = &tcp.payload()[0..payload_length];
             // Filter empty acknowledgements
             if payload.is_empty() {
+                continue;
+            }
+
+            // We only want to keep unique entries and filter out all retransmissions
+            if !seen_sequences.add((flowid, tcp.get_sequence())) {
+                // This is a retransmission, so do not process it
                 continue;
             }
 

@@ -1,3 +1,5 @@
+#[cfg(feature = "read_pcap")]
+mod bounded_buffer;
 mod constants;
 pub mod knn;
 mod load_sequence;
