@@ -487,21 +487,21 @@ pub fn process_pcap(
     // let file = "./tests/data/CF-constant-rate-400ms-2packets.pcap";
     let mut records = extract_tls_records(&file)?;
 
-    // If verbose show all records in RON notation
-    if verbose {
-        println!(
-            "{}\n{}\n",
-            "List of all TLS records in RON notation:".underline(),
-            ron::ser::to_string_pretty(
-                &records,
-                ron::ser::PrettyConfig {
-                    enumerate_arrays: true,
-                    ..Default::default()
-                }
-            )
-            .unwrap()
-        );
-    }
+    // // If verbose show all records in RON notation
+    // if verbose {
+    //     println!(
+    //         "{}\n{}\n",
+    //         "List of all TLS records in RON notation:".underline(),
+    //         ron::ser::to_string_pretty(
+    //             &records,
+    //             ron::ser::PrettyConfig {
+    //                 enumerate_arrays: true,
+    //                 ..Default::default()
+    //             }
+    //         )
+    //         .unwrap()
+    //     );
+    // }
 
     if filter.is_none() {
         filter = (|| -> Result<Option<SocketAddrV4>, Error> {
@@ -550,11 +550,14 @@ pub fn process_pcap(
         tmp = filter_tls_records(tmp, (*filter.ip(), filter.port()));
         mem::swap(records, &mut tmp);
     });
-    if interative {
-        println!("{}", "TLS Records with DNS responses:".underline());
-        for r in records.values().flat_map(std::convert::identity).sorted() {
-            println!("{:?}", r);
-        }
+    if verbose {
+        // println!("{}", "TLS Records with DNS responses:".underline());
+        let records: Vec<_> = records
+            .values()
+            .flat_map(std::convert::identity)
+            .sorted()
+            .collect();
+        eprintln!("{}", serde_json::to_string_pretty(&records).unwrap());
     }
 
     Ok(records)
