@@ -6,8 +6,11 @@ use failure::Error;
 use pyo3::{
     self, basic::CompareOp, exceptions::Exception, prelude::*, types::PyType, PyObjectProtocol,
 };
-use sequences::{load_all_dnstap_files_from_dir, CostTracker, OneHotEncoding, Sequence};
-use std::{collections::BTreeMap, path::Path};
+use sequences::{
+    load_all_files_with_extension_from_dir_with_config, CostTracker, LoadDnstapConfig,
+    OneHotEncoding, Sequence,
+};
+use std::{collections::BTreeMap, ffi::OsStr, path::Path};
 
 fn error2py(err: Error) -> PyErr {
     PyErr::new::<Exception, _>(format!("{}", err.display_causes()))
@@ -19,6 +22,9 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PySequence>()?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
+    /// load_file(path, /)
+    /// --
+    ///
     /// Load a dnstap file from disk and create a `Sequence` object
     #[pyfn(m, "load_file")]
     fn load_file(path: String) -> PyResult<PySequence> {
@@ -26,11 +32,26 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
         Ok(seq.into())
     }
 
-    /// Load a whole folder of dnstap files
+    /// load_folder(path, extension = "dnstap", /)
+    /// --
+    ///
+    /// Load a whole folder of files with given `extension`.
+    /// `extension` defaults to the value "dnstap".
     #[pyfn(m, "load_folder")]
-    fn load_folder(py: Python<'_>, path: String) -> PyResult<Vec<(String, Vec<PySequence>)>> {
+    fn load_folder(
+        py: Python<'_>,
+        path: String,
+        extension: Option<String>,
+    ) -> PyResult<Vec<(String, Vec<PySequence>)>> {
+        let extension = extension.unwrap_or_else(|| "dnstap".to_string());
         let seqs = py
-            .allow_threads(|| load_all_dnstap_files_from_dir(Path::new(&path)))
+            .allow_threads(|| {
+                load_all_files_with_extension_from_dir_with_config(
+                    Path::new(&path),
+                    &OsStr::new(&extension),
+                    LoadDnstapConfig::Normal,
+                )
+            })
             .map_err(error2py)?;
         Ok(seqs
             .into_iter()
