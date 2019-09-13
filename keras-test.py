@@ -19,14 +19,15 @@ HIDDEN_SIZE = 128
 BATCH_SIZE = 128
 LAYERS = 1
 
-datapath = "/mnt/data/Downloads/new-task-setup/2018-10-01-no-dnssec/views/split0/"
+# datapath = "/mnt/data/Downloads/new-task-setup/2018-10-01-no-dnssec/views/split0/"
+datapath = "/home/jbushart/tmp/"
 
 FAILED_DOMAINS_LIST = (
     "/mnt/data/Downloads/new-task-setup/2018-10-01-no-dnssec/failed_domains_final.csv"
 )
 CONFUSION_DOMAINS_LISTS = [
-    "/home/jbushart/projects/confusion_domains/redirects.csv",
-    "/home/jbushart/projects/encrypted-dns/results/2018-10-09-no-dnssec/confusion_domains.csv",
+    # "/home/jbushart/projects/confusion_domains/redirects.csv",
+    "/home/jbushart/projects/encrypted-dns/results/2018-10-09-no-dnssec/confusion_domains.csv"
 ]
 
 
@@ -96,7 +97,7 @@ def shuffle_in_unison_scary(a: np.array, b: np.array) -> t.Tuple[np.array, np.ar
 
 
 def main() -> None:
-    m = (0, 0, 0, 0, 0, 0, 0)
+    m = (0, 0)
 
     canonicalizer = Canonicalize()
     files_to_ignore = load_files_to_ignore()
@@ -104,12 +105,12 @@ def main() -> None:
     sequences = [
         [
             pylib.load_file(f)
-            for f in glob(path.join(datapath, "*", f"*{i}.dnstap*"))
+            for f in glob(path.join(datapath, "*", f"*{i}-0.dnstap*"))
             if sanitize_file_name(f) not in files_to_ignore
         ]
         for i in range(10)
     ]
-    training_raw = [[s.to_one_hot_encoding() for s in seqs] for seqs in sequences]
+    training_raw = [[s.to_vector_encoding() for s in seqs] for seqs in sequences]
     labels = [[get_label(s.id(), canonicalizer) for s in seqs] for seqs in sequences]
     del sequences
 
@@ -197,7 +198,10 @@ def main() -> None:
                 tr,
                 la,
                 validation_data=(val_data, val_labels),
-                epochs=1,
+                epochs=10,
+                steps_per_epoch=5,
+                validation_steps=5,
+                shuffle=False,
                 callbacks=[tensorboard],
             )
 

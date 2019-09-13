@@ -106,8 +106,14 @@ impl PySequence {
         Ok(self.sequence.classify())
     }
 
+    /// Convert the Sequence into a List of Lists suitable for ML.
     pub fn to_one_hot_encoding(&self) -> PyResult<Vec<OneHotEncoding>> {
         Ok(self.sequence.to_one_hot_encoding())
+    }
+
+    /// Convert the Sequence into a List of Lists suitable for ML.
+    pub fn to_vector_encoding(&self) -> PyResult<Vec<(u16, u16)>> {
+        Ok(self.sequence.to_vector_encoding())
     }
 
     /// Returns the number of elements in this sequence

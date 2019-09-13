@@ -255,6 +255,14 @@ impl Sequence {
             .collect()
     }
 
+    pub fn to_vector_encoding(&self) -> Vec<(u16, u16)> {
+        self.0
+            .iter()
+            .cloned()
+            .map(SequenceElement::to_vector_encoding)
+            .collect()
+    }
+
     /// Return the distance to the `other` [`Sequence`].
     pub fn distance(&self, other: &Self) -> usize {
         self.distance_with_limit::<()>(other, usize::max_value(), false, false)
@@ -699,6 +707,14 @@ impl SequenceElement {
             Size(s) => panic!("One Hot Encoding only works for Sequences not exceeding a Size({}), but found a Size({})", len - 1, s),
         }
         res
+    }
+
+    fn to_vector_encoding(self) -> (u16, u16) {
+        use self::SequenceElement::*;
+        match self {
+            Size(s) => (s as u16, 0),
+            Gap(g) => (0, g as u16),
+        }
     }
 }
 
