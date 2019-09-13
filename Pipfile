@@ -4,11 +4,15 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+ipython = ">=7.8.0"
+keras = ">=2.2.5"
 matplotlib = ">=2.2.2"
 numpy = ">=1.14"
+pylib = {editable = true,path = "./pylib"}
 python-dateutil = ">=2.7.2"
 requests = ">=2.18.4"
 scipy = ">=1.0.0"
+tensorflow = ">=1.14.0"
 websocket-client = ">=0.37.0"
 
 [dev-packages]
