@@ -69,7 +69,7 @@ def normalize_dict(d: t.Dict[K, int], r: int) -> t.Dict[K, float]:
 
 
 # %%
-sequences = pylib.load_folder("/mnt/data/Downloads/dnscaptures-main-group/")
+sequences = pylib.load_folder("/mnt/data/Downloads/dnscaptures-2019-09-06/extracted")
 
 # %%
 lists: t.Dict[str, t.List[float]] = {}
@@ -79,6 +79,10 @@ for domain, seqs in sequences[:]:
         l = max(a.len(), b.len())
         mc: t.Tuple[int, t.Dict[str, int]] = a.distance_with_details(b)
         costs = normalize_dict(mc[1], l)
+        # Insert fake entries for all non-existing transitions
+        for a in range(1, 15):
+            for b in range(1, 15):
+                costs.setdefault(f"gap({a})_to_gap({b})", 0)
         merge_costs_to_lists(lists, costs)
         total.append(mc[0] / l)
 list_backup = lists
@@ -93,7 +97,10 @@ lists_distances = {
 lists_counts = OrderedDict({
     key: value
     for key, value in list_backup.items()
-    if "_to_" in key
+    # Only keep the entry if at least one value is not 0
+    # If all values are 0 this means the key was generated artificially above
+    # and carries no information about the DNS Sequences because this gap transformation was never seen
+    if "_to_" in key and max(value) > 0
 })
 
 # %%
