@@ -17,7 +17,7 @@
 # %% [markdown]
 # # PCAP to DNSTAP Differences
 #
-# The list of the 20 most problematic sequences can be found here: https://projects.cispa.saarland/bushart/encrypted-dns/issues/43  
+# The list of the 20 most problematic sequences can be found here: https://projects.cispa.saarland/bushart/encrypted-dns/issues/43
 # A copy is provided below.
 
 # %% [markdown]
@@ -45,8 +45,10 @@
 # |    ❌     | wetter.com            |     1706 |                       /mnt/data/Downloads/dnscaptures-2019-09-06/extracted/wetter.com/wetter.com-9-0.dnstap.xz |
 
 # %%
-import pylib
+import json
 from pprint import pprint
+
+import pylib
 
 # %%
 file = "/home/jbushart/tmp/wetter.com/wetter.com-9-0.dnstap.xz"
@@ -70,8 +72,6 @@ print(f"{'Message Count':<15}:{s1.message_count():>10}+4{s2.message_count():>10}
 # * Only include DNS responses: `dns.flags.response == 1`
 # * Export JSON using `Export Packet Dissections` → `As JSON...`
 
-# %%
-import json
 
 # %%
 j = json.load(open("/home/jbushart/tmp/wetter.com/tmp.json"))
@@ -83,14 +83,18 @@ for entry in j:
     assert len(queries) == 1
     query_name = next(iter(queries.values()))["dns.qry.name"]
     query_names.append(query_name)
-    
-print(f"In the pcap there are {len(query_names)} responses of which {len(set(query_names))} are unique.")
+
+print(
+    f"In the pcap there are {len(query_names)} responses of which {len(set(query_names))} are unique."
+)
 
 # %% [markdown]
 # ## Extract all frame numbers of real DNS responses
 
 # %%
-frame_numbers = [int(entry["_source"]["layers"]["frame"]["frame.number"]) for entry in j]
+frame_numbers = [
+    int(entry["_source"]["layers"]["frame"]["frame.number"]) for entry in j
+]
 
 # %% [markdown]
 # ## Extract all frame numbers of the assumed DNS responses

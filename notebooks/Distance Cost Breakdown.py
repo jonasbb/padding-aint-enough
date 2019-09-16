@@ -15,13 +15,11 @@
 
 # %%
 import typing as t
+from collections import OrderedDict
 from itertools import chain, combinations_with_replacement
 
 import matplotlib.pyplot as plt
 import pylib
-
-# %%
-from collections import OrderedDict
 from natsort import natsorted
 
 # %%
@@ -33,8 +31,12 @@ V = t.TypeVar("V")
 plt.rcParams["figure.figsize"] = [25, 15]
 
 # %%
-s0 = pylib.load_file("/mnt/data/Downloads/dnscaptures-main-group/google.com/google.com-0-0.dnstap.xz")
-s1 = pylib.load_file("/mnt/data/Downloads/dnscaptures-main-group/google.com/google.com-1-0.dnstap.xz")
+s0 = pylib.load_file(
+    "/mnt/data/Downloads/dnscaptures-main-group/google.com/google.com-0-0.dnstap.xz"
+)
+s1 = pylib.load_file(
+    "/mnt/data/Downloads/dnscaptures-main-group/google.com/google.com-1-0.dnstap.xz"
+)
 
 # %%
 s0
@@ -90,25 +92,25 @@ lists.keys(), len(total)
 
 # %%
 lists_distances = {
-    key: value
-    for key, value in list_backup.items()
-    if "_to_" not in key
+    key: value for key, value in list_backup.items() if "_to_" not in key
 }
-lists_counts = OrderedDict({
-    key: value
-    for key, value in list_backup.items()
-    # Only keep the entry if at least one value is not 0
-    # If all values are 0 this means the key was generated artificially above
-    # and carries no information about the DNS Sequences because this gap transformation was never seen
-    if "_to_" in key and max(value) > 0
-})
+lists_counts = OrderedDict(
+    {
+        key: value
+        for key, value in list_backup.items()
+        # Only keep the entry if at least one value is not 0
+        # If all values are 0 this means the key was generated artificially above
+        # and carries no information about the DNS Sequences because this gap transformation was never seen
+        if "_to_" in key and max(value) > 0
+    }
+)
 
 # %%
 lists = lists_distances
 lists["total"] = total
 labels = natsorted(list(lists.keys()))
 values = [lists[l] for l in labels]
-plt.plot([0, len(values)+1], [0, 0], color="black", alpha=0.2)
+plt.plot([0, len(values) + 1], [0, 0], color="black", alpha=0.2)
 plt.boxplot(values, labels=labels)
 plt.ylim(bottom=-0.1, top=6)
 plt.xticks(rotation=90)
@@ -121,7 +123,7 @@ plt.show()
 lists = lists_counts
 labels = natsorted(list(lists.keys()))
 values = [lists[l] for l in labels]
-plt.plot([0, len(values)+1], [0, 0], color="black", alpha=0.2)
+plt.plot([0, len(values) + 1], [0, 0], color="black", alpha=0.2)
 plt.boxplot(values, labels=labels)
 plt.ylim(bottom=-0.1)
 

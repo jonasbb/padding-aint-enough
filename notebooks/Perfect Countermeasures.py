@@ -26,7 +26,6 @@ from copy import deepcopy
 import matplotlib.cm
 import matplotlib.pyplot as plt
 import numpy as np
-
 from common_functions import COLORS2, HATCHES, LABELS
 
 

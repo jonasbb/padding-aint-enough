@@ -24,7 +24,6 @@ import typing as t
 from collections import Counter
 
 import matplotlib.pyplot as plt
-
 from common_functions import COLORS, HATCHES
 
 # %%
@@ -222,9 +221,9 @@ for title, x in counters_per_entropy.items():
         for good, bad in zip(ys_good, ys_bad)
     ]
     # smooth fraction a bit
-    fraction = [sum(x) / len(x) for x in zip(fraction)]#, fraction[1:]
+    fraction = [sum(x) / len(x) for x in zip(fraction)]  # , fraction[1:]
     ax2.step(
-        [0, *xs[:len(fraction)]],
+        [0, *xs[: len(fraction)]],
         [0, *fraction],
         **kwargs,
         color="white",
@@ -233,7 +232,7 @@ for title, x in counters_per_entropy.items():
         linewidth=3,
     )
     ln3 = ax2.step(
-        [0, *xs[:len(fraction)]],
+        [0, *xs[: len(fraction)]],
         [0, *fraction],
         **kwargs,
         color="black",

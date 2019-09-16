@@ -23,7 +23,6 @@ from itertools import cycle
 
 import matplotlib.cm
 import matplotlib.pyplot as plt
-
 from common_functions import autolabel, label2good_label, parse_log_data
 
 # %%
@@ -66,7 +65,7 @@ for i, pdata in enumerate(pdatas):
 
     plt.rcParams.update({"legend.handlelength": 3, "legend.handleheight": 1.5})
 
-    prev_values = [0] * (len(pdata[0][1])-1)
+    prev_values = [0] * (len(pdata[0][1]) - 1)
     total_domains = pdata[0][1][0]
     for label, values in pdata:
         label = label2good_label(label)
@@ -117,13 +116,15 @@ for i, pdata in enumerate(pdatas):
     plt.ylim(0, 100)
     plt.xlim(0.5, len(prev_values) + 0.5)
     # CAREFUL: Those are tiny spaces around the /
-    plt.xticks(range(1, len(prev_values) + 1), [f"{i}" for i in range(1, len(prev_values) + 1)])
+    plt.xticks(
+        range(1, len(prev_values) + 1), [f"{i}" for i in range(1, len(prev_values) + 1)]
+    )
     plt.ylabel("Correctly classified websites in %")
     plt.xlabel(f"At least n / {len(prev_values)} traces correctly classified")
 
     plt.legend(loc="upper right", bbox_to_anchor=(1, 1), borderpad=0, frameon=False)
-#     plt.legend(loc="lower left", bbox_to_anchor=(0, 0), frameon=True)
-#     plt.legend(loc="upper center", ncol=4, mode="expand")
+    #     plt.legend(loc="lower left", bbox_to_anchor=(0, 0), frameon=True)
+    #     plt.legend(loc="upper center", ncol=4, mode="expand")
     plt.tight_layout()
     plt.savefig(f"classification-results-per-domain-k{i*2 + 1}.svg")
     plt.show()
@@ -133,7 +134,7 @@ for i, pdata in enumerate(pdatas):
 pdatas = [
     parse_log_data(
         f"../results/2019-02-11-ow-from-cw/dns-sequence-final-fpr-{fpr}.log"
-#         f"../results/2019-02-09-ow-small/dns-sequence-ow-small-fpr-{fpr}.log"
+        #         f"../results/2019-02-09-ow-small/dns-sequence-ow-small-fpr-{fpr}.log"
     )[0]
     for fpr in range(5, 91, 5)
 ]
@@ -184,7 +185,7 @@ for i, pdata in enumerate(data_per_n):
         prev_values = values
     precision = 1
     if len(pdatas) > 15:
-        precision=0
+        precision = 0
     autolabel(bars, plt, precision=precision)
 
     # CAREFUL: Those are tiny spaces around the =
@@ -199,7 +200,7 @@ for i, pdata in enumerate(data_per_n):
     plt.xlim(0.5, len(xlabels) + 0.5)
 
     plt.legend(loc="upper center", ncol=4, mode="expand")
-#     plt.legend(loc="lower center", ncol=4, mode="expand")
+    #     plt.legend(loc="lower center", ncol=4, mode="expand")
     plt.gcf().set_size_inches(7, 4)
     plt.tight_layout()
     plt.savefig(f"classification-results-per-domain-k7-n{i}.svg")

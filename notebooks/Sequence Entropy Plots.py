@@ -263,4 +263,3 @@ for do_reverse_cumsum in [False, True]:
         plt.close()
 
 # %%
-

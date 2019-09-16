@@ -14,17 +14,18 @@
 # ---
 
 # %%
-import pylib
+from glob import glob
+from os import path
 
-# %%
 import matplotlib.pyplot as plt
+import pylib
+import scipy.stats
+from functional import seq
 
 # %%
 # %matplotlib inline
-plt.rcParams['figure.figsize'] = [15, 10]
+plt.rcParams["figure.figsize"] = [15, 10]
 
-# %%
-from glob import glob
 
 # %%
 base = "/mnt/data/Downloads/dnscaptures-countermeasures/extracted/jsons"
@@ -32,31 +33,26 @@ base = "/mnt/data/Downloads/dnscaptures-countermeasures/extracted/jsons"
 # %%
 dnstaps = glob(base + "/**/*.dnstap.xz.json", recursive=True)
 
-# %%
-from os import path
 
 # %%
 dnstaps2pcap = {
-    dnstap: dnstap.replace(".dnstap.xz.json", ".pcap.json") if path.exists(dnstap.replace(".dnstap.xz.json", ".pcap.json")) else None
+    dnstap: dnstap.replace(".dnstap.xz.json", ".pcap.json")
+    if path.exists(dnstap.replace(".dnstap.xz.json", ".pcap.json"))
+    else None
     for dnstap in dnstaps
 }
 
 # %%
 seqs = {
-    **{
-        f: pylib.load_file(f)
-        for f in dnstaps2pcap.keys()
-    },
-    **{
-        f: pylib.load_file(f)
-        for f in dnstaps2pcap.values() if f is not None
-    }
+    **{f: pylib.load_file(f) for f in dnstaps2pcap.keys()},
+    **{f: pylib.load_file(f) for f in dnstaps2pcap.values() if f is not None},
 }
 
 # %%
 dnstap_dists = {
     dnstap: seqs[dnstap].distance(seqs[pcap])
-    for dnstap, pcap in dnstaps2pcap.items() if pcap is not None
+    for dnstap, pcap in dnstaps2pcap.items()
+    if pcap is not None
 }
 
 # %%
@@ -95,19 +91,16 @@ plt.legend()
 
 
 # %%
-import scipy.stats
-
-# %%
 scipy.stats.describe(pass_dists)
 
 # %%
 scipy.stats.describe(ap_dists)
 
-# %%
-from functional import seq
 
 # %%
-seq(dnstap_dists.items()).filter(lambda x: "_pass" not in x[0] and x[1] < 100).map(lambda x: (*x, seqs[x[0]])).filter(lambda x: x[2].len() > 10)
+seq(dnstap_dists.items()).filter(lambda x: "_pass" not in x[0] and x[1] < 100).map(
+    lambda x: (*x, seqs[x[0]])
+).filter(lambda x: x[2].len() > 10)
 
 # %%
 s = list(seqs.values())[0]
@@ -116,7 +109,9 @@ s = list(seqs.values())[0]
 s.len()
 
 # %%
-seq(dnstap_dists.items()).filter(lambda x: "_pass" in x[0] and x[1] > 1500).map(lambda x: (*x, seqs[x[0]], dnstaps2pcap[x[0]], seqs[dnstaps2pcap[x[0]]]))
+seq(dnstap_dists.items()).filter(lambda x: "_pass" in x[0] and x[1] > 1500).map(
+    lambda x: (*x, seqs[x[0]], dnstaps2pcap[x[0]], seqs[dnstaps2pcap[x[0]]])
+)
 
 
 # %% [markdown]
@@ -139,18 +134,29 @@ def cross_distance(seqs):
 
 # %%
 cross_distance_stats = dict()
-for defence, source in [("ap", "dnstap"),("ap", "pcap"), ("pass", "dnstap"),("pass", "pcap")]:
+for defence, source in [
+    ("ap", "dnstap"),
+    ("ap", "pcap"),
+    ("pass", "dnstap"),
+    ("pass", "pcap"),
+]:
     stream = seq(dnstaps)
-    
+
     if defence == "ap":
         stream = stream.filter(lambda x: "_pass" not in x)
     elif defence == "pass":
         stream = stream.filter(lambda x: "_pass" in x)
-        
+
     if source == "pcap":
         stream = stream.map(lambda x: dnstaps2pcap[x]).filter(lambda x: x is not None)
-        
-    res = stream.sorted().group_by(lambda x: path.dirname(x)).map(lambda x: (x[0], cross_distance([seqs[f] for f in x[1]]))).map(lambda x: (path.basename(x[0]), (x[1], scipy.stats.describe(x[1])))).to_dict()
+
+    res = (
+        stream.sorted()
+        .group_by(lambda x: path.dirname(x))
+        .map(lambda x: (x[0], cross_distance([seqs[f] for f in x[1]])))
+        .map(lambda x: (path.basename(x[0]), (x[1], scipy.stats.describe(x[1]))))
+        .to_dict()
+    )
     cross_distance_stats[(defence, source)] = res
 
 # %%
@@ -182,15 +188,20 @@ plt.ylim(0, 3000)
 
 
 # %%
-dnstap_pass_lengths, dnstap_ap_lengths, pcap_pass_lengths, pcap_ap_lengths = [], [], [], []
+dnstap_pass_lengths, dnstap_ap_lengths, pcap_pass_lengths, pcap_ap_lengths = (
+    [],
+    [],
+    [],
+    [],
+)
 for dnstap, pcap in dnstaps2pcap.items():
     dl, pl = None, None
     if "_pass" not in dnstap:
         dl, pl = dnstap_ap_lengths, pcap_ap_lengths
     else:
-#     elif "_pass" in dnstap:
+        #     elif "_pass" in dnstap:
         dl, pl = dnstap_pass_lengths, pcap_pass_lengths
-    
+
     dnstap = seqs[dnstap]
     dl.append(dnstap.len())
     if pcap is not None:

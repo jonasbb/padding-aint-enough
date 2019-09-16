@@ -28,7 +28,6 @@ from os import path
 import matplotlib.cm
 import matplotlib.pyplot as plt
 import numpy as np
-
 from common_functions import LABELS, autolabel
 
 
@@ -159,9 +158,7 @@ plt.savefig(f"classification-results-{path.basename(fname)}.svg")
 # %%
 res_label_, total_traces_ = zip(
     *[
-        load_stats_file(
-            f"../results/2019-02-11-ow-from-cw/statistics-fpr-{fpr}.csv"
-        )
+        load_stats_file(f"../results/2019-02-11-ow-from-cw/statistics-fpr-{fpr}.csv")
         for fpr in range(5, 91, 5)
     ]
 )
@@ -212,10 +209,7 @@ autolabel(bar, plt, precision=0)
 plt.legend(loc="upper center", ncol=4, mode="expand")
 
 xlabels = [f"{fpr * 5}" for fpr in range(1, len(last_values) + 1)]
-plt.xticks(
-    range(1, len(last_values) + 1),
-    xlabels
-)
+plt.xticks(range(1, len(last_values) + 1), xlabels)
 plt.xlim(0.5, len(res_label[LABELS[0]]) + 0.5)
 plt.ylim(0, 100)
 plt.ylabel("Correctly classified websites in %")

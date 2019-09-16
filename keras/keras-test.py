@@ -118,7 +118,8 @@ def main() -> None:
     longest_sequence = max(max(len(seq) for seq in x) for x in training_raw)
 
     training: t.List[np.array] = [
-        pad_sequences(seqs, maxlen=longest_sequence, value=m, padding='post') for seqs in training_raw
+        pad_sequences(seqs, maxlen=longest_sequence, value=m, padding="post")
+        for seqs in training_raw
     ]
     all_labels: t.Set[str] = set()
     for l in labels:
@@ -140,7 +141,7 @@ def main() -> None:
     # "Encode" the input sequence using an RNN, producing an output of HIDDEN_SIZE.
     # Note: In a situation where your input sequences have a variable length,
     # use input_shape=(None, num_feature).
-    model.add(RNN(HIDDEN_SIZE, return_sequences=True, activation='relu'))
+    model.add(RNN(HIDDEN_SIZE, return_sequences=True, activation="relu"))
     # # As the decoder RNN's input, repeatedly provide with the last output of
     # # RNN for each time step. Repeat 'DIGITS + 1' times as that's the maximum
     # # length of output, e.g., when DIGITS=3, max output is 999+999=1998.
@@ -198,9 +199,8 @@ def main() -> None:
                 tr,
                 la,
                 validation_data=(val_data, val_labels),
-                initial_epoch=(r*8+i)*10,
-                epochs=(r*8+i)*10+10,
-
+                initial_epoch=(r * 8 + i) * 10,
+                epochs=(r * 8 + i) * 10 + 10,
                 # epochs=10,
                 # steps_per_epoch=5,
                 # validation_steps=5,

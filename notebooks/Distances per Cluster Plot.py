@@ -22,16 +22,15 @@ import json
 import matplotlib.pyplot as plt
 
 # %%
-plt.rcParams['figure.figsize'] = [7, 6]
+plt.rcParams["figure.figsize"] = [7, 6]
 
 # %%
 data = json.load(open("./distances-per-cluster.json"))
-misclass_ = [json.loads(x) for x in open('./misclassifications-final-closed-world.json').readlines()]
-misclass = {
-    x['id']: x
-    for x in misclass_
-    if x['k'] == 1
-}
+misclass_ = [
+    json.loads(x)
+    for x in open("./misclassifications-final-closed-world.json").readlines()
+]
+misclass = {x["id"]: x for x in misclass_ if x["k"] == 1}
 del misclass_
 
 # %%
@@ -44,8 +43,13 @@ len(misclass.values())
 v = next(iter(misclass.values()))
 
 # %%
-misclass_distance = [int(x['distance_min']) for v in misclass.values() for x in v['class_result']['options'] if v['label'] != x['name']]
-misclass_distance_avg = sum(misclass_distance)/len(misclass_distance)
+misclass_distance = [
+    int(x["distance_min"])
+    for v in misclass.values()
+    for x in v["class_result"]["options"]
+    if v["label"] != x["name"]
+]
+misclass_distance_avg = sum(misclass_distance) / len(misclass_distance)
 # misclass_distance_avg = sorted(misclass_distance)[int(len(misclass_distance)/2)]
 print("Len:", len(misclass_distance))
 print("Average:", misclass_distance_avg)
@@ -62,7 +66,7 @@ print("Average:", misclass_distance_avg)
 clusterdistances = [
     [
         distance / max(length1, length2)
-#         distance
+        #         distance
         for trace in domain
         for distance, length1, length2 in trace
     ]
@@ -71,7 +75,7 @@ clusterdistances = [
 ]
 
 # %%
-#perc95clusterdistances = [sorted(distances)[:85] for distances in clusterdistances]
+# perc95clusterdistances = [sorted(distances)[:85] for distances in clusterdistances]
 
 # %%
 # sortedperc95clusterdistances = sorted(
@@ -85,7 +89,10 @@ sortedclusterdistances = sorted(
 )
 plt.plot(list(x[-1] for x in sortedclusterdistances), label="Max. Distance per Domain")
 plt.plot(list(x[0] for x in sortedclusterdistances), label="Min. Distance per Domain")
-plt.plot([misclass_distance_avg] * len(sortedclusterdistances), label="Avg. Distance for wrong Classification")
+plt.plot(
+    [misclass_distance_avg] * len(sortedclusterdistances),
+    label="Avg. Distance for wrong Classification",
+)
 # plt.plot(sorted(misclass_distance), linewidth=10)
 plt.xlim(0, len(list(sortedclusterdistances)))
 plt.ylim(bottom=0)
@@ -102,7 +109,11 @@ sortedclusterdistances2 = sorted(
     key=list,
 )
 plt.plot(list(x[-1] for x in sortedclusterdistances2), label="Max. Distance per Domain")
-plt.plot(list(x[0] for x in sortedclusterdistances2), label="Min. Distance per Domain", linewidth=2)
+plt.plot(
+    list(x[0] for x in sortedclusterdistances2),
+    label="Min. Distance per Domain",
+    linewidth=2,
+)
 # plt.plot([misclass_distance_avg] * len(sortedclusterdistances), label="Avg. Distance for wrong Classification", linewidth=2, color="black")
 
 plt.xlim(0, len(list(sortedclusterdistances2)))

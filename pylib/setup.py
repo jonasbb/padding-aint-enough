@@ -1,6 +1,7 @@
 import os
 
 from setuptools import setup
+
 from setuptools_rust import Binding, RustExtension
 
 pylib_force_debug = os.getenv("PYLIB_FORCE_DEBUG", "").lower()
@@ -16,9 +17,7 @@ setup(
     name="pylib",
     version="1.1.0",
     rust_extensions=[
-        RustExtension(
-            "pylib", "Cargo.toml", binding=Binding.PyO3, debug=force_debug
-        )
+        RustExtension("pylib", "Cargo.toml", binding=Binding.PyO3, debug=force_debug)
     ],
     # rust extensions are not zip safe, just like C-extensions.
     zip_safe=False,

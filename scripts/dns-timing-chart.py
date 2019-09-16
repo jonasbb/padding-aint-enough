@@ -46,7 +46,7 @@ def info_from_source(source: str, size: int) -> t.Tuple[str, float, float]:
     color = None
     alpha = None
     if source == "Forwarder":
-        height = 1.
+        height = 1.0
         alpha = 0.66
         if size <= 1 * 468:
             # red
@@ -161,7 +161,7 @@ def main() -> None:
                     (start - min_dns_start, ind - 0.5),
                     (start - min_dns_start, ind + 0.5),
                 )
-                plt.plot((x1, x2), (y1, y2), "k-", linewidth=.5, snap=True)
+                plt.plot((x1, x2), (y1, y2), "k-", linewidth=0.5, snap=True)
             else:
                 width = end - start
                 # if the plot would be too thin, create a wider one but with less alpha

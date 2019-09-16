@@ -3,12 +3,12 @@ import argparse
 import json
 import typing as t
 from urllib.parse import urlparse
+
 import networkx as nx
 
 
 class Resource(object):
-    def __init__(self, name: str, index: int,
-                 **kwargs: t.Dict[t.Any, t.Any]) -> None:
+    def __init__(self, name: str, index: int, **kwargs: t.Dict[t.Any, t.Any]) -> None:
         self.name = name
         self.dnsname = Resource._sanitize_name(name)
         self.index = index
@@ -90,7 +90,7 @@ class ResourceDependenciesFactory(object):
                 node = nodes[i]
                 # search for two unrelated nodes with same DNS name and same dependencies
                 # same DNS name and same dependencies (by DNS name) are actually the same node
-                for other in nodes[i + 1:]:
+                for other in nodes[i + 1 :]:
                     if node.dnsname != other.dnsname:
                         continue
 
@@ -116,18 +116,18 @@ class ResourceDependenciesFactory(object):
 
         print("Names with multiple nodes:")
         import collections
+
         c = collections.Counter(node.dnsname for node in graph.nodes_iter())
         for name, count in c.most_common():
             if count > 1:
                 print("  ", name, count)
 
         for node in graph.nodes():
-            graph.node[node]['label'] = node.dnsname
-            graph.node[node]['fullname'] = node.name
-            graph.node[node]['index'] = str(node.index)
-            graph.node[node]['deps'] = repr(node.get_dependencies())
-        nx.write_graphml(
-            graph, "graph.graphml", encoding="utf-8", prettyprint=True)
+            graph.node[node]["label"] = node.dnsname
+            graph.node[node]["fullname"] = node.name
+            graph.node[node]["index"] = str(node.index)
+            graph.node[node]["deps"] = repr(node.get_dependencies())
+        nx.write_graphml(graph, "graph.graphml", encoding="utf-8", prettyprint=True)
 
 
 FACTORY: ResourceDependenciesFactory = ResourceDependenciesFactory()
@@ -135,13 +135,13 @@ FACTORY: ResourceDependenciesFactory = ResourceDependenciesFactory()
 
 def node_sanitize_name(name: str) -> str:
     if name.startswith("data:"):
-        return "\"data\""
+        return '"data"'
     elif name == "other":
-        return "\"other\""
+        return '"other"'
 
     name = urlparse(name).hostname
     # name = name.replace("https://", "").replace("http://", "")[:100]
-    return f"\"{name}\""
+    return f'"{name}"'
 
 
 def resource_depends_on(resource: str, dependency: str) -> None:
@@ -163,8 +163,9 @@ def parse_file(log: t.IO[str]) -> None:
         add_dependencies_from_initiator(fetch_url, initiator)
 
 
-def add_dependencies_from_initiator(resource: str,
-                                    initiator: t.Dict[str, t.Any]) -> None:
+def add_dependencies_from_initiator(
+    resource: str, initiator: t.Dict[str, t.Any]
+) -> None:
     # TODO maybe carry some identifier as the request ID around
     if initiator["type"] == "other":
         # TODO redirects are type other and have a "redirectResponse"
@@ -177,8 +178,7 @@ def add_dependencies_from_initiator(resource: str,
         raise Exception(f"Unknown initiator type '{initiator['type']}'")
 
 
-def add_dependencies_from_stack(resource: str,
-                                stack: t.Dict[str, t.Any]) -> None:
+def add_dependencies_from_stack(resource: str, stack: t.Dict[str, t.Any]) -> None:
     for frame in stack["callFrames"]:
         resource_depends_on(resource, frame["url"])
 
@@ -190,12 +190,13 @@ def main() -> None:
     global GRAPH, FACTORY  # pylint: disable=W0603
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-f", "--file", type=open, required=True, help="Log file to parse")
+        "-f", "--file", type=open, required=True, help="Log file to parse"
+    )
     args = parser.parse_args()
 
     parse_file(args.file)
     FACTORY.as_graph()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
