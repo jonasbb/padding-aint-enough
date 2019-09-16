@@ -163,7 +163,7 @@ fn run() -> Result<(), Error> {
     rt.block_on(async_run(config))
 }
 
-async fn async_run(    config: Config) -> Result<(), Error> {
+async fn async_run(config: Config) -> Result<(), Error> {
     // Create a TCP listener which will listen for incoming connections.
     let socket = TcpListener::bind(&config.args.listen).await?;
     println!(

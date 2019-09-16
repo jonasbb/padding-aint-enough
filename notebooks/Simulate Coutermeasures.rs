@@ -74,11 +74,11 @@ for &duration in &[100, 50, 25, 12] {
         for seq in new_seqs {
             let mut fpath = base_path.join(seq.id());
             fpath.set_extension("json");
-            
+
             // Write sequence to disc
             std::fs::create_dir_all(fpath.parent().unwrap()).unwrap();
             std::fs::write(&fpath, &seq.to_sequence().to_json().unwrap()).unwrap();
-            
+
             // Add precision sequence to map
             let domain = fpath.parent().unwrap().file_name().unwrap().to_string_lossy().to_string();
             let category = fpath.parent().unwrap().parent().unwrap().file_name().unwrap().to_string_lossy().to_string();
@@ -100,11 +100,11 @@ for &prob in &[0.4, 0.3, 0.2, 0.1] {
     for seq in new_seqs.into_iter() {
         let mut fpath = base_path.join(seq.id());
         fpath.set_extension("json");
-        
+
         // Write sequence to disc
         std::fs::create_dir_all(fpath.parent().unwrap()).unwrap();
         std::fs::write(&fpath, &seq.to_sequence().to_json().unwrap()).unwrap();
-        
+
         // Add precision sequence to map
         let domain = fpath.parent().unwrap().file_name().unwrap().to_string_lossy().to_string();
         let category = fpath.parent().unwrap().parent().unwrap().file_name().unwrap().to_string_lossy().to_string();

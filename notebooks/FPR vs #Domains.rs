@@ -184,7 +184,7 @@ impl<S: Eq + Hash> StatsCollector<S> {
         if known_problems.is_some() {
             return;
         }
-        
+
         let k_stats = self.data.entry(k).or_default();
         k_stats
             .true_domain
@@ -248,7 +248,7 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use prettytable::Row;
-        
+
         let UNICODE_LIGHT_SEP: LineSeparator = LineSeparator::new('─', '┼', '├', '┤');
         let UNICODE_HEAVY_SEP: LineSeparator = LineSeparator::new('━', '┿', '┝', '┥');
         let UNICODE_DOUBLE_SEP: LineSeparator = LineSeparator::new('═', '╪', '╞', '╡');
