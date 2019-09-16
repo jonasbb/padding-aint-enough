@@ -16,8 +16,8 @@ from keras.preprocessing.sequence import pad_sequences
 # Try replacing GRU, or SimpleRNN.
 RNN = layers.LSTM
 HIDDEN_SIZE = 128
-BATCH_SIZE = 128
-LAYERS = 1
+BATCH_SIZE = 20
+LAYERS = 3
 
 # datapath = "/mnt/data/Downloads/new-task-setup/2018-10-01-no-dnssec/views/split0/"
 datapath = "/home/jbushart/tmp/"
@@ -118,7 +118,7 @@ def main() -> None:
     longest_sequence = max(max(len(seq) for seq in x) for x in training_raw)
 
     training: t.List[np.array] = [
-        pad_sequences(seqs, maxlen=longest_sequence, value=m) for seqs in training_raw
+        pad_sequences(seqs, maxlen=longest_sequence, value=m, padding='post') for seqs in training_raw
     ]
     all_labels: t.Set[str] = set()
     for l in labels:
@@ -140,7 +140,7 @@ def main() -> None:
     # "Encode" the input sequence using an RNN, producing an output of HIDDEN_SIZE.
     # Note: In a situation where your input sequences have a variable length,
     # use input_shape=(None, num_feature).
-    model.add(RNN(HIDDEN_SIZE, return_sequences=True))
+    model.add(RNN(HIDDEN_SIZE, return_sequences=True, activation='relu'))
     # # As the decoder RNN's input, repeatedly provide with the last output of
     # # RNN for each time step. Repeat 'DIGITS + 1' times as that's the maximum
     # # length of output, e.g., when DIGITS=3, max output is 999+999=1998.
@@ -164,10 +164,10 @@ def main() -> None:
 
     tensorboard = keras.callbacks.TensorBoard(
         log_dir="./tensorboardlogs",
-        histogram_freq=0,
-        batch_size=32,
+        histogram_freq=10,
+        batch_size=BATCH_SIZE,
         write_graph=True,
-        write_grads=False,
+        write_grads=True,
         write_images=False,
         embeddings_freq=0,
         embeddings_layer_names=None,
@@ -178,7 +178,7 @@ def main() -> None:
 
     val_data = np.concatenate((training[8], training[9]))
     val_labels = np.concatenate((labels_categorical[8], labels_categorical[9]))
-    for _ in range(200):
+    for r in range(200):
         for i in range(8):
             # You have to shuffle categorical data manually
             # if also using the validation_split
@@ -198,10 +198,14 @@ def main() -> None:
                 tr,
                 la,
                 validation_data=(val_data, val_labels),
-                epochs=10,
-                steps_per_epoch=5,
-                validation_steps=5,
+                initial_epoch=(r*8+i)*10,
+                epochs=(r*8+i)*10+10,
+
+                # epochs=10,
+                # steps_per_epoch=5,
+                # validation_steps=5,
                 shuffle=False,
+                batch_size=BATCH_SIZE,
                 callbacks=[tensorboard],
             )
 
