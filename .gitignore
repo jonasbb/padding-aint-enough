@@ -3,7 +3,6 @@
 *.generated
 cluster*.svg
 src/protos
-tensorboardlogs
 # Code coverate reports
 cobertura.xml
 notebooks/*.svg
