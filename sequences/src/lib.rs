@@ -498,61 +498,7 @@ impl Sequence {
             // No gap
             [Size(_), Size(_), Size(_), Size(_), Size(_), Size(_)] => Some(R106A),
 
-            /*
-            [SequenceElement::Size(1), SequenceElement::Size(2)] => Some(R001),
-            [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1)] => {
-                Some(R002)
-            }
-            [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(2)] => {
-                Some(R003)
-            }
-            [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
-                Some(R005)
-            }
-            [SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
-                Some(R006)
-            }
-            [SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(1), SequenceElement::Size(2), SequenceElement::Size(2)] => {
-                Some(R006_3RD_LVL_DOM)
-            }
-            */
-            _ => {
-                // This part only makes sense when operating on DNSSEC data
-                // This check should be unnecessary now, given that we check for unreachability in
-                // the Chrome debugger messages and retry the loading there already
-                /*
-                let mut is_unreachable_domain = true;
-                {
-                    // Unreachable domains have many requests of Size 1 but never a DNSKEY
-                    let mut iter = self.as_elements().iter().fuse();
-                    // Sequence looks like for Size and Gap
-                    // S G S G S G S G S
-                    // we only need to loop until we find a counter proof
-                    while is_unreachable_domain {
-                        match (iter.next(), iter.next()) {
-                            // This is the end of the sequence
-                            (Some(SequenceElement::Size(1)), None) => break,
-                            // this is the normal, good case
-                            (Some(SequenceElement::Size(1)), Some(SequenceElement::Gap(_))) => {}
-
-                            // This can never happen with the above pattern
-                            (None, None) => is_unreachable_domain = false,
-                            // Sequence may not end on a Gap
-                            (Some(SequenceElement::Gap(_)), None) => is_unreachable_domain = false,
-                            // all other patterns, e.g., different Sizes do not match
-                            _ => is_unreachable_domain = false,
-                        }
-                    }
-                }
-
-                if is_unreachable_domain {
-                    Some(R007)
-                } else {
-                    None
-                }
-                */
-                None
-            }
+            _ => None,
         }
     }
 
