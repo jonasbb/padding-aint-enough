@@ -106,7 +106,7 @@ class Canonicalize:
         res = domain
         try:
             while True:
-                res = self.cache[domain]
+                res = self.cache[res]
         except KeyError:
             res = sys.intern(res)
         return res
@@ -129,10 +129,15 @@ def load_data(
     """
     canonicalizer = Canonicalize(confusion_domains)
 
-    sequences: t.List[t.List[pylib.Sequence]] = [
-        [pylib.load_file(f) for f in glob(os.path.join(datapath, "*", f"*{i}-0.pcap*"))]
-        for i in range(10)
-    ]
+    sequences: t.List[t.List[pylib.Sequence]] = []
+    for i in range(10):
+        print(f"Load shard {i} of DNS Sequences...")
+        sequences.append(
+            [
+                pylib.load_file(f)
+                for f in glob(os.path.join(datapath, "*", f"*{i}-0.pcap*"))
+            ]
+        )
     # Split into ML-ready data and labels
     training_raw = [[s.to_vector_encoding() for s in seqs] for seqs in sequences]
     labels = [
@@ -143,7 +148,6 @@ def load_data(
     # find longest sequence
     longest_sequence = max(max(len(seq) for seq in x) for x in training_raw)
     padding_value = tuple([0] * len(training_raw[0][0][0]))
-    num_features = len(padding_value)
     distinct_categories = len(training_raw[0])
     print(
         f"""Longest Sequence {longest_sequence}
@@ -152,6 +156,7 @@ Distinct Categories: {distinct_categories}
 """
     )
 
+    print("Create trainings and validation sets")
     # Create numpy arrays for training and validation
     training: np.array = pad_sequences(
         [s for seqs in training_raw[:training_validation_split] for s in seqs],
