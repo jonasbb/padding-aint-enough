@@ -41,20 +41,15 @@ def main() -> None:
     NUM_CLASSES = data.classes
 
     p = {
-        "activation": ["elu", "linear", "relu", "sigmoid", "softmax"],
-        "batch_size": [20, 40, 100],
-        "clipnorm": [None, 0.1, 1.0, 10.0, 1000.0],
-        "dropout": [0, 0.25, 0.5, 0.75],
+        "activation": ["softmax"],
+        "batch_size": [20, 40],
+        "clipnorm": [0.1, 0.2, 0.4, 0.6, 0.8, 1.0],
+        "dropout": [0, 0.05, 0.1, 0.15, 0.2, 0.25],
         "epochs": [100],
-        "hidden_size": [32, 64, 128, 256],
-        "layers": [1, 2],
-        "recurrent_dropout": [0, 0.25, 0.5, 0.75],
-        "optimizer": [
-            keras.optimizers.Adadelta,
-            keras.optimizers.Adam,
-            keras.optimizers.Nadam,
-            keras.optimizers.RMSprop,
-        ],
+        "hidden_size": [128],
+        "layers": [1],
+        "recurrent_dropout": [0, 0.05, 0.1, 0.15, 0.2, 0.25],
+        "optimizer": [keras.optimizers.Adam, keras.optimizers.Nadam],
     }
 
     scan_results = talos.Scan(
@@ -65,7 +60,7 @@ def main() -> None:
         params=p,
         model=test_model,
         experiment_name="Basic Sequences",
-        fraction_limit=0.10,
+        fraction_limit=0.20,
         # random_method="quantum",
         reduction_method="correlation",
         reduction_metric="val_accuracy",
