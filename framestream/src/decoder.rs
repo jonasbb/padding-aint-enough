@@ -1,8 +1,8 @@
-use byteorder::*;
-use constants::*;
-use failure::Backtrace;
-use std::io::Cursor;
-use std::io::{self, Read};
+use crate::constants::{CONTROL_ESCAPE, CONTROL_FIELD_CONTENT_TYPE, CONTROL_START, CONTROL_STOP};
+use byteorder::{BigEndian, ReadBytesExt};
+use failure::{Backtrace, Fail};
+use log::trace;
+use std::io::{self, Cursor, Read};
 
 #[derive(Clone, Debug)]
 pub struct DecoderReader<R: Read> {
@@ -25,7 +25,10 @@ pub enum DecodeError {
         magic_bytes: u32,
         backtrace: Backtrace,
     },
-    #[fail(display = "Unwanted Content Type: found '{}' but wants '{}'.", got, expected)]
+    #[fail(
+        display = "Unwanted Content Type: found '{}' but wants '{}'.",
+        got, expected
+    )]
     UnwantedContentType {
         got: String,
         expected: String,

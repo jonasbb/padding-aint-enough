@@ -6,6 +6,7 @@ description = "Frame Streams implementation in Rust"
 license = "ISC"
 homepage = "https://github.com/jedisct1/rust-framestream"
 repository = "https://github.com/jedisct1/rust-framestream"
+edition = "2018"
 
 [dependencies]
 byteorder = "1.3.2"

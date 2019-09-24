@@ -1,5 +1,4 @@
 ignore = [
-    "framestream",
     "taskmanager/src/schema.rs",
 ]
 format_code_in_doc_comments = true
