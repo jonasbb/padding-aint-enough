@@ -138,7 +138,7 @@ fn run() -> Result<(), Error> {
     // generic setup
     let log_settings = "client=debug,tlsproxy=debug";
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_settings))
-        .default_format_timestamp_nanos(true)
+        .format_timestamp_nanos()
         .init();
     openssl_probe::init_ssl_cert_env_vars();
     let cli_args = CliArgs::from_args();
