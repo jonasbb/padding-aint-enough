@@ -2,25 +2,17 @@ mod jsonl;
 mod stats;
 
 use crate::{jsonl::JsonlFormatter, stats::StatsCollector};
-use csv::ReaderBuilder;
 use dns_sequence::{load_all_files, prepare_confusion_domains, SimulateOption};
-use failure::{bail, format_err, Error, ResultExt};
+use failure::{format_err, Error, ResultExt};
 use log::{error, info};
-use misc_utils::fs::{file_open_read, file_open_write, WriteOptions};
+use misc_utils::fs::{file_open_write, WriteOptions};
 use sequences::{
-    common_sequence_classifications::*,
     knn::{self, ClassificationResult},
-    replace_loading_failed, LabelledSequences, Sequence,
+    LabelledSequences, Sequence,
 };
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::Serializer as JsonSerializer;
-use std::{
-    collections::HashMap,
-    ffi::OsString,
-    fs::OpenOptions,
-    io::{BufReader, Write},
-    path::{Path, PathBuf},
-};
+use std::{ffi::OsString, fs::OpenOptions, io::Write, path::PathBuf};
 use string_cache::DefaultAtom as Atom;
 use structopt::StructOpt;
 
@@ -40,10 +32,6 @@ struct CliArgs {
     /// This option can be applied multiple times. It is not permitted to have conflicting entries to the same domain.
     #[structopt(short = "d", long = "confusion_domains", parse(from_os_str))]
     confusion_domains: Vec<PathBuf>,
-    /// List of file names which did not load properly.
-    /// Also see the `website-failed` tool.
-    #[structopt(long = "loading_failed", parse(from_os_str))]
-    loading_failed: Option<PathBuf>,
     /// Path to dump a CSV file containing all the wrongly classified data
     #[structopt(long = "misclassifications", parse(from_os_str))]
     misclassifications: Option<PathBuf>,
@@ -159,12 +147,6 @@ fn run() -> Result<(), Error> {
     info!("Start loading confusion domains...");
     prepare_confusion_domains(&cli_args.confusion_domains)?;
     info!("Done loading confusion domains.");
-
-    if let Some(ref path) = &cli_args.loading_failed {
-        info!("Start loading of failed domains...");
-        prepare_failed_domains(path)?;
-        info!("Done loading of failed domains.");
-    }
 
     info!("Start loading dnstap files...");
     let simulate = match &cli_args.cmd {
@@ -388,49 +370,6 @@ fn classify_and_evaluate(
             }
         });
     info!("Done evaluation for k={}", k);
-}
-
-fn prepare_failed_domains(path: impl AsRef<Path>) -> Result<(), Error> {
-    #[derive(Debug, Deserialize)]
-    struct Record {
-        file: PathBuf,
-        reason: String,
-    }
-
-    let rdr = BufReader::new(file_open_read(path.as_ref()).with_context(|_| {
-        format!(
-            "Opening failed domains file '{}' failed",
-            path.as_ref().display()
-        )
-    })?);
-    let mut rdr = ReaderBuilder::new().has_headers(true).from_reader(rdr);
-
-    let mut failed_domains = HashMap::default();
-
-    for record in rdr.deserialize() {
-        let record: Record = record.context("Failed to read from failed domains file")?;
-        let file_name: Atom = (&record.file)
-            .file_name()
-            .map(|file_name| Atom::from(file_name.to_string_lossy().replace(".json", ".dnstap")))
-            .ok_or_else(|| {
-                format_err!(
-                    "This line does not specify a path with a file name '{}'",
-                    record.file.display()
-                )
-            })?;
-
-        let reason = if record.reason == R008 {
-            R008
-        } else if record.reason == R009 {
-            R009
-        } else {
-            bail!("Found unknown reason: {}", record.reason)
-        };
-        failed_domains.insert(file_name, reason);
-    }
-
-    replace_loading_failed(failed_domains);
-    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]

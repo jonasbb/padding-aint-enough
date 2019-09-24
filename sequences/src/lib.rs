@@ -20,7 +20,6 @@ pub use crate::{
 };
 use chrono::{self, DateTime, Duration, NaiveDateTime, Utc};
 use failure::{self, Error, ResultExt};
-use lazy_static::lazy_static;
 pub use load_sequence::convert_to_sequence;
 use misc_utils::{self, fs, path::PathExt, Min};
 use serde::{
@@ -31,26 +30,15 @@ use serde::{
 };
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
-    collections::{BTreeMap, HashMap},
+    collections::BTreeMap,
     fmt::{self, Debug},
     hash::Hash,
     mem,
     path::Path,
-    sync::{Arc, RwLock},
+    sync::Arc,
     time::Instant,
 };
 use string_cache::{self, DefaultAtom as Atom};
-
-lazy_static! {
-    static ref LOADING_FAILED: RwLock<Arc<HashMap<Atom, &'static str>>> = RwLock::default();
-}
-
-#[allow(clippy::implicit_hasher)]
-pub fn replace_loading_failed(new_data: HashMap<Atom, &'static str>) {
-    *LOADING_FAILED
-        .write()
-        .expect("Writing to LOADING_FAILED should always work") = Arc::new(new_data);
-}
 
 /// Interaperability type used when building sequences
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -388,22 +376,6 @@ impl Sequence {
     }
 
     pub fn classify(&self) -> Option<&'static str> {
-        {
-            let lock = LOADING_FAILED
-                .read()
-                .expect("Reading LOADING_FAILED must always work");
-            if let Some(Some(reason)) = Path::new(self.id())
-                // extract file name from id
-                .file_name()
-                // convert to `Atom`
-                .map(|file_name| Atom::from(file_name.to_string_lossy()))
-                // see if this is a known bad id
-                .map(|file_atom| lock.get(&file_atom))
-            {
-                return Some(reason);
-            }
-        }
-
         // Sequences of length 6 and lower were the most problematic to classify.
         // Therefore, assign all of them a reason.
         use crate::SequenceElement::{Gap, Size};

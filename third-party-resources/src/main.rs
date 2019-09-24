@@ -4,7 +4,7 @@ use dnstap::{
     process_dnstap,
     protos::{self, DnstapContent},
 };
-use failure::{format_err, Error, ResultExt};
+use failure::{Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{error, info};
 use misc_utils::fs::{file_open_read, file_open_write};
@@ -13,7 +13,6 @@ use serde::Deserialize;
 use std::{
     collections::{HashMap, HashSet},
     fs,
-    io::BufReader,
     path::{Path, PathBuf},
     sync::{Arc, RwLock},
 };
@@ -36,10 +35,6 @@ struct CliArgs {
     /// This option can be applied multiple times. It is not permitted to have conflicting entries to the same domain.
     #[structopt(short = "d", long = "confusion_domains", parse(from_os_str))]
     confusion_domains: Vec<PathBuf>,
-    /// List of file names which did not load properly.
-    /// Also see the `website-failed` tool.
-    #[structopt(long = "loading_failed", parse(from_os_str))]
-    loading_failed: Option<PathBuf>,
 }
 
 fn main() {
@@ -66,15 +61,6 @@ fn run() -> Result<(), Error> {
     info!("Start loading confusion domains...");
     prepare_confusion_domains(&cli_args.confusion_domains)?;
     info!("Done loading confusion domains.");
-
-    let failed_domains = if let Some(path) = &cli_args.loading_failed {
-        info!("Start loading of failed domains...");
-        let tmp = prepare_failed_domains(path)?;
-        info!("Done loading of failed domains.");
-        tmp
-    } else {
-        HashSet::default()
-    };
 
     let check_confusion_domains = make_check_confusion_domains();
 
@@ -116,14 +102,7 @@ fn run() -> Result<(), Error> {
                             if ft.is_file()
                                 && entry.file_name().to_string_lossy().contains(".dnstap")
                             {
-                                // Ignore all files which are in the failed domains list
-                                let path = entry.path();
-                                let fname = path.file_name().unwrap().to_string_lossy();
-                                if !failed_domains.contains(&*fname) {
-                                    Some(entry.path())
-                                } else {
-                                    None
-                                }
+                                Some(entry.path())
                             } else {
                                 None
                             }
@@ -236,41 +215,6 @@ fn run() -> Result<(), Error> {
     drop(wtr);
 
     Ok(())
-}
-
-fn prepare_failed_domains(path: impl AsRef<Path>) -> Result<HashSet<String>, Error> {
-    #[derive(Debug, Deserialize)]
-    struct Record {
-        file: PathBuf,
-        reason: String,
-    }
-
-    let rdr = BufReader::new(file_open_read(path.as_ref()).with_context(|_| {
-        format!(
-            "Opening failed domains file '{}' failed",
-            path.as_ref().display()
-        )
-    })?);
-    let mut rdr = ReaderBuilder::new().has_headers(true).from_reader(rdr);
-
-    let mut failed_domains = HashSet::default();
-
-    for record in rdr.deserialize() {
-        let record: Record = record.context("Failed to read from failed domains file")?;
-        let file_name: String = (&record.file)
-            .file_name()
-            .map(|file_name| file_name.to_string_lossy().replace(".json", ".dnstap"))
-            .ok_or_else(|| {
-                format_err!(
-                    "This line does not specify a path with a file name '{}'",
-                    record.file.display()
-                )
-            })?;
-
-        failed_domains.insert(file_name);
-    }
-
-    Ok(failed_domains)
 }
 
 fn prepare_confusion_domains<D, P>(data: D) -> Result<(), Error>
