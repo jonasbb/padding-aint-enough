@@ -1,8 +1,8 @@
 use crate::{
-    precision_sequence::PrecisionSequence, AbstractQueryResponse, LoadDnstapConfig, MatchKey,
-    Query, QuerySource, Sequence, SequenceElement, UnmatchedClientQuery,
+    precision_sequence::PrecisionSequence, AbstractQueryResponse, LoadDnstapConfig, Sequence,
+    SequenceElement,
 };
-use chrono::Duration;
+use chrono::{DateTime, Duration, Utc};
 use dnstap::{
     dnstap::Message_Type,
     process_dnstap,
@@ -11,7 +11,42 @@ use dnstap::{
 };
 use failure::{bail, format_err, Error};
 use log::{debug, info};
+use serde::Serialize;
 use std::{collections::BTreeMap, path::Path};
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
+pub struct Query {
+    pub source: QuerySource,
+    pub qname: String,
+    pub qtype: String,
+    pub start: DateTime<Utc>,
+    pub end: DateTime<Utc>,
+    pub query_size: u32,
+    pub response_size: u32,
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
+pub enum QuerySource {
+    Client,
+    Forwarder,
+    ForwarderLostQuery,
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
+pub struct MatchKey {
+    pub qname: String,
+    pub qtype: String,
+    pub id: u16,
+    pub port: u16,
+}
+
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub struct UnmatchedClientQuery {
+    pub qname: String,
+    pub qtype: String,
+    pub start: DateTime<Utc>,
+    pub size: u32,
+}
 
 pub(crate) enum Padding {
     Q128R468,

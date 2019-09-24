@@ -1,24 +1,27 @@
 #[cfg(feature = "read_pcap")]
 mod bounded_buffer;
 mod constants;
+pub mod distance_cost_info;
 pub mod knn;
-mod load_sequence;
+pub mod load_sequence;
 #[cfg(feature = "read_pcap")]
 pub mod pcap;
 pub mod precision_sequence;
+mod sequence_element;
 mod serialization;
 mod utils;
 
-use crate::{common_sequence_classifications::*, constants::*, load_sequence::Padding};
+use crate::common_sequence_classifications::*;
 pub use crate::{
     constants::common_sequence_classifications,
     precision_sequence::PrecisionSequence,
+    sequence_element::SequenceElement,
     utils::{
         load_all_dnstap_files_from_dir, load_all_dnstap_files_from_dir_with_config,
         load_all_files_with_extension_from_dir_with_config, Probability,
     },
 };
-use chrono::{self, DateTime, Duration, NaiveDateTime, Utc};
+use chrono::{self, Duration, NaiveDateTime};
 use failure::{self, Error, ResultExt};
 pub use load_sequence::convert_to_sequence;
 use misc_utils::{self, fs, path::PathExt, Min};
@@ -30,12 +33,10 @@ use serde::{
 };
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
-    collections::BTreeMap,
     fmt::{self, Debug},
     hash::Hash,
     mem,
     path::Path,
-    sync::Arc,
     time::Instant,
 };
 use string_cache::{self, DefaultAtom as Atom};
@@ -53,8 +54,8 @@ impl From<&AbstractQueryResponse> for AbstractQueryResponse {
     }
 }
 
-impl From<&Query> for AbstractQueryResponse {
-    fn from(other: &Query) -> Self {
+impl From<&load_sequence::Query> for AbstractQueryResponse {
+    fn from(other: &load_sequence::Query) -> Self {
         AbstractQueryResponse {
             time: other.end.naive_utc(),
             size: other.response_size,
@@ -77,7 +78,7 @@ pub enum LoadDnstapConfig {
 }
 
 // Gap + S1-S15
-pub type OneHotEncoding = Vec<u8>;
+pub type OneHotEncoding = Vec<u16>;
 
 #[derive(Clone, Debug)]
 pub struct Sequence(Vec<SequenceElement>, String);
@@ -135,7 +136,7 @@ impl Sequence {
                 let size = Some(load_sequence::pad_size(
                     u32::from(size),
                     false,
-                    Padding::Q128R468,
+                    load_sequence::Padding::Q128R468,
                 ));
                 last_time = Some(time);
                 gap.into_iter().chain(size)
@@ -237,7 +238,7 @@ impl Sequence {
         use_cr_mode: bool,
     ) -> (usize, DCI)
     where
-        DCI: DistanceCostInfo,
+        DCI: distance_cost_info::DistanceCostInfo,
     {
         let mut larger = self;
         let mut smaller = other;
@@ -513,166 +514,6 @@ impl<'de> Deserialize<'de> for Sequence {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub enum SequenceElement {
-    Size(u8),
-    Gap(u8),
-}
-
-impl SequenceElement {
-    fn insert_cost(self) -> usize {
-        use self::SequenceElement::*;
-
-        debug_assert_ne!(self, Size(0), "Sequence contains a Size(0) elements");
-
-        match self {
-            // Size(0) => {
-            //     // A size 0 packet should never occur
-            //     error!("Sequence contains a Size(0) elements");
-            //     usize::max_value()
-            // }
-            Size(_) => SIZE_INSERT_COST,
-            Gap(g) => g as usize * GAP_INSERT_COST_MULTIPLIER,
-        }
-    }
-
-    fn delete_cost(self) -> usize {
-        // The delete costs have to be identical to the insert costs in order to be a metric.
-        // There is no order in which two Sequences will be compared, so
-        // xABCy -> xACy
-        // must be the same as
-        // xACy -> xABCy
-        self.insert_cost()
-    }
-
-    fn substitute_cost(self, other: Self) -> usize {
-        if self == other {
-            return 0;
-        }
-
-        use self::SequenceElement::*;
-        match (self, other) {
-            // 2/3rds cost of insert
-            (Size(_), Size(_)) => {
-                (self.insert_cost() + other.delete_cost()) / SIZE_SUBSTITUTE_COST_DIVIDER
-            }
-            (Gap(g1), Gap(g2)) => {
-                (g1.max(g2) - g1.min(g2)) as usize * GAP_SUBSTITUTE_COST_MULTIPLIER
-            }
-            (a, b) => a.delete_cost() + b.insert_cost(),
-        }
-    }
-
-    fn swap_cost(self, other: Self) -> usize {
-        if self == other {
-            return 0;
-        }
-
-        SWAP_COST
-    }
-
-    fn to_one_hot_encoding(self) -> OneHotEncoding {
-        use self::SequenceElement::*;
-        let mut res = vec![0; 16];
-        let len = res.len();
-        match self {
-            Size(0) => unreachable!(),
-            Size(s) if s < len as u8 => res[s as usize] = 1,
-            Gap(g) => res[0] = g,
-
-            Size(s) => panic!("One Hot Encoding only works for Sequences not exceeding a Size({}), but found a Size({})", len - 1, s),
-        }
-        res
-    }
-
-    fn to_vector_encoding(self) -> (u16, u16) {
-        use self::SequenceElement::*;
-        match self {
-            Size(s) => (s as u16, 0),
-            Gap(g) => (0, g as u16),
-        }
-    }
-}
-
-impl Debug for SequenceElement {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use crate::SequenceElement::*;
-        let (l, v) = match self {
-            Size(v) => ("S", v),
-            Gap(v) => ("G", v),
-        };
-        write!(f, "{}{:>2}", l, v)
-    }
-}
-
-impl Serialize for SequenceElement {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let res = match self {
-            SequenceElement::Gap(g) => format!("G{:0>2}", g),
-            SequenceElement::Size(s) => format!("S{:0>2}", s),
-        };
-        serializer.serialize_str(&res)
-    }
-}
-
-impl<'de> Deserialize<'de> for SequenceElement {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct Helper;
-        use serde::de::Error;
-
-        impl<'de> Visitor<'de> for Helper {
-            type Value = SequenceElement;
-
-            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                write!(formatter, "string in format `S00` or `G00`")
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where
-                E: Error,
-            {
-                let chars = value.chars().count();
-                if chars != 3 {
-                    return Err(Error::custom(format!("The string must be of length 3 (but got {}), in the format `S00` or `G00`.", chars)));
-                }
-                let start = value.chars().next().expect("String is 3 chars large.");
-                match start {
-                    'G' => {
-                        let v = value[1..].parse::<u8>().map_err(|_| {
-                            Error::custom(format!(
-                                "The string must end in two digits, but got `{:?}`.",
-                                &value[1..]
-                            ))
-                        })?;
-                        Ok(SequenceElement::Gap(v))
-                    }
-                    'S' => {
-                        let v = value[1..].parse::<u8>().map_err(|_| {
-                            Error::custom(format!(
-                                "The string must end in two digits, but got `{:?}`.",
-                                &value[1..]
-                            ))
-                        })?;
-                        Ok(SequenceElement::Size(v))
-                    }
-                    _ => Err(Error::custom(format!(
-                        "The string must start with `G` or `S` but got `{}`.",
-                        start
-                    ))),
-                }
-            }
-        }
-
-        deserializer.deserialize_str(Helper)
-    }
-}
-
 pub struct LabelledSequence<S = Atom> {
     pub true_domain: S,
     pub mapped_domain: S,
@@ -726,169 +567,6 @@ pub fn sequence_stats(
     let avg_median = median_distances.iter().sum::<usize>() / median_distances.len();
 
     (avg_distances, median_distances, avg_avg, avg_median)
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
-pub struct Query {
-    pub source: QuerySource,
-    pub qname: String,
-    pub qtype: String,
-    pub start: DateTime<Utc>,
-    pub end: DateTime<Utc>,
-    pub query_size: u32,
-    pub response_size: u32,
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
-pub enum QuerySource {
-    Client,
-    Forwarder,
-    ForwarderLostQuery,
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-pub struct MatchKey {
-    pub qname: String,
-    pub qtype: String,
-    pub id: u16,
-    pub port: u16,
-}
-
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-pub struct UnmatchedClientQuery {
-    pub qname: String,
-    pub qtype: String,
-    pub start: DateTime<Utc>,
-    pub size: u32,
-}
-
-pub trait DistanceCostInfo: Clone + Default {
-    /// Indicates that the insert operation was the cheapest and the current cost is `cost`.
-    #[must_use]
-    fn insert(&self, cost: usize, elem1: SequenceElement) -> Self;
-    /// Indicates that the delete operation was the cheapest and the current cost is `cost`.
-    #[must_use]
-    fn delete(&self, cost: usize, elem1: SequenceElement) -> Self;
-    /// Indicates that the substitute operation was the cheapest and the current cost is `cost`.
-    #[must_use]
-    fn substitute(&self, cost: usize, elem1: SequenceElement, elem2: SequenceElement) -> Self;
-    /// Indicates that the swap operation was the cheapest and the current cost is `cost`.
-    #[must_use]
-    fn swap(&self, cost: usize, elem1: SequenceElement, elem2: SequenceElement) -> Self;
-    /// Indicates that the distance computation was aborted early.
-    ///
-    /// This occurs, if the current distance is already larger than any distance in the kNN set.
-    #[must_use]
-    fn abort(&self) -> Self;
-}
-
-impl DistanceCostInfo for () {
-    fn insert(&self, _cost: usize, _elem1: SequenceElement) -> Self {}
-    fn delete(&self, _cost: usize, _elem1: SequenceElement) -> Self {}
-    fn substitute(&self, _cost: usize, _elem1: SequenceElement, _elem2: SequenceElement) -> Self {}
-    fn swap(&self, _cost: usize, _elem1: SequenceElement, _elem2: SequenceElement) -> Self {}
-    fn abort(&self) -> Self {}
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct CostTracker {
-    pub insert_gap: usize,
-    pub insert_size: usize,
-    pub delete_gap: usize,
-    pub delete_size: usize,
-    pub substitute_gap_gap: usize,
-    pub substitute_gap_size: usize,
-    pub substitute_size_gap: usize,
-    pub substitute_size_size: usize,
-    pub swap_gap_gap: usize,
-    pub swap_gap_size: usize,
-    pub swap_size_gap: usize,
-    pub swap_size_size: usize,
-    pub is_abort: bool,
-    pub from_gap_to_gap: Arc<BTreeMap<(u8, u8), usize>>,
-    current_cost: usize,
-}
-
-impl CostTracker {
-    pub fn as_btreemap(&self) -> BTreeMap<String, usize> {
-        let mut res = BTreeMap::default();
-
-        // Convert all the gap-to-gap counts
-        for ((from, to), &count) in &*self.from_gap_to_gap {
-            res.insert(format!("gap({})_to_gap({})", from, to), count);
-        }
-
-        res.insert("insert_gap".into(), self.insert_gap);
-        res.insert("insert_size".into(), self.insert_size);
-        res.insert("delete_gap".into(), self.delete_gap);
-        res.insert("delete_size".into(), self.delete_size);
-        res.insert("substitute_gap_gap".into(), self.substitute_gap_gap);
-        res.insert("substitute_gap_size".into(), self.substitute_gap_size);
-        res.insert("substitute_size_gap".into(), self.substitute_size_gap);
-        res.insert("substitute_size_size".into(), self.substitute_size_size);
-        res.insert("swap_gap_gap".into(), self.swap_gap_gap);
-        res.insert("swap_gap_size".into(), self.swap_gap_size);
-        res.insert("swap_size_gap".into(), self.swap_size_gap);
-        res.insert("swap_size_size".into(), self.swap_size_size);
-        res.insert("is_abort".into(), self.is_abort as usize);
-        res
-    }
-
-    fn update<F>(&self, cost: usize, f: F) -> Self
-    where
-        F: Fn(&mut Self, usize),
-    {
-        let mut res = self.clone();
-        let diff = cost - self.current_cost;
-        res.current_cost = cost;
-        f(&mut res, diff);
-        res
-    }
-}
-
-impl DistanceCostInfo for CostTracker {
-    fn insert(&self, cost: usize, elem1: SequenceElement) -> Self {
-        self.update(cost, |x, diff| match elem1 {
-            SequenceElement::Gap(_) => x.insert_gap += diff,
-            SequenceElement::Size(_) => x.insert_size += diff,
-        })
-    }
-    fn delete(&self, cost: usize, elem1: SequenceElement) -> Self {
-        self.update(cost, |x, diff| match elem1 {
-            SequenceElement::Gap(_) => x.delete_gap += diff,
-            SequenceElement::Size(_) => x.delete_size += diff,
-        })
-    }
-    fn substitute(&self, cost: usize, elem1: SequenceElement, elem2: SequenceElement) -> Self {
-        let mut this = self.clone();
-        if self.current_cost != cost {
-            if let (SequenceElement::Gap(g1), SequenceElement::Gap(g2)) = (elem1, elem2) {
-                let bmap = Arc::make_mut(&mut this.from_gap_to_gap);
-                let min = g1.min(g2);
-                let max = g1.max(g2);
-                *bmap.entry((min, max)).or_insert(0) += 1;
-            }
-        }
-        this.update(cost, |x, diff| match (elem1, elem2) {
-            (SequenceElement::Gap(_), SequenceElement::Gap(_)) => x.substitute_gap_gap += diff,
-            (SequenceElement::Gap(_), SequenceElement::Size(_)) => x.substitute_gap_size += diff,
-            (SequenceElement::Size(_), SequenceElement::Gap(_)) => x.substitute_size_gap += diff,
-            (SequenceElement::Size(_), SequenceElement::Size(_)) => x.substitute_size_size += diff,
-        })
-    }
-    fn swap(&self, cost: usize, elem1: SequenceElement, elem2: SequenceElement) -> Self {
-        self.update(cost, |x, diff| match (elem1, elem2) {
-            (SequenceElement::Gap(_), SequenceElement::Gap(_)) => x.swap_gap_gap += diff,
-            (SequenceElement::Gap(_), SequenceElement::Size(_)) => x.swap_gap_size += diff,
-            (SequenceElement::Size(_), SequenceElement::Gap(_)) => x.swap_size_gap += diff,
-            (SequenceElement::Size(_), SequenceElement::Size(_)) => x.swap_size_size += diff,
-        })
-    }
-    fn abort(&self) -> Self {
-        let mut res = self.clone();
-        res.is_abort = true;
-        res
-    }
 }
 
 #[cfg(test)]

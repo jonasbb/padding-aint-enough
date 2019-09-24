@@ -18,7 +18,7 @@ use misc_utils::{
 };
 use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
-use sequences::{MatchKey, Query, QuerySource, UnmatchedClientQuery};
+use sequences::load_sequence::{MatchKey, Query, QuerySource, UnmatchedClientQuery};
 use serde::{Deserialize, Serialize};
 use serde_json;
 use serde_with;

@@ -7,8 +7,8 @@ use pyo3::{
     self, basic::CompareOp, exceptions::Exception, prelude::*, types::PyType, PyObjectProtocol,
 };
 use sequences::{
-    load_all_files_with_extension_from_dir_with_config, CostTracker, LoadDnstapConfig,
-    OneHotEncoding, Sequence,
+    distance_cost_info::CostTracker, load_all_files_with_extension_from_dir_with_config,
+    LoadDnstapConfig, OneHotEncoding, Sequence,
 };
 use std::{collections::BTreeMap, ffi::OsStr, path::Path};
 
