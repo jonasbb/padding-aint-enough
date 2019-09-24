@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.2'
-#       jupytext_version: 1.1.2
+#       jupytext_version: 1.2.0+dev
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -21,6 +21,7 @@
 # Thanks to jupytext, this notebook can be imported as `import common_functions` or `from common_functions import *`.
 
 # %%
+import lzma
 import os.path
 import typing as t
 from glob import glob
@@ -137,3 +138,18 @@ def parse_log_data(fname: str) -> t.List[t.List[t.Tuple[str, t.List[int]]]]:
         tmp = tmp[::-1]
         res.append(tmp)
     return res
+
+
+# %%
+def open_file(path: str, mode: str = "rt") -> t.Any:
+    """
+    Open files, also compressed, transparently
+
+    Open compressed files like a normal file.
+    """
+    file = None
+    ext = os.path.splitext(path)[1]
+    if ext == ".xz":
+        return lzma.open(path, mode)
+
+    return open(path, mode)
