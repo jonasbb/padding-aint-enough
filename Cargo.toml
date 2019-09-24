@@ -51,7 +51,7 @@ chrome = { path = "./chrome" }
 chrono = "0.4.9"
 csv = "1.1.1"
 dnstap = { path = "./dnstap" }
-env_logger = "0.6.2"
+env_logger = "0.7.0"
 failure = "0.1.5"
 glob = "0.3.0"
 lazy_static = "1.4.0"
