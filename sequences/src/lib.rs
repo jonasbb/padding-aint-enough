@@ -104,7 +104,7 @@ impl Sequence {
                     return Ok(serde_json::from_str(&seq_json)?);
                 }
                 #[cfg(feature = "read_pcap")]
-                Some("pcap") => return crate::pcap::load_pcap_file(path, None),
+                Some("pcap") => return crate::pcap::load_pcap_file(path, None, config),
                 _ => {}
             }
         }

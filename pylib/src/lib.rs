@@ -3,12 +3,10 @@
 
 use encrypted_dns::ErrorExt;
 use failure::Error;
-use pyo3::{
-    self, basic::CompareOp, exceptions::Exception, prelude::*, types::PyType, PyObjectProtocol,
-};
+use pyo3::{basic::CompareOp, exceptions::Exception, prelude::*, types::PyType, PyObjectProtocol};
 use sequences::{
-    distance_cost_info::CostTracker, load_all_files_with_extension_from_dir_with_config,
-    LoadSequenceConfig, OneHotEncoding, Sequence,
+    distance_cost_info::CostTracker, load_all_files_with_extension_from_dir_with_config, GapMode,
+    LoadSequenceConfig, OneHotEncoding, Padding, Sequence,
 };
 use std::{collections::BTreeMap, ffi::OsStr, path::Path};
 
@@ -22,17 +20,29 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<PySequence>()?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
-    /// load_file(path, /)
+    /// load_file(path, /, gap_mode, padding)
     /// --
     ///
     /// Load a dnstap file from disk and create a `Sequence` object
     #[pyfn(m, "load_file")]
-    fn load_file(path: String) -> PyResult<PySequence> {
-        let seq = Sequence::from_path(Path::new(&path)).map_err(error2py)?;
+    fn load_file(
+        path: String,
+        gap_mode: Option<String>,
+        padding: Option<String>,
+    ) -> PyResult<PySequence> {
+        let mut config = LoadSequenceConfig::default();
+        if let Some(gap_mode) = gap_mode {
+            config.gap_mode = gap_mode.parse().unwrap_or_else(|_| Default::default());
+        }
+        if let Some(padding) = padding {
+            config.padding = padding.parse().unwrap_or_else(|_| Default::default());
+        }
+
+        let seq = Sequence::from_path_with_config(Path::new(&path), config).map_err(error2py)?;
         Ok(seq.into())
     }
 
-    /// load_folder(path, extension = "dnstap", /)
+    /// load_folder(path, extension = "dnstap", /, gap_mode, padding)
     /// --
     ///
     /// Load a whole folder of files with given `extension`.
@@ -42,14 +52,31 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
         py: Python<'_>,
         path: String,
         extension: Option<String>,
+        gap_mode: Option<String>,
+        padding: Option<String>,
     ) -> PyResult<Vec<(String, Vec<PySequence>)>> {
         let extension = extension.unwrap_or_else(|| "dnstap".to_string());
+        let mut config = LoadSequenceConfig::default();
+        if let Some(gap_mode) = gap_mode {
+            config.gap_mode = match gap_mode.as_ref() {
+                "Log2" => GapMode::Log2,
+                "Ident" => GapMode::Ident,
+                _ => GapMode::default(),
+            };
+        }
+        if let Some(padding) = padding {
+            config.padding = match padding.as_ref() {
+                "Q128R468" => Padding::Q128R468,
+                _ => Padding::default(),
+            };
+        }
+
         let seqs = py
             .allow_threads(|| {
                 load_all_files_with_extension_from_dir_with_config(
                     Path::new(&path),
                     &OsStr::new(&extension),
-                    LoadSequenceConfig::default(),
+                    config,
                 )
             })
             .map_err(error2py)?;

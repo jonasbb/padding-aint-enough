@@ -1,4 +1,7 @@
-use crate::{bounded_buffer::BoundedBuffer, AbstractQueryResponse, PrecisionSequence, Sequence};
+use crate::{
+    bounded_buffer::BoundedBuffer, AbstractQueryResponse, LoadSequenceConfig, PrecisionSequence,
+    Sequence,
+};
 use chrono::NaiveDateTime;
 use colored::Colorize;
 use failure::{bail, format_err, Error, ResultExt};
@@ -127,33 +130,6 @@ impl Ord for TlsRecord {
     fn cmp(&self, other: &Self) -> Ordering {
         self.time.cmp(&other.time)
     }
-}
-
-/// Extract a [`Sequence`] from the path to a pcap file.
-///
-/// Error conditions include unsupported pcaps, e.g., too fragmented records, or pcaps without DNS content.
-pub fn pcap_to_sequence(
-    file: impl AsRef<Path>,
-    server: (Ipv4Addr, u16),
-) -> Result<Sequence, Error> {
-    let file = file.as_ref();
-    let mut records = extract_tls_records(&file)?;
-    records.values_mut().for_each(|records| {
-        // `filter_tls_records` takes the Vec by value, which is why we first need to move it out
-        // of the HashMap and back it afterwards.
-        let mut tmp = Vec::new();
-        mem::swap(records, &mut tmp);
-        tmp = filter_tls_records(tmp, server);
-        mem::swap(records, &mut tmp);
-    });
-
-    let seq = build_sequence(records, file.to_string_lossy());
-    seq.ok_or_else(|| {
-        format_err!(
-            "No DNS communication found in the PCAP `{}`",
-            file.display()
-        )
-    })
 }
 
 /// First step in processing a pcap file, extracting *all* Tls records
@@ -397,6 +373,7 @@ pub fn filter_tls_records(
 pub fn build_sequence<S, H>(
     records: HashMap<FlowId, Vec<TlsRecord>, H>,
     identifier: S,
+    config: LoadSequenceConfig,
 ) -> Option<Sequence>
 where
     S: Into<String>,
@@ -406,7 +383,7 @@ where
         .flat_map(|(_id, recs)| recs)
         .sorted()
         .collect();
-    crate::convert_to_sequence(&records, identifier.into(), Default::default())
+    crate::convert_to_sequence(&records, identifier.into(), config)
 }
 
 /// Given a list of pre-filtered TLS records, build a [`PrecisionSequence`] with them
@@ -440,8 +417,9 @@ fn make_error(iter: impl IntoIterator<Item = SocketAddrV4>) -> String {
 pub fn load_pcap_file<P: AsRef<Path>>(
     file: P,
     filter: Option<SocketAddrV4>,
+    config: LoadSequenceConfig,
 ) -> Result<Sequence, Error> {
-    load_pcap_file_real(file.as_ref(), filter, false, false)
+    load_pcap_file_real(file.as_ref(), filter, false, false, config)
 }
 
 /// Internally used function
@@ -451,11 +429,12 @@ pub fn load_pcap_file_real(
     filter: Option<SocketAddrV4>,
     interative: bool,
     verbose: bool,
+    config: LoadSequenceConfig,
 ) -> Result<Sequence, Error> {
     let records = process_pcap(file, filter, interative, verbose)?;
 
     // Build final Sequence
-    let seq = build_sequence(records, file.to_string_lossy());
+    let seq = build_sequence(records, file.to_string_lossy(), config);
 
     if interative {
         println!("\n{}", "Final DNS Sequence:".underline());

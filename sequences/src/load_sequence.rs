@@ -11,7 +11,7 @@ use dnstap::{
 use failure::{bail, format_err, Error};
 use log::{debug, info};
 use serde::Serialize;
-use std::{collections::BTreeMap, path::Path};
+use std::{collections::BTreeMap, path::Path, str::FromStr};
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
 pub struct Query {
@@ -68,6 +68,17 @@ impl Default for Padding {
     }
 }
 
+impl FromStr for Padding {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Q128R468" | "q128r468" => Ok(Self::Q128R468),
+            unkwn => bail!("Unknown variant: '{}'", unkwn),
+        }
+    }
+}
+
 /// Specifies how time should be converted into gaps
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum GapMode {
@@ -82,6 +93,19 @@ impl Default for GapMode {
         Self::Log2
     }
 }
+
+impl FromStr for GapMode {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Log2" | "log2" => Ok(Self::Log2),
+            "Ident" | "ident" => Ok(Self::Ident),
+            unkwn => bail!("Unknown variant: '{}'", unkwn),
+        }
+    }
+}
+
 /// Simulate different countermeasures while loading the [Sequence] data
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub enum SimulatedCountermeasure {

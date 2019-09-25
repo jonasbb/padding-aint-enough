@@ -1,11 +1,28 @@
 use failure::Error;
 use misc_utils::fs;
-use sequences::pcap::load_pcap_file_real;
+use sequences::{pcap::load_pcap_file_real, LoadSequenceConfig};
 use std::{
     net::SocketAddrV4,
     path::{Path, PathBuf},
 };
-use structopt::StructOpt;
+use structopt::{clap::arg_enum, StructOpt};
+
+arg_enum! {
+    #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+    pub enum GapMode {
+        Log2,
+        Ident
+    }
+}
+
+impl Into<sequences::GapMode> for GapMode {
+    fn into(self) -> sequences::GapMode {
+        match self {
+            GapMode::Log2 => sequences::GapMode::Log2,
+            GapMode::Ident => sequences::GapMode::Ident,
+        }
+    }
+}
 
 #[derive(Clone, Debug, StructOpt)]
 #[structopt(global_settings(&[
@@ -29,6 +46,9 @@ struct CliArgs {
     // Creates a `.json.xz` file for each pcap in the same directory
     #[structopt(long = "convert-to-json")]
     convert_to_json: bool,
+
+    #[structopt(long = "gap-mode", possible_values = &GapMode::variants(), case_insensitive = true)]
+    gap_mode: Option<GapMode>,
 }
 
 fn main() {
@@ -51,9 +71,19 @@ fn run() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let cli_args = CliArgs::from_args();
+    let mut config = LoadSequenceConfig::default();
+    if let Some(gap_mode) = cli_args.gap_mode {
+        config.gap_mode = gap_mode.into();
+    }
 
     for file in cli_args.pcap_files {
-        let seq = load_pcap_file_real(Path::new(&file), cli_args.filter, true, cli_args.verbose)?;
+        let seq = load_pcap_file_real(
+            Path::new(&file),
+            cli_args.filter,
+            true,
+            cli_args.verbose,
+            config,
+        )?;
         if cli_args.convert_to_json {
             let mut path = PathBuf::from(&file);
             path.set_extension("pcap.json.xz");
