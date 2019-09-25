@@ -96,7 +96,7 @@ impl<S> From<TokioOpensslStream<S>> for MyStream<S> {
 /// Wrapper around [`TcpStream`]
 ///
 /// This is a custom type used to have a custom implementation of the
-/// [`AsyncWrite::shutdown`] method which actually calls [`TcpStream::shutdown`] to
+/// [`AsyncWrite::poll_shutdown`] method which actually calls [`TcpStream::shutdown`] to
 /// notify the remote end that we're done writing.
 #[derive(Clone, Debug)]
 pub struct MyTcpStream(Arc<Mutex<TcpStream>>);
@@ -141,7 +141,7 @@ impl AsyncWrite for MyTcpStream {
 /// Wrapper around [`TokioOpensslStream`]
 ///
 /// This is a custom type used to have a custom implementation of the
-/// [`AsyncWrite::shutdown`] method which actually calls [`TcpStream::shutdown`] to
+/// [`AsyncWrite::poll_shutdown`] method which actually calls [`TcpStream::shutdown`] to
 /// notify the remote end that we're done writing.
 #[derive(Debug)]
 pub struct TokioOpensslStream<S>(Arc<Mutex<tokio_openssl::SslStream<S>>>);

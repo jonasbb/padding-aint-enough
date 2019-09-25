@@ -1,4 +1,4 @@
-//! [`DistanceCostInfo`] trait and implementations of it
+//! [DistanceCostInfo](crate::distance_cost_info::DistanceCostInfo) trait and implementations of it
 //!
 //! The trait is used to track how the costs for a single distance are split accross the individual
 //! components.

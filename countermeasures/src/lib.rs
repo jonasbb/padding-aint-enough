@@ -361,11 +361,8 @@ pub enum Payload<T> {
 impl<T> Payload<T> {
     /// Convert this instance of [`Payload`] into a `T`
     ///
-    /// The function takes the payload value, if the variant is [`PAYLOAD`].
-    /// Otherwise, this removes the [`DUMMY`] entries by executing `f` and returning the output.
-    ///
-    /// [`DUMMY`]: self::Payload::DUMMY
-    /// [`PAYLOAD`]: self::Payload::PAYLOAD
+    /// The function takes the payload value, if the variant is [`PAYLOAD`](Payload::Payload).
+    /// Otherwise, this removes the [`DUMMY`](Payload::Dummy) entries by executing `f` and returning the output.
     pub fn unwrap_or_else<F>(self, f: F) -> T
     where
         F: FnOnce() -> T,
