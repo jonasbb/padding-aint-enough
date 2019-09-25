@@ -21,13 +21,12 @@ pub use crate::{
         load_all_files_with_extension_from_dir_with_config, Probability,
     },
 };
-use chrono::{self, NaiveDateTime};
-use failure::{self, Error, ResultExt};
+use chrono::NaiveDateTime;
+use failure::{Error, ResultExt};
 pub use load_sequence::convert_to_sequence;
-use misc_utils::{self, fs, path::PathExt, Min};
+use misc_utils::{fs, path::PathExt, Min};
 use serde::{
-    self,
-    de::{MapAccess, Visitor},
+    de::{Error as SerdeError, MapAccess, Visitor},
     ser::SerializeMap,
     Deserialize, Deserializer, Serialize, Serializer,
 };
@@ -38,7 +37,7 @@ use std::{
     mem,
     path::Path,
 };
-use string_cache::{self, DefaultAtom as Atom};
+use string_cache::DefaultAtom as Atom;
 
 /// Interaperability type used when building sequences
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -458,7 +457,6 @@ impl<'de> Deserialize<'de> for Sequence {
         D: Deserializer<'de>,
     {
         struct Helper;
-        use serde::de::Error;
 
         impl<'de> Visitor<'de> for Helper {
             type Value = Sequence;
@@ -475,7 +473,7 @@ impl<'de> Deserialize<'de> for Sequence {
                 if let Some(entry) = entry {
                     Ok(Sequence(entry.1, entry.0))
                 } else {
-                    Err(Error::custom("The map must contain one element."))
+                    Err(SerdeError::custom("The map must contain one element."))
                 }
             }
         }
