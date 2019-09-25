@@ -21,7 +21,7 @@ pub use crate::{
         load_all_files_with_extension_from_dir_with_config, Probability,
     },
 };
-use chrono::{self, Duration, NaiveDateTime};
+use chrono::{self, NaiveDateTime};
 use failure::{self, Error, ResultExt};
 pub use load_sequence::convert_to_sequence;
 use misc_utils::{self, fs, path::PathExt, Min};
@@ -37,7 +37,6 @@ use std::{
     hash::Hash,
     mem,
     path::Path,
-    time::Instant,
 };
 use string_cache::{self, DefaultAtom as Atom};
 
@@ -114,35 +113,6 @@ impl Sequence {
     /// `config` allows to alter the loading according to [`LoadDnstapConfig`]
     pub fn from_path_with_config(path: &Path, config: LoadDnstapConfig) -> Result<Sequence, Error> {
         load_sequence::dnstap_to_sequence_with_config(path, config)
-    }
-
-    /// FIXME merge with convert_to_sequence
-    pub fn from_sizes_and_times(
-        path: String,
-        sizes_and_times: &[(u16, Instant)],
-    ) -> Result<Sequence, Error> {
-        let base_gap_size = Duration::microseconds(1000);
-        let mut last_time = None;
-        let elements = sizes_and_times
-            .iter()
-            .flat_map(|&(size, time)| {
-                let mut gap = None;
-                if let Some(last_time) = last_time {
-                    gap = load_sequence::gap_size(
-                        Duration::from_std(time - last_time).unwrap(),
-                        base_gap_size,
-                    );
-                }
-                let size = Some(load_sequence::pad_size(
-                    u32::from(size),
-                    false,
-                    load_sequence::Padding::Q128R468,
-                ));
-                last_time = Some(time);
-                gap.into_iter().chain(size)
-            })
-            .collect();
-        Ok(Sequence(elements, path))
     }
 
     /// Return the [`Sequence`]'s identifier. Normally, the file name.

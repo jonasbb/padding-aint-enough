@@ -11,14 +11,13 @@ use openssl::{
     ssl::{SslAcceptor, SslConnector, SslMethod, SslOptions, SslVerifyMode, SslVersion},
     x509::X509,
 };
-use sequences::Sequence;
+use sequences::{load_sequence::convert_to_sequence, AbstractQueryResponse, LoadDnstapConfig};
 use std::{
     io::Write,
     mem,
     net::SocketAddr,
     path::PathBuf,
     sync::{Arc, Mutex},
-    time::Instant,
 };
 use structopt::StructOpt;
 use tlsproxy::{
@@ -111,7 +110,7 @@ struct CliArgs {
 // #[derive(Debug)]
 struct Config {
     args: CliArgs,
-    message: Mutex<Vec<(u16, Instant)>>,
+    message: Mutex<Vec<AbstractQueryResponse>>,
     transport: Transport,
     acceptor: Option<SslAcceptor>,
 }
@@ -290,7 +289,10 @@ async fn handle_client(config: Arc<Config>, client: Result<TcpStream, Error>) ->
                         )));
                     }
                     _ => {
-                        msgs.push((dns.len() as u16, Instant::now()));
+                        msgs.push(AbstractQueryResponse {
+                            time: Utc::now().naive_utc(),
+                            size: dns.len() as _,
+                        });
                     }
                 }
             }
@@ -386,7 +388,7 @@ where
 
 async fn write_sequence(
     dir: Option<PathBuf>,
-    mut sequence_raw: Vec<(u16, Instant)>,
+    mut sequence_raw: Vec<AbstractQueryResponse>,
 ) -> Result<(), Error> {
     if let Some(dir) = dir {
         let filepath = dir.join(format!(
@@ -394,14 +396,16 @@ async fn write_sequence(
             Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true)
         ));
         let mut file = File::create(filepath.clone()).await?;
-        sequence_raw.sort_unstable_by_key(|x| x.1);
-        let seq =
-            Sequence::from_sizes_and_times(filepath.to_string_lossy().to_string(), &*sequence_raw)
-                .unwrap();
+        sequence_raw.sort_unstable_by_key(|x| x.time);
+        let seq = convert_to_sequence(
+            &*sequence_raw,
+            filepath.to_string_lossy().to_string(),
+            LoadDnstapConfig::Normal,
+        )
+        .unwrap();
         let content = serde_json::to_string(&seq).unwrap();
         AsyncWriteExt::write_all(&mut file, content.as_ref()).await?;
-        // TODO Flush not yet implemented: https://github.com/tokio-rs/tokio/issues/1203
-        // await!(io::flush(&mut file))?;
+        file.flush().await?;
     }
     Ok(())
 }
