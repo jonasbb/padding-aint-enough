@@ -1,7 +1,7 @@
 mod adaptive_padding;
 
 use self::adaptive_padding::AdaptivePadding;
-use crate::{utils::Probability, AbstractQueryResponse, LoadDnstapConfig, Sequence};
+use crate::{utils::Probability, AbstractQueryResponse, LoadSequenceConfig, Sequence};
 use chrono::{Duration, NaiveDateTime};
 use failure::{bail, Error};
 use fnv::FnvHasher;
@@ -70,7 +70,7 @@ impl PrecisionSequence {
         let seq = crate::load_sequence::convert_to_sequence(
             &self.0,
             self.1.clone(),
-            LoadDnstapConfig::Normal,
+            LoadSequenceConfig::default(),
         );
         seq.expect("Building a sequence needs to work, as we already checked that there is at least one element.")
     }

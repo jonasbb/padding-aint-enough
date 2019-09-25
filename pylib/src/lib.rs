@@ -8,7 +8,7 @@ use pyo3::{
 };
 use sequences::{
     distance_cost_info::CostTracker, load_all_files_with_extension_from_dir_with_config,
-    LoadDnstapConfig, OneHotEncoding, Sequence,
+    LoadSequenceConfig, OneHotEncoding, Sequence,
 };
 use std::{collections::BTreeMap, ffi::OsStr, path::Path};
 
@@ -49,7 +49,7 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
                 load_all_files_with_extension_from_dir_with_config(
                     Path::new(&path),
                     &OsStr::new(&extension),
-                    LoadDnstapConfig::Normal,
+                    LoadSequenceConfig::default(),
                 )
             })
             .map_err(error2py)?;

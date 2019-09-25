@@ -406,7 +406,7 @@ where
         .flat_map(|(_id, recs)| recs)
         .sorted()
         .collect();
-    crate::convert_to_sequence(&records, identifier.into(), crate::LoadDnstapConfig::Normal)
+    crate::convert_to_sequence(&records, identifier.into(), Default::default())
 }
 
 /// Given a list of pre-filtered TLS records, build a [`PrecisionSequence`] with them

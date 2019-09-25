@@ -1,4 +1,4 @@
-use crate::{knn::ClassifierData, LoadDnstapConfig, Sequence};
+use crate::{knn::ClassifierData, LoadSequenceConfig, Sequence};
 use failure::{bail, Error, ResultExt};
 use log::{debug, warn};
 use misc_utils::path::PathExt;
@@ -15,12 +15,12 @@ use std::{
 pub fn load_all_dnstap_files_from_dir(
     base_dir: &Path,
 ) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
-    load_all_dnstap_files_from_dir_with_config(base_dir, LoadDnstapConfig::Normal)
+    load_all_dnstap_files_from_dir_with_config(base_dir, LoadSequenceConfig::default())
 }
 
 pub fn load_all_dnstap_files_from_dir_with_config(
     base_dir: &Path,
-    config: LoadDnstapConfig,
+    config: LoadSequenceConfig,
 ) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
     load_all_files_with_extension_from_dir_with_config(base_dir, &OsStr::new("dnstap"), config)
 }
@@ -28,7 +28,7 @@ pub fn load_all_dnstap_files_from_dir_with_config(
 pub fn load_all_files_with_extension_from_dir_with_config(
     base_dir: &Path,
     file_extension: &OsStr,
-    _config: LoadDnstapConfig,
+    _config: LoadSequenceConfig,
 ) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
     // Get a list of directories
     // Each directory corresponds to a label

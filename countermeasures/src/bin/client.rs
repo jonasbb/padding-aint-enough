@@ -11,7 +11,7 @@ use openssl::{
     ssl::{SslAcceptor, SslConnector, SslMethod, SslOptions, SslVerifyMode, SslVersion},
     x509::X509,
 };
-use sequences::{load_sequence::convert_to_sequence, AbstractQueryResponse, LoadDnstapConfig};
+use sequences::{load_sequence::convert_to_sequence, AbstractQueryResponse, LoadSequenceConfig};
 use std::{
     io::Write,
     mem,
@@ -400,7 +400,7 @@ async fn write_sequence(
         let seq = convert_to_sequence(
             &*sequence_raw,
             filepath.to_string_lossy().to_string(),
-            LoadDnstapConfig::Normal,
+            LoadSequenceConfig::default(),
         )
         .unwrap();
         let content = serde_json::to_string(&seq).unwrap();

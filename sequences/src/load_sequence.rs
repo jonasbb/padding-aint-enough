@@ -1,6 +1,5 @@
 use crate::{
-    precision_sequence::PrecisionSequence, AbstractQueryResponse, LoadDnstapConfig, Sequence,
-    SequenceElement,
+    precision_sequence::PrecisionSequence, AbstractQueryResponse, Sequence, SequenceElement,
 };
 use chrono::{DateTime, Duration, Utc};
 use dnstap::{
@@ -48,21 +47,68 @@ pub struct UnmatchedClientQuery {
     pub size: u32,
 }
 
-pub(crate) enum Padding {
+/// Specifies how to load data into a [`Sequence`] and which processing steps to perform
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
+pub struct LoadSequenceConfig {
+    pub padding: Padding,
+    pub gap_mode: GapMode,
+    pub simulated_countermeasure: SimulatedCountermeasure,
+}
+
+/// Specify padding strategy to use
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub enum Padding {
+    ///  \[DEFAULT\]
     Q128R468,
 }
 
-/// Load a dnstap file and generate a [`Sequence`] from it
-pub fn dnstap_to_sequence(dnstap_file: &Path) -> Result<Sequence, Error> {
-    dnstap_to_sequence_with_config(dnstap_file, LoadDnstapConfig::Normal)
+impl Default for Padding {
+    fn default() -> Self {
+        Self::Q128R468
+    }
+}
+
+/// Specifies how time should be converted into gaps
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub enum GapMode {
+    /// Convert time based on the log2 function \[DEFAULT\]
+    Log2,
+    /// Use the identity function
+    Ident,
+}
+
+impl Default for GapMode {
+    fn default() -> Self {
+        Self::Log2
+    }
+}
+/// Simulate different countermeasures while loading the [Sequence] data
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub enum SimulatedCountermeasure {
+    /// Do not apply any post-processing steps
+    None,
+    /// Assume perfect padding is applied.
+    ///
+    /// This removes all [`SequenceElement::Size`] from the [`Sequence`].
+    PerfectPadding,
+    /// Assume perfect timing defense
+    ///
+    /// This removes all [`SequenceElement::Gap`] from the [`Sequence`].
+    PerfectTiming,
+}
+
+impl Default for SimulatedCountermeasure {
+    fn default() -> Self {
+        Self::None
+    }
 }
 
 /// Load a dnstap file and generate a [`Sequence`] from it
 ///
-/// `config` allows to alter the loading according to [`LoadDnstapConfig`]
-pub fn dnstap_to_sequence_with_config(
+/// `config` allows to alter the loading according to [`LoadSequenceConfig`]
+pub(crate) fn dnstap_to_sequence_with_config(
     dnstap_file: &Path,
-    config: LoadDnstapConfig,
+    config: LoadSequenceConfig,
 ) -> Result<Sequence, Error> {
     let matched = load_matching_query_responses_from_dnstap(dnstap_file)?;
     let seq = convert_to_sequence(&matched, dnstap_file.to_string_lossy().to_string(), config);
@@ -240,7 +286,7 @@ fn load_matching_query_responses_from_dnstap(dnstap_file: &Path) -> Result<Vec<Q
 pub fn convert_to_sequence<'a, QR>(
     data: &'a [QR],
     identifier: String,
-    config: LoadDnstapConfig,
+    config: LoadSequenceConfig,
 ) -> Option<Sequence>
 where
     QR: 'a,
@@ -260,15 +306,15 @@ where
 
                 let mut gap = None;
                 if let Some(last_end) = last_time {
-                    gap = gap_size(d.time - last_end, base_gap_size);
+                    gap = gap_size(d.time - last_end, base_gap_size, config.gap_mode);
                 }
 
-                let mut size = Some(pad_size(d.size, false, Padding::Q128R468));
+                let mut size = Some(pad_size(d.size, false, config.padding));
 
                 // The config allows us to remove either Gap or Size
-                match config {
-                    LoadDnstapConfig::Normal => {}
-                    LoadDnstapConfig::PerfectPadding => {
+                match config.simulated_countermeasure {
+                    SimulatedCountermeasure::None => {}
+                    SimulatedCountermeasure::PerfectPadding => {
                         // We need to enforce Gap(0) messages to ensure that counting the number of messages still works
 
                         // If `last_end` is set, then there was a previous message, so we need to add a gap
@@ -278,7 +324,7 @@ where
                         }
                         size = None;
                     }
-                    LoadDnstapConfig::PerfectTiming => {
+                    SimulatedCountermeasure::PerfectTiming => {
                         gap = None;
                     }
                 }
@@ -335,7 +381,7 @@ fn sanity_check_matched_queries(matched: &[Query]) -> Result<(), Error> {
     Ok(())
 }
 
-pub(crate) fn gap_size(gap: Duration, base: Duration) -> Option<SequenceElement> {
+pub(crate) fn gap_size(gap: Duration, base: Duration, mode: GapMode) -> Option<SequenceElement> {
     if gap <= base {
         return None;
     }
@@ -345,11 +391,15 @@ pub(crate) fn gap_size(gap: Duration, base: Duration) -> Option<SequenceElement>
         gap = gap - base;
         out += 1;
     }
-    let dist = f64::from(out).log2() as _;
+
+    let dist = match mode {
+        GapMode::Log2 => f64::from(out).log2() as _,
+        GapMode::Ident => out as _,
+    };
     if dist == 0 {
         None
     } else {
-        SequenceElement::Gap(dist).into()
+        Some(SequenceElement::Gap(dist))
     }
 }
 

@@ -3,7 +3,7 @@ use failure::{format_err, Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{error, info, warn};
 use misc_utils::fs::file_open_read;
-use sequences::{LabelledSequences, LoadDnstapConfig, Sequence};
+use sequences::{LabelledSequences, LoadSequenceConfig, Sequence, SimulatedCountermeasure};
 use serde::Deserialize;
 use std::{
     collections::HashMap,
@@ -27,12 +27,12 @@ arg_enum! {
     }
 }
 
-impl Into<LoadDnstapConfig> for SimulateOption {
-    fn into(self) -> LoadDnstapConfig {
+impl Into<SimulatedCountermeasure> for SimulateOption {
+    fn into(self) -> SimulatedCountermeasure {
         match self {
-            SimulateOption::Normal => LoadDnstapConfig::Normal,
-            SimulateOption::PerfectPadding => LoadDnstapConfig::PerfectPadding,
-            SimulateOption::PerfectTiming => LoadDnstapConfig::PerfectTiming,
+            SimulateOption::Normal => SimulatedCountermeasure::None,
+            SimulateOption::PerfectPadding => SimulatedCountermeasure::PerfectPadding,
+            SimulateOption::PerfectTiming => SimulatedCountermeasure::PerfectTiming,
         }
     }
 }
@@ -98,10 +98,15 @@ pub fn load_all_files(
 
     let check_confusion_domains = make_check_confusion_domains();
 
+    let sequence_config = LoadSequenceConfig {
+        simulated_countermeasure: simulate.into(),
+        ..LoadSequenceConfig::default()
+    };
+
     let seqs = sequences::load_all_files_with_extension_from_dir_with_config(
         base_dir,
         file_extension,
-        simulate.into(),
+        sequence_config,
     )
     .with_context(|_| {
         format!(

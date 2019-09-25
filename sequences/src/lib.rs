@@ -14,6 +14,7 @@ mod utils;
 use crate::common_sequence_classifications::*;
 pub use crate::{
     constants::common_sequence_classifications,
+    load_sequence::{GapMode, LoadSequenceConfig, Padding, SimulatedCountermeasure},
     precision_sequence::PrecisionSequence,
     sequence_element::SequenceElement,
     utils::{
@@ -22,7 +23,7 @@ pub use crate::{
     },
 };
 use chrono::NaiveDateTime;
-use failure::{Error, ResultExt};
+use failure::{bail, Error, ResultExt};
 pub use load_sequence::convert_to_sequence;
 use misc_utils::{fs, path::PathExt, Min};
 use serde::{
@@ -61,23 +62,10 @@ impl From<&load_sequence::Query> for AbstractQueryResponse {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-pub enum LoadDnstapConfig {
-    /// Load the Dnstap file normally
-    Normal,
-    /// Assume perfect padding is applied.
-    ///
-    /// This removes all [`SequenceElement::Size`] from the [`Sequence`]
-    PerfectPadding,
-    /// Assume perfect timing defense
-    ///
-    /// This removes all [`SequenceElement::Gap`] from the [`Sequence`]
-    PerfectTiming,
-}
-
 // Gap + S1-S15
 pub type OneHotEncoding = Vec<u16>;
 
+/// A sequence of DNS messages and timing gaps between them.
 #[derive(Clone, Debug)]
 pub struct Sequence(Vec<SequenceElement>, String);
 
@@ -87,13 +75,30 @@ impl Sequence {
         Sequence(sequence, identifier)
     }
 
-    /// Load a [`Sequence`] from a file path.
+    /// Load a [`Sequence`] from a file path with default configuration.
+    ///
+    /// See [`Sequence::from_path_with_config`] for how to customize the loading of [`Sequence`]s.
     pub fn from_path(path: &Path) -> Result<Sequence, Error> {
+        Self::from_path_with_config(path, LoadSequenceConfig::default())
+    }
+
+    /// Load a [`Sequence`] from a file path. The file has to be a dnstap file.
+    ///
+    /// `config` allows to alter the loading according to [`LoadSequenceConfig`]
+    pub fn from_path_with_config(
+        path: &Path,
+        config: LoadSequenceConfig,
+    ) -> Result<Sequence, Error> {
         // Iterate over all file extensions, from last to first.
         for ext in path.extensions() {
             match ext.to_str() {
-                Some("dnstap") => return load_sequence::dnstap_to_sequence(path),
+                Some("dnstap") => {
+                    return load_sequence::dnstap_to_sequence_with_config(path, config)
+                }
                 Some("json") => {
+                    if config != Default::default() {
+                        bail!("Trying to load a Sequence from JSON with a custom LoadSequenceConfig: LoadSequenceConfig is not supported for JSON format.")
+                    }
                     let seq_json = fs::read_to_string(path)
                         .with_context(|_| format!("Cannot read file `{}`", path.display()))?;
                     return Ok(serde_json::from_str(&seq_json)?);
@@ -104,13 +109,6 @@ impl Sequence {
             }
         }
         // Fallback to the old behavior
-        load_sequence::dnstap_to_sequence(path)
-    }
-
-    /// Load a [`Sequence`] from a file path. The file has to be a dnstap file.
-    ///
-    /// `config` allows to alter the loading according to [`LoadDnstapConfig`]
-    pub fn from_path_with_config(path: &Path, config: LoadDnstapConfig) -> Result<Sequence, Error> {
         load_sequence::dnstap_to_sequence_with_config(path, config)
     }
 
