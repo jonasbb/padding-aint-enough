@@ -345,7 +345,7 @@ pub(crate) fn gap_size(gap: Duration, base: Duration) -> Option<SequenceElement>
         gap = gap - base;
         out += 1;
     }
-    let dist = f64::from(out).log2() as u8;
+    let dist = f64::from(out).log2() as _;
     if dist == 0 {
         None
     } else {
