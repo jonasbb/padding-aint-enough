@@ -7,7 +7,7 @@ use colored::Colorize;
 use failure::{bail, format_err, Error, ResultExt};
 use itertools::Itertools;
 use log::debug;
-use pcap::{Capture, Linktype, Packet as PcapPacket};
+use pcap_parser::{data::PacketData, PcapCapture, PcapError};
 use pnet::packet::{
     ethernet::EthernetPacket, ip::IpNextHeaderProtocols, ipv4::Ipv4Packet, tcp::TcpPacket, Packet,
 };
@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     cmp::Ordering,
     collections::{HashMap, HashSet},
-    mem,
+    fs, mem,
     net::{Ipv4Addr, SocketAddrV4},
     path::Path,
 };
@@ -138,9 +138,18 @@ impl Ord for TlsRecord {
 pub fn extract_tls_records(
     file: impl AsRef<Path>,
 ) -> Result<HashMap<FlowId, Vec<TlsRecord>>, Error> {
-    let file = file.as_ref();
-    let mut capture = Capture::from_file(file)?;
-    let datalink_type = capture.get_datalink();
+    let file_content = fs::read(file)?;
+    let capture = PcapCapture::from_file(&file_content).map_err(|err| match err {
+        PcapError::Eof => format_err!("Failed reading pcap: EOF"),
+        PcapError::ReadError => format_err!("Failed reading pcap: Read error"),
+        PcapError::Incomplete => format_err!("Failed reading pcap: Incomplete"),
+        PcapError::HeaderNotRecognized => format_err!("Failed reading pcap: Header not recognized"),
+        PcapError::NomError(nom_error) => format_err!(
+            "Failed reading pcap: Nom Error: {}",
+            nom_error.description()
+        ),
+    })?;
+    let datalink_type = capture.header.network;
     // ID of the packet with in the pcap file.
     // Makes it easier to map it to the same packet within wireshark
     let mut packet_id = 0;
@@ -166,17 +175,9 @@ pub fn extract_tls_records(
     let mut seen_sequences: BoundedBuffer<(FlowId, u32)> = BoundedBuffer::new(30);
 
     (|| {
-        'packet: loop {
-            packet_id += 1;
-            let pkt = capture.next();
-
-            if pkt == Err(pcap::Error::NoMorePackets) {
-                break;
-            }
-
-            // Start parsing all the layers of the packet
-            let PcapPacket { header, data } = pkt?;
-            if header.caplen != header.len {
+        'packet: for (id, pkt) in capture.blocks.into_iter().enumerate() {
+            packet_id = id as u32 + 1;
+            if pkt.caplen != pkt.origlen {
                 bail!("Cannot process packets, as they are truncated");
             }
 
@@ -184,8 +185,12 @@ pub fn extract_tls_records(
             // Linktypes are described here: https://www.tcpdump.org/linktypes.html
             let ipv4;
             let eth; // only for extending the lifetime
-            match datalink_type {
-                Linktype(1) => {
+            match pcap_parser::data::get_packetdata(pkt.data, datalink_type, pkt.caplen as usize) {
+                None => bail!("Could not parse the packet data of packet_id {}", packet_id),
+                Some(PacketData::Unsupported(_)) | Some(PacketData::L4(_, _)) => {
+                    bail!("Unsupported linktype {}", datalink_type)
+                }
+                Some(PacketData::L2(data)) => {
                     // Normal Ethernet
                     eth = EthernetPacket::new(data)
                         .ok_or_else(|| format_err!("Expect Ethernet Packet"))?;
@@ -193,22 +198,13 @@ pub fn extract_tls_records(
                         // ipv4 = Ipv4Packet::new(eth.payload())
                         .ok_or_else(|| format_err!("Expect IPv4 Packet"))?;
                 }
-                Linktype(113) => {
+                Some(PacketData::L3(_, data)) => {
                     // Linux cooked capture
                     // Used for capturing the `any` device
                     ipv4 = Ipv4Packet::new(&data[16..])
                         .ok_or_else(|| format_err!("Expect IPv4 Packet"))?;
                 }
-                _ => bail!(
-                    "The datalink type is unknown and cannot be process: {} \"{}\"",
-                    datalink_type
-                        .get_name()
-                        .unwrap_or_else(|_| format!("ID: {}", datalink_type.0)),
-                    datalink_type
-                        .get_description()
-                        .unwrap_or_else(|_| "".to_string())
-                ),
-            }
+            };
 
             // Check for TCP in next layer
             if ipv4.get_next_level_protocol() != IpNextHeaderProtocols::Tcp {
@@ -252,7 +248,7 @@ pub fn extract_tls_records(
                 next_time.remove(&flowid);
             }
             let time =
-                NaiveDateTime::from_timestamp(header.ts.tv_sec, (header.ts.tv_usec * 1000) as u32);
+                NaiveDateTime::from_timestamp(pkt.ts_sec as i64, (pkt.ts_usec * 1000) as u32);
             *next_time.entry(flowid).or_insert_with(|| Some(time)) = Some(time);
 
             debug!("({:>2}) Processing TCP segment", packet_id);
