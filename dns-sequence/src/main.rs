@@ -312,6 +312,7 @@ fn run_classify(
 /// to the k in k-NN, while the `distance_threshold`, if not `None`, allows to specify an additional
 /// threshold, in which case no classification should happen. This toggles the two different k-NN
 /// variants from the paper.
+#[allow(clippy::too_many_arguments)]
 fn classify_and_evaluate(
     // The `k` for k-NN
     k: usize,

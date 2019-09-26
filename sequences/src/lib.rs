@@ -254,9 +254,8 @@ impl Sequence {
 
         type RowType<DCI> = Vec<(usize, DCI)>;
 
-        let mut prev_prev_row: RowType<DCI> = (0..smaller.0.len() + 1)
-            .map(|_| (0, DCI::default()))
-            .collect();
+        let mut prev_prev_row: RowType<DCI> =
+            (0..=smaller.0.len()).map(|_| (0, DCI::default())).collect();
         let mut cost = 0;
         let mut previous_row: RowType<DCI> = Some((0, DCI::default()))
             .into_iter()
@@ -266,9 +265,8 @@ impl Sequence {
                 (cost, cost_info)
             }))
             .collect();
-        let mut current_row: RowType<DCI> = (0..smaller.0.len() + 1)
-            .map(|_| (0, DCI::default()))
-            .collect();
+        let mut current_row: RowType<DCI> =
+            (0..=smaller.0.len()).map(|_| (0, DCI::default())).collect();
         debug_assert_eq!(
             previous_row.len(),
             current_row.len(),

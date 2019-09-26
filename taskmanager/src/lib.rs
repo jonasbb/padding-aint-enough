@@ -522,7 +522,7 @@ impl TaskManager {
                     .collect()
             })?;
 
-        Ok(domain_counters.into_iter().flat_map(|x| x).collect())
+        Ok(domain_counters.into_iter().flatten().collect())
     }
 }
 

@@ -79,7 +79,7 @@ impl SequenceElement {
     pub fn to_vector_encoding(self) -> (u16, u16) {
         use self::SequenceElement::*;
         match self {
-            Size(s) => (s as u16, 0),
+            Size(s) => (u16::from(s), 0),
             Gap(g) => (0, g as u16),
         }
     }
@@ -89,7 +89,7 @@ impl Debug for SequenceElement {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use crate::SequenceElement::*;
         let (l, v) = match self {
-            Size(v) => ("S", *v as u16),
+            Size(v) => ("S", u16::from(*v)),
             Gap(v) => ("G", *v),
         };
         write!(f, "{}{:>2}", l, v)

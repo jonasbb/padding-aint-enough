@@ -46,7 +46,7 @@ fn run() -> Result<(), Error> {
         .for_each(|group| group.sort_by(|a, b| a.id().cmp(&b.id())));
     info!("Done loading dnstap files.");
 
-    println!("Loaded {} elements.", data.iter().flat_map(|x| x).count());
+    println!("Loaded {} elements.", data.iter().flatten().count());
 
     let id_len = data
         .iter()

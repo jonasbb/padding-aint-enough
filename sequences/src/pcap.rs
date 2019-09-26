@@ -248,7 +248,7 @@ pub fn extract_tls_records(
                 next_time.remove(&flowid);
             }
             let time =
-                NaiveDateTime::from_timestamp(pkt.ts_sec as i64, (pkt.ts_usec * 1000) as u32);
+                NaiveDateTime::from_timestamp(i64::from(pkt.ts_sec), (pkt.ts_usec * 1000) as u32);
             *next_time.entry(flowid).or_insert_with(|| Some(time)) = Some(time);
 
             debug!("({:>2}) Processing TCP segment", packet_id);
@@ -483,7 +483,7 @@ pub fn process_pcap(
             // Try to guess what the sever might have been
             let endpoints: HashSet<_> = records
                 .values()
-                .flat_map(std::convert::identity)
+                .flatten()
                 .map(|record| SocketAddrV4::new(record.sender, record.sender_port))
                 .collect();
 
@@ -527,11 +527,7 @@ pub fn process_pcap(
     });
     if verbose {
         // println!("{}", "TLS Records with DNS responses:".underline());
-        let records: Vec<_> = records
-            .values()
-            .flat_map(std::convert::identity)
-            .sorted()
-            .collect();
+        let records: Vec<_> = records.values().flatten().sorted().collect();
         eprintln!("{}", serde_json::to_string_pretty(&records).unwrap());
     }
 

@@ -129,9 +129,9 @@ fn run() -> Result<(), Error> {
                             ..
                         } = ev.content;
                         if let Some(time) = response_time {
-                            return time;
+                            time
                         } else if let Some(time) = query_time {
-                            return time;
+                            time
                         } else {
                             panic!(
                                 "The dnstap message must contain either a query or response time."
