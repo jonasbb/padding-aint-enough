@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.2'
-#       jupytext_version: 1.2.0+dev
+#       jupytext_version: 1.2.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -30,11 +30,14 @@ import matplotlib.pyplot as plt
 from natsort import natsorted
 
 # %%
+# # %matplotlib widget
 # %matplotlib inline
 plt.rcParams["figure.figsize"] = [15, 10]
 
 # %%
+# files = glob("../keras/experiments/experiment002/csvs/*.csv")
 files = glob("../keras/csvs/*.csv")
+
 
 # %%
 def fix_value(value: str) -> str:
@@ -71,6 +74,11 @@ def load_file(file: str) -> t.Tuple[t.Dict[str, float], t.Dict[str, float]]:
     except KeyError:
         pass
 
+    # Add fake values which did not exist in the Talos config but are calculated from it
+    meta["meta_optimization_effort"] = (
+        meta["layers"] * meta["hidden_size"] * meta["epochs"]
+    )
+
     return (meta, content)
 
 
@@ -92,7 +100,10 @@ data = [tmp for tmp in (load_file(f) for f in files) if filter_data(tmp)]
 metric = "accuracy"
 
 # %%
+figures = []
 for variable in data[0][0].keys():
+    plt.figure(variable)
+    plt.clf()
     if variable == "timestamp":
         continue
     values: t.Dict[t.Any, t.List[float]] = dict()
@@ -112,6 +123,10 @@ for variable in data[0][0].keys():
     plt.title(f"Free Variable: {variable}")
     plt.ylabel(f"Metric: {metric}")
     plt.ylim(bottom=0, top=1)
+    figures += [plt.gcf().canvas]
     plt.show()
+
+# import ipywidgets as widgets
+# widgets.VBox(figures)
 
 # %%

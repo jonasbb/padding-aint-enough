@@ -1,6 +1,6 @@
 {
-    "rust.build_on_save": true,
-    "rust.all_targets": false,
-    "rust.jobs": 2,
-    "python.pythonPath": "/usr/bin/python3"
+    "python.pythonPath": "/home/jbushart/.virtualenvs/encrypted-dns-B3eMcoNz/bin/python",
+    "python.autoComplete.extraPaths": [
+        "./keras"
+    ],
 }

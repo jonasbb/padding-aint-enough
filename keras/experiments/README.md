@@ -123,6 +123,9 @@ p = {
     "recurrent_dropout": [0, 0.05, 0.1],
     "optimizer": [keras.optimizers.Adam, keras.optimizers.Nadam],
 }
+
+# Only configurations with this constraint are tested
+boolean_limit=lambda p: (p["layers"] * p["hidden_size"] * p["epochs"]) == 12800
 ```
 
 ![Epochs](./experiment003/epochs.png)

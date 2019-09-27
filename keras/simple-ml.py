@@ -2,15 +2,15 @@
 import warnings  # isort:skip
 
 warnings.filterwarnings("ignore", category=FutureWarning)  # NOQA
+# pylint: disable=no-name-in-module
 from tensorflow.python.util import deprecation  # isort:skip
 
+# pylint: disable=protected-access
 deprecation._PRINT_DEPRECATION_WARNINGS = False  # NOQA
 
-import csv
 import datetime
 import os
 import typing as t
-from glob import glob
 
 import keras
 import keras.utils
@@ -18,7 +18,7 @@ import numpy as np
 import talos
 from keras import layers
 from keras.models import Sequential
-from utils import Canonicalize, load_data, sanitize_file_name, shuffle_in_unison_scary
+from utils import load_data, shuffle_in_unison_scary
 
 # Try replacing GRU, or SimpleRNN.
 RNN = layers.LSTM
@@ -32,7 +32,7 @@ CONFUSION_DOMAINS_LISTS = [
 
 
 def main() -> None:
-    global MASKING_VALUE, NUM_CLASSES
+    global MASKING_VALUE, NUM_CLASSES  # pylint: disable=global-statement
     data = load_data(CONFUSION_DOMAINS_LISTS, "/home/jbushart/tmp/", 8)
     print(data)
     data.assert_no_nan()
@@ -43,28 +43,34 @@ def main() -> None:
     p = {
         "activation": ["softmax"],
         "batch_size": [20, 40],
-        "clipnorm": [0.1, 0.2, 0.4, 0.6, 0.8, 1.0],
-        "dropout": [0, 0.05, 0.1, 0.15, 0.2, 0.25],
-        "epochs": [100],
-        "hidden_size": [128],
-        "layers": [1],
-        "recurrent_dropout": [0, 0.05, 0.1, 0.15, 0.2, 0.25],
+        "clipnorm": [0.1],
+        "dropout": [0.05],
+        "epochs": [20, 25, 50, 100],
+        "hidden_size": [128, 256],
+        "layers": [2],
+        "recurrent_dropout": [0.05],
         "optimizer": [keras.optimizers.Adam, keras.optimizers.Nadam],
     }
 
     scan_results = talos.Scan(
+        # Training and Validation Data
         x=data.training,
         y=data.training_labels,
         x_val=data.validation,
         y_val=data.validation_labels,
+        # Model Selection parameters
         params=p,
         model=test_model,
-        experiment_name="Basic Sequences",
-        fraction_limit=0.20,
-        # random_method="quantum",
+        fraction_limit=0.50,
         reduction_method="correlation",
         reduction_metric="val_accuracy",
+        # Talos Config
+        experiment_name="Basic Sequences",
         print_params=True,
+        disable_progress_bar=True,
+        # This has to be on the last line
+        boolean_limit=lambda p: (p["layers"] * p["hidden_size"] * p["epochs"])
+        == 12800,  # ,
     )
 
     import IPython
