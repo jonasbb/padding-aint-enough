@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 import csv
-import sys
 import typing as t
 from copy import copy
 from glob import glob
 from os import path
 
 import keras
+import keras.utils
 import numpy as np
 import pylib
-from keras import layers, utils
+from keras import layers
 from keras.models import Sequential
 from keras.preprocessing.sequence import pad_sequences
+from utils import Canonicalize, sanitize_file_name, shuffle_in_unison_scary
 
 # Try replacing GRU, or SimpleRNN.
 RNN = layers.LSTM
@@ -31,47 +32,6 @@ CONFUSION_DOMAINS_LISTS = [
 ]
 
 
-class Canonicalize:
-    cache: t.Dict[str, str]
-
-    def __init__(self) -> None:
-        self.cache = dict()
-        # read all files and add them to the cache
-        for file in CONFUSION_DOMAINS_LISTS:
-            rdr = csv.reader(open(file, "r"))
-            for dom, canon in rdr:
-                dom = sys.intern(dom)
-                canon = sys.intern(canon)
-                # skip comments
-                if dom.startswith("#"):
-                    continue
-                if dom in self.cache:
-                    raise Exception(
-                        f"Two duplicate entries for the same domain '{dom}' while canonicalizing."
-                    )
-                self.cache[dom] = canon
-
-    def canonicalize(self, domain: str) -> str:
-        res = domain
-        try:
-            res = self.cache[domain]
-        except KeyError:
-            pass
-        return sys.intern(res)
-
-
-def sanitize_file_name(filename: str) -> str:
-    # strip extension
-    tmp = path.basename(filename)
-    if tmp.endswith(".xz"):
-        tmp = tmp[: -len(".xz")]
-    if tmp.endswith(".json"):
-        tmp = tmp[: -len(".json")]
-    if tmp.endswith(".dnstap"):
-        tmp = tmp[: -len(".dnstap")]
-    return sys.intern(tmp)
-
-
 def load_files_to_ignore() -> t.Set[str]:
     res = set()
     rdr = csv.reader(open(FAILED_DOMAINS_LIST, "r"))
@@ -82,24 +42,10 @@ def load_files_to_ignore() -> t.Set[str]:
     return res
 
 
-def get_label(filename: str, canonicalizer: Canonicalize) -> str:
-    # get the name of the directory containing the file
-    label = path.basename(path.dirname(filename))
-    return canonicalizer.canonicalize(label)
-
-
-def shuffle_in_unison_scary(a: np.array, b: np.array) -> t.Tuple[np.array, np.array]:
-    rng_state = np.random.get_state()
-    np.random.shuffle(a)
-    np.random.set_state(rng_state)
-    np.random.shuffle(b)
-    return (a, b)
-
-
 def main() -> None:
     m = (0, 0)
 
-    canonicalizer = Canonicalize()
+    canonicalizer = Canonicalize(CONFUSION_DOMAINS_LISTS)
     files_to_ignore = load_files_to_ignore()
 
     sequences = [
@@ -111,7 +57,9 @@ def main() -> None:
         for i in range(10)
     ]
     training_raw = [[s.to_vector_encoding() for s in seqs] for seqs in sequences]
-    labels = [[get_label(s.id(), canonicalizer) for s in seqs] for seqs in sequences]
+    labels = [
+        [canonicalizer.canonicalize_path(s.id()) for s in seqs] for seqs in sequences
+    ]
     del sequences
 
     # find longest sequence
@@ -128,7 +76,8 @@ def main() -> None:
 
     labels_numeric = [[label_to_num[l] for l in ls] for ls in labels]
     labels_categorical = [
-        utils.to_categorical(l, num_classes=len(all_labels)) for l in labels_numeric
+        keras.utils.to_categorical(l, num_classes=len(all_labels))
+        for l in labels_numeric
     ]
 
     num_feature = len(training[0][0][0])
