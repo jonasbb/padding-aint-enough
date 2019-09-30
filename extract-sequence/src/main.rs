@@ -43,10 +43,10 @@ struct CliArgs {
     /// List of PCAP files
     #[structopt(name = "PCAPS")]
     pcap_files: Vec<String>,
-    // Creates a `.json.xz` file for each pcap in the same directory
+    /// Creates a `.json.xz` file for each pcap in the same directory
     #[structopt(long = "convert-to-json")]
     convert_to_json: bool,
-
+    /// Method to convert the time between messages into a gap value
     #[structopt(long = "gap-mode", possible_values = &GapMode::variants(), case_insensitive = true)]
     gap_mode: Option<GapMode>,
 }
