@@ -201,8 +201,8 @@ pub fn extract_tls_records(
                 Some(PacketData::L3(_, data)) => {
                     // Linux cooked capture
                     // Used for capturing the `any` device
-                    ipv4 = Ipv4Packet::new(&data[16..])
-                        .ok_or_else(|| format_err!("Expect IPv4 Packet"))?;
+                    ipv4 =
+                        Ipv4Packet::new(data).ok_or_else(|| format_err!("Expect IPv4 Packet"))?;
                 }
             };
 

@@ -9,6 +9,8 @@ use sequences::{
 const DNSTAP1: &str = "./tests/data/porno666.tv-6-0.dnstap.xz";
 /// File containing two missing [`Gap`]s and one [`Size`](2) entry
 const DNSTAP2: &str = "./tests/data/zuanke8.com-5-0.dnstap.xz";
+/// Simple pcap file to test reading and extracting of pcaps
+const PCAP1: &str = "./tests/data/google.com-0-0.pcap";
 
 #[test]
 fn test_load_sequence_normal() {
@@ -68,4 +70,16 @@ fn test_load_sequence_perfect_timing() {
         DNSTAP2.to_string(),
     );
     assert_eq!(expected, seq);
+}
+
+#[test]
+#[cfg_attr(not(feature = "read_pcap"), ignore)]
+fn test_load_pcap() {
+    let seq = Sequence::from_path(PCAP1.as_ref()).unwrap();
+    let expected = r##"{"./tests/data/google.com-0-0.pcap":["S01","G08","S01","G04","S01","G07","S01","G02","S01","G02","S01","G05","S01","G02","S01","G02","S01","G02","S01"]}"##;
+    assert_eq!(
+        expected,
+        serde_json::to_string(&seq).unwrap(),
+        "Failed to load google.com pcap file"
+    );
 }
