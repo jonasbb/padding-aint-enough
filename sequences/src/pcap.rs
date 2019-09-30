@@ -7,6 +7,7 @@ use colored::Colorize;
 use failure::{bail, format_err, Error, ResultExt};
 use itertools::Itertools;
 use log::debug;
+use misc_utils::fs;
 use pcap_parser::{data::PacketData, PcapCapture, PcapError};
 use pnet::packet::{
     ethernet::EthernetPacket, ip::IpNextHeaderProtocols, ipv4::Ipv4Packet, tcp::TcpPacket, Packet,
@@ -18,7 +19,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     cmp::Ordering,
     collections::{HashMap, HashSet},
-    fs, mem,
+    mem,
     net::{Ipv4Addr, SocketAddrV4},
     path::Path,
 };
