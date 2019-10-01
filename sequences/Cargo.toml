@@ -5,7 +5,7 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 edition = "2018"
 
 [features]
-read_pcap = [ "colored", "itertools", "pcap-parser", "pnet", "ron", "rustls" ]
+read_pcap = [ "colored", "etherparse", "itertools", "pcap-parser", "ron", "rustls" ]
 
 [[bench]]
 name = "take_smallest"
@@ -19,6 +19,7 @@ harness = false
 chrono = { version = "0.4.9", features = [ "serde" ] }
 colored = { version = "1.8.0", optional = true }
 dnstap = { path = "../dnstap" }
+etherparse = { version = "0.8.2", optional = true }
 failure = "0.1.5"
 fnv = "1.0.6"
 itertools = { version = "0.8.0", optional = true }
@@ -28,7 +29,6 @@ misc_utils = "2.4.0"
 num-traits = "0.2.8"
 ordered-float = { version = "1.0.2", features = [ "serde" ] }
 pcap-parser = { version = "0.8.1", features = [ "data" ], optional = true }
-pnet = { version = "0.22.0", optional = true }
 rand = "0.7.2"
 rand_xorshift = "0.2.0"
 rayon = "1.2.0"

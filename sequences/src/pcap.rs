@@ -4,14 +4,12 @@ use crate::{
 };
 use chrono::NaiveDateTime;
 use colored::Colorize;
+use etherparse::{InternetSlice, Ipv4HeaderSlice, SlicedPacket, TcpHeaderSlice, TransportSlice};
 use failure::{bail, format_err, Error, ResultExt};
 use itertools::Itertools;
 use log::{debug, trace};
 use misc_utils::fs;
 use pcap_parser::{data::PacketData, PcapCapture, PcapError};
-use pnet::packet::{
-    ethernet::EthernetPacket, ip::IpNextHeaderProtocols, ipv4::Ipv4Packet, tcp::TcpPacket, Packet,
-};
 use rustls::internal::msgs::{
     codec::Codec, enums::ContentType as TlsContentType, message::Message as TlsMessage,
 };
@@ -44,9 +42,9 @@ impl FlowId {
         }
     }
 
-    pub fn from_ip_and_tcp(ipv4: &Ipv4Packet, tcp: &TcpPacket) -> Self {
-        let p0 = (ipv4.get_source(), tcp.get_source());
-        let p1 = (ipv4.get_destination(), tcp.get_destination());
+    pub fn from_ip_and_tcp<'a, 'b>(ipv4: &Ipv4HeaderSlice<'a>, tcp: &TcpHeaderSlice<'b>) -> Self {
+        let p0 = (ipv4.source_addr(), tcp.source_port());
+        let p1 = (ipv4.destination_addr(), tcp.destination_port());
         Self::from_pairs(p0, p1)
     }
 }
@@ -184,65 +182,61 @@ pub fn extract_tls_records(
 
             // Try extracting an IPv4 packet from the raw bytes we have
             // Linktypes are described here: https://www.tcpdump.org/linktypes.html
+            let parsed_packet;
             let ipv4;
-            let eth; // only for extending the lifetime
+            let tcp;
             match pcap_parser::data::get_packetdata(pkt.data, datalink_type, pkt.caplen as usize) {
                 None => bail!("Could not parse the packet data of packet_id {}", packet_id),
                 Some(PacketData::Unsupported(_)) | Some(PacketData::L4(_, _)) => {
                     bail!("Unsupported linktype {}", datalink_type)
                 }
                 Some(PacketData::L2(data)) => {
-                    // Normal Ethernet
-                    eth = EthernetPacket::new(data)
-                        .ok_or_else(|| format_err!("Expect Ethernet Packet"))?;
-                    ipv4 = Ipv4Packet::new(eth.payload())
-                        // ipv4 = Ipv4Packet::new(eth.payload())
-                        .ok_or_else(|| format_err!("Expect IPv4 Packet"))?;
+                    // Normal Ethernet captures
+                    parsed_packet = SlicedPacket::from_ethernet(data)
+                        .map_err(|err| format_err!("{:?}", err))?;
                 }
                 Some(PacketData::L3(_, data)) => {
                     // Linux cooked capture
                     // Used for capturing the `any` device
-                    ipv4 =
-                        Ipv4Packet::new(data).ok_or_else(|| format_err!("Expect IPv4 Packet"))?;
+                    parsed_packet =
+                        SlicedPacket::from_ip(data).map_err(|err| format_err!("{:?}", err))?;
                 }
             };
+            if let Some(InternetSlice::Ipv4(inner)) = parsed_packet.ip {
+                ipv4 = inner;
+            } else {
+                bail!("Could not find an IPv4 packet for packet_id: {}", packet_id);
+            }
 
-            // Check for TCP in next layer
-            if ipv4.get_next_level_protocol() != IpNextHeaderProtocols::Tcp {
+            // Only process TCP packets, skip rest
+            if let Some(TransportSlice::Tcp(inner)) = parsed_packet.transport {
+                tcp = inner;
+            } else {
+                continue;
+            }
+
+            // Filter empty acknowledgements
+            if parsed_packet.payload.is_empty() {
                 continue;
             }
 
             // Bit 0 => Reserved
             // Bit 1 => DF Don't Fragment
             // Bit 2 => MF More Fragments
-            if (ipv4.get_flags() & 0b0000_0001) > 0 {
+            if ipv4.more_fragments() {
                 bail!("Fragmented Packets are not supported")
             }
 
-            let tcp =
-                TcpPacket::new(ipv4.payload()).ok_or_else(|| format_err!("Expect TCP Segment"))?;
-
             let flowid = FlowId::from_ip_and_tcp(&ipv4, &tcp);
 
-            // It seems that pnet 0.22 has a problem determining the TCP payload as it includes padding
-            // See issue here: https://github.com/libpnet/libpnet/issues/346
-            let tl = ipv4.get_total_length() as usize;
-            let ihl = ipv4.get_header_length() as usize;
-            let payload_length = tl - (ihl + tcp.get_data_offset() as usize) * 4;
-            let payload = &tcp.payload()[0..payload_length];
-            // Filter empty acknowledgements
-            if payload.is_empty() {
-                continue;
-            }
-
             // We only want to keep unique entries and filter out all retransmissions
-            if !seen_sequences.add((flowid, tcp.get_sequence())) {
+            if !seen_sequences.add((flowid, tcp.sequence_number())) {
                 // This is a retransmission, so do not process it
                 continue;
             }
 
             let buffer = buffer_unprocessed.entry(flowid).or_default();
-            buffer.extend_from_slice(payload);
+            buffer.extend_from_slice(parsed_packet.payload);
 
             // We only want to keep the next_time of the previous iteration, if we have a partially processed packet
             if buffer.is_empty() {
@@ -266,15 +260,15 @@ pub fn extract_tls_records(
                 debug!(
                     "{:?} {} - {}B",
                     tls.typ,
-                    ipv4.get_source(),
+                    ipv4.source_addr(),
                     tls.payload.length()
                 );
                 let record = TlsRecord {
                     packet_in_pcap: packet_id,
-                    sender: ipv4.get_source(),
-                    sender_port: tcp.get_source(),
-                    receiver: ipv4.get_destination(),
-                    receiver_port: tcp.get_destination(),
+                    sender: ipv4.source_addr(),
+                    sender_port: tcp.source_port(),
+                    receiver: ipv4.destination_addr(),
+                    receiver_port: tcp.destination_port(),
                     // next_time is never None here
                     time: next_time[&flowid].unwrap(),
                     message_type: tls.typ.into(),
