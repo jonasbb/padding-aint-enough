@@ -6,7 +6,7 @@ use chrono::NaiveDateTime;
 use colored::Colorize;
 use failure::{bail, format_err, Error, ResultExt};
 use itertools::Itertools;
-use log::debug;
+use log::{debug, trace};
 use misc_utils::fs;
 use pcap_parser::{data::PacketData, PcapCapture, PcapError};
 use pnet::packet::{
@@ -304,22 +304,26 @@ pub fn filter_tls_records(
     records: Vec<TlsRecord>,
     (server, server_port): (Ipv4Addr, u16),
 ) -> Vec<TlsRecord> {
+    let base_message_size = 128;
     let client_marker_query_size = 128 * 3;
 
     // First we ignore everything until we have seen the ChangeCipherSpec message from sever and client
     // This tells us that the initial unencrypted part of the handshake is done.
     //
-    // Then we wait until the first message of the client.
-    // The message needs to be at least 128 bytes to count.
-    // For example, the client sends a finished message to finish the handshake which is smaller than 128B.
+    // Then we wait for the transmission of the aaa.aaa.aaa.aaa query and the corresponding response.
+    // They can both be recognized by their large size, of at least 3*128 bytes (255 Qname + header overhead + block padding).
+    // Afterwards, we check for a small query, the `start.example` one.
+    // The response to this query we want to keep in the data.
     //
     // From then on, only keep the server traffic.
     // This might need adapting later on.
 
+    trace!("Filter TLS Server: {} {}", server, server_port);
     let mut has_seen_server_change_cipher_spec = false;
     let mut has_seen_client_change_cipher_spec = false;
-    let mut has_seen_first_marker_query = false;
-    let mut has_seen_second_marker_query = false;
+    let mut has_seen_large_marker_query = false;
+    let mut has_seen_start_marker_query = false;
+    let mut has_seen_end_marker_query = false;
     let mut records: Vec<_> = records
         .into_iter()
         .skip_while(|rec| {
@@ -331,35 +335,64 @@ pub fn filter_tls_records(
                 }
             }
 
+            if has_seen_server_change_cipher_spec && has_seen_client_change_cipher_spec {
+                trace!("Second ChangeCipherSpec seen in ID: {}", rec.packet_in_pcap);
+            }
             !(has_seen_server_change_cipher_spec && has_seen_client_change_cipher_spec)
         })
+        // Filter for the large marker query aaa.aaa.aaa.aaa
         .skip_while(|rec| {
-            if !(rec.sender == server && rec.sender_port == server_port)
+            if rec.sender == server
+                && rec.sender_port == server_port
                 && rec.message_length >= client_marker_query_size
             {
-                has_seen_first_marker_query = true;
+                has_seen_large_marker_query = true;
             }
 
-            !has_seen_first_marker_query
+            if has_seen_large_marker_query {
+                trace!("Marker Query (large) seen in ID: {}", rec.packet_in_pcap);
+            }
+            !has_seen_large_marker_query
         })
-        // Skip the first marker query
-        .skip(1)
+        // Now we wait for the next message from the client, which is a small `start.example.`
+        .skip_while(|rec| {
+            if rec.receiver == server
+                && rec.receiver_port == server_port
+                && rec.message_length >= base_message_size
+                && rec.message_length <= 2 * base_message_size
+            {
+                has_seen_start_marker_query = true;
+            }
+
+            if has_seen_start_marker_query {
+                trace!("Marker Query (start) seen in ID: {}", rec.packet_in_pcap);
+            }
+            !has_seen_start_marker_query
+        })
         .take_while(|rec| {
             if !(rec.sender == server && rec.sender_port == server_port)
                 && rec.message_length >= client_marker_query_size
             {
-                has_seen_second_marker_query = true;
+                has_seen_end_marker_query = true;
             }
 
-            !has_seen_second_marker_query
+            !has_seen_end_marker_query
         })
+        // Only keep the server replies
         .filter(|rec| rec.sender == server && rec.sender_port == server_port)
-        // Skip both marker query responses
-        .skip(2)
+        // Only keep messages which are large enough to contain DNS
+        .filter(|rec| rec.message_length >= base_message_size)
+        // Skip the start marker query responses
+        .skip(1)
         .collect();
-    // Remove the additional marker query to `end.example.`, which is at the very end before we stopped collecting.
-    if !records.is_empty() {
-        records.truncate(records.len() - 1);
+
+    if has_seen_end_marker_query {
+        // Remove the additional marker query to `end.example.`,
+        // which is at the very end before we stopped collecting,
+        // but only if we are sure we observed it.
+        // The last part is important as sometimes the `end.example.` and
+        // zzz.zzz.zzz.zzz queries are part of a new TCP session due to timeouts.
+        records.truncate(records.len().saturating_sub(1));
     }
     records
 }

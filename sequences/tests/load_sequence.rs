@@ -13,6 +13,8 @@ const DNSTAP2: &str = "./tests/data/zuanke8.com-5-0.dnstap.xz";
 const PCAP1: &str = "./tests/data/google.com-0-0.pcap";
 /// Simple pcap file to test reading and extracting of compressed pcaps
 const PCAP_XZ1: &str = "./tests/data/1password.com-0-0.pcap.xz";
+/// Simple pcap file to test parsing with duplicated aaa.aaa.aaa.aaa queries
+const PCAP_XZ2: &str = "./tests/data/zju.edu.cn-8-0.pcap.xz";
 
 #[test]
 fn test_load_sequence_normal() {
@@ -74,6 +76,7 @@ fn test_load_sequence_perfect_timing() {
     assert_eq!(expected, seq);
 }
 
+/// Ensure that an uncompressed pcap file can be read
 #[test]
 #[cfg_attr(not(feature = "read_pcap"), ignore)]
 fn test_load_pcap() {
@@ -86,6 +89,7 @@ fn test_load_pcap() {
     );
 }
 
+/// Ensure that a compressed pcap file can be read
 #[test]
 #[cfg_attr(not(feature = "read_pcap"), ignore)]
 fn test_load_pcap_xz() {
@@ -94,6 +98,23 @@ fn test_load_pcap_xz() {
     assert_eq!(
         expected,
         serde_json::to_string(&seq).unwrap(),
-        "Failed to load google.com pcap file"
+        "Failed to load 1password.com pcap file"
+    );
+}
+
+/// Test that parsing still works, even with repeated aaa queries
+///
+/// For a small fraction of cases, the large aaa.aaa.aaa.aaa query got duplicated.
+/// This caused problems, as the second answer was interpreted as the closing zzz.zzz.zzz.zzz response and thus
+#[test]
+#[cfg_attr(not(feature = "read_pcap"), ignore)]
+fn test_load_pcap_duplicate_aaa_query() {
+    let seq = Sequence::from_path(PCAP_XZ2.as_ref()).unwrap();
+    let expected =
+        r##"{"./tests/data/zju.edu.cn-8-0.pcap.xz":["S01","G02","S01","G09","S01","G02","S01"]}"##;
+    assert_eq!(
+        expected,
+        serde_json::to_string(&seq).unwrap(),
+        "Failed to load zju.edu.cn pcap file"
     );
 }
