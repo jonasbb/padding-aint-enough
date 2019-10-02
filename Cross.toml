@@ -5,9 +5,5 @@ passthrough = [
     "PYTHON_SYS_EXECUTABLE",
 ]
 
-[target.x86_64-unknown-linux-musl]
-# image = "japaric/x86_64-unknown-linux-musl:v0.1.14"
-image = "ekidd/rust-musl-builder:nightly"
-
 [target.x86_64-unknown-linux-gnu]
 image = "debian-rust-nightly"
