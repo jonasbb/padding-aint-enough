@@ -1,3 +1,6 @@
+mod tcp_buffer;
+
+use self::tcp_buffer::TcpBuffer;
 use crate::{
     bounded_buffer::BoundedBuffer, AbstractQueryResponse, LoadSequenceConfig, PrecisionSequence,
     Sequence,
@@ -22,38 +25,56 @@ use std::{
     path::Path,
 };
 
-/// Identifier for a two-way TCP flow
+/// Identifier for a one-way TCP flow
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
-pub struct FlowId {
-    pub ip0: Ipv4Addr,
-    pub port0: u16,
-    pub ip1: Ipv4Addr,
-    pub port1: u16,
+pub struct FlowIdentifier {
+    pub source_ip: Ipv4Addr,
+    pub source_port: u16,
+    pub destination_ip: Ipv4Addr,
+    pub destination_port: u16,
 }
 
-impl FlowId {
-    pub fn from_pairs(p0: (Ipv4Addr, u16), p1: (Ipv4Addr, u16)) -> Self {
-        let ((ip0, port0), (ip1, port1)) = if p0 <= p1 { (p0, p1) } else { (p1, p0) };
+impl FlowIdentifier {
+    pub fn from_pairs(source: (Ipv4Addr, u16), destination: (Ipv4Addr, u16)) -> Self {
         Self {
-            ip0,
-            port0,
-            ip1,
-            port1,
+            source_ip: source.0,
+            source_port: source.1,
+            destination_ip: destination.0,
+            destination_port: destination.1,
         }
     }
 
     pub fn from_ip_and_tcp<'a, 'b>(ipv4: &Ipv4HeaderSlice<'a>, tcp: &TcpHeaderSlice<'b>) -> Self {
-        let p0 = (ipv4.source_addr(), tcp.source_port());
-        let p1 = (ipv4.destination_addr(), tcp.destination_port());
-        Self::from_pairs(p0, p1)
+        let source = (ipv4.source_addr(), tcp.source_port());
+        let destination = (ipv4.destination_addr(), tcp.destination_port());
+        Self::from_pairs(source, destination)
     }
 }
 
-impl From<&TlsRecord> for FlowId {
+impl From<&TlsRecord> for FlowIdentifier {
     fn from(other: &TlsRecord) -> Self {
-        let p0 = (other.sender, other.sender_port);
-        let p1 = (other.receiver, other.receiver_port);
-        Self::from_pairs(p0, p1)
+        let source = (other.sender, other.sender_port);
+        let destination = (other.receiver, other.receiver_port);
+        Self::from_pairs(source, destination)
+    }
+}
+
+/// Identifier for a two-way TCP flow
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct TwoWayFlowIdentifier(FlowIdentifier);
+
+impl From<FlowIdentifier> for TwoWayFlowIdentifier {
+    fn from(other: FlowIdentifier) -> Self {
+        let p0 = (other.source_ip, other.source_port);
+        let p1 = (other.destination_ip, other.destination_port);
+        let ((source_ip, source_port), (destination_ip, destination_port)) =
+            if p0 <= p1 { (p0, p1) } else { (p1, p0) };
+        Self(FlowIdentifier {
+            source_ip,
+            source_port,
+            destination_ip,
+            destination_port,
+        })
     }
 }
 
@@ -136,7 +157,7 @@ impl Ord for TlsRecord {
 /// This extracts all Tls records from the pcap file, from both client and server.
 pub fn extract_tls_records(
     file: impl AsRef<Path>,
-) -> Result<HashMap<FlowId, Vec<TlsRecord>>, Error> {
+) -> Result<HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>>, Error> {
     let file_content = fs::read(file)?;
     let capture = PcapCapture::from_file(&file_content).map_err(|err| match err {
         PcapError::Eof => format_err!("Failed reading pcap: EOF"),
@@ -153,11 +174,11 @@ pub fn extract_tls_records(
     // Makes it easier to map it to the same packet within wireshark
     let mut packet_id = 0;
     // List of all parsed TLS records
-    let mut tls_records: HashMap<FlowId, Vec<TlsRecord>> = HashMap::default();
+    let mut tls_records: HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>> = HashMap::default();
     // Buffer all unprocessed bytes.
     //
     // It needs to be a HashMap, because it needs to be stored per direction.
-    let mut buffer_unprocessed: HashMap<FlowId, Vec<u8>> = HashMap::default();
+    let mut buffer_unprocessed: HashMap<FlowIdentifier, TcpBuffer> = HashMap::default();
     // The time value we will be using for the next successfully parsed TLS record.
     //
     // It needs to be a HashMap, because it needs to be stored per direction.
@@ -169,9 +190,9 @@ pub fn extract_tls_records(
     // r: t1
     // r2: t2
     // Therefore, we cannot update the time until after we successfully parsed r.
-    let mut next_time: HashMap<FlowId, Option<NaiveDateTime>> = HashMap::default();
+    let mut next_time: HashMap<FlowIdentifier, Option<NaiveDateTime>> = HashMap::default();
     // Keep a list of flowids and processed sequence numbers to be able to detect retransmissions
-    let mut seen_sequences: BoundedBuffer<(FlowId, u32)> = BoundedBuffer::new(30);
+    let mut seen_sequences: BoundedBuffer<(FlowIdentifier, u32)> = BoundedBuffer::new(30);
 
     (|| {
         'packet: for (id, pkt) in capture.blocks.into_iter().enumerate() {
@@ -227,7 +248,7 @@ pub fn extract_tls_records(
                 bail!("Fragmented Packets are not supported")
             }
 
-            let flowid = FlowId::from_ip_and_tcp(&ipv4, &tcp);
+            let flowid = FlowIdentifier::from_ip_and_tcp(&ipv4, &tcp);
 
             // We only want to keep unique entries and filter out all retransmissions
             if !seen_sequences.add((flowid, tcp.sequence_number())) {
@@ -236,7 +257,7 @@ pub fn extract_tls_records(
             }
 
             let buffer = buffer_unprocessed.entry(flowid).or_default();
-            buffer.extend_from_slice(parsed_packet.payload);
+            buffer.add_data(tcp.sequence_number(), parsed_packet.payload);
 
             // We only want to keep the next_time of the previous iteration, if we have a partially processed packet
             if buffer.is_empty() {
@@ -249,14 +270,14 @@ pub fn extract_tls_records(
             debug!("({:>2}) Processing TCP segment", packet_id);
 
             while !buffer.is_empty() {
-                let tls = match TlsMessage::read_bytes(&buffer) {
+                let tls = match TlsMessage::read_bytes(buffer.view_data()) {
                     Some(tls) => tls,
                     // We cannot parse the packet yet, so just skip the processing
                     None => continue 'packet,
                 };
                 // Remove the bytes we already processed
                 // The TLS header is 5 byte long and not included in the payload
-                buffer.drain(..5 + tls.payload.length());
+                buffer.consume(5 + tls.payload.length())?;
                 debug!(
                     "{:?} {} - {}B",
                     tls.typ,
@@ -274,10 +295,7 @@ pub fn extract_tls_records(
                     message_type: tls.typ.into(),
                     message_length: tls.payload.length() as u32,
                 };
-                tls_records
-                    .entry((&record).into())
-                    .or_default()
-                    .push(record);
+                tls_records.entry(flowid.into()).or_default().push(record);
 
                 // Now that we build the TLS record, we can update the time
                 next_time.insert(flowid, Some(time));
@@ -395,7 +413,7 @@ pub fn filter_tls_records(
 ///
 /// For filtering the list of [`TlsRecord`]s see the [`filter_tls_records`].
 pub fn build_sequence<S, H>(
-    records: HashMap<FlowId, Vec<TlsRecord>, H>,
+    records: HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>, H>,
     identifier: S,
     config: LoadSequenceConfig,
 ) -> Option<Sequence>
@@ -414,7 +432,7 @@ where
 ///
 /// For filtering the list of [`TlsRecord`]s see the [`filter_tls_records`].
 pub fn build_precision_sequence<S, H>(
-    records: HashMap<FlowId, Vec<TlsRecord>, H>,
+    records: HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>, H>,
     identifier: S,
 ) -> Option<PrecisionSequence>
 where
@@ -482,7 +500,7 @@ pub fn process_pcap(
     mut filter: Option<SocketAddrV4>,
     interative: bool,
     verbose: bool,
-) -> Result<HashMap<FlowId, Vec<TlsRecord>>, Error> {
+) -> Result<HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>>, Error> {
     if interative {
         println!("{}{}", "Processing file: ".bold(), file.display());
     }

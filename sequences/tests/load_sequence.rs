@@ -15,6 +15,8 @@ const PCAP1: &str = "./tests/data/google.com-0-0.pcap";
 const PCAP_XZ1: &str = "./tests/data/1password.com-0-0.pcap.xz";
 /// Simple pcap file to test parsing with duplicated aaa.aaa.aaa.aaa queries
 const PCAP_XZ2: &str = "./tests/data/zju.edu.cn-8-0.pcap.xz";
+/// Test parsing with reordered data
+const PCAP_XZ3: &str = "./tests/data/vk.com-1217-242.pcap.xz";
 
 #[test]
 fn test_load_sequence_normal() {
@@ -116,5 +118,19 @@ fn test_load_pcap_duplicate_aaa_query() {
         expected,
         serde_json::to_string(&seq).unwrap(),
         "Failed to load zju.edu.cn pcap file"
+    );
+}
+
+/// Test that parsing is resilient to reordered data
+#[test]
+#[cfg_attr(not(feature = "read_pcap"), ignore)]
+fn test_load_pcap_reordered_packets() {
+    let seq = Sequence::from_path(PCAP_XZ3.as_ref()).unwrap();
+    let expected =
+        r##"{"./tests/data/vk.com-1217-242.pcap.xz":["S01","G08","S01","G09","S01","G02","S01","G05","S01","G02","S01","G06","S01","G07","S01","G02","S01"]}"##;
+    assert_eq!(
+        expected,
+        serde_json::to_string(&seq).unwrap(),
+        "Failed to load vk.com pcap file"
     );
 }
