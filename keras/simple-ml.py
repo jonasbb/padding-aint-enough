@@ -33,7 +33,7 @@ CONFUSION_DOMAINS_LISTS = [
 
 def main() -> None:
     global MASKING_VALUE, NUM_CLASSES  # pylint: disable=global-statement
-    data = load_data(CONFUSION_DOMAINS_LISTS, "/home/jbushart/tmp/", 8)
+    data = load_data(CONFUSION_DOMAINS_LISTS, "/home/jbushart/tmp/", "*pcap.json.xz", 8)
     print(data)
     data.assert_no_nan()
 

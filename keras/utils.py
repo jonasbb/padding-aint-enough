@@ -122,9 +122,15 @@ class Canonicalize:
 
 
 def load_data(
-    confusion_domains: t.List[str], datapath: str, training_validation_split: int
+    confusion_domains: t.List[str],
+    datapath: str,
+    extension_pattern: str,
+    training_validation_split: int,
 ) -> SequenceData:
     """
+    `confusion_domains`: List of files specifying the canonicalisation steps for domains
+    `datapath`: Base path where all the files are located
+    `extension_pattern`: A pattern for glob describing which file extensions to load
     `training_validation_split`: The first ID which should be used for validation instead of training.
     """
     canonicalizer = Canonicalize(confusion_domains)
@@ -135,7 +141,9 @@ def load_data(
         sequences.append(
             [
                 pylib.load_file(f)
-                for f in glob(os.path.join(datapath, "*", f"*{i}-0.pcap*"))
+                for f in glob(
+                    os.path.join(datapath, "*", f"*{i}-0.{extension_pattern}")
+                )
             ]
         )
     # Split into ML-ready data and labels
