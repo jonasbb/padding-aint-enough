@@ -26,11 +26,20 @@ RE_FILENAMES = re.compile(
 
 
 def copy_files_hierarchical(files: t.List[str], to_path: str) -> t.List[str]:
+    """
+    Copy all files into a new hierarchy.
+
+    The files will be copied under `to_path`, based on the `RE_FILENAMES` regex above.
+    The new path will be `to_path/<set>/<domain>/<basename>`.
+    """
     pool = mp.Pool()
     return pool.starmap(copy_single_file, map(lambda x: (x, to_path), files))
 
 
 def copy_single_file(file: str, to_path: str) -> str:
+    """
+    Copy a single file as defined in copy_files_hierarchical
+    """
     filename = path.basename(file)
     match = RE_FILENAMES.match(filename)
     if match is None:
@@ -63,6 +72,9 @@ def postprocess_pcap_batch(batch: t.List[str]) -> None:
 
 
 def concat_xz_files(files: t.List[str]) -> str:
+    """
+    Read a bunch of xz-files and concatenate them.
+    """
     contents = []
     for file in files:
         with lzma.open(file, "rt") as f:
@@ -79,16 +91,20 @@ def main() -> None:
     to_path = args[1]
 
     # Move pcap and dnstap files to new location
+    print("Copy *.pcap.xz files to new place")
     new_file_names = copy_files_hierarchical(
         glob(path.join(from_path, "*", "*.pcap.xz")), to_path
     )
+    print("Copy *.dnstap.xz files to new place")
     copy_files_hierarchical(glob(path.join(from_path, "*", "*.dnstap.xz")), to_path)
     # Create one big tlskeys file for all keys
+    print("Concatenate tlskeys files")
     tlskeys = concat_xz_files(glob(path.join(from_path, "*", "*.tlskeys.txt.xz")))
     with open(path.join(to_path, "tlskeys.txt"), "w+t") as f:
         f.write(tlskeys)
 
     # Postprocess pcaps
+    print("Postprocess pcaps")
     postprocess_pcaps(new_file_names)
 
 
