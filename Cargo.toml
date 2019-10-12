@@ -52,7 +52,7 @@ chrono = "0.4.9"
 csv = "1.1.1"
 dnstap = { path = "./dnstap" }
 env_logger = "0.7.0"
-failure = "0.1.5"
+failure = "0.1.6"
 glob = "0.3.0"
 lazy_static = "1.4.0"
 log = "0.4.8"
@@ -74,7 +74,7 @@ features = [ "chrono" ]
 [dev-dependencies]
 chrome = { path = "./chrome" }
 criterion = "0.3.0"
-failure = "0.1.5"
+failure = "0.1.6"
 misc_utils = "2.4.0"
 serde_json = "1.0.41"
 
