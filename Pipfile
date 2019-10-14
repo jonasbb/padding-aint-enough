@@ -23,6 +23,7 @@ websocket-client = "~=0.37.0"
 [dev-packages]
 black = "==19.3b0"
 mypy = "*"
+notebook = "~=6.0"
 pylint = "*"
 setuptools-rust = "~=0.10.1"
 
