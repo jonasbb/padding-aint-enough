@@ -86,7 +86,7 @@ fn run() -> Result<(), Error> {
         )?;
         if cli_args.convert_to_json {
             let mut path = PathBuf::from(&file);
-            path.set_extension("pcap.json.xz");
+            path.set_extension("json.xz");
             let _ = fs::write(&path, seq.to_json()?);
         }
     }
