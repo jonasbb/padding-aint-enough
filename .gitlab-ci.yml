@@ -43,8 +43,8 @@ test:cargo:
   # Remove debug build optimizations for third-party crates
   # They are usefull for local development, as this crates more optimized debug binaries
   # but makes CI very slow
-  - sed -i '/profile.dev.overrides./,+1 d' Cargo.toml
-  - sed -i '/profile.dev.build-override/,+1 d' Cargo.toml
+  - sed -i '/profile.dev.overrides./,+2 d' Cargo.toml
+  - sed -i '/profile.dev.build-override/,+2 d' Cargo.toml
 
   - cargo build --all
   - cargo test --all
