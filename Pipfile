@@ -18,6 +18,7 @@ scipy = "~=1.0"
 talos = "~=0.6.3"
 tensorflow = "~=1.14"
 tensorflow-gpu = "~=1.14"
+tldextract = "==2.2.2"
 websocket-client = "~=0.37.0"
 
 [dev-packages]
