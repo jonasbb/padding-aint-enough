@@ -11,7 +11,7 @@ diesel = { version = "1.4.3", features = ["chrono", "postgres"] }
 diesel-derive-enum = { version = "0.4.4", features = ["postgres"] }
 diesel_migrations = "1.4.0"
 encrypted-dns = { path = ".." }
-env_logger = "0.7.0"
+env_logger = "0.7.1"
 failure = "0.1.6"
 lazy_static = "1.4.0"
 log = "0.4.8"
