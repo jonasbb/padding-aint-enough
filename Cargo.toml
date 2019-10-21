@@ -81,6 +81,4 @@ misc_utils = "2.4.0"
 serde_json = "1.0.41"
 
 [patch.crates-io]
-# Use the unmerged changes from https://github.com/servo/string-cache/pull/226
-string_cache = { git = "https://github.com/dekellum/string-cache/", rev = "b3f91850f6e40c77dbceda74de03a8006ad12643" }
 trust-dns-proto = { git = "https://github.com/jonasbb/trust-dns", branch = "fix-empty-option-at-end-of-edns" }
