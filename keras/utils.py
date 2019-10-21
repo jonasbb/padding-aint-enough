@@ -12,7 +12,6 @@ from glob import glob
 import keras
 import keras.utils
 import numpy as np
-import pylib
 from keras.preprocessing.sequence import pad_sequences
 
 
@@ -133,6 +132,8 @@ def load_data(
     `extension_pattern`: A pattern for glob describing which file extensions to load
     `training_validation_split`: The first ID which should be used for validation instead of training.
     """
+    import pylib
+
     canonicalizer = Canonicalize(confusion_domains)
 
     sequences: t.List[t.List[pylib.Sequence]] = []
