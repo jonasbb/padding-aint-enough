@@ -321,7 +321,7 @@ fn memorize_distance(
             entry
         } else {
             let dist = validation_sample
-                .distance_with_limit::<()>(trainings_sample, usize::max_value(), true, use_cr_mode)
+                .distance_with_limit::<()>(trainings_sample, true, use_cr_mode)
                 .0;
             // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
             let dist_norm = if distance == 0 {

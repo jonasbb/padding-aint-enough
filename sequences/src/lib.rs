@@ -185,15 +185,10 @@ impl Sequence {
 
     /// Return the distance to the `other` [`Sequence`].
     pub fn distance(&self, other: &Self) -> usize {
-        self.distance_with_limit::<()>(other, usize::max_value(), false, false)
-            .0
+        self.distance_with_limit::<()>(other, false, false).0
     }
 
     /// Same as [`Sequence::distance`] but with an early exit criteria
-    ///
-    /// `max_distance` specifies an early exit criteria.
-    /// The function will exit early, if the distance found will be larger than `max_distance` without computing the final value.
-    /// The return value for an early exit will be larger than `max_distance`.
     ///
     /// This means that early exit can be disabled by setting `max_distance` to `usize::max_value()`, as there can be no larger value.
     ///
@@ -206,7 +201,6 @@ impl Sequence {
     pub fn distance_with_limit<DCI>(
         &self,
         other: &Self,
-        max_distance: usize,
         use_length_prefilter: bool,
         use_cr_mode: bool,
     ) -> (usize, DCI)
@@ -318,16 +312,6 @@ impl Sequence {
                 // let cost = insertions.min(deletions).min(substitutions).min(swapping);
                 min_cost_current_row.update(cost);
                 current_row.push((cost, cost_info));
-            }
-
-            // See whether we can abort early
-            // `min_cost_current_row` keeps the minimal cost which we encountered this row
-            // We also know, that is the cost ever becomes larger than `max_distance`, then the result of this function is uninteresting.
-            // If we see that `min_cost_current_row > max_distance`, then we know that this function can never return a result smaller than `max_distance`,
-            // because there is always a cost added to the value of the previous row.
-            if min_cost_current_row.get_min_extreme() > max_distance {
-                let cost_info = DCI::default().abort();
-                return (usize::max_value(), cost_info);
             }
 
             mem::swap(&mut prev_prev_row, &mut previous_row);

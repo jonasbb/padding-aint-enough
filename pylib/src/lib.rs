@@ -119,12 +119,9 @@ impl PySequence {
         &self,
         other: &PySequence,
     ) -> PyResult<(usize, BTreeMap<String, usize>)> {
-        let (cost, cost_info) = self.sequence.distance_with_limit::<CostTracker>(
-            &other.sequence,
-            usize::max_value(),
-            false,
-            false,
-        );
+        let (cost, cost_info) =
+            self.sequence
+                .distance_with_limit::<CostTracker>(&other.sequence, false, false);
         Ok((cost, cost_info.as_btreemap()))
     }
 
