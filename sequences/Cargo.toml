@@ -16,12 +16,14 @@ name = "u8_abs"
 harness = false
 
 [dependencies]
+chashmap = "2.2.2"
 chrono = { version = "0.4.9", features = [ "serde" ] }
 colored = { version = "1.8.0", optional = true }
 dnstap = { path = "../dnstap" }
 etherparse = { version = "0.8.2", optional = true }
 failure = "0.1.6"
 fnv = "1.0.6"
+internment = "0.3.10"
 itertools = { version = "0.8.0", optional = true }
 lazy_static = "1.4.0"
 log = "0.4.8"

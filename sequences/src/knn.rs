@@ -1,7 +1,9 @@
 use crate::{
     utils::{take_smallest, take_smallest_opt},
-    LabelledSequence, LabelledSequences, Sequence,
+    InternedSequence, LabelledSequence, LabelledSequences, Sequence,
 };
+use chashmap::CHashMap;
+use lazy_static::lazy_static;
 use log::{debug, error};
 use misc_utils::{Max, Min};
 use ordered_float::NotNan;
@@ -11,6 +13,12 @@ use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     fmt::{self, Display},
 };
+
+lazy_static! {
+    /// Memorize distance calculations
+    static ref PRECOMPUTED_DISTANCES: CHashMap<(InternedSequence, InternedSequence, bool), (usize, NotNan<f64>)> =
+        Default::default();
+}
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub enum ClassificationResultQuality {
@@ -216,8 +224,6 @@ where
 {
     assert!(k > 0, "kNN needs a k with k > 0");
 
-    // TODO by precalculating a distance metric half of the distance() calls could be eliminated()
-
     validation_data
         .into_par_iter()
         .with_max_len(1)
@@ -228,23 +234,10 @@ where
                     // iterate over all elements of the trainings data
                     .flat_map(|tlseq| {
                         tlseq.sequences.iter().map(move |s| {
-                            move |max_dist: usize| {
-                                let distance = vsample
-                                    .distance_with_limit::<()>(s, max_dist, true, use_cr_mode)
-                                    .0;
-                                // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
-                                let distance_norm = if distance == 0 {
-                                    NotNan::new(0.).unwrap()
-                                } else {
-                                    NotNan::new(distance as f64 / s.len().max(vsample.len()) as f64)
-                                        .unwrap_or_else(|err| {
-                                            error!(
-                                                "Failed to calculate normalized distance: {}",
-                                                err
-                                            );
-                                            NotNan::new(999.).unwrap()
-                                        })
-                                };
+                            move |_max_dist: usize| {
+                                let (distance, distance_norm) =
+                                    memorize_distance(vsample, s, use_cr_mode);
+
                                 ClassifierData {
                                     label: &tlseq.mapped_domain,
                                     distance,
@@ -265,7 +258,7 @@ pub fn knn_with_threshold<S>(
     trainings_data: &[LabelledSequences<S>],
     validation_data: &[Sequence],
     k: u8,
-    distance_threshold: f32,
+    distance_threshold: f64,
     use_cr_mode: bool,
 ) -> Vec<ClassificationResult>
 where
@@ -283,52 +276,13 @@ where
                     // iterate over all elements of the trainings data
                     .flat_map(|tlseq| {
                         tlseq.sequences.iter().map(move |s| {
-                            let length_of_longer_sequence = vsample.len().max(s.len());
-                            let abs_threshold = (length_of_longer_sequence as f32
-                                * distance_threshold.ceil())
-                                as usize;
-
-                            move |max_dist: usize| {
-                                // this is the distance as determined by the DNS sequence distance function
-                                let real_distance = vsample
-                                    .distance_with_limit::<()>(
-                                        s,
-                                        max_dist.min(abs_threshold),
-                                        true,
-                                        use_cr_mode,
-                                    )
-                                    .0;
-
-                                if (real_distance as f32 / length_of_longer_sequence as f32)
-                                    > distance_threshold
-                                {
+                            move |_max_dist: usize| {
+                                let (distance, distance_norm) =
+                                    memorize_distance(vsample, s, use_cr_mode);
+                                if *distance_norm.as_ref() > distance_threshold {
                                     // In case the distance reaches our threshold, we do not want any result
                                     None
                                 } else {
-                                    let distance = vsample
-                                        .distance_with_limit::<()>(
-                                            s,
-                                            max_dist.min(abs_threshold),
-                                            true,
-                                            use_cr_mode,
-                                        )
-                                        .0;
-                                    // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
-                                    let distance_norm =
-                                        if distance == 0 {
-                                            NotNan::new(0.).unwrap()
-                                        } else {
-                                            NotNan::new(
-                                                distance as f64 / s.len().max(vsample.len()) as f64,
-                                            )
-                                            .unwrap_or_else(|err| {
-                                                error!(
-                                                    "Failed to calculate normalized distance: {}",
-                                                    err
-                                                );
-                                                NotNan::new(999.).unwrap()
-                                            })
-                                        };
                                     Some(ClassifierData {
                                         label: &tlseq.mapped_domain,
                                         distance,
@@ -344,6 +298,54 @@ where
             ClassificationResult::from_classifier_data(&distances)
         })
         .collect()
+}
+
+/// Perform the distance calculation between two [`Sequence`]s and memorize the result.
+fn memorize_distance(
+    validation_sample: &Sequence,
+    trainings_sample: &Sequence,
+    use_cr_mode: bool,
+) -> (usize, NotNan<f64>) {
+    let v = validation_sample.intern();
+    let t = trainings_sample.intern();
+    // Distance is symmetric, so sort the two parts of the key, such that we store them only once
+    let key = if v < t {
+        (v, t, use_cr_mode)
+    } else {
+        (t, v, use_cr_mode)
+    };
+
+    // Only fill these with temporary values. They will get overwritten by the lambda below, but
+    // they need to be initialized before the lambda.
+    let mut distance = usize::max_value();
+    let mut distance_norm = NotNan::new(0.0).unwrap();
+    PRECOMPUTED_DISTANCES.alter(key, |entry| {
+        if let Some((dist, dist_norm)) = entry {
+            distance = dist;
+            distance_norm = dist_norm;
+            entry
+        } else {
+            let dist = validation_sample
+                .distance_with_limit::<()>(trainings_sample, usize::max_value(), true, use_cr_mode)
+                .0;
+            // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
+            let dist_norm = if distance == 0 {
+                NotNan::new(0.).unwrap()
+            } else {
+                NotNan::new(
+                    distance as f64 / validation_sample.len().max(trainings_sample.len()) as f64,
+                )
+                .unwrap_or_else(|err| {
+                    error!("Failed to calculate normalized distance: {}", err);
+                    NotNan::new(999.).unwrap()
+                })
+            };
+            distance = dist;
+            distance_norm = dist_norm;
+            Some((dist, dist_norm))
+        }
+    });
+    (distance, distance_norm)
 }
 
 #[allow(clippy::type_complexity)]

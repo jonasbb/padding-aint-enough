@@ -24,6 +24,8 @@ pub use crate::{
 };
 use chrono::NaiveDateTime;
 use failure::{bail, Error, ResultExt};
+use fnv::FnvHasher;
+use internment::Intern;
 pub use load_sequence::convert_to_sequence;
 use misc_utils::{fs, path::PathExt, Min};
 use serde::{
@@ -34,7 +36,7 @@ use serde::{
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     fmt::{self, Debug},
-    hash::Hash,
+    hash::{Hash, Hasher},
     mem,
     path::Path,
 };
@@ -67,12 +69,13 @@ pub type OneHotEncoding = Vec<u16>;
 
 /// A sequence of DNS messages and timing gaps between them.
 #[derive(Clone, Debug)]
-pub struct Sequence(Vec<SequenceElement>, String);
+pub struct Sequence(InternedSequence, String);
 
 #[allow(clippy::len_without_is_empty)]
 impl Sequence {
     pub fn new(sequence: Vec<SequenceElement>, identifier: String) -> Sequence {
-        Sequence(sequence, identifier)
+        let interned = InternedSequence::from_vec(sequence);
+        Sequence(interned, identifier)
     }
 
     /// Load a [`Sequence`] from a file path with default configuration.
@@ -119,7 +122,7 @@ impl Sequence {
 
     /// Return the number of [`SequenceElement`]s contained
     pub fn len(&self) -> usize {
-        self.0.len()
+        (self.0).0.len()
     }
 
     /// Generalize the [`Sequence`] and make an abstract version by removing some features.
@@ -127,21 +130,21 @@ impl Sequence {
     /// * ID will be the empty string, thus allowing comparisons between different abstract Sequences
     /// * All [`Gap`][`SequenceElement::Gap`] elements will have a value of `0`, as exact values are often undesireable.
     pub fn to_abstract_sequence(&self) -> Self {
-        Sequence(
-            self.0
-                .iter()
-                .map(|seqelem| match seqelem {
-                    SequenceElement::Gap(_) => SequenceElement::Gap(0),
-                    elem => *elem,
-                })
-                .collect(),
-            "".to_string(),
-        )
+        let seq = (self.0)
+            .0
+            .iter()
+            .map(|seqelem| match seqelem {
+                SequenceElement::Gap(_) => SequenceElement::Gap(0),
+                elem => *elem,
+            })
+            .collect();
+        Sequence::new(seq, "".to_string())
     }
 
     /// Return a rough complexity score for the [`Sequence`]
     pub fn complexity(&self) -> usize {
-        self.0
+        (self.0)
+            .0
             .iter()
             .filter_map(|x| match x {
                 SequenceElement::Size(n) => Some(*n as usize),
@@ -152,7 +155,8 @@ impl Sequence {
 
     /// Return the number of [`SequenceElement::Size`] elements in the [`Sequence`]
     pub fn message_count(&self) -> usize {
-        self.0
+        (self.0)
+            .0
             .iter()
             .filter(|x| match x {
                 SequenceElement::Size(_) => true,
@@ -162,7 +166,8 @@ impl Sequence {
     }
 
     pub fn to_one_hot_encoding(&self) -> Vec<OneHotEncoding> {
-        self.0
+        (self.0)
+            .0
             .iter()
             .cloned()
             .map(SequenceElement::to_one_hot_encoding)
@@ -170,7 +175,8 @@ impl Sequence {
     }
 
     pub fn to_vector_encoding(&self) -> Vec<(u16, u16)> {
-        self.0
+        (self.0)
+            .0
             .iter()
             .cloned()
             .map(SequenceElement::to_vector_encoding)
@@ -207,10 +213,10 @@ impl Sequence {
     where
         DCI: distance_cost_info::DistanceCostInfo,
     {
-        let mut larger = self;
-        let mut smaller = other;
+        let mut larger = (self.0).0;
+        let mut smaller = (other.0).0;
 
-        if larger.0.len() < smaller.0.len() {
+        if larger.len() < smaller.len() {
             mem::swap(&mut larger, &mut smaller);
         }
         // smaller is always shorter or equal sized
@@ -224,7 +230,7 @@ impl Sequence {
         if use_cr_mode {
             let mut cost: usize = 0;
             let mut cost_info = DCI::default();
-            for &x in &larger.0[smaller.0.len()..] {
+            for &x in &larger[smaller.len()..] {
                 cost = cost.saturating_add(x.insert_cost());
                 cost_info = cost_info.insert(cost, x);
             }
@@ -233,19 +239,19 @@ impl Sequence {
 
         const ABSOLUTE_LENGTH_DIFF: usize = 40;
         const RELATIVE_LENGTH_DIFF_FACTOR: usize = 5;
-        let length_diff = larger.0.len() - smaller.0.len();
+        let length_diff = larger.len() - smaller.len();
         if use_length_prefilter
             && length_diff > ABSOLUTE_LENGTH_DIFF
-            && length_diff > (larger.0.len() / RELATIVE_LENGTH_DIFF_FACTOR)
+            && length_diff > (larger.len() / RELATIVE_LENGTH_DIFF_FACTOR)
         {
             let cost_info = DCI::default().abort();
             return (usize::max_value(), cost_info);
         }
 
-        if smaller.0.is_empty() {
+        if smaller.is_empty() {
             let mut cost: usize = 0;
             let mut cost_info = DCI::default();
-            for &x in &larger.0 {
+            for &x in larger.iter() {
                 cost = cost.saturating_add(x.insert_cost());
                 cost_info = cost_info.insert(cost, x);
             }
@@ -255,50 +261,48 @@ impl Sequence {
         type RowType<DCI> = Vec<(usize, DCI)>;
 
         let mut prev_prev_row: RowType<DCI> =
-            (0..=smaller.0.len()).map(|_| (0, DCI::default())).collect();
+            (0..=smaller.len()).map(|_| (0, DCI::default())).collect();
         let mut cost = 0;
         let mut previous_row: RowType<DCI> = Some((0, DCI::default()))
             .into_iter()
-            .chain(smaller.0.iter().map(|&elem| {
+            .chain(smaller.iter().map(|&elem| {
                 cost += elem.insert_cost();
                 let cost_info = DCI::default().insert(cost, elem);
                 (cost, cost_info)
             }))
             .collect();
         let mut current_row: RowType<DCI> =
-            (0..=smaller.0.len()).map(|_| (0, DCI::default())).collect();
+            (0..=smaller.len()).map(|_| (0, DCI::default())).collect();
         debug_assert_eq!(
             previous_row.len(),
             current_row.len(),
             "Row length must be equal"
         );
 
-        for (i, &elem1) in larger.0.iter().enumerate() {
+        for (i, &elem1) in larger.iter().enumerate() {
             current_row.clear();
             let p = previous_row[0].0 + elem1.delete_cost();
             let p_info = previous_row[0].1.delete(p, elem1);
             current_row.push((p, p_info));
             let mut min_cost_current_row: Min<usize> = Default::default();
 
-            for (j, &elem2) in smaller.0.iter().enumerate() {
+            for (j, &elem2) in smaller.iter().enumerate() {
                 let insertions = previous_row[j + 1].0 + elem1.insert_cost();
                 let insertions_info = previous_row[j + 1].1.insert(insertions, elem1);
                 let deletions = current_row[j].0 + elem2.delete_cost();
                 let deletions_info = current_row[j].1.delete(deletions, elem2);
                 let substitutions = previous_row[j].0 + elem1.substitute_cost(elem2);
                 let substitutions_info = previous_row[j].1.substitute(substitutions, elem1, elem2);
-                let (swapping, swapping_info) = if i > 0
-                    && j > 0
-                    && larger.0[i] == smaller.0[j - 1]
-                    && larger.0[i - 1] == smaller.0[j]
-                {
-                    let swapping = prev_prev_row[j - 1].0 + elem1.swap_cost(elem2);
-                    let swapping_info = prev_prev_row[j - 1].1.swap(swapping, elem1, elem2);
-                    (swapping, swapping_info)
-                } else {
-                    // generate a large value but not so large, that an overflow might happen while performing some addition
-                    (usize::max_value() / 4, DCI::default().abort())
-                };
+                let (swapping, swapping_info) =
+                    if i > 0 && j > 0 && larger[i] == smaller[j - 1] && larger[i - 1] == smaller[j]
+                    {
+                        let swapping = prev_prev_row[j - 1].0 + elem1.swap_cost(elem2);
+                        let swapping_info = prev_prev_row[j - 1].1.swap(swapping, elem1, elem2);
+                        (swapping, swapping_info)
+                    } else {
+                        // generate a large value but not so large, that an overflow might happen while performing some addition
+                        (usize::max_value() / 4, DCI::default().abort())
+                    };
                 let (a, a_info) = if insertions < deletions {
                     (insertions, insertions_info)
                 } else {
@@ -338,7 +342,7 @@ impl Sequence {
 
     /// Return the internal slice of [`SequenceElement`]s
     pub fn as_elements(&self) -> &[SequenceElement] {
-        &self.0
+        &(self.0).0
     }
 
     pub fn classify(&self) -> Option<&'static str> {
@@ -401,6 +405,10 @@ impl Sequence {
     pub fn to_json(&self) -> Result<String, Error> {
         Ok(serde_json::to_string(self)?)
     }
+
+    pub fn intern(&self) -> InternedSequence {
+        self.0
+    }
 }
 
 impl PartialEq for Sequence {
@@ -442,7 +450,7 @@ impl Serialize for Sequence {
         S: Serializer,
     {
         let mut map_ser = serializer.serialize_map(Some(1))?;
-        map_ser.serialize_entry(&self.1, &self.0)?;
+        map_ser.serialize_entry(&self.1, &(self.0).0)?;
         map_ser.end()
     }
 }
@@ -467,7 +475,7 @@ impl<'de> Deserialize<'de> for Sequence {
             {
                 let entry = map.next_entry()?;
                 if let Some(entry) = entry {
-                    Ok(Sequence(entry.1, entry.0))
+                    Ok(Sequence::new(entry.1, entry.0))
                 } else {
                     Err(SerdeError::custom("The map must contain one element."))
                 }
@@ -533,6 +541,59 @@ pub fn sequence_stats(
     (avg_distances, median_distances, avg_avg, avg_median)
 }
 
+#[derive(Copy, Clone)]
+pub struct InternedSequence(Intern<Vec<SequenceElement>>, u64);
+
+impl InternedSequence {
+    fn new(sequence: Intern<Vec<SequenceElement>>) -> Self {
+        let mut hasher = FnvHasher::default();
+        sequence.hash(&mut hasher);
+        let hash = hasher.finish();
+        Self(sequence, hash)
+    }
+
+    fn from_vec(sequence: Vec<SequenceElement>) -> Self {
+        Self::new(Intern::new(sequence))
+    }
+}
+
+impl PartialEq for InternedSequence {
+    fn eq(&self, other: &Self) -> bool {
+        // compare Hash first, only then the sequences
+        self.1 == other.1 && self.0 == other.0
+    }
+}
+
+impl Eq for InternedSequence {}
+
+impl Hash for InternedSequence {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: std::hash::Hasher,
+    {
+        self.1.hash(state);
+    }
+}
+
+impl Ord for InternedSequence {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // Compare hash first, then sequence
+        self.1.cmp(&other.1).then_with(|| self.0.cmp(&other.0))
+    }
+}
+
+impl PartialOrd for InternedSequence {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Debug for InternedSequence {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        self.0.fmt(fmt)
+    }
+}
+
 #[cfg(test)]
 mod test_edit_dist {
     use super::{
@@ -542,24 +603,24 @@ mod test_edit_dist {
 
     #[test]
     fn test_edit_distance_dist1() {
-        let seq1 = Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into());
+        let seq1 = Sequence::new(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into());
 
         // substitution
-        let seq2 = Sequence(vec![Size(2), Gap(2), Size(1), Size(2), Size(1)], "".into());
+        let seq2 = Sequence::new(vec![Size(2), Gap(2), Size(1), Size(2), Size(1)], "".into());
         assert_eq!(6, seq1.distance(&seq2));
-        let seq2b = Sequence(vec![Size(1), Gap(3), Size(1), Size(2), Size(1)], "".into());
+        let seq2b = Sequence::new(vec![Size(1), Gap(3), Size(1), Size(2), Size(1)], "".into());
         assert_eq!(3, seq1.distance(&seq2b));
 
         // swapping
-        let seq3 = Sequence(vec![Size(1), Gap(2), Size(2), Size(1), Size(1)], "".into());
+        let seq3 = Sequence::new(vec![Size(1), Gap(2), Size(2), Size(1), Size(1)], "".into());
         assert_eq!(3, seq1.distance(&seq3));
 
         // deletion
-        let seq4 = Sequence(vec![Size(1), Size(1), Size(2), Size(1)], "".into());
+        let seq4 = Sequence::new(vec![Size(1), Size(1), Size(2), Size(1)], "".into());
         assert_eq!(2, seq1.distance(&seq4));
 
         // insertion
-        let seq5 = Sequence(
+        let seq5 = Sequence::new(
             vec![Size(1), Size(2), Gap(2), Size(1), Size(2), Size(1)],
             "".into(),
         );
@@ -568,11 +629,11 @@ mod test_edit_dist {
 
     #[test]
     fn test_edit_distance_inserts() {
-        let seq1 = Sequence(vec![], "".into());
-        let seq2 = Sequence(vec![Size(1), Size(1)], "".into());
+        let seq1 = Sequence::new(vec![], "".into());
+        let seq2 = Sequence::new(vec![Size(1), Size(1)], "".into());
 
-        let seq6 = Sequence(vec![Gap(3)], "".into());
-        let seq7 = Sequence(vec![Gap(10)], "".into());
+        let seq6 = Sequence::new(vec![Gap(3)], "".into());
+        let seq7 = Sequence::new(vec![Gap(10)], "".into());
         println!("Smaller gap: {}", seq1.distance(&seq6));
         println!("Bigger gap: {}", seq1.distance(&seq7));
         assert!(
@@ -580,8 +641,8 @@ mod test_edit_dist {
             "Bigger Gaps have higher cost."
         );
 
-        let seq6 = Sequence(vec![Size(1), Gap(3), Size(1)], "".into());
-        let seq7 = Sequence(vec![Size(1), Gap(10), Size(1)], "".into());
+        let seq6 = Sequence::new(vec![Size(1), Gap(3), Size(1)], "".into());
+        let seq7 = Sequence::new(vec![Size(1), Gap(10), Size(1)], "".into());
         println!("Smaller gap: {}", seq2.distance(&seq6));
         println!("Bigger gap: {}", seq2.distance(&seq7));
         assert!(
@@ -592,11 +653,11 @@ mod test_edit_dist {
 
     #[test]
     fn test_edit_distance_substitutions() {
-        let seq1 = Sequence(vec![Size(1)], "".into());
-        let seq2 = Sequence(vec![Gap(10)], "".into());
+        let seq1 = Sequence::new(vec![Size(1)], "".into());
+        let seq2 = Sequence::new(vec![Gap(10)], "".into());
 
-        let seqa = Sequence(vec![Gap(9)], "".into());
-        let seqb = Sequence(vec![Gap(1)], "".into());
+        let seqa = Sequence::new(vec![Gap(9)], "".into());
+        let seqb = Sequence::new(vec![Gap(1)], "".into());
         println!("Smaller gap change: {}", seq2.distance(&seqa));
         println!("Bigger gap change: {}", seq2.distance(&seqb));
         assert!(
@@ -619,8 +680,8 @@ mod test_edit_dist {
         assert_eq!(seq1, seq2);
         assert_eq!(0, seq1.distance(&seq2));
 
-        let seq3 = Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into());
-        let seq4 = Sequence(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into());
+        let seq3 = Sequence::new(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into());
+        let seq4 = Sequence::new(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into());
         assert_eq!(0, seq3.distance(&seq4));
     }
 }

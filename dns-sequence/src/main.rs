@@ -331,7 +331,7 @@ fn classify_and_evaluate(
             &*training_data,
             &*test_data,
             k as u8,
-            distance_threshold,
+            f64::from(distance_threshold),
             use_cr_mode,
         )
     } else {
