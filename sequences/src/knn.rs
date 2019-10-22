@@ -1,6 +1,5 @@
 use crate::{
-    utils::{take_smallest, take_smallest_opt},
-    InternedSequence, LabelledSequence, LabelledSequences, Sequence,
+    utils::take_smallest, InternedSequence, LabelledSequence, LabelledSequences, Sequence,
 };
 use chashmap::CHashMap;
 use lazy_static::lazy_static;
@@ -234,15 +233,13 @@ where
                     // iterate over all elements of the trainings data
                     .flat_map(|tlseq| {
                         tlseq.sequences.iter().map(move |s| {
-                            move |_max_dist: usize| {
-                                let (distance, distance_norm) =
-                                    memorize_distance(vsample, s, use_cr_mode);
+                            let (distance, distance_norm) =
+                                memorize_distance(vsample, s, use_cr_mode);
 
-                                ClassifierData {
-                                    label: &tlseq.mapped_domain,
-                                    distance,
-                                    distance_norm,
-                                }
+                            ClassifierData {
+                                label: &tlseq.mapped_domain,
+                                distance,
+                                distance_norm,
                             }
                         })
                     }),
@@ -270,25 +267,23 @@ where
         .into_par_iter()
         .with_max_len(1)
         .map(|vsample| {
-            let distances = take_smallest_opt(
+            let distances = take_smallest(
                 trainings_data
                     .iter()
                     // iterate over all elements of the trainings data
                     .flat_map(|tlseq| {
-                        tlseq.sequences.iter().map(move |s| {
-                            move |_max_dist: usize| {
-                                let (distance, distance_norm) =
-                                    memorize_distance(vsample, s, use_cr_mode);
-                                if *distance_norm.as_ref() > distance_threshold {
-                                    // In case the distance reaches our threshold, we do not want any result
-                                    None
-                                } else {
-                                    Some(ClassifierData {
-                                        label: &tlseq.mapped_domain,
-                                        distance,
-                                        distance_norm,
-                                    })
-                                }
+                        tlseq.sequences.iter().flat_map(move |s| {
+                            let (distance, distance_norm) =
+                                memorize_distance(vsample, s, use_cr_mode);
+                            if *distance_norm.as_ref() > distance_threshold {
+                                // In case the distance reaches our threshold, we do not want any result
+                                None
+                            } else {
+                                Some(ClassifierData {
+                                    label: &tlseq.mapped_domain,
+                                    distance,
+                                    distance_norm,
+                                })
                             }
                         })
                     }),
