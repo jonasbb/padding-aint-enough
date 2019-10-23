@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 0.8.6
+#       format_version: '1.3'
+#       jupytext_version: 1.3.0rc0+dev
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -19,18 +19,16 @@
 
 import csv
 import typing as t
+from glob import glob
 from itertools import cycle
 
 import matplotlib.cm
 import matplotlib.pyplot as plt
 import numpy as np
+from natsort import natsorted
+
 
 # %%
-fname = "../results/2019-01-11-closed-world/statistics-final.csv"
-# fname = "../results/2019-01-11-closed-world/statistics-final-dist-2.16.csv"
-# fname = "../results/2019-01-11-closed-world/statistics-final-dist-4.0.csv"
-
-
 def load_statistics_csv(fname: str) -> t.Tuple[int, t.Dict[str, t.List[int]]]:
     # pylint: disable=W0621
     res: t.Dict[str, t.List[int]] = {}
@@ -81,10 +79,9 @@ labels = ["Pseudo-Plurality + Distance", "Plurality", "Majority", "Exact"]
 
 # %%
 # Load the statistics data for all iterations of the long term
-data = [
-    load_statistics_csv(f"../results/2019-01-24-long-term/statistics-{i}.csv")
-    for i in range(1, 519)
-]
+# basepath = "../results/2019-01-24-long-term/statistics-*.csv"
+basepath = "../tmpres/stats-*.csv"
+data = [load_statistics_csv(f) for f in natsorted(glob(basepath))]
 
 # %%
 pdata: t.Dict[str, t.List[int]] = {}
@@ -93,7 +90,10 @@ pdata["total"] = []
 for k in data[0][1].keys():
     pdata[k] = []
 
-idx = 3
+# This allows to specify which k-value we plot
+# Normally this is either 0 and we ran the classification with --exact-k
+# or the classification used -k, then 0 means k=1, 1 means k=3, etc.
+idx = 0
 for a, b in data:
     pdata["total"].append(a)
     for k, values in b.items():
@@ -132,14 +132,18 @@ for label in labels[::-1]:
 
 plt.legend(loc="upper center", ncol=4, mode="expand")
 
-# # CAREFUL: Those are tiny spaces around the =
+# xticks = list(range(0, len(pdata["total"]), 48))
+# xticks_labels = [f"{d // 24}" for d in xticks]
+
+# Measurements are once every half hour. So 48 entries per day
 xticks = list(range(0, len(pdata["total"]), 48))
-xticks_labels = [f"{d // 24}" for d in xticks]
+xticks_labels = [f"{d // 48}" for d in xticks]
 plt.xticks(xticks, xticks_labels)
+plt.xlabel("Days since start")
 plt.xlim(0, len(pdata["total"]))
+
 plt.ylim(0, 100)
 plt.ylabel("Percent of all DNS sequences")
-plt.xlabel("Days since start")
 
 plt.gcf().set_size_inches(7, 4)
 plt.tight_layout()

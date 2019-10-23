@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.1.2
+#       format_version: '1.3'
+#       jupytext_version: 1.3.0rc0+dev
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -214,9 +214,5 @@ plt.plot(sorted(pcap_pass_lengths), label="pcap-pass")
 plt.plot(sorted(dnstap_ap_lengths), label="dnstap-ap")
 plt.plot(sorted(pcap_ap_lengths), label="pcap-ap")
 plt.legend()
-
-# %%
-dnstaps2pcap.keys()
-
 
 # %%
