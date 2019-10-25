@@ -37,8 +37,7 @@ test:cargo:
   - rustc --version
   - cargo --version
 
-  - pipenv install --dev --verbose
-  - pipenv run pip freeze
+  - pipenv sync --dev
 
   # Remove debug build optimizations for third-party crates
   # They are usefull for local development, as this crates more optimized debug binaries
