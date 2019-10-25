@@ -28,6 +28,8 @@ test:cargo:
   - cargo install-update --allow-no-update sccache
   # This may only be set AFTER installing sccache
   - export RUSTC_WRAPPER="sccache"
+  - export CC="sccache gcc"
+  - export CXX="sccache g++"
   # Update all tools
   - cargo install-update -a
 
