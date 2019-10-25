@@ -41,11 +41,10 @@ test:cargo:
 
   - pipenv sync --dev
 
-  # Remove debug build optimizations for third-party crates
+  # Reduce the debug build optimizations for third-party crates and set them to 1
   # They are usefull for local development, as this crates more optimized debug binaries
   # but makes CI very slow
-  - sed -i '/profile.dev.overrides./,+2 d' Cargo.toml
-  - sed -i '/profile.dev.build-override/,+2 d' Cargo.toml
+  - sed -i 's/^opt-level\s*=\s*3$/opt-level = 1/' Cargo.toml
 
   - cargo build --all
   - cargo test --all
