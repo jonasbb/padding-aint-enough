@@ -14,5 +14,5 @@ failure = "0.1.6"
 sequences = { path = "../sequences", features = [ "read_pcap" ] }
 
 [dependencies.pyo3]
-version = "0.8.1"
+version = "0.8.2"
 features = [ "python3" ]
