@@ -1,44 +1,41 @@
-FROM fedora:29
-
-# Copy modified unbound rpms
-COPY rpms /rpms
+FROM arm32v7/debian:10
 
 # Update system to newest version
 #
 # Install all needed packages
-# `bind-utils` for `dig`
-# `iproute` for `ss`
-# `libglvnd-glx` to fix the missing libGL.so
-# `mesa-dri-drivers` to fix a missing DRI library
+# `dnsutils` for `dig`
+# `fstrm-bin` for fstrm_capture
+# `libglvnd0` to fix the missing libGL.so
+# `libgl1-mesa-dri` to fix a missing DRI library
 # `moreutils` for `ts`
-# `nmap-ncat` for `nc`
+# `ncat` for `nc`
 # `psmisc` for `killall`
-RUN dnf -y --setopt=tsflags=nodocs update \
-    && dnf -y --setopt=tsflags=nodocs install \
+RUN apt-get update \
+    && apt-get -y --no-install-recommends install \
         autoconf \
-        bind-utils \
-        chromium-headless \
+        automake \
+        build-essential \
+        chromium \
+        dnsutils \
         fish \
-        fstrm-devel \
+        fstrm-bin \
         git \
-        iproute \
-        libglvnd-glx \
+        libfstrm-dev \
+        libgl1-mesa-dri \
+        libglvnd0 \
+        libssl-dev \
         libtool \
-        libyaml-devel \
+        libyaml-dev \
         make \
-        mesa-dri-drivers \
         moreutils \
-        nmap-ncat \
-        openssl-devel \
+        ncat \
         psmisc \
         python3-requests \
-        python3-websocket-client \
+        python3-websocket \
         sudo \
         tcpdump \
-        /rpms/unbound-1*.rpm \
-        /rpms/unbound-libs-1*.rpm \
-        /rpms/python?-unbound-1*.rpm \
-    && dnf clean all
+        unbound \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install stubby
 RUN true \
@@ -52,7 +49,7 @@ RUN true \
     && mkdir build \
     && cd build \
     && ../configure --without-libidn --without-libidn2 --enable-stub-only --with-stubby \
-    && make \
+    && make -j \
     && make install \
     && ldconfig \
     && true
@@ -62,16 +59,23 @@ RUN true \
 # Also setup a directory under /run/user, needed for fish to work
 RUN useradd --create-home docker \
     && echo "docker ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
-    && mkdir /run/user/`id -u docker` \
-    && chmod -R 700 /run/user/`id -u docker` \
-    && chown -R docker:docker /run/user/`id -u docker` \
+    && true
+
+# Configure unbound
+COPY unbound.conf /etc/unbound/
+# * Create runtime directory for unbound
+# * And install the trust anchor
+#   unbound-anchor returns 1 if the anchor was updated, but this is not an error case
+# * Create server certificates for unbound-control to work
+RUN true \
+    && mkdir /var/run/unbound \
+    && chown unbound:unbound /var/run/unbound \
+    && (unbound-anchor -F || true) \
+    && sg unbound /usr/sbin/unbound-control-setup -d /etc/unbound/ \
+    && unbound-checkconf \
     && true
 
 COPY stubby.yml /etc/stubby/stubby.yml
-# Configure unbound
-COPY unbound.conf /etc/unbound/
-# Create server certificates for unbound-control to work
-RUN sg unbound /usr/sbin/unbound-control-setup -d /etc/unbound/
 
 # Copy needed executables
 COPY bin /usr/bin/
