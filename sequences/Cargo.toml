@@ -30,7 +30,7 @@ log = "0.4.8"
 misc_utils = "2.4.0"
 num-traits = "0.2.8"
 ordered-float = { version = "1.0.2", features = [ "serde" ] }
-pcap-parser = { version = "0.8.1", features = [ "data" ], optional = true }
+pcap-parser = { version = "0.8.2", features = [ "data" ], optional = true }
 rand = "0.7.2"
 rand_xorshift = "0.2.0"
 rayon = "1.2.0"
