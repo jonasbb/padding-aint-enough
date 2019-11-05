@@ -10,7 +10,7 @@ env_logger = "0.7.1"
 failure = "0.1.6"
 lazy_static = "1.4.0"
 log = "0.4.8"
-misc_utils = "2.4.0"
+misc_utils = "2.5.0"
 prettytable-rs = { version = "0.8.0", default-features = false }
 sequences = { path = "../sequences/" }
 serde = { version = "1.0.102", features = [ "derive" ] }

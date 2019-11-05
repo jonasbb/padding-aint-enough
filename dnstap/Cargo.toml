@@ -9,7 +9,7 @@ chrono = "0.4.9"
 failure = "0.1.6"
 framestream = { path = "../framestream" }
 log = "0.4.8"
-misc_utils = "2.4.0"
+misc_utils = "2.5.0"
 protobuf = "2.8.1"
 trust-dns-proto = { version = "=0.8.0", default-features = false }
 
