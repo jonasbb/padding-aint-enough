@@ -59,7 +59,7 @@ glob = "0.3.0"
 lazy_static = "1.4.0"
 log = "0.4.8"
 min-max-heap = "1.2.2"
-misc_utils = "2.4.0"
+misc_utils = "2.5.0"
 petgraph = { version = "0.4.13", features = [ "serde-1" ] }
 petgraph-graphml = "1.0.0"
 rayon = "1.2.0"
@@ -77,7 +77,7 @@ features = [ "chrono" ]
 chrome = { path = "./chrome" }
 criterion = "0.3.0"
 failure = "0.1.6"
-misc_utils = "2.4.0"
+misc_utils = "2.5.0"
 serde_json = "1.0.41"
 
 [patch.crates-io]

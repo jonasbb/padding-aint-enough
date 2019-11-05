@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 env_logger = "0.7.1"
 failure = "0.1.6"
-misc_utils = "2.4.0"
+misc_utils = "2.5.0"
 sequences = { path = "../sequences", features = [ "read_pcap" ] }
 structopt = "0.3.3"
 
