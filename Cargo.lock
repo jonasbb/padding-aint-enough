@@ -432,7 +432,7 @@ dependencies = [
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "misc_utils 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "prettytable-rs 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sequences 0.1.0",
  "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -451,7 +451,7 @@ dependencies = [
  "framestream 0.1.2",
  "glob 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "misc_utils 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf 2.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "protobuf-codegen-pure 2.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "trust-dns-proto 0.8.0 (git+https://github.com/jonasbb/trust-dns?branch=fix-empty-option-at-end-of-edns)",
@@ -482,7 +482,7 @@ dependencies = [
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "min-max-heap 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "misc_utils 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "petgraph 0.4.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "petgraph-graphml 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -530,7 +530,7 @@ version = "0.1.0"
 dependencies = [
  "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "misc_utils 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "pretty_assertions 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "sequences 0.1.0",
  "structopt 0.3.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1010,7 +1010,7 @@ dependencies = [
 
 [[package]]
 name = "misc_utils"
-version = "2.5.0"
+version = "2.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1787,7 +1787,7 @@ dependencies = [
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "min-max-heap 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "misc_utils 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "ordered-float 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "pcap-parser 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2009,7 +2009,7 @@ dependencies = [
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "misc_utils 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "openssl 0.10.25 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sequences 0.1.0",
@@ -2070,7 +2070,7 @@ dependencies = [
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "misc_utils 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rayon 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.41 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2779,7 +2779,7 @@ dependencies = [
 "checksum mio 0.6.19 (registry+https://github.com/rust-lang/crates.io-index)" = "83f51996a3ed004ef184e16818edc51fadffe8e7ca68be67f9dee67d84d0ff23"
 "checksum mio-uds 0.6.7 (registry+https://github.com/rust-lang/crates.io-index)" = "966257a94e196b11bb43aca423754d87429960a768de9414f3691d6957abf125"
 "checksum miow 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "8c1f2f3b1cf331de6896aabf6e9d55dca90356cc9960cca7eaaf408a355ae919"
-"checksum misc_utils 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "6fbe5a4f116d33e1b2f4f834a2edc775da912f1fc18ae7036d1049622c2913a4"
+"checksum misc_utils 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)" = "83598f0b65292932519750a4965eb3106202ea0f02250c29ede2094ab2b734a5"
 "checksum net2 0.2.33 (registry+https://github.com/rust-lang/crates.io-index)" = "42550d9fb7b6684a6d404d9fa7250c2eb2646df731d1c06afc06dcee9e1bcf88"
 "checksum new_debug_unreachable 1.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "f40f005c60db6e03bae699e414c58bf9aa7ea02a2d0b9bfbcf19286cc4c82b30"
 "checksum nodrop 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)" = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
