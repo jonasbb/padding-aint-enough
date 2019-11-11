@@ -17,6 +17,7 @@ use std::{
     io::{BufRead, BufReader, Read},
     panic::{self, RefUnwindSafe, UnwindSafe},
     path::{Path, PathBuf},
+    process::{Command, Stdio},
     sync::Arc,
     thread::{self, JoinHandle},
     time::Duration,
@@ -204,7 +205,12 @@ fn run_exec(cmd: SubCommand, config: Config) -> Result<(), Error> {
             bail!("You need to specify at least one executor.");
         }
 
-        ensure_docker_image_exists(&config.docker_image).context("Check for docker image")?;
+        if let Some(ssh_config) = &config.ssh {
+            ensure_docker_image_exists_ssh(&ssh_config.remote_name, &config.docker_image)
+                .context("Check for docker image")?
+        } else {
+            ensure_docker_image_exists(&config.docker_image).context("Check for docker image")?;
+        }
 
         init_global_environment(&config).context("Could not setup the global environment")?;
 
@@ -323,11 +329,16 @@ where
         .unwrap()
 }
 
-/// Perform the execution of a task in a VM
+/// Perform the execution of a task in a container
 ///
 /// This function is responsible for all the steps related to capturing the measurement data from
-/// the VMs.
+/// the container.
 fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> {
+    // Delegate to ssh if configured
+    if config.ssh.is_some() {
+        return process_tasks_docker_ssh(taskmgr, config);
+    }
+
     loop {
         if let Some(mut task) = taskmgr.get_task_for_vm()? {
             let _taskstatus = execute_or_restart_task(&mut task, taskmgr, |mut task| {
@@ -367,7 +378,157 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                     &*CHROME_LOG_FILE_NAME,
                     &*PCAP_FILE_NAME,
                     &*TIMING_FILE_NAME,
-                    &*TLSKEYS_FILE_NAME,
+                    // &*TLSKEYS_FILE_NAME,
+                ] {
+                    // strip the .xz extension
+                    let fname = fname.with_extension("");
+                    fs::copy(tmp_dir.path().join(&fname), local_path.join(&fname)).with_context(
+                        |_| {
+                            format!(
+                                "{}: Failed to copy back file {}",
+                                task.name(),
+                                fname.display()
+                            )
+                        },
+                    )?;
+                }
+                tmp_dir.close()?;
+
+                debug!("Finished task {} ({})", task.name(), task.id());
+                taskmgr.finished_task_for_vm(&mut task)
+            })?;
+        } else {
+            info!("No tasks left for Docker");
+            thread::sleep(Duration::new(10, 0));
+        }
+    }
+}
+
+/// Same as [`process_tasks_docker`] but runs the container on a remote maschine
+fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<(), Error> {
+    let ssh = config.ssh.as_ref().unwrap();
+
+    loop {
+        if let Some(mut task) = taskmgr.get_task_for_vm()? {
+            let _taskstatus = execute_or_restart_task(&mut task, taskmgr, |mut task| {
+                let tmp_dir = TempDirBuilder::new().prefix("docker").tempdir()?;
+                info!(
+                    "Process task {} ({}), step Docker, tmp dir {}",
+                    task.name(),
+                    task.id(),
+                    tmp_dir.path().display()
+                );
+
+                // Create a remote temporary directory
+                let output2 = Command::new("ssh")
+                    .args(&[
+                        &ssh.remote_name,
+                        "mktemp",
+                        "--tmpdir",
+                        "--directory",
+                        "docker-remote-XXXXXX",
+                    ])
+                    .output()
+                    .with_context(|_| {
+                        format!("{}: Cannot create remote temporary directory", task.name())
+                    })?;
+                if !output2.status.success() {
+                    bail!("{}: Cannot create remote temporary directory: ssh has exited with error {}", task.name(), output2.status.code().unwrap_or(-1))
+                };
+                let remote_tmp_dir = String::from_utf8(output2.stdout).with_context(|_| {
+                    format!(
+                        "{}: The remote temporary directory is not UTF-8",
+                        task.name()
+                    )
+                })?;
+                // Need to remove the trailing newline
+                let remote_tmp_dir = remote_tmp_dir.trim();
+                info!("{}: Using remote dir {}", task.name(), remote_tmp_dir);
+
+                debug!("{}: Copy initial files to mount point", task.name());
+                // Write all the required files to the mount point
+                fs::copy(config.get_cache_file(), tmp_dir.path().join("cache.dump"))
+                    .with_context(|_| format!("{}: Failed to copy cache.dump", task.name()))?;
+                fs::write(
+                    tmp_dir.path().join("domain"),
+                    &format!("http://www.{}", task.domain()),
+                )
+                .with_context(|_| format!("{}: Failed to create file `domain`", task.name()))?;
+                // Copy files from local temp dir to remote temp dir
+                // Call scp -pr <local_tmp>/cache.dump <local_tmp>/domain <host>:<remote_tmp>
+                // Unfortunatly scp does not support globbing on the local site
+                let status = Command::new("scp")
+                    .arg("-pr")
+                    .arg(tmp_dir.path().join("cache.dump"))
+                    .arg(tmp_dir.path().join("domain"))
+                    .arg(format!("{}:{}", ssh.remote_name, remote_tmp_dir))
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .status()
+                    .with_context(|_| {
+                        format!(
+                            "{}: Could not copy the local tmp folder to remote location",
+                            task.name()
+                        )
+                    })?;
+                if !status.success() {
+                    bail!("{}: Could not copy the local tmp folder to remote location: scp has exited with error {}", task.name(), status.code().unwrap_or(-1));
+                }
+
+                debug!("{}: Run docker container", task.name());
+                let _status = docker_run_ssh(
+                    &ssh.remote_name,
+                    &ssh.docker_image,
+                    remote_tmp_dir.as_ref(),
+                    None,
+                    Duration::new(60, 0),
+                )
+                .with_context(|_| format!("{}: Failed to start the measurements", task.name()))?;
+                debug!("{}: Copy files from mount point to local back", task.name());
+                let local_path: PathBuf = config.get_collected_results_path().join(task.name());
+                ensure_path_exists(&local_path)?;
+
+                // Copy all files from remote temp dir to local temp dir
+                let status = Command::new("scp")
+                    .arg("-pr")
+                    .arg(format!(
+                        "{}:{}/website-log*",
+                        ssh.remote_name, remote_tmp_dir
+                    ))
+                    .arg(tmp_dir.path())
+                    .stdout(Stdio::null())
+                    .stderr(Stdio::null())
+                    .status()
+                    .with_context(|_| {
+                        format!(
+                            "{}: Could not copy the remote tmp folder to local",
+                            task.name()
+                        )
+                    })?;
+                if !status.success() {
+                    bail!("{}: Could not copy the remote tmp folder to local: scp has exited with error {}", task.name(), status.code().unwrap_or(-1))
+                };
+                // Delete remote temporary directory
+                let status = Command::new("ssh")
+                    .arg(&ssh.remote_name)
+                    .arg("rm")
+                    .arg("--recursive")
+                    .arg(remote_tmp_dir)
+                    .status()
+                    .with_context(|_| {
+                        format!("{}: Cannot delete remote temporary directory", task.name())
+                    })?;
+                if !status.success() {
+                    bail!("{}: Cannot create delete temporary directory: ssh has exited with error {}", task.name(), status.code().unwrap_or(-1))
+                };
+
+                for fname in &[
+                    &*DNSTAP_FILE_NAME,
+                    &*LOG_FILE,
+                    &*CHROME_LOG_FILE_NAME,
+                    &*PCAP_FILE_NAME,
+                    &*TIMING_FILE_NAME,
+                    // &*TLSKEYS_FILE_NAME,
                 ] {
                     // strip the .xz extension
                     let fname = fname.with_extension("");
@@ -530,7 +691,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                     (&*CHROME_LOG_FILE_NAME, "json.xz"),
                     (&*PCAP_FILE_NAME, "pcap.xz"),
                     (&*TIMING_FILE_NAME, "dnstimes.txt.xz"),
-                    (&*TLSKEYS_FILE_NAME, "tlskeys.txt.xz"),
+                    // (&*TLSKEYS_FILE_NAME, "tlskeys.txt.xz"),
                 ] {
                     let src = old_task_dir.join(filename);
                     let dst = results_path.join(task.domain()).join(format!(

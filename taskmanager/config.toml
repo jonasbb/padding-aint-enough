@@ -1,4 +1,4 @@
-working_directory = "/mnt/data/Downloads/new-task-setup"
+working_directory = "/mnt/data/Downloads/dnspi-remote"
 database = "postgres://taskmanager@/taskmanager"
 per_domain_datasets = 4
 per_domain_datasets_repeated_measurements = 2
@@ -9,3 +9,7 @@ max_allowed_dist_difference_abs = 300
 num_executors = 2
 refresh_cache_seconds = 3600
 docker_image = "dnscapture"
+
+[ssh]
+remote_name = "dnspi"
+docker_image = "projects.cispa.saarland:5005/bushart/encrypted-dns/dnscapture-pi"

@@ -538,6 +538,7 @@ pub struct Config {
     pub num_executors: u8,
     pub refresh_cache_seconds: u32,
     pub docker_image: String,
+    pub ssh: Option<SshConfig>,
 }
 
 impl Config {
@@ -568,4 +569,10 @@ impl Config {
     pub fn get_prefetch_file(&self) -> PathBuf {
         self.working_directory.join("alexa-top30k-eff-tlds.txt")
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SshConfig {
+    pub remote_name: String,
+    pub docker_image: String,
 }

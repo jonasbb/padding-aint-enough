@@ -103,6 +103,87 @@ pub fn docker_run(
     }
 }
 
+/// Run a docker container
+///
+/// * `image` specifies the docker image to use
+/// * `host_dir` Mounts the path to the `/output` location in the container and uses it for the container ID file
+/// * `command` is an optional command to be run *inside* the docker container.
+/// * `timeout` make sure the container is kill after the duration specified in timeout. This functions makes sure to kill and remove the container.
+pub fn docker_run_ssh(
+    host: &str,
+    image: &str,
+    host_dir: &Path,
+    command: Option<&str>,
+    timeout: Duration,
+) -> Result<ExitStatus, Error> {
+    // Change permissions, such that if a different user than the docker user creates the
+    // host_dir, the docker container can still write to it
+    // let mut perms = fs::metadata(host_dir)?.permissions();
+    // perms.set_mode(0o777);
+    // fs::set_permissions(host_dir, perms)?;
+    let status = Command::new("ssh")
+        .args(&[host, "chmod", "-R", "0777"])
+        .arg(host_dir)
+        .status()?;
+    if !status.success() {
+        bail!("Cannot chmod the remote folder {}", host_dir.display());
+    }
+
+    let mut cmd = Command::new("ssh");
+    cmd.args(&[
+        host,
+        "docker",
+        "run",
+        "--privileged",
+        &format!("--cidfile={}/cidfile", host_dir.to_string_lossy()),
+        "-v",
+        &format!("{}:/output", host_dir.to_string_lossy()),
+        "--dns=127.0.0.1",
+        "--shm-size=2g",
+        "--rm",
+        image,
+    ])
+    .stdout(Stdio::null())
+    .stderr(Stdio::null());
+    if let Some(command) = command {
+        cmd.arg(command);
+    }
+    trace!("Execute command: {:?}", cmd);
+    let mut child = cmd.spawn()?;
+    match child.wait_timeout(timeout) {
+        Ok(Some(status)) => Ok(status),
+        Ok(None) => {
+            // container has not exited yet
+            let output = Command::new("ssh")
+                .arg(host)
+                .arg("cat")
+                .stderr(Stdio::null())
+                .output()
+                .context("Cannot read cidfile via SSH")?;
+            let containerid = String::from_utf8_lossy(&output.stdout);
+            docker_kill_ssh(host, containerid.trim());
+            // if docker container cannot be killed, at least kill the child process
+            let _ = child.kill();
+            Ok(child.wait()?)
+        }
+        Err(err) => {
+            let output = Command::new("ssh")
+                .arg(host)
+                .arg("cat")
+                .stderr(Stdio::null())
+                .output()
+                .context("Cannot read cidfile via SSH")?;
+            let containerid = String::from_utf8_lossy(&output.stdout);
+            docker_kill_ssh(host, containerid.trim());
+            // if docker container cannot be killed, at least kill the child process
+            let _ = child.kill();
+            // try to reap it to avoid zombies
+            let _ = child.try_wait();
+            Err(err.into())
+        }
+    }
+}
+
 /// Make really really sure the docker container will not be running afterwards
 ///
 /// Required the id of the container to kill.
@@ -119,11 +200,37 @@ fn docker_kill(containerid: &str) {
         .status();
 }
 
-pub fn ensure_docker_image_exists(image: &str) -> Result<(), Error> {
+/// Like [`docker_kill`] but via SSH
+fn docker_kill_ssh(host: &str, containerid: &str) {
+    let _ = Command::new("ssh")
+        .args(&[host, "docker", "kill", containerid])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+    let _ = Command::new("ssh")
+        .args(&[host, "docker", "rm", "--force=true", containerid])
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+}
+
+/// Check if the docker image exists on the local machine
+pub(crate) fn ensure_docker_image_exists(image: &str) -> Result<(), Error> {
     let output = Command::new("docker")
         .arg("images")
         .arg("-q")
         .arg(image)
+        .output()?;
+    if output.stdout.len() < 10 {
+        bail!("Docker image {} does not exist.", image)
+    }
+    Ok(())
+}
+
+/// Like [`ensure_docker_image_exists`] but via SSH
+pub(crate) fn ensure_docker_image_exists_ssh(host: &str, image: &str) -> Result<(), Error> {
+    let output = Command::new("ssh")
+        .args(&[host, "docker", "images", "-q", image])
         .output()?;
     if output.stdout.len() < 10 {
         bail!("Docker image {} does not exist.", image)
