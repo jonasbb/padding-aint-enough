@@ -10,7 +10,7 @@ use chrono::{Duration, Utc};
 use diesel::prelude::*;
 use failure::{bail, Error, ResultExt};
 use log::info;
-use misc_utils::fs::file_open_read;
+use misc_utils::fs::read_to_string;
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::{self, Debug, Display},
@@ -543,10 +543,7 @@ pub struct Config {
 
 impl Config {
     pub fn try_load_config(path: &Path) -> Result<Config, Error> {
-        let mut content = String::new();
-        file_open_read(path)?
-            .read_to_string(&mut content)
-            .context("Cannot read config file")?;
+        let content = read_to_string(path).context("Cannot read config file")?;
         Ok(toml::from_str(&content)?)
     }
 

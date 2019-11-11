@@ -7,7 +7,7 @@ use env_logger;
 use failure::{bail, Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{debug, error, info, warn};
-use misc_utils::fs::file_open_read;
+use misc_utils::fs::{file_open_read, read_to_string};
 use sequences::{sequence_stats, Sequence};
 use serde_json;
 use std::{
@@ -601,10 +601,7 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
 
                 let chrome_log = local_path.join(task.name()).join(&*CHROME_LOG_FILE_NAME);
                 // open Chrome file and parse it
-                let mut rdr = file_open_read(&chrome_log)
-                    .with_context(|_| format!("Failed to read {}", chrome_log.display()))?;
-                let mut content = String::new();
-                rdr.read_to_string(&mut content)
+                let content = read_to_string(&chrome_log)
                     .with_context(|_| format!("Error while reading '{}'", chrome_log.display()))?;
                 let msgs: Vec<ChromeDebuggerMessage> = serde_json::from_str(&content)
                     .with_context(|_| {

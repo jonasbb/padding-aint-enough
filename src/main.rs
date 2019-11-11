@@ -13,7 +13,7 @@ use failure::{bail, format_err, Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{debug, info, warn};
 use misc_utils::{
-    fs::{file_open_read, file_open_write, WriteOptions},
+    fs::{file_open_write, read_to_string, WriteOptions},
     Min,
 };
 use petgraph::prelude::*;
@@ -99,15 +99,7 @@ fn run() -> Result<(), Error> {
     process_dnstap(&*dnstap_file)
         .with_context(|_| format!("Processing dnstap file '{}'", dnstap_file.display()))?;
 
-    // choose a large enough buffer for all purposes, as this is a single run binary the size does not matter
-    let mut content = String::with_capacity(1024 * 1024 * 50);
-    let mut rdr = file_open_read(&cli_args.webpage_log).with_context(|_| {
-        format!(
-            "Opening input file '{}' failed",
-            cli_args.webpage_log.display(),
-        )
-    })?;
-    rdr.read_to_string(&mut content).with_context(|_| {
+    let content = read_to_string(&cli_args.webpage_log).with_context(|_| {
         format!(
             "Reading input file '{}' failed",
             cli_args.webpage_log.display(),
