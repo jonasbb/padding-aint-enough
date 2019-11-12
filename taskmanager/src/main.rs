@@ -238,14 +238,12 @@ fn run_exec(cmd: SubCommand, config: Config) -> Result<(), Error> {
                 Some("Sanity Check Single".to_string()),
             ));
             let taskmgr_ = taskmgr.clone();
-            let config_ = config.clone();
             handles.push(run_thread_restart(
-                move || result_sanity_checks_domain(&taskmgr_, &config_),
+                move || result_sanity_checks_domain(&taskmgr_, &config),
                 Some("Sanity Check Domain".to_string()),
             ));
-            let taskmgr_ = taskmgr.clone();
             handles.push(run_thread_restart(
-                move || cleanup_stale_tasks(&taskmgr_),
+                move || cleanup_stale_tasks(&taskmgr),
                 Some("Cleanup stale tasks".to_string()),
             ));
         }

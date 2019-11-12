@@ -539,10 +539,10 @@ pub fn process_pcap(
                 .cloned()
                 .filter(|sa| sa.port() == 853)
                 .collect();
-            if candidates.len() == 1 {
-                return Ok(Some(candidates[0]));
-            } else if candidates.len() > 1 {
-                bail!(make_error(candidates))
+            match candidates.len() {
+                0 => {}
+                1 => return Ok(Some(candidates[0])),
+                _ => bail!(make_error(candidates)),
             }
 
             let candidates: Vec<_> = endpoints
@@ -550,10 +550,10 @@ pub fn process_pcap(
                 .cloned()
                 .filter(|sa| sa.port() == 8853)
                 .collect();
-            if candidates.len() == 1 {
-                return Ok(Some(candidates[0]));
-            } else if candidates.len() > 1 {
-                bail!(make_error(candidates))
+            match candidates.len() {
+                0 => {}
+                1 => return Ok(Some(candidates[0])),
+                _ => bail!(make_error(candidates)),
             }
 
             bail!(make_error(endpoints))
