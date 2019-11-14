@@ -2,7 +2,6 @@ use chrome::ChromeDebuggerMessage;
 use criterion::{criterion_group, criterion_main, Criterion};
 use failure::{Error, ResultExt};
 use misc_utils::fs::file_open_read;
-use serde_json;
 use std::{
     io::Read,
     path::{Path, PathBuf},

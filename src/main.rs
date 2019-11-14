@@ -8,7 +8,6 @@ use dnstap::{
     dnstap::Message_Type,
     protos::{Dnstap, DnstapContent},
 };
-use env_logger;
 use failure::{bail, format_err, Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{debug, info, warn};
@@ -20,8 +19,6 @@ use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
 use sequences::load_sequence::{MatchKey, Query, QuerySource, UnmatchedClientQuery};
 use serde::{Deserialize, Serialize};
-use serde_json;
-use serde_with;
 use std::{
     borrow::Cow,
     collections::BTreeMap,

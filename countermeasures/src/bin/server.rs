@@ -25,7 +25,6 @@ use tokio::{
     net::{TcpListener, TcpStream},
     prelude::*,
 };
-use tokio_openssl;
 use trust_dns_proto::{
     op::message::Message,
     serialize::binary::{BinEncodable, BinEncoder},

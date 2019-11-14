@@ -710,7 +710,6 @@ mod test {
     use super::*;
     use misc_utils::fs::file_open_read;
     use petgraph::{algo::is_isomorphic, graph::IndexType, EdgeType};
-    use serde_json;
     use std::path::Path;
 
     fn get_messages<P>(path: P) -> Result<Vec<ChromeDebuggerMessage>, Error>

@@ -1,5 +1,4 @@
 use csv::ReaderBuilder;
-use env_logger;
 use failure::{Error, ResultExt};
 use log::info;
 use misc_utils::fs::file_open_read;

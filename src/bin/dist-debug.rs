@@ -1,5 +1,4 @@
 use encrypted_dns::FailExt;
-use env_logger;
 use failure::{Error, ResultExt};
 use glob::glob;
 use log::{debug, info, warn};

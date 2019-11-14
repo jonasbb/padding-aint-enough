@@ -8,7 +8,6 @@ use failure::{bail, Error, ResultExt};
 use framestream::DecoderReader;
 use log::warn;
 use misc_utils::fs::file_open_read;
-use protobuf;
 use std::{convert::TryFrom, path::Path};
 
 pub fn process_dnstap<P: AsRef<Path>>(

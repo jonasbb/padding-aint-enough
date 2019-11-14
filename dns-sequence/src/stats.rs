@@ -437,7 +437,6 @@ mod plot {
     use failure::Error;
     use log::info;
     use misc_utils::fs::{file_open_write, WriteOptions};
-    use serde_json;
     use std::{collections::HashMap, fs::OpenOptions, path::Path};
 
     pub fn percentage_stacked_area_chart<S: ::std::hash::BuildHasher>(

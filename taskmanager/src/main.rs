@@ -3,13 +3,11 @@ mod utils;
 use crate::utils::*;
 use chrome::ChromeDebuggerMessage;
 use encrypted_dns::{chrome_log_contains_errors, ErrorExt};
-use env_logger;
 use failure::{bail, Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{debug, error, info, warn};
 use misc_utils::fs::{file_open_read, read_to_string};
 use sequences::{sequence_stats, Sequence};
-use serde_json;
 use std::{
     ffi::{OsStr, OsString},
     fmt::{self, Debug},
