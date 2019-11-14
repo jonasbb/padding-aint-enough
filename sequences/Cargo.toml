@@ -28,7 +28,7 @@ itertools = { version = "0.8.1", optional = true }
 lazy_static = "1.4.0"
 log = "0.4.8"
 misc_utils = "2.5.1"
-num-traits = "0.2.8"
+num-traits = "0.2.9"
 ordered-float = { version = "1.0.2", features = [ "serde" ] }
 pcap-parser = { version = "0.8.2", features = [ "data" ], optional = true }
 rand = "0.7.2"
