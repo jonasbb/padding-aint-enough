@@ -368,25 +368,28 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 let local_path: PathBuf = config.get_collected_results_path().join(task.name());
                 ensure_path_exists(&local_path)?;
 
-                for fname in &[
-                    &*DNSTAP_FILE_NAME,
-                    &*LOG_FILE,
-                    &*CHROME_LOG_FILE_NAME,
-                    &*PCAP_FILE_NAME,
-                    &*TIMING_FILE_NAME,
-                    // &*TLSKEYS_FILE_NAME,
+                for (fname, required) in &[
+                    (&*DNSTAP_FILE_NAME, true),
+                    (&*LOG_FILE, true),
+                    (&*CHROME_LOG_FILE_NAME, true),
+                    (&*PCAP_FILE_NAME, true),
+                    (&*TIMING_FILE_NAME, true),
+                    (&*TLSKEYS_FILE_NAME, false),
                 ] {
                     // strip the .xz extension
                     let fname = fname.with_extension("");
-                    fs::copy(tmp_dir.path().join(&fname), local_path.join(&fname)).with_context(
-                        |_| {
+                    let status = fs::copy(tmp_dir.path().join(&fname), local_path.join(&fname))
+                        .with_context(|_| {
                             format!(
                                 "{}: Failed to copy back file {}",
                                 task.name(),
                                 fname.display()
                             )
-                        },
-                    )?;
+                        });
+                    // Throw error if file is required but copy failed
+                    if required {
+                        status?;
+                    }
                 }
                 tmp_dir.close()?;
 
@@ -518,25 +521,28 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                     bail!("{}: Cannot create delete temporary directory: ssh has exited with error {}", task.name(), status.code().unwrap_or(-1))
                 };
 
-                for fname in &[
-                    &*DNSTAP_FILE_NAME,
-                    &*LOG_FILE,
-                    &*CHROME_LOG_FILE_NAME,
-                    &*PCAP_FILE_NAME,
-                    &*TIMING_FILE_NAME,
-                    // &*TLSKEYS_FILE_NAME,
+                for (fname, required) in &[
+                    (&*DNSTAP_FILE_NAME, true),
+                    (&*LOG_FILE, true),
+                    (&*CHROME_LOG_FILE_NAME, true),
+                    (&*PCAP_FILE_NAME, true),
+                    (&*TIMING_FILE_NAME, true),
+                    (&*TLSKEYS_FILE_NAME, false),
                 ] {
                     // strip the .xz extension
                     let fname = fname.with_extension("");
-                    fs::copy(tmp_dir.path().join(&fname), local_path.join(&fname)).with_context(
-                        |_| {
+                    let status = fs::copy(tmp_dir.path().join(&fname), local_path.join(&fname))
+                        .with_context(|_| {
                             format!(
                                 "{}: Failed to copy back file {}",
                                 task.name(),
                                 fname.display()
                             )
-                        },
-                    )?;
+                        });
+                    // Throw error if file is required but copy failed
+                    if required {
+                        status?;
+                    }
                 }
                 tmp_dir.close()?;
 
@@ -678,13 +684,13 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
 
                 let old_task_dir = local_path.join(task.name());
 
-                for (filename, new_file_ext) in &[
-                    (&*DNSTAP_FILE_NAME, "dnstap.xz"),
-                    (&*LOG_FILE, "log.xz"),
-                    (&*CHROME_LOG_FILE_NAME, "json.xz"),
-                    (&*PCAP_FILE_NAME, "pcap.xz"),
-                    (&*TIMING_FILE_NAME, "dnstimes.txt.xz"),
-                    // (&*TLSKEYS_FILE_NAME, "tlskeys.txt.xz"),
+                for (filename, new_file_ext, required) in &[
+                    (&*DNSTAP_FILE_NAME, "dnstap.xz", true),
+                    (&*LOG_FILE, "log.xz", true),
+                    (&*CHROME_LOG_FILE_NAME, "json.xz", true),
+                    (&*PCAP_FILE_NAME, "pcap.xz", true),
+                    (&*TIMING_FILE_NAME, "dnstimes.txt.xz", true),
+                    (&*TLSKEYS_FILE_NAME, "tlskeys.txt.xz", false),
                 ] {
                     let src = old_task_dir.join(filename);
                     let dst = results_path.join(task.domain()).join(format!(
@@ -692,9 +698,13 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                         task.name(),
                         new_file_ext
                     ));
-                    fs::rename(&src, &dst).with_context(|_| {
+                    let status = fs::rename(&src, &dst).with_context(|_| {
                         format!("Failed to move {} to {}", src.display(), dst.display())
-                    })?;
+                    });
+                    // Throw error if file is required but copy failed
+                    if required {
+                        status?;
+                    }
                 }
                 fs::remove_dir(&old_task_dir).with_context(|_| {
                     format!(
