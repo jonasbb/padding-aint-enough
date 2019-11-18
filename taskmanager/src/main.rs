@@ -387,7 +387,7 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                             )
                         });
                     // Throw error if file is required but copy failed
-                    if required {
+                    if *required {
                         status?;
                     }
                 }
@@ -540,7 +540,7 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                             )
                         });
                     // Throw error if file is required but copy failed
-                    if required {
+                    if *required {
                         status?;
                     }
                 }
@@ -702,7 +702,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                         format!("Failed to move {} to {}", src.display(), dst.display())
                     });
                     // Throw error if file is required but copy failed
-                    if required {
+                    if *required {
                         status?;
                     }
                 }

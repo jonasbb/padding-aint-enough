@@ -26,7 +26,7 @@ members = [
 opt-level = 1
 
 # This applies to all dependencies, but not this crate or any workspace member
-[profile.dev.overrides."*"]
+[profile.dev.package."*"]
 debug = 1 # lines only
 opt-level = 3
 

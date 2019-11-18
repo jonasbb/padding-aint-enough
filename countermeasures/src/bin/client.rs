@@ -350,7 +350,7 @@ where
     Ok(total_bytes)
 }
 
-async fn copy_server_to_client<R, W>(mut server: R, mut client: W) -> Result<(u64), Error>
+async fn copy_server_to_client<R, W>(mut server: R, mut client: W) -> Result<u64, Error>
 where
     R: Stream<Item = Result<(Vec<u8>, Message), Error>> + Send + Unpin,
     W: AsyncWrite + Unpin,

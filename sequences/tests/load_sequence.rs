@@ -126,8 +126,7 @@ fn test_load_pcap_duplicate_aaa_query() {
 #[cfg_attr(not(feature = "read_pcap"), ignore)]
 fn test_load_pcap_reordered_packets() {
     let seq = Sequence::from_path(PCAP_XZ3.as_ref()).unwrap();
-    let expected =
-        r##"{"./tests/data/vk.com-1217-242.pcap.xz":["S01","G08","S01","G09","S01","G02","S01","G05","S01","G02","S01","G06","S01","G07","S01","G02","S01"]}"##;
+    let expected = r##"{"./tests/data/vk.com-1217-242.pcap.xz":["S01","G08","S01","G09","S01","G02","S01","G05","S01","G02","S01","G06","S01","G07","S01","G02","S01"]}"##;
     assert_eq!(
         expected,
         serde_json::to_string(&seq).unwrap(),
