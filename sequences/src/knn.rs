@@ -324,11 +324,11 @@ fn memorize_distance(
                 .distance_with_limit::<()>(trainings_sample, true, use_cr_mode)
                 .0;
             // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
-            let dist_norm = if distance == 0 {
+            let dist_norm = if dist == 0 {
                 NotNan::new(0.).unwrap()
             } else {
                 NotNan::new(
-                    distance as f64 / validation_sample.len().max(trainings_sample.len()) as f64,
+                    dist as f64 / validation_sample.len().max(trainings_sample.len()) as f64,
                 )
                 .unwrap_or_else(|err| {
                     error!("Failed to calculate normalized distance: {}", err);
