@@ -13,8 +13,16 @@ use itertools::Itertools;
 use log::{debug, trace};
 use misc_utils::fs;
 use pcap_parser::{data::PacketData, PcapCapture, PcapError};
-use rustls::internal::msgs::{
-    codec::Codec, enums::ContentType as TlsContentType, message::Message as TlsMessage,
+use rustls::{
+    internal::msgs::{
+        codec::Codec,
+        enums::ContentType as TlsContentType,
+        handshake::{
+            HandshakePayload as TlsHandshakePayload, ServerExtension as TlsServerExtensions,
+        },
+        message::{Message as TlsMessage, MessagePayload as TlsMessagePayload},
+    },
+    ProtocolVersion,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -105,6 +113,30 @@ impl From<TlsContentType> for MessageType {
     }
 }
 
+/// Different TLS versions we support
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Deserialize, Serialize)]
+pub enum TlsVersion {
+    Tls1_2,
+    Tls1_3,
+    Unknown,
+}
+
+impl From<ProtocolVersion> for TlsVersion {
+    fn from(version: ProtocolVersion) -> Self {
+        match version {
+            ProtocolVersion::TLSv1_2 => Self::Tls1_2,
+            ProtocolVersion::TLSv1_3 => Self::Tls1_3,
+            _ => Self::Unknown,
+        }
+    }
+}
+
+impl From<&ProtocolVersion> for TlsVersion {
+    fn from(version: &ProtocolVersion) -> Self {
+        Self::from(*version)
+    }
+}
+
 /// Abstract representation of a TlsRecord within a pcap file
 ///
 /// This contains the necessary information to build a [`Sequence`] and to map them back to the pcap for debugging using wireshark.
@@ -128,6 +160,8 @@ pub struct TlsRecord {
     pub message_type: MessageType,
     /// Payload size of the TLS record
     pub message_length: u32,
+    /// TLS version choosen by the server, if this is the ServerHello handshake message
+    pub tls_version: Option<TlsVersion>,
 }
 
 impl Into<AbstractQueryResponse> for &TlsRecord {
@@ -284,6 +318,31 @@ pub fn extract_tls_records(
                     ipv4.source_addr(),
                     tls.payload.length()
                 );
+
+                let mut tls_version = None;
+
+                // See if this is a server send ServerHello with a version
+                if let Some(inner) = tls
+                    .payload
+                    .decode_given_type(TlsContentType::Handshake, ProtocolVersion::TLSv1_2)
+                {
+                    if let TlsMessagePayload::Handshake(handshake_payload) = inner {
+                        if let TlsHandshakePayload::ServerHello(server_hello) =
+                            handshake_payload.payload
+                        {
+                            let mut min_version = server_hello.legacy_version.into();
+                            for ext in &server_hello.extensions {
+                                if let TlsServerExtensions::SupportedVersions(vers) = ext {
+                                    let vers = vers.into();
+                                    if vers > min_version {
+                                        min_version = vers;
+                                    }
+                                }
+                            }
+                            tls_version = Some(min_version);
+                        }
+                    }
+                };
                 let record = TlsRecord {
                     packet_in_pcap: packet_id,
                     sender: ipv4.source_addr(),
@@ -294,6 +353,7 @@ pub fn extract_tls_records(
                     time: next_time[&flowid].unwrap(),
                     message_type: tls.typ.into(),
                     message_length: tls.payload.length() as u32,
+                    tls_version,
                 };
                 tls_records.entry(flowid.into()).or_default().push(record);
 
@@ -331,6 +391,7 @@ pub fn filter_tls_records(
     // This might need adapting later on.
 
     trace!("Filter TLS Server: {} {}", server, server_port);
+    let mut tls_version = None;
     let mut has_seen_server_change_cipher_spec = false;
     let mut has_seen_client_change_cipher_spec = false;
     let mut has_seen_large_marker_query = false;
@@ -338,6 +399,11 @@ pub fn filter_tls_records(
     let mut has_seen_end_marker_query = false;
     let mut records: Vec<_> = records
         .into_iter()
+        .inspect(|rec| {
+            if rec.tls_version.is_some() {
+                tls_version = rec.tls_version;
+            }
+        })
         .skip_while(|rec| {
             if rec.message_type == MessageType::ChangeCipherSpec {
                 if rec.sender == server && rec.sender_port == server_port {
@@ -392,11 +458,19 @@ pub fn filter_tls_records(
         })
         // Only keep the server replies
         .filter(|rec| rec.sender == server && rec.sender_port == server_port)
-        // Only keep messages which are large enough to contain DNS
-        .filter(|rec| rec.message_length >= base_message_size)
+        // Only keep `Application Data` entries
+        .filter(|rec| rec.message_type == MessageType::ApplicationData)
         // Skip the start marker query responses
         .skip(1)
         .collect();
+
+    // if the connection is build using TLSv1.2 the messages are not necessarily padded to 128 bytes
+    // Instead they are unpadded.
+    // We need to keep this in mind while filtering for message sizes here
+    // Only keep messages which are large enough to contain DNS
+    if tls_version == Some(TlsVersion::Tls1_3) {
+        records.retain(|rec| rec.message_length >= base_message_size);
+    }
 
     if has_seen_end_marker_query {
         // Remove the additional marker query to `end.example.`,
@@ -474,6 +548,7 @@ pub fn load_pcap_file_real(
     config: LoadSequenceConfig,
 ) -> Result<Sequence, Error> {
     let records = process_pcap(file, filter, interative, verbose)?;
+    trace!("Extracted Flows:\n{:#?}", records);
 
     // Build final Sequence
     let seq = build_sequence(records, file.to_string_lossy(), config);
@@ -507,6 +582,7 @@ pub fn process_pcap(
 
     // let file = "./tests/data/CF-constant-rate-400ms-2packets.pcap";
     let mut records = extract_tls_records(&file)?;
+    trace!("Extracted TLS Recrods:\n{:#?}", records);
 
     // // If verbose show all records in RON notation
     // if verbose {
