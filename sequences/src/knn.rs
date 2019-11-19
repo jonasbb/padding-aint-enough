@@ -1,7 +1,6 @@
 use crate::{
     utils::take_smallest, InternedSequence, LabelledSequence, LabelledSequences, Sequence,
 };
-use chashmap::CHashMap;
 use lazy_static::lazy_static;
 use log::{debug, error};
 use misc_utils::{Max, Min};
@@ -15,7 +14,7 @@ use std::{
 
 lazy_static! {
     /// Memorize distance calculations
-    static ref PRECOMPUTED_DISTANCES: CHashMap<(InternedSequence, InternedSequence, bool), (usize, NotNan<f64>)> =
+    static ref PRECOMPUTED_DISTANCES: dashmap::DashMap<(InternedSequence, InternedSequence, bool), (usize, NotNan<f64>)> =
         Default::default();
 }
 
@@ -312,35 +311,22 @@ fn memorize_distance(
 
     // Only fill these with temporary values. They will get overwritten by the lambda below, but
     // they need to be initialized before the lambda.
-    let mut distance = usize::max_value();
-    let mut distance_norm = NotNan::new(0.0).unwrap();
-    PRECOMPUTED_DISTANCES.alter(key, |entry| {
-        if let Some((dist, dist_norm)) = entry {
-            distance = dist;
-            distance_norm = dist_norm;
-            entry
+    *PRECOMPUTED_DISTANCES.get_or_insert_with(&key, || {
+        let dist = validation_sample
+            .distance_with_limit::<()>(trainings_sample, true, use_cr_mode)
+            .0;
+        // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
+        let dist_norm = if dist == 0 {
+            NotNan::new(0.).unwrap()
         } else {
-            let dist = validation_sample
-                .distance_with_limit::<()>(trainings_sample, true, use_cr_mode)
-                .0;
-            // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
-            let dist_norm = if dist == 0 {
-                NotNan::new(0.).unwrap()
-            } else {
-                NotNan::new(
-                    dist as f64 / validation_sample.len().max(trainings_sample.len()) as f64,
-                )
+            NotNan::new(dist as f64 / validation_sample.len().max(trainings_sample.len()) as f64)
                 .unwrap_or_else(|err| {
                     error!("Failed to calculate normalized distance: {}", err);
                     NotNan::new(999.).unwrap()
                 })
-            };
-            distance = dist;
-            distance_norm = dist_norm;
-            Some((dist, dist_norm))
-        }
-    });
-    (distance, distance_norm)
+        };
+        (dist, dist_norm)
+    })
 }
 
 #[allow(clippy::type_complexity)]
