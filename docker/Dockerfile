@@ -1,22 +1,22 @@
 FROM debian:9
 
 # The Rust toolchain to use when building our image.  Set by `hooks/build`.
-ARG TOOLCHAIN=nightly-2019-08-10
+ARG TOOLCHAIN=nightly-2019-11-17
 
-RUN apt-get update && \
-    apt-get install -y \
-    build-essential \
-    curl \
-    liblzma-dev \
-    libpcap-dev \
-    libpq-dev \
-    libssl-dev \
-    sudo \
+RUN true && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        liblzma-dev \
+        libpq-dev \
+        sudo \
     && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    useradd rust --user-group --create-home --shell /bin/bash --groups sudo
-
-# RUN apt-get update && apt-get install -y curl
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    useradd rust --user-group --create-home --shell /bin/bash --groups sudo && \
+    true
 
 # Run all further code as user `rust`, and create our working directories
 # as the appropriate user.
