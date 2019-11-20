@@ -14,7 +14,7 @@ use std::{
 
 lazy_static! {
     /// Memorize distance calculations
-    static ref PRECOMPUTED_DISTANCES: dashmap::DashMap<(InternedSequence, InternedSequence, bool), (usize, NotNan<f64>)> =
+    static ref PRECOMPUTED_DISTANCES: dashmap::DashMap<(InternedSequence, InternedSequence, bool), usize> =
         Default::default();
 }
 
@@ -311,22 +311,24 @@ fn memorize_distance(
 
     // Only fill these with temporary values. They will get overwritten by the lambda below, but
     // they need to be initialized before the lambda.
-    *PRECOMPUTED_DISTANCES.get_or_insert_with(&key, || {
-        let dist = validation_sample
+    let distance = *PRECOMPUTED_DISTANCES.get_or_insert_with(&key, || {
+        validation_sample
             .distance_with_limit::<()>(trainings_sample, true, use_cr_mode)
-            .0;
-        // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
-        let dist_norm = if dist == 0 {
-            NotNan::new(0.).unwrap()
-        } else {
-            NotNan::new(dist as f64 / validation_sample.len().max(trainings_sample.len()) as f64)
-                .unwrap_or_else(|err| {
-                    error!("Failed to calculate normalized distance: {}", err);
-                    NotNan::new(999.).unwrap()
-                })
-        };
-        (dist, dist_norm)
-    })
+            .0
+    });
+
+    // Avoid divide by 0 cases, which can happen in the PerfectPadding scenario
+    // If both sequences are 0 length, then the distance must also be 0
+    let distance_norm = if distance == 0 {
+        NotNan::new(0.).unwrap()
+    } else {
+        NotNan::new(distance as f64 / validation_sample.len().max(trainings_sample.len()) as f64)
+            .unwrap_or_else(|err| {
+                error!("Failed to calculate normalized distance: {}", err);
+                NotNan::new(999.).unwrap()
+            })
+    };
+    (distance, distance_norm)
 }
 
 #[allow(clippy::type_complexity)]
