@@ -122,7 +122,7 @@ impl Sequence {
 
     /// Return the number of [`SequenceElement`]s contained
     pub fn len(&self) -> usize {
-        (self.0).0.len()
+        self.as_elements().len()
     }
 
     /// Generalize the [`Sequence`] and make an abstract version by removing some features.
@@ -130,8 +130,8 @@ impl Sequence {
     /// * ID will be the empty string, thus allowing comparisons between different abstract Sequences
     /// * All [`Gap`][`SequenceElement::Gap`] elements will have a value of `0`, as exact values are often undesireable.
     pub fn to_abstract_sequence(&self) -> Self {
-        let seq = (self.0)
-            .0
+        let seq = self
+            .as_elements()
             .iter()
             .map(|seqelem| match seqelem {
                 SequenceElement::Gap(_) => SequenceElement::Gap(0),
@@ -143,8 +143,7 @@ impl Sequence {
 
     /// Return a rough complexity score for the [`Sequence`]
     pub fn complexity(&self) -> usize {
-        (self.0)
-            .0
+        self.as_elements()
             .iter()
             .filter_map(|x| match x {
                 SequenceElement::Size(n) => Some(*n as usize),
@@ -155,8 +154,7 @@ impl Sequence {
 
     /// Return the number of [`SequenceElement::Size`] elements in the [`Sequence`]
     pub fn message_count(&self) -> usize {
-        (self.0)
-            .0
+        self.as_elements()
             .iter()
             .filter(|x| match x {
                 SequenceElement::Size(_) => true,
@@ -166,8 +164,7 @@ impl Sequence {
     }
 
     pub fn to_one_hot_encoding(&self) -> Vec<OneHotEncoding> {
-        (self.0)
-            .0
+        self.as_elements()
             .iter()
             .cloned()
             .map(SequenceElement::to_one_hot_encoding)
@@ -175,8 +172,7 @@ impl Sequence {
     }
 
     pub fn to_vector_encoding(&self) -> Vec<(u16, u16)> {
-        (self.0)
-            .0
+        self.as_elements()
             .iter()
             .cloned()
             .map(SequenceElement::to_vector_encoding)
@@ -207,8 +203,8 @@ impl Sequence {
     where
         DCI: distance_cost_info::DistanceCostInfo,
     {
-        let mut larger = (self.0).0;
-        let mut smaller = (other.0).0;
+        let mut larger = self.as_elements();
+        let mut smaller = other.as_elements();
 
         if larger.len() < smaller.len() {
             mem::swap(&mut larger, &mut smaller);
@@ -326,7 +322,7 @@ impl Sequence {
 
     /// Return the internal slice of [`SequenceElement`]s
     pub fn as_elements(&self) -> &[SequenceElement] {
-        &(self.0).0
+        &((self.0).0).1
     }
 
     pub fn classify(&self) -> Option<&'static str> {
@@ -526,25 +522,25 @@ pub fn sequence_stats(
 }
 
 #[derive(Copy, Clone)]
-pub struct InternedSequence(Intern<Vec<SequenceElement>>, u64);
+pub struct InternedSequence(Intern<(u64, Vec<SequenceElement>)>);
 
 impl InternedSequence {
-    fn new(sequence: Intern<Vec<SequenceElement>>) -> Self {
-        let mut hasher = FnvHasher::default();
-        sequence.hash(&mut hasher);
-        let hash = hasher.finish();
-        Self(sequence, hash)
+    fn new(intern: Intern<(u64, Vec<SequenceElement>)>) -> Self {
+        Self(intern)
     }
 
     fn from_vec(sequence: Vec<SequenceElement>) -> Self {
-        Self::new(Intern::new(sequence))
+        let mut hasher = FnvHasher::default();
+        sequence.hash(&mut hasher);
+        let hash = hasher.finish();
+        Self::new(Intern::new((hash, sequence)))
     }
 }
 
 impl PartialEq for InternedSequence {
     fn eq(&self, other: &Self) -> bool {
-        // compare Hash first, only then the sequences
-        self.1 == other.1 && self.0 == other.0
+        // Rely on pointer comparison of Intern
+        self.0.eq(&other.0)
     }
 }
 
@@ -555,14 +551,17 @@ impl Hash for InternedSequence {
     where
         H: std::hash::Hasher,
     {
-        self.1.hash(state);
+        (self.0).0.hash(state);
     }
 }
 
 impl Ord for InternedSequence {
     fn cmp(&self, other: &Self) -> Ordering {
         // Compare hash first, then sequence
-        self.1.cmp(&other.1).then_with(|| self.0.cmp(&other.0))
+        (self.0)
+            .0
+            .cmp(&(other.0).0)
+            .then_with(|| (self.0).1.cmp(&(other.0).1))
     }
 }
 
@@ -574,7 +573,7 @@ impl PartialOrd for InternedSequence {
 
 impl Debug for InternedSequence {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        self.0.fmt(fmt)
+        (self.0).1.fmt(fmt)
     }
 }
 
