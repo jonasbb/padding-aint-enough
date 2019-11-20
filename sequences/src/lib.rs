@@ -24,7 +24,6 @@ pub use crate::{
 };
 use chrono::NaiveDateTime;
 use failure::{bail, Error, ResultExt};
-use fnv::FnvHasher;
 use internment::Intern;
 pub use load_sequence::convert_to_sequence;
 use misc_utils::{fs, path::PathExt, Min};
@@ -36,11 +35,13 @@ use serde::{
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     fmt::{self, Debug},
-    hash::{Hash, Hasher},
+    hash::Hash,
     mem,
     path::Path,
 };
 use string_cache::DefaultAtom as Atom;
+
+pub type InternedSequence = Intern<Vec<SequenceElement>>;
 
 /// Interaperability type used when building sequences
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
@@ -74,7 +75,7 @@ pub struct Sequence(InternedSequence, String);
 #[allow(clippy::len_without_is_empty)]
 impl Sequence {
     pub fn new(sequence: Vec<SequenceElement>, identifier: String) -> Sequence {
-        let interned = InternedSequence::from_vec(sequence);
+        let interned = InternedSequence::new(sequence);
         Sequence(interned, identifier)
     }
 
@@ -322,7 +323,7 @@ impl Sequence {
 
     /// Return the internal slice of [`SequenceElement`]s
     pub fn as_elements(&self) -> &[SequenceElement] {
-        &((self.0).0).1
+        self.0.as_ref()
     }
 
     pub fn classify(&self) -> Option<&'static str> {
@@ -430,7 +431,7 @@ impl Serialize for Sequence {
         S: Serializer,
     {
         let mut map_ser = serializer.serialize_map(Some(1))?;
-        map_ser.serialize_entry(&self.1, &(self.0).0)?;
+        map_ser.serialize_entry(&self.1, &self.0)?;
         map_ser.end()
     }
 }
@@ -519,62 +520,6 @@ pub fn sequence_stats(
     let avg_median = median_distances.iter().sum::<usize>() / median_distances.len();
 
     (avg_distances, median_distances, avg_avg, avg_median)
-}
-
-#[derive(Copy, Clone)]
-pub struct InternedSequence(Intern<(u64, Vec<SequenceElement>)>);
-
-impl InternedSequence {
-    fn new(intern: Intern<(u64, Vec<SequenceElement>)>) -> Self {
-        Self(intern)
-    }
-
-    fn from_vec(sequence: Vec<SequenceElement>) -> Self {
-        let mut hasher = FnvHasher::default();
-        sequence.hash(&mut hasher);
-        let hash = hasher.finish();
-        Self::new(Intern::new((hash, sequence)))
-    }
-}
-
-impl PartialEq for InternedSequence {
-    fn eq(&self, other: &Self) -> bool {
-        // Rely on pointer comparison of Intern
-        self.0.eq(&other.0)
-    }
-}
-
-impl Eq for InternedSequence {}
-
-impl Hash for InternedSequence {
-    fn hash<H>(&self, state: &mut H)
-    where
-        H: std::hash::Hasher,
-    {
-        (self.0).0.hash(state);
-    }
-}
-
-impl Ord for InternedSequence {
-    fn cmp(&self, other: &Self) -> Ordering {
-        // Compare hash first, then sequence
-        (self.0)
-            .0
-            .cmp(&(other.0).0)
-            .then_with(|| (self.0).1.cmp(&(other.0).1))
-    }
-}
-
-impl PartialOrd for InternedSequence {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Debug for InternedSequence {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        (self.0).1.fmt(fmt)
-    }
 }
 
 #[cfg(test)]
