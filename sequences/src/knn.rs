@@ -14,7 +14,7 @@ use std::{
 
 lazy_static! {
     /// Memorize distance calculations
-    static ref PRECOMPUTED_DISTANCES: dashmap::DashMap<(InternedSequence, InternedSequence, bool), usize> =
+    static ref PRECOMPUTED_DISTANCES: dashmap::DashMap<(InternedSequence, InternedSequence), usize> =
         Default::default();
 }
 
@@ -222,6 +222,11 @@ where
 {
     assert!(k > 0, "kNN needs a k with k > 0");
 
+    eprintln!(
+        "Current size of memorization map: {} entries",
+        PRECOMPUTED_DISTANCES.len()
+    );
+
     validation_data
         .into_par_iter()
         .with_max_len(1)
@@ -261,6 +266,11 @@ where
     S: AsRef<str> + Clone + Display + Sync,
 {
     assert!(k > 0, "kNN needs a k with k > 0");
+
+    eprintln!(
+        "Current size of memorization map: {} entries",
+        PRECOMPUTED_DISTANCES.len()
+    );
 
     validation_data
         .into_par_iter()
@@ -303,11 +313,7 @@ fn memorize_distance(
     let v = validation_sample.intern();
     let t = trainings_sample.intern();
     // Distance is symmetric, so sort the two parts of the key, such that we store them only once
-    let key = if v < t {
-        (v, t, use_cr_mode)
-    } else {
-        (t, v, use_cr_mode)
-    };
+    let key = if v < t { (v, t) } else { (t, v) };
 
     // Only fill these with temporary values. They will get overwritten by the lambda below, but
     // they need to be initialized before the lambda.
