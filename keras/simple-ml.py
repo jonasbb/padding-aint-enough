@@ -40,16 +40,30 @@ def main() -> None:
     MASKING_VALUE = data.masking_value
     NUM_CLASSES = data.classes
 
+    # p = {
+    #     "activation": ["softmax"],
+    #     "batch_size": [20, 40],
+    #     "clipnorm": [0.1],
+    #     "dropout": [0.05],
+    #     "epochs": [20, 25, 50, 100],
+    #     "hidden_size": [128, 256],
+    #     "layers": [2],
+    #     "optimizer": [keras.optimizers.Adam, keras.optimizers.Nadam],
+    #     "recurrent_dropout": [0.05],
+    # }
+
+    # Optimal p based on the results from the Google Cloud VM
+    # {'batch_size': 160, 'dropout': 0.05, 'clipnorm': 0.1, 'epochs': 50, 'layers': 2, 'optimizer': <class 'keras.optimizers.Nadam'>, 'activation': 'softmax', 'hidden_size': 256, 'recurrent_dropout': 0.05}
     p = {
         "activation": ["softmax"],
-        "batch_size": [20, 40],
+        "batch_size": [160],
         "clipnorm": [0.1],
         "dropout": [0.05],
-        "epochs": [20, 25, 50, 100],
-        "hidden_size": [128, 256],
+        "epochs": [50],
+        "hidden_size": [256],
         "layers": [2],
+        "optimizer": [keras.optimizers.Nadam],
         "recurrent_dropout": [0.05],
-        "optimizer": [keras.optimizers.Adam, keras.optimizers.Nadam],
     }
 
     scan_results = talos.Scan(
@@ -61,16 +75,16 @@ def main() -> None:
         # Model Selection parameters
         params=p,
         model=test_model,
-        fraction_limit=0.50,
+        fraction_limit=1.0,
         reduction_method="correlation",
         reduction_metric="val_accuracy",
         # Talos Config
         experiment_name="Basic Sequences",
         print_params=True,
         disable_progress_bar=True,
-        # This has to be on the last line
-        boolean_limit=lambda p: (p["layers"] * p["hidden_size"] * p["epochs"])
-        == 12800,  # ,
+        # # This has to be on the last line
+        # boolean_limit=lambda p: (p["layers"] * p["hidden_size"] * p["epochs"])
+        # == 12800,  # ,
     )
 
     import IPython
