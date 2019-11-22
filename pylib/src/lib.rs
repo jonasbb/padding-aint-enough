@@ -2,11 +2,11 @@
 #![allow(clippy::all)]
 
 use encrypted_dns::ErrorExt;
-use failure::Error;
+use failure::{format_err, Error, ResultExt};
 use pyo3::{basic::CompareOp, exceptions::Exception, prelude::*, types::PyType, PyObjectProtocol};
 use sequences::{
     distance_cost_info::CostTracker, load_all_files_with_extension_from_dir_with_config, GapMode,
-    LoadSequenceConfig, OneHotEncoding, Padding, Sequence,
+    LabelledSequences, LoadSequenceConfig, OneHotEncoding, Padding, Sequence,
 };
 use std::{collections::BTreeMap, ffi::OsStr, path::Path};
 
@@ -83,6 +83,38 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
         Ok(seqs
             .into_iter()
             .map(|(domain, seqs)| (domain, seqs.into_iter().map(Into::into).collect()))
+            .collect())
+    }
+
+    /// load_preprocessed(path)
+    /// --
+    ///
+    /// Load a file with preprocessed sequences.
+    #[pyfn(m, "load_preprocessed")]
+    fn load_preprocessed(
+        _py: Python<'_>,
+        path: String,
+    ) -> PyResult<Vec<(String, Vec<PySequence>)>> {
+        let s = misc_utils::fs::read_to_string(&path)
+            .with_context(|_| format_err!("Could not open {} to read from it.", path))
+            .map_err(|err| error2py(err.into()))?;
+        let seqs: Vec<LabelledSequences<String>> = serde_json::from_str(&s)
+            .with_context(|_| {
+                format_err!(
+                    "The file {} could not be deserialized into LabelledSequences",
+                    path
+                )
+            })
+            .map_err(|err| error2py(err.into()))?;
+
+        Ok(seqs
+            .into_iter()
+            .map(|lseq| {
+                (
+                    lseq.mapped_domain,
+                    lseq.sequences.into_iter().map(From::from).collect(),
+                )
+            })
             .collect())
     }
 

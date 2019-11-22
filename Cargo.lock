@@ -1413,12 +1413,14 @@ dependencies = [
 
 [[package]]
 name = "pylib"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "encrypted-dns 0.1.0",
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "misc_utils 2.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "pyo3 0.8.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sequences 0.1.0",
+ "serde_json 1.0.41 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
