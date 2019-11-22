@@ -11,7 +11,9 @@ deprecation._PRINT_DEPRECATION_WARNINGS = False  # NOQA
 import datetime
 import os
 import pickle
+import signal
 import sys
+import traceback
 import typing as t
 
 import keras
@@ -21,6 +23,8 @@ import talos
 from keras import layers
 from keras.models import Sequential
 from utils import load_data, shuffle_in_unison_scary
+
+signal.signal(signal.SIGUSR1, lambda sig, stack: traceback.print_stack(stack))
 
 # Try replacing GRU, or SimpleRNN.
 RNN = layers.LSTM
