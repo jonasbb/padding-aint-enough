@@ -157,11 +157,13 @@ def load_data(
     # find longest sequence
     longest_sequence = max(max(len(seq) for seq in x) for x in training_raw)
     padding_value = tuple([0] * len(training_raw[0][0][0]))
-    distinct_categories = len(training_raw[0])
+    distinct_domains = len(training_raw[0])
+    distinct_categories = len(set(labels[0]))
     print(
         f"""Longest Sequence {longest_sequence}
 Padding Value: {padding_value}
-Distinct Categories: {distinct_categories}
+Distinct (input) Categories: {distinct_domains} (before normalization)
+Distinct (output) Categories: {distinct_categories}
 """
     )
 
@@ -180,11 +182,7 @@ Distinct Categories: {distinct_categories}
         padding="post",
     )
 
-    expected_shape = (
-        distinct_categories * training_validation_split,
-        longest_sequence,
-        2,
-    )
+    expected_shape = (distinct_domains * training_validation_split, longest_sequence, 2)
     if training.shape != expected_shape:
         raise Exception(
             f"There was an error converting the sequences into a numpy array: Expected shape {expected_shape} but found shape {training.shape}"
