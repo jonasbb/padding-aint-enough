@@ -9,7 +9,7 @@ repos:
         language: system
         pass_filenames: false
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v2.4.0
     hooks:
       - id: check-merge-conflict
       - id: check-yaml
@@ -17,7 +17,7 @@ repos:
       - id: trailing-whitespace
         exclude_types: ["diff", "markdown", "svg"]
   - repo: https://github.com/python/black
-    rev: 19.3b0
+    rev: 19.10b0
     hooks:
       - id: black
         language_version: python3.7

@@ -22,7 +22,7 @@ tldextract = "~=2.2"
 websocket-client = "~=0.56.0"
 
 [dev-packages]
-black = "==19.3b0"
+black = "==19.10b0"
 mypy = "*"
 notebook = "~=6.0"
 pylint = "*"
