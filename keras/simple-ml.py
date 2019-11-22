@@ -10,6 +10,8 @@ deprecation._PRINT_DEPRECATION_WARNINGS = False  # NOQA
 
 import datetime
 import os
+import pickle
+import sys
 import typing as t
 
 import keras
@@ -27,15 +29,36 @@ NUM_CLASSES = None
 
 CONFUSION_DOMAINS_LISTS = [
     # "/home/jbushart/projects/confusion_domains/redirects.csv",
-    "/home/jbushart/projects/encrypted-dns/results/2018-10-09-no-dnssec/confusion_domains.csv"
+    # "/home/jbushart/projects/encrypted-dns/results/2018-10-09-no-dnssec/confusion_domains.csv"
+    "/home/jbushart/projects/confusion_domains/redirects-2019-08-30.csv",
+    "/home/jbushart/projects/encrypted-dns/confusion_domains.csv",
 ]
+
+PREPROCESSED_FILENAME = "./ml-preprocessed.pickle"
 
 
 def main() -> None:
     global MASKING_VALUE, NUM_CLASSES  # pylint: disable=global-statement
-    data = load_data(CONFUSION_DOMAINS_LISTS, "/home/jbushart/tmp/", "*pcap.json.xz", 8)
+
+    if os.path.exists(PREPROCESSED_FILENAME):
+        print(f"Loading existing preprocessed data from {PREPROCESSED_FILENAME}")
+        with open(PREPROCESSED_FILENAME, "rb") as f:
+            data = pickle.load(f)
+    else:
+        data = load_data(
+            CONFUSION_DOMAINS_LISTS,
+            "/mnt/data/Downloads/dnscaptures-2019-11-18-full-rescan/extracted/0",
+            "*pcap.json.xz",
+            8,
+        )
+        with open(PREPROCESSED_FILENAME, "wb") as f:
+            pickle.dump(data, f)
+
     print(data)
     data.assert_no_nan()
+
+    if "preprocess" in sys.argv:
+        return
 
     MASKING_VALUE = data.masking_value
     NUM_CLASSES = data.classes
