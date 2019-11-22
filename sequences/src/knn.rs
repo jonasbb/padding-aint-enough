@@ -223,7 +223,8 @@ where
     assert!(k > 0, "kNN needs a k with k > 0");
 
     eprintln!(
-        "Current size of memorization map: {} entries",
+        "Current size of memorization map (k={}): {} entries",
+        k,
         PRECOMPUTED_DISTANCES.len()
     );
 
@@ -268,7 +269,8 @@ where
     assert!(k > 0, "kNN needs a k with k > 0");
 
     eprintln!(
-        "Current size of memorization map: {} entries",
+        "Current size of memorization map (k={}): {} entries",
+        k,
         PRECOMPUTED_DISTANCES.len()
     );
 

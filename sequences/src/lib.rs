@@ -467,6 +467,17 @@ impl<'de> Deserialize<'de> for Sequence {
     }
 }
 
+#[test]
+fn test_serialization_roundtrip_sequence() {
+    let seq = Sequence::new(vec![], "".into());
+    let from_des = serde_json::from_str(&serde_json::to_string(&seq).unwrap()).unwrap();
+    assert_eq!(seq, from_des);
+
+    let seq = Sequence::new(vec![Size(1), Gap(2), Size(1), Size(2), Size(1)], "".into());
+    let from_des = serde_json::from_str(&serde_json::to_string(&seq).unwrap()).unwrap();
+    assert_eq!(seq, from_des);
+}
+
 pub struct LabelledSequence<S = Atom> {
     pub true_domain: S,
     pub mapped_domain: S,
