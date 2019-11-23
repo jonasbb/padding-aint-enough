@@ -17,7 +17,7 @@ lazy_static = "1.4.0"
 log = "0.4.8"
 misc_utils = "2.5.1"
 # Needed for Postgres. https://github.com/emk/rust-musl-builder#making-diesel-work
-openssl = { version = "0.10.25", features = ["vendored"] }
+openssl = { version = "0.10.26", features = ["vendored"] }
 rayon = "1.2.1"
 sequences = { path = "../sequences" }
 serde = { version = "1.0.102", features = [ "derive" ] }
