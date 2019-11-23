@@ -12,7 +12,7 @@ failure = "0.1.6"
 futures-preview = { version = "=0.3.0-alpha.19", features =  [ "async-await" ] }
 lazy_static = "1.4.0"
 log = "0.4.8"
-openssl = { version = "0.10.25", features = [ "vendored" ] }
+openssl = { version = "0.10.26", features = [ "vendored" ] }
 openssl-probe = "0.1.2"
 rand = "0.7.2"
 sequences = { path = "../sequences" }
