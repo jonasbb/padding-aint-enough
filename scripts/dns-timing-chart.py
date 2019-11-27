@@ -1,11 +1,10 @@
 #!/usr/bin/python3
 
+import json
 import os
-import pickle
 import sys
 import typing as t
 
-import IPython
 import matplotlib.pyplot as plt
 import numpy as np
 from dateutil.parser import parse as parse_iso8601
@@ -17,7 +16,7 @@ def print_help(prg_name: str) -> None:
         f"""Usage
 {prg_name} <File>
 
-The program expects a single file as argument. The file must be a pickle-file containing the data used for plotting."""
+The program expects a single file as argument. The file must be a json-file containing the data used for plotting."""
     )
 
 
@@ -25,7 +24,7 @@ next_ind = -1
 
 
 def get_next_ind() -> int:
-    global next_ind
+    global next_ind  # pylint: disable=global-statement
     tmp = next_ind
     next_ind -= 1
     return tmp
@@ -81,7 +80,7 @@ def main() -> None:
         sys.exit(1)
 
     with open(sys.argv[1], "rb") as f:
-        data = pickle.load(f)
+        data = json.load(f)
 
     (root, _ext) = os.path.splitext(sys.argv[1])
     outfile = root + ".svg"
@@ -107,16 +106,16 @@ def main() -> None:
         minimum_size = 0
 
     # also consume DNS information if available
-    dns_pickle = os.path.join(os.path.dirname(sys.argv[1]), "dns.pickle")
-    if os.path.exists(dns_pickle):
-        dns = pickle.load(open(dns_pickle, "rb"))
+    dns_json = os.path.join(os.path.dirname(sys.argv[1]), "dns.json")
+    if os.path.exists(dns_json):
+        dns = json.load(open(dns_json, "rb"))
         dns.sort(key=lambda x: x["start"], reverse=False)
 
         dns_start = np.array([parse_iso8601(elem["start"]).timestamp() for elem in dns])
         min_dns_start = min(dns_start)
         dns_end = np.array([parse_iso8601(elem["end"]).timestamp() for elem in dns])
         dns_names = np.array([f"{elem['qname']} ({elem['qtype']})" for elem in dns])
-        dns_source = np.array([elem["source"][0] for elem in dns])
+        dns_source = np.array([elem["source"] for elem in dns])
         dns_size = np.array([elem["response_size"] for elem in dns])
 
         minimum_size = max(minimum_size, (max(dns_end) - min_dns_start) * 0.01)
@@ -144,7 +143,7 @@ def main() -> None:
     yticks = list(range(len(begin)))
     yticks_labels = list(event)
 
-    if os.path.exists(dns_pickle):
+    if os.path.exists(dns_json):
         label2index: t.Dict[str, int] = dict()
         prev_end = None
 
