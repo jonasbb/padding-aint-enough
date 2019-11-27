@@ -5,8 +5,8 @@
 //     text_representation:
 //       extension: .rs
 //       format_name: percent
-//       format_version: '1.2'
-//       jupytext_version: 0.8.6
+//       format_version: '1.3'
+//       jupytext_version: 1.3.0
 //   kernelspec:
 //     display_name: Rust
 //     language: rust
@@ -24,13 +24,12 @@
 // * Use how often this exact sequence appears in the dataset
 
 // %%
-:dep sequences = { path = "/home/jbushart/projects/encrypted-dns/sequences"}
+// :dep sequences = { path = "/home/jbushart/projects/encrypted-dns/sequences"}
 
 // %%
-:dep serde = { version = "1.0.84", features = [ "derive" ] }
+// :dep serde = { version = "1.0.84", features = [ "derive" ] }
 
 // %%
-extern crate hashbrown;
 extern crate itertools;
 extern crate misc_utils;
 extern crate rayon;
@@ -41,16 +40,17 @@ extern crate serde;
 extern crate string_cache;
 
 // %%
-use hashbrown::HashMap;
 use itertools::Itertools;
 use misc_utils::fs::*;
 use rayon::prelude::*;
 use sequences::{
     knn::{ClassificationResult, ClassificationResultQuality},
     load_all_dnstap_files_from_dir, Sequence, SequenceElement,
+    load_all_files_with_extension_from_dir_with_config
 };
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::HashMap,
     ffi::OsString,
     path::{Path, PathBuf},
 };
@@ -72,11 +72,13 @@ pub struct Entropy {
 
 // %%
 // let data_closed_world = load_all_dnstap_files_from_dir(&"/home/jbushart/projects/data/dnscaptures-main-group".as_ref()).unwrap();
-let data_open_world = load_all_dnstap_files_from_dir(&"/home/jbushart/projects/data/dnscaptures-open-world".as_ref()).unwrap();
+// let data_open_world = load_all_dnstap_files_from_dir(&"/home/jbushart/projects/data/dnscaptures-open-world".as_ref()).unwrap();
 // let data: Vec<(String, Vec<Sequence>)> = data_closed_world.iter().cloned().chain(data_open_world.iter().cloned()).collect();
 
-// let data = data_closed_world.clone();
-let data = data_open_world.clone();
+let data_closed_world = load_all_files_with_extension_from_dir_with_config(&"/mnt/data/Downloads/dnscaptures-2019-11-18-full-rescan/extracted/0".as_ref(), "pcap".as_ref(), Default::default()).unwrap();
+
+let data = data_closed_world.clone();
+// let data = data_open_world.clone();
 
 // %%
 let mut counter_elem_n1: HashMap<SequenceElement, usize> = HashMap::default();
@@ -111,7 +113,7 @@ for (domain, seqs) in &data {
         *counter_lengths_only_size.entry(length_size_only).or_insert(0) += 1;
         *counter_complexity.entry(seq.complexity()).or_insert(0) += 1;
     }
-}
+};
 {
     let mut counter_sorted: Vec<_> = counter_elem_n1.iter().collect();
     counter_sorted.sort_by_key(|x| x.0);
@@ -227,10 +229,7 @@ impl Misclassification {
 
 // %%
 pub fn load_misclassifications(file: impl AsRef<Path>) -> Vec<Misclassification> {
-    let mut buffer = String::new();
-    file_open_read(&file.as_ref())
-        .unwrap()
-        .read_to_string(&mut buffer)
+    let buffer = read_to_string(&file.as_ref())
         .unwrap();
     let mut counter = 0;
     serde_json::Deserializer::from_str(&buffer)
@@ -245,16 +244,19 @@ pub fn load_misclassifications(file: impl AsRef<Path>) -> Vec<Misclassification>
 }
 
 // %%
-let (mis_open_world, mis_closed_world) = rayon::join(
-    || load_misclassifications(&"../results/2019-01-15-open-world-no-thres-mis.json"),
-    || load_misclassifications(&"../results/2019-01-11-closed-world-no-thres-mis.json")
-);
-dbg!(mis_open_world.len());
+// let (mis_open_world, mis_closed_world) = rayon::join(
+//     || load_misclassifications(&"../results/2019-01-15-open-world-no-thres-mis.json"),
+//     || load_misclassifications(&"../results/2019-01-11-closed-world-no-thres-mis.json")
+// );
+// dbg!(mis_open_world.len());
+// dbg!(mis_closed_world.len());
+
+let mis_closed_world = load_misclassifications(&"../results/2019-11-18-full-rescan/crossvalidate/crossvalidate-miss-0.json.xz");
 dbg!(mis_closed_world.len());
 
 // %%
-let file_to_quality: HashMap<PathBuf, ClassificationResultQuality> = mis_open_world.iter()
-    .chain(mis_closed_world.iter())
+let file_to_quality: HashMap<PathBuf, ClassificationResultQuality> = /*mis_open_world.iter()
+    .chain(*/mis_closed_world.iter()/*)*/
     .filter(|m| m.k == 7)
     .map(|m| (m.id.clone(), m.determine_quality()))
     .collect();

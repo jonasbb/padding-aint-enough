@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0rc0+dev
+#       jupytext_version: 1.3.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -25,6 +25,7 @@ from itertools import cycle
 import matplotlib.cm
 import matplotlib.pyplot as plt
 import numpy as np
+from common_functions import LABELS, open_file
 from natsort import natsorted
 
 
@@ -32,8 +33,9 @@ from natsort import natsorted
 def load_statistics_csv(fname: str) -> t.Tuple[int, t.Dict[str, t.List[int]]]:
     # pylint: disable=W0621
     res: t.Dict[str, t.List[int]] = {}
-    csv_reader = csv.reader(open(fname))
-    labels = next(csv_reader)[2:-1]
+    csv_reader = csv.reader(open_file(fname))
+    # skip labels
+    next(csv_reader)[2:-1]
     for row in csv_reader:
         # The first two entries are k and label
         # The last entry is the number of distinct reasons
@@ -48,7 +50,6 @@ def load_statistics_csv(fname: str) -> t.Tuple[int, t.Dict[str, t.List[int]]]:
         key: [values[i] + values[i + 1] for i in range(0, len(values), 2)]
         for key, values in res.items()
     }
-    labels = [labels[i] for i in range(0, len(labels), 2)]
 
     # Check that each k-values has the same number of traces
     num_traces = [sum(v) for v in res.values()]
@@ -59,13 +60,11 @@ def load_statistics_csv(fname: str) -> t.Tuple[int, t.Dict[str, t.List[int]]]:
     # Cut out the classification results we do not care for
     # Namely: No Result, Wrong, and Contains
     res = {key: values[3:] for key, values in res.items()}
-    # Use real proper labels
-    labels = ["Pseudo-Plurality + Distance", "Plurality", "Majority", "Exact"]
 
     # Transpose res, such that for each label, we have a list of values for increasing k's
     res_label: t.Dict[str, t.List[int]] = {}
     res_keys = sorted(res.keys())
-    for l_idx, label in enumerate(labels):
+    for l_idx, label in enumerate(LABELS):
         res_label[label] = []
         for res_key in res_keys:
             res_label[label].append(res[res_key][l_idx])
@@ -74,13 +73,10 @@ def load_statistics_csv(fname: str) -> t.Tuple[int, t.Dict[str, t.List[int]]]:
 
 
 # %%
-# Use real proper labels
-labels = ["Pseudo-Plurality + Distance", "Plurality", "Majority", "Exact"]
-
-# %%
 # Load the statistics data for all iterations of the long term
 # basepath = "../results/2019-01-24-long-term/statistics-*.csv"
-basepath = "../tmpres/stats-*.csv"
+# basepath = "../tmpres/stats-*.csv"
+basepath = "../results/2019-11-18-full-rescan/classify/stats-*.csv.xz"
 data = [load_statistics_csv(f) for f in natsorted(glob(basepath))]
 
 # %%
@@ -105,9 +101,14 @@ plt.rcParams.update({"legend.handlelength": 3, "legend.handleheight": 1.5})
 colors = cycle(matplotlib.cm.Set1.colors)  # pylint: disable=E1101
 hatches = cycle(["/", "-", "\\", "|"])
 
-last_values = np.array([0] * len(pdata[labels[0]]))
-for label in labels[::-1]:
+last_values = np.array([0] * len(pdata[LABELS[0]]))
+for label in LABELS[::-1]:
     values = pdata[label]
+
+    # Do not process disambiguation steps if they do not exist
+    if sum(values) == 0:
+        continue
+
     total_traces = pdata["total"]
     # Convert into percentages
     pb = [v * 100 / total for v, total in zip(last_values, total_traces)]
@@ -130,7 +131,8 @@ for label in labels[::-1]:
     )
 
 
-plt.legend(loc="upper center", ncol=4, mode="expand")
+# plt.legend(loc="upper center", ncol=4, mode="expand")
+plt.legend(loc="upper center", ncol=4)
 
 # xticks = list(range(0, len(pdata["total"]), 48))
 # xticks_labels = [f"{d // 24}" for d in xticks]

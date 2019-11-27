@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 0.8.6
+#       format_version: '1.3'
+#       jupytext_version: 1.3.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -25,7 +25,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import pylib
 
 
 # %%
@@ -44,8 +43,9 @@ fname = (
 )
 fname = "/home/jbushart/sshfs/dnscaptures/measurements/misclassifications-ow-small.json"
 fname = "/home/jbushart/projects/encrypted-dns/results/2019-02-11-ow-from-cw/misclassifications-ow-pre-k7.json.xz"
+fname = "./2019-11-18-miss-ow.json.xz"
 content = []
-with lzma.open(fname, "rb") as f:
+with lzma.open(fname, "rt") as f:
     # with open(fname, 'rb') as f:
     lines = iter(f)
     for line in lines:
@@ -96,21 +96,6 @@ def is_class_correct(
 
 # %% [markdown]
 # # Minimal / Maximal distance within block of misclassifications
-
-# %%
-# # Load all local dnstap files with the current pylib version
-# # The current pylib version might be newer and have more classifications
-# local_root = "/home/jbushart/projects/data/dnscaptures-open-world/"
-# # index by filename
-# cache = {}
-# for _, seqs in pylib.load_folder(local_root):
-#     for seq in seqs:
-#         cache[Path(seq.id()).name] = seq
-
-# local_root = "/home/jbushart/projects/data/dnscaptures-main-group/"
-# for _, seqs in pylib.load_folder(local_root):
-#     for seq in seqs:
-#         cache[Path(seq.id()).name] = seq
 
 # %%
 # for each k, count min and max distances, as well as sequence lengths
@@ -184,7 +169,11 @@ max_dists_norm = {
 # }
 
 # %%
-plt.plot(range(len(min_dists_norm[7])), min_dists_norm[7], label="Min")
+# Which k to print results for
+k = 1
+
+# %%
+plt.plot(range(len(min_dists_norm[k])), min_dists_norm[k], label="Min")
 for key, values in list(max_dists_norm.items())[1:]:
     plt.plot(range(len(values)), values, label=f"Max k={key}")
 plt.ylim(0, 4)
@@ -195,11 +184,11 @@ plt.tight_layout()
 plt.xlim(0, 82490)
 
 # %%
-len(min_dists_norm[7])
+len(min_dists_norm[k])
 
 # %%
 # Try to figure out how the thresholds have to be to set a false positive rate of 10%, 20%, etc.
-dists = sorted(min_dists_norm[7])
+dists = sorted(min_dists_norm[k])
 total_count_without_prefilter = 82490
 for i in range(0, 101, 5):
     idx = total_count_without_prefilter * i // 100
@@ -215,7 +204,7 @@ for k, values in max_dists_norm.items():
 
 # %%
 # Values which are too extreme
-for fname, stat in distances_per_k[7].items():
+for fname, stat in distances_per_k[k].items():
     if float(stat.min_dist) / stat.seq_length >= 6:
         print(fname, stat)
 

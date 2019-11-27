@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.2.4
+#       format_version: '1.3'
+#       jupytext_version: 1.3.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -76,16 +76,25 @@ def smooth(y: t.Sequence[float], box_pts: int) -> t.List[float]:
 # * Duration: ~64.5 hours
 
 # %%
-source = "../../data/long-term-data/*/"
-source = "/mnt/data/Downloads/dnscaptures-2019-10-07-7days/*/"
+# source = "../../data/long-term-data/*/"
+# source = "/mnt/data/Downloads/dnscaptures-2019-10-07-7days/*/"
+source = (
+    "/mnt/data/Downloads/dnscaptures-2019-11-18-full-rescan/extracted-preprocessed/*"
+)
 
 folders = natsorted(glob(source))
+folders = folders[1:]  # remove the 0 case, which is the full dataset
+
 
 # %%
-data = [
-    {domain: sequences for domain, sequences in pylib.load_folder(f, "json")}
-    for f in folders
-]
+def pylib_load(path) -> t.List[t.Tuple[str, t.List[pylib.Sequence]]]:
+    if path.endswith(".xz"):
+        return pylib.load_preprocessed(path)
+    else:
+        return pylib.load_folder(path, "json")
+
+
+data = [{domain: sequences for domain, sequences in pylib_load(f)} for f in folders]
 
 # %%
 distances: t.Dict[str, t.List[t.List[int]]] = dict()
@@ -134,12 +143,18 @@ for extra, dst in [("", distances), ("relative-", distances_relative)]:
         plot(ys_min, "Min Distance", domain != total)
 
         plt.ylabel("Absolute Distance")
-        plt.xlabel("Iteration")
+        plt.xlabel("Days")
         plt.ylim(bottom=0, top=sorted(ys_max)[int(len(ys_max) * 0.95)] * 1.5)
-        plt.xlim(left=0, right=len(values))
+        plt.xlim(left=0, right=len(values) - 4)
+        xticks = list(range(0, len(values), 48))
+        xticks_labels = [f"{d // 48}" for d in xticks]
+        plt.xticks(xticks, xticks_labels)
         plt.legend()
         #     plt.show()
-        plt.savefig(f"domain-{extra}{domain}.png")
+
+        plt.gcf().set_size_inches(7, 4)
+        plt.tight_layout()
+        plt.savefig(f"domain-{extra}{domain}.svg")
 
 # %%
 md = []

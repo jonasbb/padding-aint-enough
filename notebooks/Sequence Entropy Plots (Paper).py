@@ -5,8 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 0.8.6
+#       format_version: '1.3'
+#       jupytext_version: 1.3.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -32,14 +32,15 @@ hatches = [c for _, c in zip(range(5), HATCHES)]
 
 # %%
 # Map from filename to tuple of entropy and result quality
-data = json.load(lzma.open("./sequences-stats-cw.json.xz", "rt"))
+# data = json.load(lzma.open("./sequences-stats-cw.json.xz", "rt"))
+data = json.load(open("./sequences-stats.json", "rt"))
 
 # %% [markdown]
 # # First count how many files there are in each category of entropy
 
 # %%
 def filter_out(
-    entropy: t.Any  # pylint: disable=unused-argument,redefined-outer-name
+    entropy: t.Any,  # pylint: disable=unused-argument,redefined-outer-name
 ) -> bool:
     #     # VERY good
     #     if entropy["length"] <= 6:

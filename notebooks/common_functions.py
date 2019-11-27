@@ -6,8 +6,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.2.0+dev
+#       format_version: '1.3'
+#       jupytext_version: 1.3.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -114,7 +114,7 @@ def parse_log_data(fname: str) -> t.List[t.List[t.Tuple[str, t.List[int]]]]:
     * There is only Tuple, per result quality
     * The list in the tuple are the number of domains for the given result quality
     """
-    with open(fname) as f:
+    with open_file(fname) as f:
         content = f.read()
     # This marks the start of the table we are interested in
     separator = (

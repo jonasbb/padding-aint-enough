@@ -6,8 +6,8 @@
 //     text_representation:
 //       extension: .rs
 //       format_name: percent
-//       format_version: '1.2'
-//       jupytext_version: 0.8.6
+//       format_version: '1.3'
+//       jupytext_version: 1.3.0
 //   kernelspec:
 //     display_name: Rust
 //     language: rust
@@ -24,21 +24,20 @@
 // # Generic Includes
 
 // %%
-:dep prettytable = {package = "prettytable-rs"}
+// :dep prettytable = {package = "prettytable-rs"}
 
 // %%
-:dep sequences = { path = "/home/jbushart/projects/encrypted-dns/sequences"}
+// :dep sequences = { path = "/home/jbushart/projects/encrypted-dns/sequences"}
 // %%
-:dep serde = { version = "1.0.84", features = [ "derive" ] }
+// :dep serde = { version = "1.0.84", features = [ "derive" ] }
 // %%
-extern crate hashbrown;extern crate misc_utils;
+extern crate misc_utils;
 extern crate prettytable;
 extern crate rayon;
 extern crate sequences;
 extern crate serde_json;
 extern crate serde;
 // %%
-use hashbrown::HashMap;
 use misc_utils::fs::*;
 use prettytable::{
     cell,
@@ -49,9 +48,11 @@ use rayon::prelude::*;
 use sequences::{
     knn::{ClassificationResult, ClassificationResultQuality},
     load_all_dnstap_files_from_dir, Sequence, SequenceElement,
+    load_all_files_with_extension_from_dir_with_config
 };
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::HashMap,
     ffi::OsString,
     fmt::{self, Display},
     hash::Hash,
@@ -79,10 +80,7 @@ impl Misclassification {
 
 // %%
 pub fn load_misclassifications(file: impl AsRef<Path>) -> Vec<Misclassification> {
-    let mut buffer = String::new();
-    file_open_read(&file.as_ref())
-        .unwrap()
-        .read_to_string(&mut buffer)
+    let buffer = read_to_string(&file.as_ref())
         .unwrap();
     let mut counter = 0;
     serde_json::Deserializer::from_str(&buffer)

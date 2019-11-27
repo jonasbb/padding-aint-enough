@@ -6,8 +6,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 0.8.6
+#       format_version: '1.3'
+#       jupytext_version: 1.3.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -21,6 +21,7 @@
 # # %matplotlib notebook
 
 import csv
+import lzma
 import typing as t
 from itertools import cycle
 from os import path
@@ -35,7 +36,10 @@ from common_functions import LABELS, autolabel
 def load_stats_file(fname: str) -> t.Tuple[t.Dict[str, t.List[int]], int]:
     global LABELS
     res: t.Dict[str, t.List[int]] = {}
-    csv_reader = csv.reader(open(fname))
+    if fname.endswith(".xz"):
+        csv_reader = csv.reader(lzma.open(fname, "rt"))
+    else:
+        csv_reader = csv.reader(open(fname))
     # Read the header
     next(csv_reader)
     for row in csv_reader:
@@ -78,9 +82,10 @@ def load_stats_file(fname: str) -> t.Tuple[t.Dict[str, t.List[int]], int]:
 # %%
 res_label_err: t.Optional[t.List[float]] = None
 
-fname = "../results/2019-01-09-closed-world/statistics-final.csv"
+# fname = "../results/2019-01-09-closed-world/statistics-final.csv"
 # fname = "../results/2019-01-11-closed-world/statistics-final.csv"
 # fname = "../results/2019-02-04-scenario4/scenario4-cross-cache-stats.csv"
+fname = "../results/2019-11-18-full-rescan/crossvalidate/crossvalidate-stats-0.csv.xz"
 
 # Use this for a single file
 res_label, total_traces = load_stats_file(fname)
@@ -100,6 +105,15 @@ res_label, total_traces = load_stats_file(fname)
 # _a = [sum(x) for x in zip(*res_label_a.values())]
 # _b = [sum(x) for x in zip(*res_label_b.values())]
 # res_label_err = [abs(a - b) / 2 for a, b in zip(_a, _b)]
+
+# %%
+# Fake embedd the NN data
+
+for k, v in res_label.items():
+    if k == "Unanimous":
+        v.append(int(0.8136 * 92350))
+    else:
+        v.append(0)
 
 # %%
 plt.close()
@@ -143,13 +157,18 @@ if res_label_err:
     ]
 autolabel(bar, plt, yoffset=yoffset)
 
-plt.legend(loc="upper center", ncol=4, mode="expand")
+plt.legend(loc="lower center", ncol=4, mode="expand")
 
 # CAREFUL: Those are tiny spaces around the =
-plt.xticks(range(1, 1 + 5), [f"k = {k}" for k in range(1, 10, 2)])
+xticks = [f"k = {k*2 + 1}\n" for k in range(len(last_values))]
+if len(xticks) > 5:
+    # Fake NN data
+    xticks[-1] = "Neural\nNetwork"
+plt.xticks(range(1, 1 + len(last_values)), xticks)
 plt.xlim(0.5, len(res_label[LABELS[0]]) + 0.5)
 plt.ylim(0, 100)
 plt.ylabel("Correctly classified websites in %")
+plt.xlabel(" ")
 
 plt.gcf().set_size_inches(7, 4)
 plt.tight_layout()

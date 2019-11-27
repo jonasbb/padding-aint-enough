@@ -6,8 +6,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.1.2
+#       format_version: '1.3'
+#       jupytext_version: 1.3.0rc0+dev
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -30,7 +30,11 @@ pdatas_err: t.Optional[t.List[t.List[float]]] = None
 
 # Use this for a single file
 # pdatas = parse_log_data("../results/2019-02-09-cache-both/dns-sequence-cache-both.log")
-pdatas = parse_log_data("../results/2019-01-09-closed-world/dns-sequence-final.log")
+# pdatas = parse_log_data("../results/2019-01-09-closed-world/dns-sequence-final.log")
+pdatas = parse_log_data(
+    "../results/2019-11-18-full-rescan/crossvalidate/crossvalidate-res-0.log.xz"
+)
+
 
 # # Use this when plotting the average of two files
 # # Parse all the data
@@ -73,6 +77,9 @@ for i, pdata in enumerate(pdatas):
         values = values[1:]
         print(values)
         heights = [v - pv for v, pv in zip(values, prev_values)]
+        # If all heights are 0, then we do not need to draw anything for this step
+        if sum(heights) == 0:
+            continue
         if total_domains == 9207:
             total_domains = 9205
         # Convert into percentages
@@ -122,8 +129,8 @@ for i, pdata in enumerate(pdatas):
     plt.ylabel("Correctly classified websites in %")
     plt.xlabel(f"At least n / {len(prev_values)} traces correctly classified")
 
-    plt.legend(loc="upper right", bbox_to_anchor=(1, 1), borderpad=0, frameon=False)
-    #     plt.legend(loc="lower left", bbox_to_anchor=(0, 0), frameon=True)
+    # plt.legend(loc="upper right", bbox_to_anchor=(1, 1), borderpad=0, frameon=False)
+    plt.legend(loc="lower left", bbox_to_anchor=(0, 0), frameon=True)
     #     plt.legend(loc="upper center", ncol=4, mode="expand")
     plt.tight_layout()
     plt.savefig(f"classification-results-per-domain-k{i*2 + 1}.svg")
@@ -133,10 +140,11 @@ for i, pdata in enumerate(pdatas):
 # Parse all the data
 pdatas = [
     parse_log_data(
-        f"../results/2019-02-11-ow-from-cw/dns-sequence-final-fpr-{fpr}.log"
-        #         f"../results/2019-02-09-ow-small/dns-sequence-ow-small-fpr-{fpr}.log"
+        # f"../results/2019-02-11-ow-from-cw/dns-sequence-final-fpr-{fpr}.log"
+        # f"../results/2019-02-09-ow-small/dns-sequence-ow-small-fpr-{fpr}.log"
+        f"../results/2019-11-18-full-rescan/fpr/res-fpr-{fpr}pc.log"
     )[0]
-    for fpr in range(5, 91, 5)
+    for fpr in range(5, 71, 5)
 ]
 
 # %%
@@ -170,6 +178,9 @@ for i, pdata in enumerate(data_per_n):
         label = label2good_label(label)
         print(values)
         heights = [v - pv for v, pv in zip(values, prev_values)]
+        # Skip tie breaking steps which never occur
+        if sum(heights) == 0:
+            continue
         # Convert into percentages
         h = [v * 100 / 9207 for v in heights]
         ph = [v * 100 / 9207 for v in prev_values]
@@ -199,11 +210,12 @@ for i, pdata in enumerate(data_per_n):
     plt.ylim(0, 100)
     plt.xlim(0.5, len(xlabels) + 0.5)
 
-    plt.legend(loc="upper center", ncol=4, mode="expand")
-    #     plt.legend(loc="lower center", ncol=4, mode="expand")
+    # plt.legend(loc="upper center", ncol=4, mode="expand")
+    # plt.legend(loc="lower center", ncol=4, mode="expand")
+    plt.legend(loc="lower center", ncol=4)
     plt.gcf().set_size_inches(7, 4)
     plt.tight_layout()
-    plt.savefig(f"classification-results-per-domain-k7-n{i}.svg")
+    plt.savefig(f"classification-results-per-domain-n{i}.svg")
     plt.show()
 
 # %%
