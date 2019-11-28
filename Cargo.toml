@@ -11,10 +11,11 @@ edition = "2018"
 members = [
     "chrome",
     "countermeasures",
-    "dnstap",
     "dns-sequence",
+    "dnstap",
     "extract-sequence",
     "framestream",
+    "plot-dnstap",
     "pylib",
     "sequences",
     "taskmanager",

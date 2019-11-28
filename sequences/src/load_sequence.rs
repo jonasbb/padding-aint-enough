@@ -146,7 +146,7 @@ pub fn dnstap_to_precision_sequence(dnstap_file: &Path) -> Result<PrecisionSeque
     Ok(seq.ok_or_else(|| format_err!("PrecisionSequence is empty"))?)
 }
 
-fn load_matching_query_responses_from_dnstap(dnstap_file: &Path) -> Result<Vec<Query>, Error> {
+pub fn load_matching_query_responses_from_dnstap(dnstap_file: &Path) -> Result<Vec<Query>, Error> {
     // process dnstap if available
     let mut events: Vec<protos::Dnstap> =
         process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;

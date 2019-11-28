@@ -14,7 +14,9 @@ mod utils;
 use crate::common_sequence_classifications::*;
 pub use crate::{
     constants::common_sequence_classifications,
-    load_sequence::{GapMode, LoadSequenceConfig, Padding, SimulatedCountermeasure},
+    load_sequence::{
+        convert_to_sequence, GapMode, LoadSequenceConfig, Padding, SimulatedCountermeasure,
+    },
     precision_sequence::PrecisionSequence,
     sequence_element::SequenceElement,
     utils::{
@@ -25,7 +27,6 @@ pub use crate::{
 use chrono::NaiveDateTime;
 use failure::{bail, Error, ResultExt};
 use internment::Intern;
-pub use load_sequence::convert_to_sequence;
 use misc_utils::{fs, path::PathExt, Min};
 use serde::{
     de::{Error as SerdeError, MapAccess, Visitor},
