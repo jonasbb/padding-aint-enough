@@ -28,7 +28,7 @@ pub fn load_all_dnstap_files_from_dir_with_config(
 pub fn load_all_files_with_extension_from_dir_with_config(
     base_dir: &Path,
     file_extension: &OsStr,
-    _config: LoadSequenceConfig,
+    config: LoadSequenceConfig,
 ) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
     // Get a list of directories
     // Each directory corresponds to a label
@@ -86,9 +86,7 @@ pub fn load_all_files_with_extension_from_dir_with_config(
                 .into_iter()
                 .filter_map(|file| {
                     debug!("Processing {:?} file '{}'", file_extension, file.display());
-                    // FIXME have a way to load arbitrary files BUT with a config
-                    // match Sequence::from_path_with_config(&*dnstap_file, config).with_context(
-                    match Sequence::from_path(&file).with_context(|_| {
+                    match Sequence::from_path_with_config(&file, config).with_context(|_| {
                         format!("Processing {:?} file '{}'", file_extension, file.display())
                     }) {
                         Ok(seq) => Some(seq),
