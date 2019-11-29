@@ -420,6 +420,14 @@ pub(crate) fn gap_size(gap: Duration, base: Duration, mode: GapMode) -> Option<S
         GapMode::Log2 => f64::from(out).log2() as _,
         GapMode::Ident => out as _,
     };
+
+    // // FIXME: Shift Gap values to better align the Pi data with the server data
+    // let dist = match dist {
+    //     x @ 0..=1 => x,
+    //     2..=4 => 2,
+    //     x => x-2,
+    // };
+
     if dist == 0 {
         None
     } else {

@@ -131,10 +131,17 @@ if len(parsed_queries) == 0:
 num_querysets = len(parsed_queries)
 colormap = categorical_cmap(4, num_querysets)
 
+correction_factor = 1.0
+if num_querysets == 4:
+    # scale the time differently for the pi
+    correction_factor = 3.17008912331757
+
 # To separate the different domains better pretend we have one additional queryset
 # such that this always creates an empty line
 if num_querysets > 1:
     num_querysets += 1
+
+end_time = 0.0
 
 for queryset_id, (queryset, filename) in enumerate(parsed_queries):
     # A queryset is the set of queries from a single source file
@@ -150,7 +157,7 @@ for queryset_id, (queryset, filename) in enumerate(parsed_queries):
     prev_end = None
 
     for i, q in enumerate(queryset):
-        # plt.plot([i, i], label=q["qname"])
+        end_time = max(end_time, (q["end"] - min_dns_start).total_seconds())
 
         label = f"{q['qname']} ({q['qtype']})"
 
@@ -173,7 +180,7 @@ for queryset_id, (queryset, filename) in enumerate(parsed_queries):
         plt.barh(
             ind,
             (end - start).total_seconds(),
-            left=(start - min_dns_start).total_seconds(),
+            left=(start - min_dns_start).total_seconds() / correction_factor,
             color=color,
             alpha=alpha,
             height=height,
@@ -213,7 +220,11 @@ for (label, ind) in LABEL2INDEX.items():
     yticks.append(ind * num_querysets - num_querysets / 2)
     yticks_labels.append(label)
 plt.yticks(yticks, yticks_labels)
-plt.xlabel("Time in seconds")
+
+xticks, xtickslabels = plt.xticks()
+xtickslabels = [f"{tick:.4}\n{tick*correction_factor:.4}" for tick in xticks]
+plt.xticks(xticks, xtickslabels)
+plt.xlabel(f"Time in seconds (Total: {end_time})")
 
 plt.legend(
     handles=legend_handles,
