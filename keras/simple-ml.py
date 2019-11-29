@@ -9,6 +9,7 @@ from tensorflow.python.util import deprecation  # isort:skip
 deprecation._PRINT_DEPRECATION_WARNINGS = False  # NOQA
 
 import datetime
+import lzma
 import os
 import pickle
 import signal
@@ -38,7 +39,7 @@ CONFUSION_DOMAINS_LISTS = [
     "/home/jbushart/projects/encrypted-dns/confusion_domains.csv",
 ]
 
-PREPROCESSED_FILENAME = "./ml-preprocessed.pickle"
+PREPROCESSED_FILENAME = "./ml-preprocessed.pickle.xz"
 
 
 def main() -> None:
@@ -46,16 +47,17 @@ def main() -> None:
 
     if os.path.exists(PREPROCESSED_FILENAME):
         print(f"Loading existing preprocessed data from {PREPROCESSED_FILENAME}")
-        with open(PREPROCESSED_FILENAME, "rb") as f:
+        with lzma.open(PREPROCESSED_FILENAME, "rb") as f:
             data = pickle.load(f)
     else:
         data = load_data(
             CONFUSION_DOMAINS_LISTS,
-            "/mnt/data/Downloads/dnscaptures-2019-11-18-full-rescan/extracted/0",
+            # "/mnt/data/Downloads/dnscaptures-2019-11-18-full-rescan/extracted/0",
+            "/mnt/data/Downloads/dnscaptures-2019-11-20-pi/extracted/0",
             "*pcap.json.xz",
-            8,
+            3,
         )
-        with open(PREPROCESSED_FILENAME, "wb") as f:
+        with lzma.open(PREPROCESSED_FILENAME, "wb") as f:
             pickle.dump(data, f)
 
     print(data)
