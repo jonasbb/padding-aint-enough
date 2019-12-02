@@ -7,7 +7,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0rc0+dev
+#       jupytext_version: 1.3.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -144,7 +144,7 @@ pdatas = [
         # f"../results/2019-02-09-ow-small/dns-sequence-ow-small-fpr-{fpr}.log"
         f"../results/2019-11-18-full-rescan/fpr/res-fpr-{fpr}pc.log"
     )[0]
-    for fpr in range(5, 71, 5)
+    for fpr in range(5, 91, 5)
 ]
 
 # %%

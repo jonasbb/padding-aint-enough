@@ -132,7 +132,7 @@ for label in LABELS[::-1]:
 
 
 # plt.legend(loc="upper center", ncol=4, mode="expand")
-plt.legend(loc="upper center", ncol=4)
+plt.legend(loc="lower center", ncol=4)
 
 # xticks = list(range(0, len(pdata["total"]), 48))
 # xticks_labels = [f"{d // 24}" for d in xticks]
@@ -145,7 +145,7 @@ plt.xlabel("Days since start")
 plt.xlim(0, len(pdata["total"]))
 
 plt.ylim(0, 100)
-plt.ylabel("Percent of all DNS sequences")
+plt.ylabel("Correctly classified websites in %")
 
 plt.gcf().set_size_inches(7, 4)
 plt.tight_layout()

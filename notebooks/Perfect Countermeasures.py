@@ -6,8 +6,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 0.8.6
+#       format_version: '1.3'
+#       jupytext_version: 1.3.0
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -23,16 +23,15 @@ import csv
 import typing as t
 from copy import deepcopy
 
-import matplotlib.cm
 import matplotlib.pyplot as plt
 import numpy as np
-from common_functions import COLORS2, HATCHES, LABELS
+from common_functions import COLORS2, HATCHES, LABELS, open_file
 
 
 # %%
 def load_stats_file(fname: str) -> t.Tuple[t.Dict[str, t.List[int]], int]:
     res: t.Dict[str, t.List[int]] = {}
-    csv_reader = csv.reader(open(fname))
+    csv_reader = csv.reader(open_file(fname))
     # Read the header
     next(csv_reader)
     for row in csv_reader:
@@ -75,15 +74,22 @@ def load_stats_file(fname: str) -> t.Tuple[t.Dict[str, t.List[int]], int]:
 # %%
 res = {}
 for label, fname, zorder in [
-    ("Baseline", "../results/2019-02-10-simulate/statistics-simulate-Normal.csv", 0),
+    # ("Baseline", "../results/2019-02-10-simulate/statistics-simulate-Normal.csv", 0),
+    (
+        "Baseline",
+        "../results/2019-11-18-full-rescan/crossvalidate/crossvalidate-stats-0.csv.xz",
+        0,
+    ),
     (
         "Perfect Timing",
-        "../results/2019-02-10-simulate/statistics-simulate-PerfectTiming.csv",
+        # "../results/2019-02-10-simulate/statistics-simulate-PerfectTiming.csv",
+        "../results/2019-11-18-full-rescan/countermeasures/stats-stats-perfect-timing.csv.xz",
         100,
     ),
     (
         "Perfect Padding",
-        "../results/2019-02-10-simulate/statistics-simulate-PerfectPadding.csv",
+        # "../results/2019-02-10-simulate/statistics-simulate-PerfectPadding.csv",
+        "../results/2019-11-18-full-rescan/countermeasures/stats-stats-perfect-padding.csv.xz",
         50,
     ),
 ]:

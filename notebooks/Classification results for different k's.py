@@ -86,6 +86,9 @@ res_label_err: t.Optional[t.List[float]] = None
 # fname = "../results/2019-01-11-closed-world/statistics-final.csv"
 # fname = "../results/2019-02-04-scenario4/scenario4-cross-cache-stats.csv"
 fname = "../results/2019-11-18-full-rescan/crossvalidate/crossvalidate-stats-0.csv.xz"
+# fname = "../results/2019-11-20-pi/crossvalidate-stats-0.csv.xz"
+# fname = "../results/2019-11-20-pi/stats-shifted-gaps.csv.xz"
+# fname = "../results/2019-11-20-pi/stats-0.csv.xz"
 
 # Use this for a single file
 res_label, total_traces = load_stats_file(fname)
@@ -107,13 +110,29 @@ res_label, total_traces = load_stats_file(fname)
 # res_label_err = [abs(a - b) / 2 for a, b in zip(_a, _b)]
 
 # %%
-# Fake embedd the NN data
+# # Fake embedd the NN data
 
-for k, v in res_label.items():
-    if k == "Unanimous":
-        v.append(int(0.8136 * 92350))
-    else:
-        v.append(0)
+# for k, v in res_label.items():
+#     if k == "Unanimous":
+#         v.append(int(0.8136 * 92350))
+#     else:
+#         v.append(0)
+
+# %%
+# # Only keep k=1 and k=3 data
+# # This is important for the Pi dataset, as it only has 4 sequences, thus k=5 does not make sense
+# res_label = {
+#     key: value[:2]
+#     for key, value in res_label.items()
+# }
+# res_label
+
+# %%
+# res_label = {'Pseudo-Plurality': [0, 0],
+#  'Plurality': [0, 0],
+#  'Majority': [0, 0],
+#  'Unanimous': [int(0.8136 * 92350), int(0.6355 * 92350)]}
+# total_traces = 92350
 
 # %%
 plt.close()
@@ -125,6 +144,10 @@ last_values = np.array([0] * len(res_label[LABELS[0]]))
 for label in LABELS[::-1]:
     kwargs: t.Dict[str, t.Any] = {}
     values = res_label[label]
+    # Skip non-existing disambiguation steps
+    #     print(values)
+    #     if sum(values) == 0:
+    #         continue
     # Convert into percentages
     pv = [v * 100 / total_traces for v in values]
     pb = [v * 100 / total_traces for v in last_values]
@@ -157,27 +180,37 @@ if res_label_err:
     ]
 autolabel(bar, plt, yoffset=yoffset)
 
+# plt.legend(loc="upper center", ncol=4, mode="expand")
 plt.legend(loc="lower center", ncol=4, mode="expand")
 
 # CAREFUL: Those are tiny spaces around the =
-xticks = [f"k = {k*2 + 1}\n" for k in range(len(last_values))]
+xticks = [f"k = {k*2 + 1}" for k in range(len(last_values))]
+# xticks = ["NN (Server)", "NN (Pi)"]
 if len(xticks) > 5:
     # Fake NN data
     xticks[-1] = "Neural\nNetwork"
 plt.xticks(range(1, 1 + len(last_values)), xticks)
 plt.xlim(0.5, len(res_label[LABELS[0]]) + 0.5)
 plt.ylim(0, 100)
+# plt.ylim(0, 50)
 plt.ylabel("Correctly classified websites in %")
 plt.xlabel(" ")
 
 plt.gcf().set_size_inches(7, 4)
+# plt.gcf().set_size_inches(7, 2.3)
+# plt.xticks(plt.xticks()[0],[])
+# Two column only layout
+# plt.gcf().set_size_inches(7/5*2, 4)
 plt.tight_layout()
 plt.savefig(f"classification-results-{path.basename(fname)}.svg")
 
 # %%
 res_label_, total_traces_ = zip(
     *[
-        load_stats_file(f"../results/2019-02-11-ow-from-cw/statistics-fpr-{fpr}.csv")
+        # load_stats_file(f"../results/2019-02-11-ow-from-cw/statistics-fpr-{fpr}.csv")
+        load_stats_file(
+            f"../results/2019-11-18-full-rescan/fpr/stats-fpr-{fpr}pc.csv.xz"
+        )
         for fpr in range(5, 91, 5)
     ]
 )
@@ -206,6 +239,9 @@ last_values = np.array([0] * len(res_label[LABELS[0]]))
 for label in LABELS[::-1]:
     kwargs: t.Dict[str, t.Any] = {}
     values = res_label[label]
+    # Skip disambiguation steps which do not exist
+    if sum(values) == 0:
+        continue
     # Convert into percentages
     pv = [v * 100 / total_traces for v in values]
     pb = [v * 100 / total_traces for v in last_values]
@@ -225,7 +261,8 @@ for label in LABELS[::-1]:
 
 autolabel(bar, plt, precision=0)
 
-plt.legend(loc="upper center", ncol=4, mode="expand")
+# plt.legend(loc="upper center", ncol=4, mode="expand")
+plt.legend(loc="lower center")
 
 xlabels = [f"{fpr * 5}" for fpr in range(1, len(last_values) + 1)]
 plt.xticks(range(1, len(last_values) + 1), xlabels)
