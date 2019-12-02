@@ -8,7 +8,9 @@ mod ensure_padding;
 mod error;
 mod pass_through;
 mod streams;
+pub mod throttle;
 
+use crate::throttle::Throttle;
 pub use crate::{
     adaptive_padding::AdaptivePadding,
     constant_rate::ConstantRate,
@@ -32,7 +34,6 @@ use std::{
     time::Duration,
 };
 use structopt::StructOpt;
-use tokio_timer::throttle::Throttle;
 
 /// Self Signed server certificate in PEM format
 pub const SERVER_CERT: &[u8] = include_bytes!("../cert.pem");

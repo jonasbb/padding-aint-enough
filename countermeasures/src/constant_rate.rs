@@ -1,7 +1,11 @@
 use crate::Payload;
-use futures::{task::Context, Poll, Stream};
-use std::{pin::Pin, time::Duration};
-use tokio_timer::Interval;
+use futures::Stream;
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+    time::Duration,
+};
+use tokio::{time, time::Interval};
 
 pub struct ConstantRate<S, T>
 where
@@ -17,7 +21,7 @@ where
 {
     pub fn new(stream: S, interval: Duration) -> Self {
         Self {
-            interval: Interval::new_interval(interval),
+            interval: time::interval(interval),
             stream,
         }
     }
@@ -63,37 +67,42 @@ mod tests {
     fn test_constant_time_insert_dummy() {
         let dur_short = Duration::new(0, 33_000_000);
         let dur_long = Duration::new(0, 100_000_000);
-        let rt = tokio::runtime::Runtime::new().unwrap();
+        let mut rt = tokio::runtime::Runtime::new().unwrap();
 
         // This test is non-deterministic, so run it multiple times
         for _ in 0..20 {
-            let items = stream::iter(0..10);
-            let cr_slow = ConstantRate::new(items, dur_long);
-            let cr = ConstantRate::new(cr_slow, dur_short);
+            let fut = async {
+                let items = stream::iter(0..10);
+                // These need to be within an async context as timer creation requires this
+                let cr_slow = ConstantRate::new(items, dur_long);
+                let cr = ConstantRate::new(cr_slow, dur_short);
 
-            let begin = Instant::now();
-            let mut element_count = 0;
-            let mut elements_between_dummies = 0;
-            let mut dummies_between_elements = 0;
-            {
-                let element_count = &mut element_count;
-                let fut = cr.for_each(move |x| {
-                    // Remove one layer of the douple payload
-                    let x = dbg!(x.flatten());
-                    *element_count += 1;
-                    if x == Payload::Dummy {
-                        elements_between_dummies = 0;
-                        dummies_between_elements += 1;
-                        assert!(dummies_between_elements <= 3);
-                    } else {
-                        elements_between_dummies += 1;
-                        dummies_between_elements = 0;
-                        assert_eq!(elements_between_dummies, 1);
-                    }
-                    future::ready(())
-                });
-                rt.block_on(fut);
-            }
+                let begin = Instant::now();
+                let mut element_count = 0;
+                let mut elements_between_dummies = 0;
+                let mut dummies_between_elements = 0;
+                {
+                    let element_count = &mut element_count;
+                    cr.for_each(move |x| {
+                        // Remove one layer of the douple payload
+                        let x = dbg!(x.flatten());
+                        *element_count += 1;
+                        if x == Payload::Dummy {
+                            elements_between_dummies = 0;
+                            dummies_between_elements += 1;
+                            assert!(dummies_between_elements <= 3);
+                        } else {
+                            elements_between_dummies += 1;
+                            dummies_between_elements = 0;
+                            assert_eq!(elements_between_dummies, 1);
+                        }
+                        future::ready(())
+                    })
+                    .await;
+                }
+                (begin, element_count)
+            };
+            let (begin, element_count) = rt.block_on(fut);
 
             let end = Instant::now();
             // The precision of the timer wheel is only up to 1 ms

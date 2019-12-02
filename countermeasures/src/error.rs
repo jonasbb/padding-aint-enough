@@ -6,9 +6,9 @@ pub enum Error {
     /// Unknown error condition
     #[fail(display = "An unknown error occured.")]
     Unknown(Backtrace),
-    /// Errors related to [`tokio_timer`]
+    /// Errors related to [`tokio::time`]
     #[fail(display = "Tokio Timer Error: {}", _0)]
-    Timer(#[fail(cause)] tokio_timer::Error, Backtrace),
+    Timer(#[fail(cause)] tokio::time::Error, Backtrace),
     /// Errors based on [`std::io`]
     #[fail(display = "{}: Kind: {:?}", _0, _1)]
     Io(#[fail(cause)] std::io::Error, std::io::ErrorKind, Backtrace),
@@ -39,8 +39,8 @@ impl From<()> for Error {
     }
 }
 
-impl From<tokio_timer::Error> for Error {
-    fn from(error: tokio_timer::Error) -> Self {
+impl From<tokio::time::Error> for Error {
+    fn from(error: tokio::time::Error) -> Self {
         Error::Timer(error, Backtrace::default())
     }
 }

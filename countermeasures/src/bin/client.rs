@@ -146,13 +146,13 @@ fn run() -> Result<(), Error> {
         std::env::set_var("SSLKEYLOGFILE", file.to_path_buf());
     }
 
-    let rt = tokio::runtime::Runtime::new().unwrap();
+    let mut rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async_run(cli_args))
 }
 
 async fn async_run(cli_args: CliArgs) -> Result<(), Error> {
     // Create a TCP listener which will listen for incoming connections.
-    let socket = TcpListener::bind(&cli_args.listen).await?;
+    let mut socket = TcpListener::bind(&cli_args.listen).await?;
     println!(
         "Listening on: {}\nProxying to: {}\n",
         cli_args.listen, cli_args.server

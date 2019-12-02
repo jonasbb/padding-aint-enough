@@ -1,6 +1,9 @@
 use crate::Payload;
-use futures::{task::Context, Poll, Stream};
-use std::pin::Pin;
+use futures::Stream;
+use std::{
+    pin::Pin,
+    task::{Context, Poll},
+};
 
 pub struct PassThrough<S, T>
 where

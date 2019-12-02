@@ -1,13 +1,11 @@
 //! Contains different stream implementations for TCP or TLS streams
 
-use futures::{
-    io::Error,
-    task::{Context, Poll},
-};
+use futures::io::Error;
 use std::{
     io,
     pin::Pin,
     sync::{Arc, Mutex},
+    task::{Context, Poll},
 };
 use tokio::{
     io::{AsyncRead, AsyncWrite},

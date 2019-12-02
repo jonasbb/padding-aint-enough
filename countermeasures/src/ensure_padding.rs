@@ -1,6 +1,10 @@
 use crate::Error;
-use futures::{task::Context, Poll, Stream};
-use std::{io, pin::Pin};
+use futures::Stream;
+use std::{
+    io,
+    pin::Pin,
+    task::{Context, Poll},
+};
 use trust_dns_proto::{
     op::message::Message,
     rr::rdata::opt::{EdnsCode, EdnsOption},

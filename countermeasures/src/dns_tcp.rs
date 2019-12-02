@@ -1,10 +1,15 @@
 use byteorder::{BigEndian, ByteOrder};
-use futures::{task::Context, Poll, Stream};
-use log::trace;
-use std::{io, pin::Pin};
+use futures::Stream;
+use log::{debug, trace};
+use std::{
+    io,
+    pin::Pin,
+    task::{Context, Poll},
+};
 use tokio::prelude::*;
 
 /// Defines what element the stream is expecting to read next
+#[derive(Debug)]
 enum DnsBytesReadState {
     /// Indicator to read the length header
     Length,
@@ -56,7 +61,7 @@ where
     // Stream can signal that it's finished by returning `None`:
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = &mut *self;
-        trace!(
+        debug!(
             "Read {} bytes, expects {} bytes, missing {} bytes",
             this.buf.len(),
             this.expected_bytes,
@@ -64,7 +69,7 @@ where
         );
 
         if this.buf.len() < this.expected_bytes {
-            match Pin::new(&mut this.read).poll_read(cx, &mut this.buf) {
+            match Pin::new(&mut this.read).poll_read_buf(cx, &mut this.buf) {
                 Poll::Ready(Ok(n)) => {
                     // By convention, if an AsyncRead says that it read 0 bytes,
                     // we should assume that it has got to the end, so we signal that
@@ -80,7 +85,7 @@ where
 
         // now that we read more, we may be able to process it
         if this.buf.len() >= this.expected_bytes {
-            match this.read_state {
+            match &this.read_state {
                 DnsBytesReadState::Length => {
                     let len = BigEndian::read_u16(&this.buf[0..this.expected_bytes]) as usize;
                     // remove the bytes

@@ -1,5 +1,5 @@
 use crate::Payload;
-use futures::{future, stream, task::Context, FutureExt, Poll, Stream, StreamExt};
+use futures::{future, stream, FutureExt, Stream, StreamExt};
 use lazy_static::lazy_static;
 use log::debug;
 use rand::{
@@ -8,9 +8,10 @@ use rand::{
 };
 use std::{
     pin::Pin,
-    time::{Duration, Instant},
+    task::{Context, Poll},
+    time::Duration,
 };
-use tokio_timer::{delay, Delay};
+use tokio::time::{self, Delay, Instant};
 
 const DURATION_MAX: Duration = Duration::from_secs(3600 * 24 * 365);
 const DURATION_ONE_MS: Duration = Duration::from_millis(1);
@@ -117,7 +118,7 @@ where
         let mut res = Self {
             stream: Box::new(stream),
             eipi: DURATION_MAX,
-            deadline: delay(Instant::now() + DURATION_MAX),
+            deadline: time::delay_for(DURATION_MAX),
             intra_burst_gaps: Vec::default(),
             inter_burst_gaps: Vec::default(),
             last_created_item: Instant::now(),
@@ -440,9 +441,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::throttle::Throttle;
     use futures::{future, stream};
     use std::time::Instant;
-    use tokio_timer::throttle::Throttle;
 
     /// [`Duration`] of exactly 1 ms
     const MS_1: Duration = Duration::from_millis(1);
@@ -451,44 +452,47 @@ mod tests {
 
     #[test]
     fn test_adaptive_padding_reset_gap_after_payload() {
-        let rt = tokio::runtime::Runtime::new().unwrap();
+        let mut rt = tokio::runtime::Runtime::new().unwrap();
 
         // This test is non-deterministic, so run it multiple times
         for _ in 0..20 {
-            // Ensure that a new gap is sampled after each payload entry,
-            // by checking that the time between payload and the first dummy is at least the minimum time (modulo timer resolution)
-            let items = stream::iter(0..10);
-            let throttle = Throttle::new(items, MS_100);
+            let fut = async {
+                // Ensure that a new gap is sampled after each payload entry,
+                // by checking that the time between payload and the first dummy is at least the minimum time (modulo timer resolution)
+                let items = stream::iter(0..10);
+                // This need to be within an async context as timer creation requires this
+                let throttle = Throttle::new(items, MS_100);
 
-            let cr = AdaptivePadding::new(throttle);
-            // The minimum [`Duration`] which can be sampled for EIPI
-            let ms_min = *cr
-                .inter_burst_gaps
-                .iter()
-                .map(|(gap, _)| gap)
-                .min()
-                .unwrap();
+                let cr = AdaptivePadding::new(throttle);
+                // The minimum [`Duration`] which can be sampled for EIPI
+                let ms_min = *cr
+                    .inter_burst_gaps
+                    .iter()
+                    .map(|(gap, _)| gap)
+                    .min()
+                    .unwrap();
 
-            let mut last_payload = Some(Instant::now());
-            let fut = cr.for_each(move |x| {
-                match (x, { last_payload }) {
-                    (Payload::Payload(_), _) => {
-                        last_payload = Some(Instant::now());
-                    }
-                    (Payload::Dummy, Some(last_p)) => {
-                        let dur = Instant::now() - last_p;
-                        eprintln!("{:>5} µs: {:?}", dur.as_micros(), x);
-                        // Ensure that the adaptive padding produces items quicker than the throttle
-                        assert!(dur > (ms_min - MS_1));
-                        last_payload = None;
-                    }
-                    (Payload::Dummy, None) => {
-                        // We do not care about this case
-                    }
-                };
-                future::ready(())
-            });
-
+                let mut last_payload = Some(Instant::now());
+                cr.for_each(move |x| {
+                    match (x, { last_payload }) {
+                        (Payload::Payload(_), _) => {
+                            last_payload = Some(Instant::now());
+                        }
+                        (Payload::Dummy, Some(last_p)) => {
+                            let dur = Instant::now() - last_p;
+                            eprintln!("{:>5} µs: {:?}", dur.as_micros(), x);
+                            // Ensure that the adaptive padding produces items quicker than the throttle
+                            assert!(dur > (ms_min - MS_1));
+                            last_payload = None;
+                        }
+                        (Payload::Dummy, None) => {
+                            // We do not care about this case
+                        }
+                    };
+                    future::ready(())
+                })
+                .await;
+            };
             rt.block_on(fut);
         }
     }

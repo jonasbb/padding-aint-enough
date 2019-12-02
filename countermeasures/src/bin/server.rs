@@ -3,7 +3,7 @@
 
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
 use failure::Fail;
-use futures::{future, Stream};
+use futures::{future, Stream, StreamExt};
 use log::info;
 use openssl::{
     pkey::PKey,
@@ -158,13 +158,13 @@ fn run() -> Result<(), Error> {
         ),
     }
 
-    let rt = tokio::runtime::Runtime::new().unwrap();
+    let mut rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async_run(config))
 }
 
 async fn async_run(config: Config) -> Result<(), Error> {
     // Create a TCP listener which will listen for incoming connections.
-    let socket = TcpListener::bind(&config.args.listen).await?;
+    let mut socket = TcpListener::bind(&config.args.listen).await?;
     println!(
         "Listening on: {}\nProxying to: {}\n",
         config.args.listen, config.args.server
