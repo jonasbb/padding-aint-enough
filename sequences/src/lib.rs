@@ -19,10 +19,7 @@ pub use crate::{
     },
     precision_sequence::PrecisionSequence,
     sequence_element::SequenceElement,
-    utils::{
-        load_all_dnstap_files_from_dir, load_all_dnstap_files_from_dir_with_config,
-        load_all_files_with_extension_from_dir_with_config, Probability,
-    },
+    utils::{load_all_files_with_extension_from_dir_with_config, Probability},
 };
 use chrono::NaiveDateTime;
 use failure::{bail, Error, ResultExt};

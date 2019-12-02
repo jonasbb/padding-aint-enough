@@ -12,19 +12,6 @@ use std::{
     str::FromStr,
 };
 
-pub fn load_all_dnstap_files_from_dir(
-    base_dir: &Path,
-) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
-    load_all_dnstap_files_from_dir_with_config(base_dir, LoadSequenceConfig::default())
-}
-
-pub fn load_all_dnstap_files_from_dir_with_config(
-    base_dir: &Path,
-    config: LoadSequenceConfig,
-) -> Result<Vec<(String, Vec<Sequence>)>, Error> {
-    load_all_files_with_extension_from_dir_with_config(base_dir, &OsStr::new("dnstap"), config)
-}
-
 pub fn load_all_files_with_extension_from_dir_with_config(
     base_dir: &Path,
     file_extension: &OsStr,

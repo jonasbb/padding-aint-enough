@@ -520,15 +520,6 @@ where
     crate::load_sequence::convert_to_precision_sequence(&records, identifier.into())
 }
 
-fn make_error(iter: impl IntoIterator<Item = SocketAddrV4>) -> String {
-    let mut error =
-        "Multiple server candidates found.\nSelect a server with -f/--filter:".to_string();
-    for cand in iter {
-        error += &format!("\n  {}", cand);
-    }
-    error
-}
-
 /// Perform all the steps to generate a [`Sequence`] from a pcap-file
 pub fn load_pcap_file<P: AsRef<Path>>(
     file: P,
@@ -576,6 +567,16 @@ pub fn process_pcap(
     interative: bool,
     verbose: bool,
 ) -> Result<HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>>, Error> {
+    /// Create a error description if multiple filter candidates are found
+    fn make_error(iter: impl IntoIterator<Item = SocketAddrV4>) -> String {
+        let mut error =
+            "Multiple server candidates found.\nSelect a server with -f/--filter:".to_string();
+        for cand in iter {
+            error += &format!("\n  {}", cand);
+        }
+        error
+    };
+
     if interative {
         println!("{}{}", "Processing file: ".bold(), file.display());
     }
