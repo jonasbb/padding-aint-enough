@@ -1,5 +1,3 @@
-#[cfg(feature = "read_pcap")]
-mod bounded_buffer;
 mod constants;
 pub mod distance_cost_info;
 pub mod knn;
@@ -106,7 +104,7 @@ impl Sequence {
                     return Ok(serde_json::from_str(&seq_json)?);
                 }
                 #[cfg(feature = "read_pcap")]
-                Some("pcap") => return crate::pcap::load_pcap_file(path, None, config),
+                Some("pcap") => return crate::pcap::build_sequence(path, None, false, config),
                 _ => {}
             }
         }

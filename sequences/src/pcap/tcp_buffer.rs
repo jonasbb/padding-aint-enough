@@ -1,8 +1,6 @@
 //! Types for TCP stream reassembly
 
-#![allow(dead_code)]
-
-use crate::bounded_buffer::BoundedBuffer;
+use super::BoundedBuffer;
 use failure::{bail, Error};
 use std::collections::BTreeMap;
 
@@ -59,6 +57,7 @@ impl TcpBuffer {
     }
 
     /// Clear all the data stored in the buffer
+    #[allow(dead_code)]
     pub fn clear_data(&mut self) {
         self.buffer.clear();
         self.unprocessed_data.clear();

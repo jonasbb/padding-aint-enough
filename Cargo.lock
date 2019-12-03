@@ -218,16 +218,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "colored"
-version = "1.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "atty 0.2.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "const-random"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1771,7 +1761,6 @@ name = "sequences"
 version = "0.1.0"
 dependencies = [
  "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "colored 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "criterion 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "dashmap 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "dnstap 0.1.0",
@@ -2538,7 +2527,6 @@ dependencies = [
 "checksum circular 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "b0fc239e0f6cb375d2402d48afb92f76f5404fd1df208a41930ec81eda078bea"
 "checksum clap 2.33.0 (registry+https://github.com/rust-lang/crates.io-index)" = "5067f5bb2d80ef5d68b4c87db81601f0b75bca627bc2ef76b141d7b846a3c6d9"
 "checksum cloudabi 0.0.3 (registry+https://github.com/rust-lang/crates.io-index)" = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
-"checksum colored 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "433e7ac7d511768127ed85b0c4947f47a254131e37864b2dc13f52aa32cd37e5"
 "checksum const-random 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "7b641a8c9867e341f3295564203b1c250eb8ce6cb6126e007941f78c4d2ed7fe"
 "checksum const-random-macro 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "c750ec12b83377637110d5a57f5ae08e895b06c4b16e2bdbf1a94ef717428c59"
 "checksum constant_time_eq 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "995a44c877f9212528ccc74b21a232f66ad69001e40ede5bcee2ac9ef2657120"

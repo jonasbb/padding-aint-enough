@@ -3,7 +3,7 @@ mod adaptive_padding;
 use self::adaptive_padding::AdaptivePadding;
 use crate::{utils::Probability, AbstractQueryResponse, LoadSequenceConfig, Sequence};
 use chrono::{Duration, NaiveDateTime};
-use failure::{bail, Error};
+use failure::{bail, format_err, Error, ResultExt};
 use fnv::FnvHasher;
 use misc_utils::{fs, path::PathExt};
 use rand::{distributions::Open01, Rng, SeedableRng};
@@ -42,13 +42,12 @@ impl PrecisionSequence {
                 Some("dnstap") => return crate::load_sequence::dnstap_to_precision_sequence(path),
                 #[cfg(feature = "read_pcap")]
                 Some("pcap") => {
-                    let records = crate::pcap::process_pcap(path, None, false, false)?;
-                    return crate::pcap::build_precision_sequence(records, path.to_string_lossy())
-                        .ok_or_else(|| {
-                            failure::format_err!(
+                    return Ok(crate::pcap::build_precision_sequence(path, None, false)
+                        .with_context(|_| {
+                            format_err!(
                                 "Could not build a sequence from the list of filtered records."
                             )
-                        });
+                        })?);
                 }
                 Some("json") => {
                     let s = fs::read_to_string(path)?;

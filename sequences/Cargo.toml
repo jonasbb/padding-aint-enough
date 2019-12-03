@@ -5,7 +5,7 @@ authors = ["Jonas Bushart <jonas@bushart.org>"]
 edition = "2018"
 
 [features]
-read_pcap = [ "colored", "etherparse", "itertools", "pcap-parser", "ron", "rustls" ]
+read_pcap = [ "etherparse", "itertools", "pcap-parser", "ron", "rustls" ]
 
 [[bench]]
 name = "take_smallest"
@@ -17,7 +17,6 @@ harness = false
 
 [dependencies]
 chrono = { version = "0.4.10", features = [ "serde" ] }
-colored = { version = "1.9.0", optional = true }
 dashmap = "1.2.0"
 dnstap = { path = "../dnstap" }
 etherparse = { version = "0.8.3", optional = true }

@@ -1,12 +1,27 @@
+//! Parsing PCAPs and extracting DNS Sequences from them
+//!
+//! The module has two entry point which does the pcap parsing and returns a sequence.
+//! These are the [`build_sequence`] and [`build_precision_sequence`] functions.
+//!
+//! Internally three main steps are performed:
+//!
+//! 1. Extract all TLS records from the pcap file: [`extract_tls_records`].
+//! 2. Then filter out all records which are not interesting in our case: [`filter_tls_records`].
+//!
+//!     This are the records containing the TLS certificates or other meta-information which is not DNS traffic.
+//!     This relies on either a manually specified filter (IP + Port) to identify which flow contains the DNS traffic,
+//!     or it uses the [`guess_dns_flow_identifier`] function to guess based on IP or port information.
+//! 3. The extracted size and time information are converted into a sequence using [`crate::convert_to_sequence`].
+//!
+//! Steps 1 and 2 are combined in a single [`extract_and_filter_tls_records_from_file`], such that it can be shared
+//! for both [`build_sequence`]/[`build_precision_sequence`] functions.
+
+mod bounded_buffer;
 mod tcp_buffer;
 
-use self::tcp_buffer::TcpBuffer;
-use crate::{
-    bounded_buffer::BoundedBuffer, AbstractQueryResponse, LoadSequenceConfig, PrecisionSequence,
-    Sequence,
-};
+use self::{bounded_buffer::BoundedBuffer, tcp_buffer::TcpBuffer};
+use crate::{AbstractQueryResponse, LoadSequenceConfig, PrecisionSequence, Sequence};
 use chrono::NaiveDateTime;
-use colored::Colorize;
 use etherparse::{InternetSlice, Ipv4HeaderSlice, SlicedPacket, TcpHeaderSlice, TransportSlice};
 use failure::{bail, format_err, Error, ResultExt};
 use itertools::Itertools;
@@ -189,7 +204,7 @@ impl Ord for TlsRecord {
 /// First step in processing a pcap file, extracting *all* Tls records
 ///
 /// This extracts all Tls records from the pcap file, from both client and server.
-pub fn extract_tls_records(
+fn extract_tls_records(
     file: impl AsRef<Path>,
 ) -> Result<HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>>, Error> {
     let file_content = fs::read(file)?;
@@ -372,7 +387,7 @@ pub fn extract_tls_records(
 ///
 /// The interesting TLS records are those needed to build the feature set.
 /// This means only those containing DNS traffic and maybe only the client or server.
-pub fn filter_tls_records(
+fn filter_tls_records(
     records: Vec<TlsRecord>,
     (server, server_port): (Ipv4Addr, u16),
 ) -> Vec<TlsRecord> {
@@ -483,158 +498,66 @@ pub fn filter_tls_records(
     records
 }
 
-/// Given a list of pre-filtered TLS records, build a [`Sequence`] with them
-///
-/// For filtering the list of [`TlsRecord`]s see the [`filter_tls_records`].
-pub fn build_sequence<S, H>(
-    records: HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>, H>,
-    identifier: S,
-    config: LoadSequenceConfig,
-) -> Option<Sequence>
-where
-    S: Into<String>,
-{
-    let records: Vec<_> = records
-        .into_iter()
-        .flat_map(|(_id, recs)| recs)
-        .sorted()
-        .collect();
-    crate::convert_to_sequence(&records, identifier.into(), config)
-}
-
-/// Given a list of pre-filtered TLS records, build a [`PrecisionSequence`] with them
-///
-/// For filtering the list of [`TlsRecord`]s see the [`filter_tls_records`].
-pub fn build_precision_sequence<S, H>(
-    records: HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>, H>,
-    identifier: S,
-) -> Option<PrecisionSequence>
-where
-    S: Into<String>,
-{
-    let records: Vec<_> = records
-        .into_iter()
-        .flat_map(|(_id, recs)| recs)
-        .sorted()
-        .collect();
-    crate::load_sequence::convert_to_precision_sequence(&records, identifier.into())
-}
-
 /// Perform all the steps to generate a [`Sequence`] from a pcap-file
-pub fn load_pcap_file<P: AsRef<Path>>(
-    file: P,
-    filter: Option<SocketAddrV4>,
-    config: LoadSequenceConfig,
-) -> Result<Sequence, Error> {
-    load_pcap_file_real(file.as_ref(), filter, false, false, config)
-}
-
-/// Internally used function
-#[doc(hidden)]
-pub fn load_pcap_file_real(
+pub fn build_sequence(
     file: &Path,
     filter: Option<SocketAddrV4>,
-    interative: bool,
     verbose: bool,
     config: LoadSequenceConfig,
 ) -> Result<Sequence, Error> {
-    let records = process_pcap(file, filter, interative, verbose)?;
-    trace!("Extracted Flows:\n{:#?}", records);
-
-    // Build final Sequence
-    let seq = build_sequence(records, file.to_string_lossy(), config);
-
-    if interative {
-        println!("\n{}", "Final DNS Sequence:".underline());
-        if let Some(seq) = &seq {
-            println!("{:?}", seq);
-        }
-        println!();
-    }
-
-    if let Some(seq) = seq {
-        Ok(seq)
-    } else {
-        bail!("Could not build a sequence from the list of filtered records.")
-    }
+    let records = extract_and_filter_tls_records_from_file(file, filter, verbose)?;
+    let records: Vec<_> = records
+        .into_iter()
+        .flat_map(|(_id, recs)| recs)
+        .sorted()
+        .collect();
+    crate::convert_to_sequence(&records, file.to_string_lossy().to_string(), config).ok_or_else(
+        || {
+            format_err!(
+                "Could not build Sequence from extracted TLS records for file {}",
+                file.display()
+            )
+        },
+    )
 }
 
-/// Internally used function
-#[doc(hidden)]
-pub fn process_pcap(
+/// Perform all the steps to generate a [`PrecisionSequence`] from a pcap-file
+pub fn build_precision_sequence(
+    file: &Path,
+    filter: Option<SocketAddrV4>,
+    verbose: bool,
+) -> Result<PrecisionSequence, Error> {
+    let records = extract_and_filter_tls_records_from_file(file, filter, verbose)?;
+    let records: Vec<_> = records
+        .into_iter()
+        .flat_map(|(_id, recs)| recs)
+        .sorted()
+        .collect();
+    crate::load_sequence::convert_to_precision_sequence(
+        &records,
+        file.to_string_lossy().to_string(),
+    )
+    .ok_or_else(|| {
+        format_err!(
+            "Could not build PrecisionSequence from extracted TLS records for file {}",
+            file.display()
+        )
+    })
+}
+
+/// Extract TLS records from a file and filter them to only contain DNS entries
+fn extract_and_filter_tls_records_from_file(
     file: &Path,
     mut filter: Option<SocketAddrV4>,
-    interative: bool,
     verbose: bool,
 ) -> Result<HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>>, Error> {
-    /// Create a error description if multiple filter candidates are found
-    fn make_error(iter: impl IntoIterator<Item = SocketAddrV4>) -> String {
-        let mut error =
-            "Multiple server candidates found.\nSelect a server with -f/--filter:".to_string();
-        for cand in iter {
-            error += &format!("\n  {}", cand);
-        }
-        error
-    };
-
-    if interative {
-        println!("{}{}", "Processing file: ".bold(), file.display());
-    }
-
-    // let file = "./tests/data/CF-constant-rate-400ms-2packets.pcap";
+    // Extract TLS records
     let mut records = extract_tls_records(&file)?;
     trace!("Extracted TLS Recrods:\n{:#?}", records);
 
-    // // If verbose show all records in RON notation
-    // if verbose {
-    //     println!(
-    //         "{}\n{}\n",
-    //         "List of all TLS records in RON notation:".underline(),
-    //         ron::ser::to_string_pretty(
-    //             &records,
-    //             ron::ser::PrettyConfig {
-    //                 enumerate_arrays: true,
-    //                 ..Default::default()
-    //             }
-    //         )
-    //         .unwrap()
-    //     );
-    // }
-
+    // Guess which connection contains the DNS flow if not manually specified
     if filter.is_none() {
-        filter = (|| -> Result<Option<SocketAddrV4>, Error> {
-            // Try to guess what the sever might have been
-            let endpoints: HashSet<_> = records
-                .values()
-                .flatten()
-                .map(|record| SocketAddrV4::new(record.sender, record.sender_port))
-                .collect();
-
-            // Check different ports I use for DoT
-            let candidates: Vec<_> = endpoints
-                .iter()
-                .cloned()
-                .filter(|sa| sa.port() == 853)
-                .collect();
-            match candidates.len() {
-                0 => {}
-                1 => return Ok(Some(candidates[0])),
-                _ => bail!(make_error(candidates)),
-            }
-
-            let candidates: Vec<_> = endpoints
-                .iter()
-                .cloned()
-                .filter(|sa| sa.port() == 8853)
-                .collect();
-            match candidates.len() {
-                0 => {}
-                1 => return Ok(Some(candidates[0])),
-                _ => bail!(make_error(candidates)),
-            }
-
-            bail!(make_error(endpoints))
-        })()?;
+        filter = Some(guess_dns_flow_identifier(&records)?);
     }
     // Filter was set to Some() in the snippet above
     let filter = filter.unwrap();
@@ -648,11 +571,71 @@ pub fn process_pcap(
         tmp = filter_tls_records(tmp, (*filter.ip(), filter.port()));
         mem::swap(records, &mut tmp);
     });
+
+    trace!("Extracted Flows:\n{:#?}", records);
     if verbose {
-        // println!("{}", "TLS Records with DNS responses:".underline());
         let records: Vec<_> = records.values().flatten().sorted().collect();
         eprintln!("{}", serde_json::to_string_pretty(&records).unwrap());
     }
 
     Ok(records)
+
+    // // Build final Sequence
+    // let seq = build_sequence(records, file.to_string_lossy(), config);
+
+    // if let Some(seq) = seq {
+    //     Ok(seq)
+    // } else {
+    //     bail!("Could not build a sequence from the list of filtered records.")
+    // }
+}
+
+/// Guess which of the flows contains DNS data
+///
+/// Returns a result if a single flow could be identified.
+/// Returns an error if either no endpoints exist or multiple candidates exist.
+fn guess_dns_flow_identifier(
+    records: &HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>>,
+) -> Result<SocketAddrV4, Error> {
+    /// Create a error description if multiple filter candidates are found
+    fn make_error(iter: impl IntoIterator<Item = SocketAddrV4>) -> String {
+        let mut error =
+            "Multiple server candidates found.\nSelect a server with -f/--filter:".to_string();
+        for cand in iter {
+            error += &format!("\n  {}", cand);
+        }
+        error
+    };
+
+    // Try to guess what the sever might have been
+    let endpoints: HashSet<_> = records
+        .values()
+        .flatten()
+        .map(|record| SocketAddrV4::new(record.sender, record.sender_port))
+        .collect();
+
+    // Check different ports I use for DoT
+    let candidates: Vec<_> = endpoints
+        .iter()
+        .cloned()
+        .filter(|sa| sa.port() == 853)
+        .collect();
+    match candidates.len() {
+        0 => {}
+        1 => return Ok(candidates[0]),
+        _ => bail!(make_error(candidates)),
+    }
+
+    let candidates: Vec<_> = endpoints
+        .iter()
+        .cloned()
+        .filter(|sa| sa.port() == 8853)
+        .collect();
+    match candidates.len() {
+        0 => {}
+        1 => return Ok(candidates[0]),
+        _ => bail!(make_error(candidates)),
+    }
+
+    bail!(make_error(endpoints))
 }

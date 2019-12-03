@@ -1,6 +1,6 @@
 use failure::Error;
 use misc_utils::fs;
-use sequences::{pcap::load_pcap_file_real, LoadSequenceConfig};
+use sequences::{pcap::build_sequence, LoadSequenceConfig};
 use std::{
     net::SocketAddrV4,
     path::{Path, PathBuf},
@@ -77,13 +77,7 @@ fn run() -> Result<(), Error> {
     }
 
     for file in cli_args.pcap_files {
-        let seq = load_pcap_file_real(
-            Path::new(&file),
-            cli_args.filter,
-            true,
-            cli_args.verbose,
-            config,
-        )?;
+        let seq = build_sequence(Path::new(&file), cli_args.filter, cli_args.verbose, config)?;
         if cli_args.convert_to_json {
             let mut path = PathBuf::from(&file);
             path.set_extension("json.xz");
