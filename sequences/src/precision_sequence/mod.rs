@@ -3,7 +3,9 @@ mod adaptive_padding;
 use self::adaptive_padding::AdaptivePadding;
 use crate::{utils::Probability, AbstractQueryResponse, LoadSequenceConfig, Sequence};
 use chrono::{Duration, NaiveDateTime};
-use failure::{bail, format_err, Error, ResultExt};
+use failure::{bail, Error};
+#[cfg(feature = "read_pcap")]
+use failure::{format_err, ResultExt};
 use fnv::FnvHasher;
 use misc_utils::{fs, path::PathExt};
 use rand::{distributions::Open01, Rng, SeedableRng};
