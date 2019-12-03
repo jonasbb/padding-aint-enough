@@ -1,7 +1,10 @@
 mod adaptive_padding;
 
 use self::adaptive_padding::AdaptivePadding;
-use crate::{utils::Probability, AbstractQueryResponse, LoadSequenceConfig, Sequence};
+use crate::{
+    serialization::serde_duration, utils::Probability, AbstractQueryResponse, LoadSequenceConfig,
+    Sequence,
+};
 use chrono::{Duration, NaiveDateTime};
 use failure::{bail, Error};
 #[cfg(feature = "read_pcap")]
@@ -329,110 +332,5 @@ impl fmt::Display for Overhead {
             self.time.num_seconds(),
             self.time.num_microseconds().unwrap() % 1_000_000
         )
-    }
-}
-
-mod serde_duration {
-    use chrono::Duration;
-    use serde::{
-        de::{Deserializer, Error, Unexpected, Visitor},
-        ser::Serializer,
-    };
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<Duration, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        struct Helper;
-        impl<'de> Visitor<'de> for Helper {
-            type Value = Duration;
-
-            fn expecting(&self, formatter: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-                formatter.write_str("Invalid duration. Must be an integer, float, or string with optional subsecond precision.")
-            }
-
-            fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
-            where
-                E: Error,
-            {
-                Ok(Duration::seconds(value))
-            }
-
-            fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
-            where
-                E: Error,
-            {
-                if value <= i64::max_value() as u64 {
-                    Ok(Duration::seconds(value as i64))
-                } else {
-                    Err(Error::custom(format!(
-                        "Invalid or out of range value '{}' for Duration",
-                        value
-                    )))
-                }
-            }
-
-            fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
-            where
-                E: Error,
-            {
-                let seconds = value.trunc() as i64;
-                let nsecs = (value.fract() * 1_000_000_000_f64).abs() as u32;
-                Ok(Duration::seconds(seconds) + Duration::nanoseconds(i64::from(nsecs)))
-            }
-
-            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
-            where
-                E: Error,
-            {
-                let parts: Vec<_> = value.split('.').collect();
-
-                match *parts.as_slice() {
-                    [seconds] => {
-                        if let Ok(seconds) = i64::from_str_radix(seconds, 10) {
-                            Ok(Duration::seconds(seconds))
-                        } else {
-                            Err(Error::invalid_value(Unexpected::Str(value), &self))
-                        }
-                    }
-                    [seconds, subseconds] => {
-                        if let Ok(seconds) = i64::from_str_radix(seconds, 10) {
-                            let subseclen = subseconds.chars().count() as u32;
-                            if subseclen > 9 {
-                                return Err(Error::custom(format!(
-                                    "Duration only support nanosecond precision but '{}' has more than 9 digits.",
-                                    value
-                                )));
-                            }
-
-                            if let Ok(mut subseconds) = u32::from_str_radix(subseconds, 10) {
-                                // convert subseconds to nanoseconds (10^-9), require 9 places for nanoseconds
-                                subseconds *= 10u32.pow(9 - subseclen);
-                                Ok(Duration::seconds(seconds)
-                                    + Duration::nanoseconds(i64::from(subseconds)))
-                            } else {
-                                Err(Error::invalid_value(Unexpected::Str(value), &self))
-                            }
-                        } else {
-                            Err(Error::invalid_value(Unexpected::Str(value), &self))
-                        }
-                    }
-
-                    _ => Err(Error::invalid_value(Unexpected::Str(value), &self)),
-                }
-            }
-        }
-
-        deserializer.deserialize_any(Helper)
-    }
-
-    pub fn serialize<S>(d: &Duration, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let sec = d.num_seconds();
-        let nsec = (*d - Duration::seconds(sec)).num_nanoseconds().unwrap();
-        let s = format!("{}.{:>09}", sec, nsec);
-        serializer.serialize_str(&*s)
     }
 }
