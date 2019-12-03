@@ -4,11 +4,11 @@ use crate::depgraph::DepGraph;
 use chrome::{ChromeDebuggerMessage, Request, TargetInfo};
 use chrono::{DateTime, Utc};
 use failure::{bail, format_err, Error, ResultExt};
-use lazy_static::lazy_static;
 use misc_utils::{
     fs::{file_open_write, read_to_string, WriteOptions},
     Min,
 };
+use once_cell::sync::Lazy;
 use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
 use serde::{Deserialize, Serialize};
@@ -22,10 +22,8 @@ use std::{
 use structopt::{self, StructOpt};
 use url::Url;
 
-lazy_static! {
-    /// Global output directory for all generated files
-    static ref OUTDIR: RwLock<PathBuf> = RwLock::new(PathBuf::new());
-}
+/// Global output directory for all generated files
+static OUTDIR: Lazy<RwLock<PathBuf>> = Lazy::new(Default::default);
 
 const DEP_GRAPH: &str = "dependencies.graphml";
 

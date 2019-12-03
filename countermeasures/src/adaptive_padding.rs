@@ -1,7 +1,7 @@
 use crate::Payload;
 use futures::{future, stream, FutureExt, Stream, StreamExt};
-use lazy_static::lazy_static;
 use log::debug;
+use once_cell::sync::Lazy;
 use rand::{
     distributions::{Distribution, Uniform, WeightedError, WeightedIndex},
     thread_rng,
@@ -16,9 +16,9 @@ use tokio::time::{self, Delay, Instant};
 const DURATION_MAX: Duration = Duration::from_secs(3600 * 24 * 365);
 const DURATION_ONE_MS: Duration = Duration::from_millis(1);
 
-lazy_static! {
-    static ref DISTRIBUTION_BASE_VALUE: f64 = 2f64.sqrt();
-    static ref DISTRIBUTION: Vec<(Duration, u16)> = [
+static DISTRIBUTION_BASE_VALUE: Lazy<f64> = Lazy::new(|| 2f64.sqrt());
+static DISTRIBUTION: Lazy<Vec<(Duration, u16)>> = Lazy::new(|| {
+    [
         (0, 0),
         (1, 0),
         (2, 0),
@@ -66,12 +66,14 @@ lazy_static! {
         (44, 1),
     ]
     .iter()
-    .map(|&(gap, count)| (
-        Duration::from_micros(DISTRIBUTION_BASE_VALUE.powi(gap as i32) as u64),
-        count
-    ))
-    .collect();
-}
+    .map(|&(gap, count)| {
+        (
+            Duration::from_micros(DISTRIBUTION_BASE_VALUE.powi(gap as i32) as u64),
+            count,
+        )
+    })
+    .collect()
+});
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 enum Event<T> {

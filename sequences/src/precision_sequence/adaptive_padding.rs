@@ -1,15 +1,15 @@
 use crate::utils::Probability;
 use chrono::{Duration, NaiveDateTime};
-use lazy_static::lazy_static;
 use log::debug;
+use once_cell::sync::Lazy;
 use rand::distributions::{Distribution, Uniform, WeightedError, WeightedIndex};
 use rand_xorshift::XorShiftRng;
 
-lazy_static! {
-    static ref DURATION_MAX: Duration = Duration::seconds(3600 * 24 * 365);
-    static ref DURATION_ONE_MS: Duration = Duration::milliseconds(1);
-    static ref DISTRIBUTION_BASE_VALUE: f64 = 2f64.sqrt();
-    static ref DISTRIBUTION: Vec<(Duration, u16)> = [
+static DURATION_MAX: Lazy<Duration> = Lazy::new(|| Duration::seconds(3600 * 24 * 365));
+static DURATION_ONE_MS: Lazy<Duration> = Lazy::new(|| Duration::milliseconds(1));
+static DISTRIBUTION_BASE_VALUE: Lazy<f64> = Lazy::new(|| 2f64.sqrt());
+static DISTRIBUTION: Lazy<Vec<(Duration, u16)>> = Lazy::new(|| {
+    [
         (0, 0),
         (1, 0),
         (2, 0),
@@ -57,12 +57,14 @@ lazy_static! {
         (44, 1),
     ]
     .iter()
-    .map(|&(gap, count)| (
-        Duration::microseconds(DISTRIBUTION_BASE_VALUE.powi(gap as i32) as i64),
-        count
-    ))
-    .collect();
-}
+    .map(|&(gap, count)| {
+        (
+            Duration::microseconds(DISTRIBUTION_BASE_VALUE.powi(gap as i32) as i64),
+            count,
+        )
+    })
+    .collect()
+});
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 enum State {

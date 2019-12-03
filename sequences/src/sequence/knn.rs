@@ -2,9 +2,9 @@
 
 use super::{InternedSequence, Sequence};
 use crate::utils::take_smallest;
-use lazy_static::lazy_static;
 use log::{debug, error};
 use misc_utils::{Max, Min};
+use once_cell::sync::Lazy;
 use ordered_float::NotNan;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -14,11 +14,9 @@ use std::{
 };
 use string_cache::DefaultAtom as Atom;
 
-lazy_static! {
-    /// Memorize distance calculations
-    static ref PRECOMPUTED_DISTANCES: dashmap::DashMap<(InternedSequence, InternedSequence), usize> =
-        Default::default();
-}
+/// Memorize distance calculations
+static PRECOMPUTED_DISTANCES: Lazy<dashmap::DashMap<(InternedSequence, InternedSequence), usize>> =
+    Lazy::new(Default::default);
 
 /// [`Sequence`] with additional data about the true domain and the canonical domain
 pub struct LabelledSequence<S = Atom> {

@@ -1,8 +1,8 @@
 use crate::reverse_cum_sum;
 use csv::WriterBuilder;
 use failure::{format_err, Error, ResultExt};
-use lazy_static::lazy_static;
 use misc_utils::fs::{file_open_write, WriteOptions};
+use once_cell::sync::Lazy;
 use prettytable::{
     cell,
     format::{FormatBuilder, LinePosition, LineSeparator, TableFormat},
@@ -24,21 +24,26 @@ const COLORS: &[&str] = &[
     "#9467bd", "#c5b0d5", "#d62728", "#ff9896",
 ];
 
-lazy_static! {
-    /// A line separator made of light unicode table elements
-    static ref UNICODE_LIGHT_SEP: LineSeparator = LineSeparator::new('─', '┼', '├', '┤');
-    /// A line separator made of heavy unicode table elements
-    static ref UNICODE_HEAVY_SEP: LineSeparator = LineSeparator::new('━', '┿', '┝', '┥');
-    /// A line separator made of double unicode table elements
-    static ref UNICODE_DOUBLE_SEP: LineSeparator = LineSeparator::new('═', '╪', '╞', '╡');
-
-    static ref FORMAT_NO_BORDER_UNICODE: TableFormat = FormatBuilder::new()
+/// A line separator made of light unicode table elements
+#[allow(dead_code)]
+static UNICODE_LIGHT_SEP: Lazy<LineSeparator> =
+    Lazy::new(|| LineSeparator::new('─', '┼', '├', '┤'));
+/// A line separator made of heavy unicode table elements
+#[allow(dead_code)]
+static UNICODE_HEAVY_SEP: Lazy<LineSeparator> =
+    Lazy::new(|| LineSeparator::new('━', '┿', '┝', '┥'));
+/// A line separator made of double unicode table elements
+#[allow(dead_code)]
+static UNICODE_DOUBLE_SEP: Lazy<LineSeparator> =
+    Lazy::new(|| LineSeparator::new('═', '╪', '╞', '╡'));
+static FORMAT_NO_BORDER_UNICODE: Lazy<TableFormat> = Lazy::new(|| {
+    FormatBuilder::new()
         .padding(1, 1)
         // .separator(LinePosition::Intern, *UNICODE_LIGHT_SEP)
         .separator(LinePosition::Title, *UNICODE_DOUBLE_SEP)
         .column_separator('│')
-        .build();
-}
+        .build()
+});
 
 #[derive(Debug)]
 pub(crate) struct StatsCollector<S: Eq + Hash = Atom> {

@@ -4,9 +4,9 @@ use crate::utils::*;
 use chrome::ChromeDebuggerMessage;
 use encrypted_dns::{chrome_log_contains_errors, ErrorExt};
 use failure::{bail, Error, ResultExt};
-use lazy_static::lazy_static;
 use log::{debug, error, info, warn};
 use misc_utils::fs::{file_open_read, read_to_string};
+use once_cell::sync::Lazy;
 use sequences::{sequence_stats, Sequence};
 use std::{
     ffi::{OsStr, OsString},
@@ -24,14 +24,14 @@ use structopt::{self, StructOpt};
 use taskmanager::{models::Task, AddDomainConfig, Config, TaskManager};
 use tempfile::{Builder as TempDirBuilder, TempDir};
 
-lazy_static! {
-    static ref DNSTAP_FILE_NAME: &'static Path = &Path::new("website-log.dnstap.xz");
-    static ref LOG_FILE: &'static Path = &Path::new("website-log.log.xz");
-    static ref CHROME_LOG_FILE_NAME: &'static Path = &Path::new("website-log.json.xz");
-    static ref PCAP_FILE_NAME: &'static Path = &Path::new("website-log.pcap.xz");
-    static ref TIMING_FILE_NAME: &'static Path = &Path::new("website-log.dnstimes.txt.xz");
-    static ref TLSKEYS_FILE_NAME: &'static Path = &Path::new("website-log.tlskeys.txt.xz");
-}
+static DNSTAP_FILE_NAME: Lazy<&'static Path> = Lazy::new(|| &Path::new("website-log.dnstap.xz"));
+static LOG_FILE: Lazy<&'static Path> = Lazy::new(|| &Path::new("website-log.log.xz"));
+static CHROME_LOG_FILE_NAME: Lazy<&'static Path> = Lazy::new(|| &Path::new("website-log.json.xz"));
+static PCAP_FILE_NAME: Lazy<&'static Path> = Lazy::new(|| &Path::new("website-log.pcap.xz"));
+static TIMING_FILE_NAME: Lazy<&'static Path> =
+    Lazy::new(|| &Path::new("website-log.dnstimes.txt.xz"));
+static TLSKEYS_FILE_NAME: Lazy<&'static Path> =
+    Lazy::new(|| &Path::new("website-log.tlskeys.txt.xz"));
 
 #[derive(StructOpt)]
 #[structopt(global_settings(&[

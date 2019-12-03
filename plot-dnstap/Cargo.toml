@@ -7,10 +7,10 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-sequences = { path = "../sequences" }
 env_logger = "0.7.1"
+failure = "0.1.6"
 log = "0.4.8"
 pyo3 = "0.8.3"
-structopt = "0.3.5"
-failure = "0.1.6"
+sequences = { path = "../sequences" }
 serde_json = "1.0.42"
+structopt = "0.3.5"

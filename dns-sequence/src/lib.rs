@@ -1,8 +1,8 @@
 use csv::ReaderBuilder;
 use failure::{format_err, Error, ResultExt};
-use lazy_static::lazy_static;
 use log::{error, info, warn};
 use misc_utils::fs::file_open_read;
+use once_cell::sync::Lazy;
 use sequences::{knn::LabelledSequences, LoadSequenceConfig, Sequence, SimulatedCountermeasure};
 use serde::Deserialize;
 use std::{
@@ -14,9 +14,7 @@ use std::{
 use string_cache::DefaultAtom as Atom;
 use structopt::clap::arg_enum;
 
-lazy_static! {
-    static ref CONFUSION_DOMAINS: RwLock<Arc<HashMap<Atom, Atom>>> = RwLock::default();
-}
+static CONFUSION_DOMAINS: Lazy<RwLock<Arc<HashMap<Atom, Atom>>>> = Lazy::new(Default::default);
 
 arg_enum! {
     #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]

@@ -5,9 +5,9 @@ use dnstap::{
     protos::{self, DnstapContent},
 };
 use failure::{Error, ResultExt};
-use lazy_static::lazy_static;
 use log::{error, info};
 use misc_utils::fs::{file_open_read, file_open_write};
+use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use serde::Deserialize;
 use std::{
@@ -18,9 +18,7 @@ use std::{
 };
 use structopt::{self, StructOpt};
 
-lazy_static! {
-    static ref CONFUSION_DOMAINS: RwLock<Arc<HashMap<String, String>>> = RwLock::default();
-}
+static CONFUSION_DOMAINS: Lazy<RwLock<Arc<HashMap<String, String>>>> = Lazy::new(Default::default);
 
 #[derive(StructOpt, Debug)]
 #[structopt(global_settings(&[
