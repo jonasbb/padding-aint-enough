@@ -3,7 +3,7 @@ use failure::{format_err, Error, ResultExt};
 use lazy_static::lazy_static;
 use log::{error, info, warn};
 use misc_utils::fs::file_open_read;
-use sequences::{LabelledSequences, LoadSequenceConfig, Sequence, SimulatedCountermeasure};
+use sequences::{knn::LabelledSequences, LoadSequenceConfig, Sequence, SimulatedCountermeasure};
 use serde::Deserialize;
 use std::{
     collections::HashMap,

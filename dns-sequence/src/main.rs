@@ -7,8 +7,8 @@ use failure::{format_err, Error, ResultExt};
 use log::{error, info};
 use misc_utils::fs::{file_open_write, WriteOptions};
 use sequences::{
-    knn::{self, ClassificationResult},
-    LabelledSequences, Sequence,
+    knn::{self, ClassificationResult, LabelledSequences},
+    Sequence,
 };
 use serde::Serialize;
 use serde_json::Serializer as JsonSerializer;

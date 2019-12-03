@@ -2,7 +2,7 @@
 //!
 //! The trait is used to track how the costs for a single distance are split accross the individual
 //! components.
-use crate::SequenceElement;
+use super::SequenceElement;
 use std::{collections::BTreeMap, sync::Arc};
 
 pub trait DistanceCostInfo: Clone + Default {

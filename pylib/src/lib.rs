@@ -5,8 +5,9 @@ use encrypted_dns::ErrorExt;
 use failure::{format_err, Error, ResultExt};
 use pyo3::{basic::CompareOp, exceptions::Exception, prelude::*, types::PyType, PyObjectProtocol};
 use sequences::{
-    distance_cost_info::CostTracker, load_all_files_with_extension_from_dir_with_config, GapMode,
-    LabelledSequences, LoadSequenceConfig, OneHotEncoding, Padding, Sequence,
+    distance_cost_info::CostTracker, knn::LabelledSequences,
+    load_all_files_with_extension_from_dir_with_config, GapMode, LoadSequenceConfig,
+    OneHotEncoding, Padding, Sequence,
 };
 use std::{collections::BTreeMap, ffi::OsStr, path::Path};
 

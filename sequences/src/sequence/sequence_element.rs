@@ -1,8 +1,11 @@
 //! Implementation of the [`SequenceElement`] type and associated traits
 
-use crate::{constants::*, OneHotEncoding};
+use crate::constants::*;
 use serde::{self, de::Visitor, Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt::{self, Debug};
+
+// Gap + S1-S15
+pub type OneHotEncoding = Vec<u16>;
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub enum SequenceElement {
@@ -87,7 +90,7 @@ impl SequenceElement {
 
 impl Debug for SequenceElement {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use crate::SequenceElement::*;
+        use self::SequenceElement::*;
         let (l, v) = match self {
             Size(v) => ("S", u16::from(*v)),
             Gap(v) => ("G", *v),
@@ -189,6 +192,7 @@ mod test {
         assert_eq!(&serde_json::to_string(&Size(u8::max_value()))?, "\"S255\"");
         Ok(())
     }
+
     #[test]
     fn test_deserialize_elements() -> Result<(), serde_json::error::Error> {
         assert_eq!(serde_json::from_str::<SequenceElement>("\"G01\"")?, Gap(1));

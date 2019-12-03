@@ -1,6 +1,5 @@
-use crate::{
-    utils::take_smallest, InternedSequence, LabelledSequence, LabelledSequences, Sequence,
-};
+use super::{InternedSequence, Sequence};
+use crate::utils::take_smallest;
 use lazy_static::lazy_static;
 use log::{debug, error};
 use misc_utils::{Max, Min};
@@ -11,11 +10,27 @@ use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     fmt::{self, Display},
 };
+use string_cache::DefaultAtom as Atom;
 
 lazy_static! {
     /// Memorize distance calculations
     static ref PRECOMPUTED_DISTANCES: dashmap::DashMap<(InternedSequence, InternedSequence), usize> =
         Default::default();
+}
+
+/// [`Sequence`] with additional data about the true domain and the canonical domain
+pub struct LabelledSequence<S = Atom> {
+    pub true_domain: S,
+    pub mapped_domain: S,
+    pub sequence: Sequence,
+}
+
+/// A set of DNS [`Sequence`]s which all belong to the same true domain and canonical domain
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+pub struct LabelledSequences<S = Atom> {
+    pub true_domain: S,
+    pub mapped_domain: S,
+    pub sequences: Vec<Sequence>,
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
