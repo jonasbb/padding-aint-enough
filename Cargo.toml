@@ -82,4 +82,5 @@ misc_utils = "2.5.1"
 serde_json = "1.0.42"
 
 [patch.crates-io]
+dashmap = { git = "https://gitlab.nebulanet.cc/pmarks/dashmap/", branch = "pmarks/optional-async" }
 trust-dns-proto = { git = "https://github.com/jonasbb/trust-dns", branch = "fix-empty-option-at-end-of-edns" }

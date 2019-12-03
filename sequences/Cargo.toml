@@ -17,7 +17,7 @@ harness = false
 
 [dependencies]
 chrono = { version = "0.4.10", features = [ "serde" ] }
-dashmap = "1.2.0"
+dashmap = { version = "1.2.0", default-features = false }
 dnstap = { path = "../dnstap" }
 etherparse = { version = "0.8.3", optional = true }
 failure = "0.1.6"
