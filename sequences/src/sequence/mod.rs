@@ -1,3 +1,10 @@
+//! [`Sequence`] type and related modules
+//!
+//! The [`Sequence`] captures the information of a DNS Sequence with padding and timing abstraction applied.
+//!
+//! The module contains the [`SequenceElement`], which is the implementation part of [`Sequence`].
+//! Additionally, the [`knn`] module contains all functions and types to perform k-NN classification.
+
 pub mod distance_cost_info;
 pub mod knn;
 mod sequence_element;

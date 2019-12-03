@@ -1,3 +1,5 @@
+//! All k-NN related types and k-NN implementing functions
+
 use super::{InternedSequence, Sequence};
 use crate::utils::take_smallest;
 use lazy_static::lazy_static;
