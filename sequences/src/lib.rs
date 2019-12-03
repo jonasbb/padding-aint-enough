@@ -1,5 +1,6 @@
 mod constants;
 pub mod distance_cost_info;
+pub mod dnstap;
 pub mod knn;
 pub mod load_sequence;
 #[cfg(feature = "read_pcap")]
@@ -52,15 +53,6 @@ impl From<&AbstractQueryResponse> for AbstractQueryResponse {
     }
 }
 
-impl From<&load_sequence::Query> for AbstractQueryResponse {
-    fn from(other: &load_sequence::Query) -> Self {
-        AbstractQueryResponse {
-            time: other.end.naive_utc(),
-            size: other.response_size,
-        }
-    }
-}
-
 // Gap + S1-S15
 pub type OneHotEncoding = Vec<u16>;
 
@@ -92,9 +84,7 @@ impl Sequence {
         // Iterate over all file extensions, from last to first.
         for ext in path.extensions() {
             match ext.to_str() {
-                Some("dnstap") => {
-                    return load_sequence::dnstap_to_sequence_with_config(path, config)
-                }
+                Some("dnstap") => return dnstap::build_sequence(path, config),
                 Some("json") => {
                     if config != Default::default() {
                         bail!("Trying to load a Sequence from JSON with a custom LoadSequenceConfig: LoadSequenceConfig is not supported for JSON format.")
@@ -109,7 +99,7 @@ impl Sequence {
             }
         }
         // Fallback to the old behavior
-        load_sequence::dnstap_to_sequence_with_config(path, config)
+        dnstap::build_sequence(path, config)
     }
 
     /// Return the [`Sequence`]'s identifier. Normally, the file name.

@@ -1,31 +1,22 @@
 mod depgraph;
 
 use crate::depgraph::DepGraph;
-use chrome::{ChromeDebuggerMessage, RedirectResponse, Request, Response, TargetInfo, Timing};
+use chrome::{ChromeDebuggerMessage, Request, TargetInfo};
 use chrono::{DateTime, Utc};
-use dnstap::{
-    self,
-    dnstap::Message_Type,
-    protos::{Dnstap, DnstapContent},
-};
 use failure::{bail, format_err, Error, ResultExt};
 use lazy_static::lazy_static;
-use log::{debug, info, warn};
 use misc_utils::{
     fs::{file_open_write, read_to_string, WriteOptions},
     Min,
 };
 use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
-use sequences::load_sequence::{MatchKey, Query, QuerySource, UnmatchedClientQuery};
 use serde::{Deserialize, Serialize};
 use std::{
     borrow::Cow,
-    collections::BTreeMap,
     convert::TryFrom,
     fs::{create_dir_all, remove_dir_all, OpenOptions},
-    path::{Path, PathBuf},
-    process::Command,
+    path::PathBuf,
     sync::RwLock,
 };
 use structopt::{self, StructOpt};
@@ -34,13 +25,8 @@ use url::Url;
 lazy_static! {
     /// Global output directory for all generated files
     static ref OUTDIR: RwLock<PathBuf> = RwLock::new(PathBuf::new());
-
-    static ref PYTHON_DNS_TIMING: PathBuf = Path::new("./scripts/dns-timing-chart.py")
-        .canonicalize()
-        .expect("Canonicalizing a path should not fail.");
 }
 
-const DNS_TIMING: &str = "dns-timing.json";
 const DEP_GRAPH: &str = "dependencies.graphml";
 
 #[derive(StructOpt, Debug)]
@@ -84,18 +70,6 @@ fn run() -> Result<(), Error> {
         *lock = outdir;
     }
 
-    // Try processing of .dnstap and .dnstap.xz files
-    let dnstap_file = cli_args.webpage_log.with_extension("dnstap");
-    process_dnstap(&*dnstap_file)
-        .with_context(|_| format!("Processing dnstap file '{}'", dnstap_file.display()))?;
-    // replace json.xz with dnstap.xz
-    let dnstap_file = cli_args
-        .webpage_log
-        .with_extension("")
-        .with_extension("dnstap.xz");
-    process_dnstap(&*dnstap_file)
-        .with_context(|_| format!("Processing dnstap file '{}'", dnstap_file.display()))?;
-
     let content = read_to_string(&cli_args.webpage_log).with_context(|_| {
         format!(
             "Reading input file '{}' failed",
@@ -115,203 +89,6 @@ fn run() -> Result<(), Error> {
             cli_args.webpage_log.display()
         )
     })?;
-
-    Ok(())
-}
-
-fn process_dnstap(dnstap_file: &Path) -> Result<(), Error> {
-    // process dnstap if available
-    if dnstap_file.exists() {
-        info!("Found dnstap file.");
-        let mut events: Vec<Dnstap> =
-            dnstap::process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
-
-        // the dnstap events can be out of order, so sort them by timestamp
-        // always take the later timestamp if there are multiple
-        events.sort_by_key(|ev| {
-            let DnstapContent::Message {
-                query_time,
-                response_time,
-                ..
-            } = ev.content;
-            if let Some(time) = response_time {
-                time
-            } else if let Some(time) = query_time {
-                time
-            } else {
-                panic!("The dnstap message must contain either a query or response time.")
-            }
-        });
-
-        let mut unanswered_client_queries = BTreeMap::new();
-        let mut matched = Vec::new();
-
-        for ev in events
-            .into_iter()
-            // search for the CLIENT_RESPONE `start.example.` message as the end of the prefetching events
-            .skip_while(|ev| {
-                let DnstapContent::Message {
-                    message_type,
-                    ref response_message,
-                    ..
-                } = ev.content;
-                if message_type == Message_Type::CLIENT_RESPONSE {
-                    let (dnsmsg, _size) =
-                        response_message.as_ref().expect("Unbound always sets this");
-                    let qname = dnsmsg.queries()[0].name().to_utf8();
-                    if qname == "start.example." {
-                        return false;
-                    }
-                }
-                true
-            })
-            // the skip while returns the CLIENT_RESPONSE with `start.example.`
-            // We want to remove this as well, so skip over the first element here
-            .skip(1)
-            // Only process messages until the end message is found in form of the first (thus CLIENT_QUERY)
-            // message forr domain `end.example.`
-            .take_while(|ev| {
-                let DnstapContent::Message {
-                    message_type,
-                    ref query_message,
-                    ..
-                } = ev.content;
-                if message_type == Message_Type::CLIENT_QUERY {
-                    let (dnsmsg, _size) = query_message.as_ref().expect("Unbound always sets this");
-                    let qname = dnsmsg.queries()[0].name().to_utf8();
-                    if qname == "end.example." {
-                        return false;
-                    }
-                }
-                true
-            })
-        {
-            let DnstapContent::Message {
-                message_type,
-                query_message,
-                response_message,
-                query_time,
-                response_time,
-                query_port,
-                ..
-            } = ev.content;
-            match message_type {
-                Message_Type::CLIENT_QUERY => {
-                    let (dnsmsg, size) = query_message.expect("Unbound always sets this");
-                    let qname = dnsmsg.queries()[0].name().to_utf8();
-                    let qtype = dnsmsg.queries()[0].query_type().to_string();
-                    let id = dnsmsg.id();
-                    let start = query_time.expect("Unbound always sets this");
-                    let port = query_port.expect("Unbound always sets this");
-
-                    let key = MatchKey {
-                        qname: qname.clone(),
-                        qtype: qtype.clone(),
-                        id,
-                        port,
-                    };
-                    let value = UnmatchedClientQuery {
-                        qname,
-                        qtype,
-                        start,
-                        size: size as u32,
-                    };
-                    let existing_value = unanswered_client_queries.insert(key, value);
-                    if let Some(existing_value) = existing_value {
-                        info!(
-                            "Duplicate Client Query for '{}' ({})",
-                            existing_value.qname, existing_value.qtype
-                        );
-                    }
-                }
-
-                Message_Type::CLIENT_RESPONSE => {
-                    let (dnsmsg, size) = response_message.expect("Unbound always sets this");
-                    let qname = dnsmsg.queries()[0].name().to_utf8();
-                    let qtype = dnsmsg.queries()[0].query_type().to_string();
-                    let id = dnsmsg.id();
-                    let end = response_time.expect("Unbound always sets this");
-                    let port = query_port.expect("Unbound always sets this");
-
-                    let key = MatchKey {
-                        qname: qname.clone(),
-                        qtype: qtype.clone(),
-                        id,
-                        port,
-                    };
-                    if let Some(unmatched) = unanswered_client_queries.remove(&key) {
-                        matched.push(Query {
-                            source: QuerySource::Client,
-                            qname: unmatched.qname,
-                            qtype: unmatched.qtype,
-                            start: unmatched.start,
-                            end,
-                            query_size: unmatched.size,
-                            response_size: size as u32,
-                        })
-                    } else {
-                        info!("Unmatched Client Response for '{}' ({})", qname, qtype);
-                    };
-                }
-
-                Message_Type::FORWARDER_RESPONSE => {
-                    let (dnsmsg, size) = response_message.expect("Unbound always sets this");
-                    let qname = dnsmsg.queries()[0].name().to_utf8();
-                    let qtype = dnsmsg.queries()[0].query_type().to_string();
-                    let start = query_time.expect("Unbound always sets this");
-                    let end = response_time.expect("Unbound always sets this");
-                    matched.push(Query {
-                        source: QuerySource::Forwarder,
-                        qname,
-                        qtype,
-                        start,
-                        end,
-                        query_size: u32::max_value(),
-                        response_size: size as u32,
-                    });
-                }
-
-                Message_Type::FORWARDER_QUERY => {
-                    let (dnsmsg, size) = query_message.expect("Unbound always sets this");
-                    let qname = dnsmsg.queries()[0].name().to_utf8();
-                    let qtype = dnsmsg.queries()[0].query_type().to_string();
-                    let start = query_time.expect("Unbound always sets this");
-                    matched.push(Query {
-                        source: QuerySource::ForwarderLostQuery,
-                        qname,
-                        qtype,
-                        start,
-                        end: start,
-                        query_size: size as u32,
-                        response_size: u32::max_value(),
-                    })
-                }
-
-                _ => bail!("Unexpected message type {:?}", message_type),
-            }
-        }
-
-        // cleanup some messages
-        // filter out all the queries which are just noise
-        matched.retain(|query| {
-            !(query.qtype == "NULL" && query.qname.starts_with("_ta"))
-                && query.qname != "fedoraproject.org."
-        });
-        for msg in unanswered_client_queries {
-            debug!("Unanswered client query: {:?}", msg);
-        }
-
-        if !matched.is_empty() {
-            let fname = get_output_dir().join("dns.json");
-            let mut wtr = file_open_write(
-                &fname,
-                WriteOptions::default()
-                    .set_open_options(OpenOptions::new().create(true).truncate(true)),
-            )
-            .with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
-            serde_json::to_writer(&mut wtr, &matched)?;
-        }
-    }
 
     Ok(())
 }
@@ -336,74 +113,7 @@ fn url_to_domain(url: &str) -> Result<String, Error> {
         })?)
 }
 
-fn dns_timing_chart(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
-    let timings: Vec<(String, String, Timing)> = messages
-        .iter()
-        .filter_map(|msg| match msg {
-            ChromeDebuggerMessage::NetworkRequestWillBeSent {
-                redirect_response: Some(RedirectResponse { url, timing }),
-                ..
-            }
-            | ChromeDebuggerMessage::NetworkResponseReceived {
-                response:
-                    Response {
-                        url,
-                        timing: Some(timing),
-                    },
-                ..
-            } => {
-                if !should_ignore_url(url) && timing.dns_start.is_some() {
-                    return Some((url_to_domain(url).unwrap(), url.clone(), *timing));
-                }
-                None
-            }
-            // Ignore all other messages
-            _ => None,
-        })
-        .collect();
-
-    // protect against failed network requests. Sometimes this might end up empty, in which case we do not want to plot anything
-    let fname = get_output_dir().join(DNS_TIMING);
-    if timings.is_empty() {
-        warn!(
-            "Skipping {} because no timing information available",
-            fname.display()
-        );
-    }
-
-    let mut wtr = file_open_write(
-        &fname,
-        WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    )
-    .with_context(|_| format!("Opening input file '{}' failed", &fname.display(),))?;
-    serde_json::to_writer(&mut wtr, &timings)?;
-    // we need to close the writer to flush everything
-    drop(wtr);
-
-    let status = Command::new(&*PYTHON_DNS_TIMING)
-        .arg(
-            &*get_output_dir()
-                .join(DNS_TIMING)
-                .canonicalize()?
-                .to_string_lossy(),
-        )
-        .current_dir(get_output_dir())
-        .status()
-        .context("Could not start Python process")?;
-
-    if !status.success() {
-        match status.code() {
-            Some(code) => bail!("Python exited with status code: {}", code),
-            None => bail!("Python terminated by signal"),
-        }
-    }
-
-    Ok(())
-}
-
 fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
-    dns_timing_chart(messages)?;
-
     let mut depgraph = DepGraph::new(messages).context("Failure to build the graph.")?;
     depgraph.simplify_graph();
     depgraph.duplicate_domains();

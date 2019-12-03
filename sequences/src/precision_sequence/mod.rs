@@ -41,7 +41,7 @@ impl PrecisionSequence {
         // Iterate over all file extensions, from last to first.
         for ext in path.extensions() {
             match ext.to_str() {
-                Some("dnstap") => return crate::load_sequence::dnstap_to_precision_sequence(path),
+                Some("dnstap") => return crate::dnstap::build_precision_sequence(path),
                 #[cfg(feature = "read_pcap")]
                 Some("pcap") => {
                     return Ok(crate::pcap::build_precision_sequence(path, None, false)

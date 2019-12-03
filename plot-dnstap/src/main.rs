@@ -1,6 +1,6 @@
 use failure::{format_err, Error, ResultExt};
 use pyo3::{types::PyDict, ObjectProtocol, PyErr, PyResult, Python};
-use sequences::load_sequence::Query;
+use sequences::dnstap::Query;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
 
@@ -59,9 +59,8 @@ fn run() -> Result<(), Error> {
         .dnstap_files
         .into_iter()
         .map(|file| {
-            let queries =
-                sequences::load_sequence::load_matching_query_responses_from_dnstap(&file)
-                    .with_context(|_| format_err!("Cannot process file {}", file.display()))?;
+            let queries = sequences::dnstap::load_matching_query_responses_from_dnstap(&file)
+                .with_context(|_| format_err!("Cannot process file {}", file.display()))?;
             let outfile = if let Some(outdir) = outdir {
                 outdir.join(file.file_name().unwrap()).with_extension("svg")
             } else {
