@@ -33,51 +33,56 @@ type TasksColumnType = (
     schema::tasks::id,
     schema::tasks::priority,
     schema::tasks::name,
-    schema::tasks::domain,
-    schema::tasks::domain_counter,
+    schema::tasks::website,
+    schema::tasks::website_counter,
     schema::tasks::state,
     schema::tasks::restart_count,
     schema::tasks::last_modified,
     schema::tasks::associated_data,
     schema::tasks::groupid,
     schema::tasks::groupsize,
+    schema::tasks::uri,
 );
 const TASKS_COLUMNS: TasksColumnType = (
     schema::tasks::id,
     schema::tasks::priority,
     schema::tasks::name,
-    schema::tasks::domain,
-    schema::tasks::domain_counter,
+    schema::tasks::website,
+    schema::tasks::website_counter,
     schema::tasks::state,
     schema::tasks::restart_count,
     schema::tasks::last_modified,
     schema::tasks::associated_data,
     schema::tasks::groupid,
     schema::tasks::groupsize,
+    schema::tasks::uri,
 );
 
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-pub struct AddDomainConfig {
-    pub(crate) domain: String,
-    pub(crate) domain_counter: i32,
+pub struct AddWebsiteConfig {
+    pub(crate) website: String,
+    pub(crate) website_counter: i32,
     pub(crate) groupid: i32,
     pub(crate) groupsize: u8,
+    pub(crate) uri: String,
 }
 
-impl AddDomainConfig {
+impl AddWebsiteConfig {
     pub fn new(
-        domain: impl Into<String>,
-        domain_counter: i32,
+        website: impl Into<String>,
+        website_counter: i32,
         groupid: i32,
         groupsize: u8,
+        uri: impl Into<String>,
     ) -> Self {
-        assert!(domain_counter >= 0);
+        assert!(website_counter >= 0);
         assert!(groupid >= 0);
         Self {
-            domain: domain.into(),
-            domain_counter,
+            website: website.into(),
+            website_counter,
             groupid,
             groupsize,
+            uri: uri.into(),
         }
     }
 }
@@ -96,7 +101,6 @@ impl Debug for TaskManager {
 }
 
 impl TaskManager {
-    #[allow(clippy::new_ret_no_self)]
     pub fn new(database: &str) -> Result<Self, Error> {
         let conn = PgConnection::establish(database)?;
         conn.execute("SET lock_timeout TO 30000")?;
@@ -105,6 +109,7 @@ impl TaskManager {
         Ok(Self { db_connection })
     }
 
+    /// Perform database schema migration steps
     pub fn run_migrations(&self) -> Result<(), Error> {
         let conn = self.db_connection.lock().unwrap();
         info!("Run database migrations");
@@ -112,6 +117,7 @@ impl TaskManager {
         Ok(())
     }
 
+    /// Truncate all tables to create a fresh database state
     pub fn delete_all(&self) -> Result<(), Error> {
         let conn = self.db_connection.lock().unwrap();
         conn.transaction::<(), _, _>(|| {
@@ -121,6 +127,7 @@ impl TaskManager {
         })
     }
 
+    /// Update all the tasks which are passed through `tasks`
     fn update_tasks<'a, T>(&self, conn: &PgConnection, tasks: T) -> Result<(), Error>
     where
         T: IntoIterator<Item = &'a models::Task>,
@@ -136,27 +143,31 @@ impl TaskManager {
         })
     }
 
-    pub fn add_domains<I>(&self, domains: I, initial_priority: i32) -> Result<(), Error>
+    /// Add a list of URIs to the database
+    ///
+    /// The tasks will get an increasing priority starting from `initial_priority`.
+    pub fn add_uris<I>(&self, websites: I, initial_priority: i32) -> Result<(), Error>
     where
-        I: IntoIterator<Item = AddDomainConfig>,
+        I: IntoIterator<Item = AddWebsiteConfig>,
     {
         let conn = self.db_connection.lock().unwrap();
         conn.transaction(|| {
             let mut prio = 0;
-            for config in domains {
+            for config in websites {
                 for i in 0..config.groupsize {
-                    let dc = config.domain_counter + i32::from(i);
+                    let wc = config.website_counter + i32::from(i);
                     let row = models::TaskInsert {
                         priority: prio + i32::from(i) + initial_priority,
-                        name: &format!("{}-{}-{}", config.domain, dc, config.groupid),
-                        domain: &config.domain,
-                        domain_counter: dc,
+                        name: &format!("{}-{}-{}", config.website, wc, config.groupid),
+                        website: &config.website,
+                        website_counter: wc,
                         state: models::TaskState::Created,
                         restart_count: 0,
                         last_modified: Utc::now(),
                         associated_data: None,
                         groupid: config.groupid,
                         groupsize: i32::from(config.groupsize),
+                        uri: &config.uri,
                     };
                     diesel::insert_into(schema::tasks::table)
                         .values(&row)
@@ -258,7 +269,7 @@ impl TaskManager {
         conn.transaction(|| self.update_tasks(&conn, Some(&*task)))
     }
 
-    pub fn results_need_sanity_check_domain(&self) -> Result<Option<Vec<models::Task>>, Error> {
+    pub fn results_need_sanity_check_website(&self) -> Result<Option<Vec<models::Task>>, Error> {
         use diesel::dsl::sql_query;
 
         let conn = self.db_connection.lock().unwrap();
@@ -268,29 +279,30 @@ impl TaskManager {
                 t.id,
                 t.priority,
                 t.name,
-                t.domain,
-                t.domain_counter,
+                t.website,
+                t.website_counter,
                 t.state,
                 t.restart_count,
                 t.last_modified,
                 t.associated_data,
                 t.groupid,
-                t.groupsize
+                t.groupsize,
+                t.uri
             FROM (
-                SELECT domain, groupid
+                SELECT website, groupid
                 FROM tasks
                 WHERE state = 'check_quality_domain'
                     AND aborted = false
-                GROUP BY domain, groupid
+                GROUP BY website, groupid
                 HAVING count(*) = MAX(groupsize)
                 LIMIT 1
             ) AS s
             JOIN tasks t
-                ON s.domain = t.domain
+                ON s.website = t.website
                AND s.groupid = t.groupid
 
             ORDER BY
-                t.domain,
+                t.website,
                 priority ASC
             ;"#,
             )
@@ -310,7 +322,7 @@ impl TaskManager {
         }
     }
 
-    pub fn mark_results_checked_domain(&self, tasks: &mut Vec<models::Task>) -> Result<(), Error> {
+    pub fn mark_results_checked_website(&self, tasks: &mut Vec<models::Task>) -> Result<(), Error> {
         for task in &*tasks {
             if task.state != models::TaskState::CheckQualityDomain {
                 bail!("To check results they must be in the CheckQualityDomain state.")
@@ -325,7 +337,7 @@ impl TaskManager {
 
         let msg = format!(
             "Finished domain {} groupid {}",
-            tasks[0].domain(),
+            tasks[0].website(),
             tasks[0].groupid()
         );
         let row = models::InfoInsert {
@@ -368,15 +380,15 @@ impl TaskManager {
                 Ok(())
             })
         } else {
-            use crate::schema::tasks::dsl::{domain, groupid, tasks};
+            use crate::schema::tasks::dsl::{groupid, tasks, website};
 
-            // We must abort all tasks for this domain
+            // We must abort all tasks for this website
             let msg = format!("Too many restarts for task {}, abort domain.", task.name());
 
             conn.transaction(|| {
-                // get all tasks for the same domain
+                // get all tasks for the same website
                 let other_tasks = tasks
-                    .filter(domain.eq(task.domain()))
+                    .filter(website.eq(task.website()))
                     .filter(groupid.eq(task.groupid()))
                     .select(TASKS_COLUMNS)
                     .load::<models::Task>(&*conn)
@@ -409,11 +421,11 @@ impl TaskManager {
         tasks: &mut [models::Task],
         reason: &dyn Display,
     ) -> Result<(), Error> {
-        // check that all tasks belong to the same domain
+        // check that all tasks belong to the same website
         for task in &*tasks {
             assert_eq!(
-                tasks[0].domain(),
-                task.domain(),
+                tasks[0].website(),
+                task.website(),
                 "restart_tasks only works if all tasks belong to the same domain"
             );
             assert_eq!(
@@ -455,10 +467,10 @@ impl TaskManager {
                 Ok(())
             })
         } else {
-            // We must abort all tasks for this domain
+            // We must abort all tasks for this website
             let msg = format!(
                 "Too many restarts for domain {} groupid {}",
-                tasks[0].domain(),
+                tasks[0].website(),
                 tasks[0].groupid()
             );
 
@@ -487,44 +499,56 @@ impl TaskManager {
 
     pub fn get_domain_state(
         &self,
-        domains: &[impl AsRef<str>],
-    ) -> Result<Vec<models::DomainCounters>, Error> {
+        websites: impl IntoIterator<Item = impl AsRef<str>>,
+    ) -> Result<Vec<models::WebsiteCounters>, Error> {
         use diesel::{dsl::sql_query, sql_types::*};
 
         let conn = self.db_connection.lock().unwrap();
-        let domain_counters =
-            conn.transaction::<Vec<Vec<models::DomainCounters>>, Error, _>(|| {
-                domains
-                    .iter()
-                    .map(|domain| -> Result<Vec<models::DomainCounters>, Error> {
-                        Ok(sql_query(
+        let website_counters =
+            conn.transaction::<Vec<models::WebsiteCounters>, Error, _>(|| {
+                websites
+                    .into_iter()
+                    .map(|website| -> Result<models::WebsiteCounters, Error> {
+                        let website = website.as_ref();
+                        let res = sql_query(
                             r#"SELECT
-                            domain,
-                            MAX(domain_counter) + 1 as domain_counter,
+                            website,
+                            MAX(website_counter) + 1 as website_counter,
                             MAX(groupid) + 1 as groupid
                         FROM tasks
                         WHERE
-                            domain = $1
+                            website = $1
                         GROUP BY
-                            domain
+                            website
                         ;"#,
                         )
-                        .bind::<Text, _>(domain.as_ref())
-                        .load::<models::DomainCounters>(&*conn)
+                        .bind::<Text, _>(website)
+                        .load::<models::WebsiteCounters>(&*conn)
                         .with_context(|_| {
                             format!(
-                                "Cannot retrieve domain counters from database for domain '{}'",
-                                domain.as_ref(),
+                                "Cannot retrieve website counters from database for website '{}'",
+                                website,
                             )
-                        })?)
+                        })?;
+                        // Check if there is a database result and if not, then create an artificial one
+                        // Res is a Vec, but we want to move the first value out of the vec
+                        Ok(res
+                            .into_iter()
+                            .next()
+                            .unwrap_or_else(|| models::WebsiteCounters {
+                                website: website.to_string(),
+                                website_counter: 0,
+                                groupid: 0,
+                            }))
                     })
                     .collect()
             })?;
 
-        Ok(domain_counters.into_iter().flatten().collect())
+        Ok(website_counters)
     }
 }
 
+/// Configuration options for the Taskmanager
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Config {
     pub working_directory: PathBuf,

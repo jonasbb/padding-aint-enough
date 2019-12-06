@@ -3,12 +3,13 @@ mod utils;
 use crate::utils::*;
 use chrome::ChromeDebuggerMessage;
 use encrypted_dns::{chrome_log_contains_errors, ErrorExt};
-use failure::{bail, Error, ResultExt};
+use failure::{bail, format_err, Error, ResultExt};
 use log::{debug, error, info, warn};
 use misc_utils::fs::{file_open_read, read_to_string};
 use once_cell::sync::Lazy;
 use sequences::{sequence_stats, Sequence};
 use std::{
+    collections::HashMap,
     ffi::{OsStr, OsString},
     fmt::{self, Debug},
     fs,
@@ -21,8 +22,9 @@ use std::{
     time::Duration,
 };
 use structopt::{self, StructOpt};
-use taskmanager::{models::Task, AddDomainConfig, Config, TaskManager};
+use taskmanager::{models::Task, AddWebsiteConfig, Config, TaskManager};
 use tempfile::{Builder as TempDirBuilder, TempDir};
+use url::Url;
 
 static DNSTAP_FILE_NAME: Lazy<&'static Path> = Lazy::new(|| &Path::new("website-log.dnstap.xz"));
 static LOG_FILE: Lazy<&'static Path> = Lazy::new(|| &Path::new("website-log.log.xz"));
@@ -64,12 +66,16 @@ enum SubCommand {
     /// Create the initial list of tasks from a domain list
     #[structopt(name = "init")]
     InitTaskSet {
+        /// File containing a list of websites or URIs
         #[structopt(
             short = "d",
             long = "domain",
             parse(try_from_os_str = path_file_exists_and_readable_open)
         )]
         domain_list: (Box<dyn Read>, PathBuf),
+        /// --domain argument contains full URIs instead of only domains
+        #[structopt(long)]
+        domains_are_uris: bool,
     },
     /// Start executing the tasks
     #[structopt(name = "run")]
@@ -86,6 +92,9 @@ enum SubCommand {
             parse(try_from_os_str = path_file_exists_and_readable_open)
         )]
         domain_list: (Box<dyn Read>, PathBuf),
+        /// --domain argument contains full URIs instead of only domains
+        #[structopt(long)]
+        domains_are_uris: bool,
     },
 }
 
@@ -158,6 +167,7 @@ fn run() -> Result<(), Error> {
 fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
     if let SubCommand::InitTaskSet {
         domain_list: (mut domain_list_reader, domain_list_path),
+        domains_are_uris,
         ..
     } = cmd
     {
@@ -168,8 +178,7 @@ fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
             .context("Error while executing migrations")?;
 
         debug!("Read domains file");
-        let domains_r = BufReader::new(&mut domain_list_reader);
-        let domains = domains_r
+        let domains_or_uris = BufReader::new(&mut domain_list_reader)
             .lines()
             .collect::<Result<Vec<String>, std::io::Error>>()
             .with_context(|_| format!("Failed to read line in {}", domain_list_path.display()))?;
@@ -178,13 +187,30 @@ fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
             .delete_all()
             .context("Empty database before filling it")?;
         info!("Add new database entries");
+        let uris: Result<Vec<_>, Error> = domains_or_uris
+            .into_iter()
+            .enumerate()
+            .map(|(idx, domain_or_uri)| {
+                let DomainAndUri { domain, uri } =
+                    get_domain_and_uri(domain_or_uri.clone(), domains_are_uris).ok_or_else(
+                        || {
+                            format_err!(
+                                "Cannot get domain and URI for input value: {}",
+                                domain_or_uri
+                            )
+                        },
+                    )?;
+                Ok(AddWebsiteConfig::new(
+                    domain,
+                    0,
+                    if domains_are_uris { idx as _ } else { 0 },
+                    config.per_domain_datasets,
+                    uri,
+                ))
+            })
+            .collect();
         taskmgr
-            .add_domains(
-                domains
-                    .into_iter()
-                    .map(|domain| AddDomainConfig::new(domain, 0, 0, config.per_domain_datasets)),
-                config.initial_priority,
-            )
+            .add_uris(uris?, config.initial_priority)
             .context("Could not create tasks")?;
     } else {
         unreachable!("The run function verifies which enum variant this is.")
@@ -265,8 +291,10 @@ fn run_debug(args: CliArgs, config: Config) -> Result<(), Error> {
 
 #[allow(clippy::needless_pass_by_value)]
 fn run_add_recurring(cmd: SubCommand, config: Config) -> Result<(), Error> {
+    let config = &config;
     if let SubCommand::AddRecurring {
         domain_list: (mut domain_list_reader, domain_list_path),
+        domains_are_uris,
         ..
     } = cmd
     {
@@ -274,19 +302,49 @@ fn run_add_recurring(cmd: SubCommand, config: Config) -> Result<(), Error> {
             .context("Cannot create TaskManager")?;
 
         debug!("Read domains file");
-        let domains = BufReader::new(&mut domain_list_reader)
+        let domains_or_uris = BufReader::new(&mut domain_list_reader)
             .lines()
             .collect::<Result<Vec<String>, std::io::Error>>()
             .with_context(|_| format!("Failed to read line in {}", domain_list_path.display()))?;
 
-        let domain_state = taskmgr
-            .get_domain_state(&domains)
+        let uris_per_domain = domains_or_uris.into_iter().try_fold(
+            HashMap::new(),
+            |mut uris_per_domain: HashMap<String, Vec<String>>,
+             domain_or_uri|
+             -> Result<_, Error> {
+                let DomainAndUri { domain, uri } =
+                    get_domain_and_uri(domain_or_uri.clone(), domains_are_uris).ok_or_else(
+                        || {
+                            format_err!(
+                                "Cannot get domain and URI for input value: {}",
+                                domain_or_uri
+                            )
+                        },
+                    )?;
+                uris_per_domain.entry(domain).or_default().push(uri);
+                Ok(uris_per_domain)
+            },
+        )?;
+
+        let website_state = taskmgr
+            .get_domain_state(uris_per_domain.keys())
             .context("Failed to retrieve the domainstate")?;
         taskmgr
-            .add_domains(
-                domain_state.into_iter().map(|dc| {
-                    dc.into_add_domain_config(config.per_domain_datasets_repeated_measurements)
-                }),
+            .add_uris(
+                website_state
+                    .into_iter()
+                    .zip(uris_per_domain.values())
+                    .flat_map(|(mut wc, uris)| {
+                        uris.into_iter().map(move |uri| {
+                            let res = wc.clone().into_add_website_config(
+                                config.per_domain_datasets_repeated_measurements,
+                                uri.clone(),
+                            );
+                            // Generate unique IDs for each URL set
+                            wc.groupid += 1;
+                            res
+                        })
+                    }),
                 0,
             )
             .context("Failed to add repeated domains tasks")?;
@@ -350,11 +408,8 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 // Write all the required files to the mount point
                 fs::copy(config.get_cache_file(), tmp_dir.path().join("cache.dump"))
                     .with_context(|_| format!("{}: Failed to copy cache.dump", task.name()))?;
-                fs::write(
-                    tmp_dir.path().join("domain"),
-                    &format!("http://www.{}", task.domain()),
-                )
-                .with_context(|_| format!("{}: Failed to create file `domain`", task.name()))?;
+                fs::write(tmp_dir.path().join("domain"), &task.uri())
+                    .with_context(|_| format!("{}: Failed to create file `domain`", task.name()))?;
 
                 debug!("{}: Run docker container", task.name());
                 let _status = docker_run(
@@ -448,11 +503,8 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                 // Write all the required files to the mount point
                 fs::copy(config.get_cache_file(), tmp_dir.path().join("cache.dump"))
                     .with_context(|_| format!("{}: Failed to copy cache.dump", task.name()))?;
-                fs::write(
-                    tmp_dir.path().join("domain"),
-                    &format!("http://www.{}", task.domain()),
-                )
-                .with_context(|_| format!("{}: Failed to create file `domain`", task.name()))?;
+                fs::write(tmp_dir.path().join("domain"), &task.uri())
+                    .with_context(|_| format!("{}: Failed to create file `domain`", task.name()))?;
                 // Copy files from local temp dir to remote temp dir
                 // Call scp -pr <local_tmp>/cache.dump <local_tmp>/domain <host>:<remote_tmp>
                 // Unfortunatly scp does not support globbing on the local site
@@ -657,7 +709,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
     loop {
         ensure_path_exists(&results_path)?;
 
-        let tasks = taskmgr.results_need_sanity_check_domain()?;
+        let tasks = taskmgr.results_need_sanity_check_website()?;
         if tasks.is_none() {
             info!("No tasks for sanity check domains");
             thread::sleep(Duration::new(10, 0));
@@ -679,7 +731,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
             info!("Sanity check domain: Marked Good: '{}'", tasks[0].name());
             //everything is fine, advance the tasks to next stage
             for task in &*tasks {
-                let outdir = results_path.join(task.domain());
+                let outdir = results_path.join(task.website());
                 ensure_path_exists(&outdir)?;
 
                 let old_task_dir = local_path.join(task.name());
@@ -693,7 +745,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                     (&*TLSKEYS_FILE_NAME, "tlskeys.txt.xz", false),
                 ] {
                     let src = old_task_dir.join(filename);
-                    let dst = results_path.join(task.domain()).join(format!(
+                    let dst = results_path.join(task.website()).join(format!(
                         "{}.{}",
                         task.name(),
                         new_file_ext
@@ -715,7 +767,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
             }
 
             taskmgr
-                .mark_results_checked_domain(tasks)
+                .mark_results_checked_website(tasks)
                 .context("Failed to mark domain tasks as finished.")?;
             Ok(())
         };
@@ -775,7 +827,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                     // restart all tasks
                     info!(
                         "Restart task of domain {} groupid {} because of distance difference",
-                        tasks[0].domain(),
+                        tasks[0].website(),
                         tasks[0].groupid(),
                     );
                     taskmgr
@@ -797,6 +849,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
     }
 }
 
+/// Update the Unbound cache dump snapshot
 fn update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
     let tmp_dir = TempDir::new()?;
     // Copy the prefetching list to the mount point
@@ -835,9 +888,30 @@ fn update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
     Ok(())
 }
 
+/// Background thread which regularly updates the Unbound cache dump snapshot
 fn background_update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
     loop {
         update_unbound_cache_dump(config)?;
         thread::sleep(Duration::from_secs(u64::from(config.refresh_cache_seconds)));
     }
+}
+
+struct DomainAndUri {
+    domain: String,
+    uri: String,
+}
+
+/// Get a string representing the domain and the full URI
+fn get_domain_and_uri(domain_or_uri: String, is_uri: bool) -> Option<DomainAndUri> {
+    Some(if is_uri {
+        DomainAndUri {
+            domain: Url::parse(&domain_or_uri).ok()?.host_str()?.to_string(),
+            uri: domain_or_uri,
+        }
+    } else {
+        DomainAndUri {
+            uri: format!("http://{}", domain_or_uri),
+            domain: domain_or_uri,
+        }
+    })
 }

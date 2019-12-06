@@ -2,7 +2,7 @@
 
 use crate::{
     schema::{infos, tasks},
-    AddDomainConfig,
+    AddWebsiteConfig,
 };
 use chrono::{DateTime, Utc};
 use diesel_derive_enum::DbEnum;
@@ -18,14 +18,15 @@ pub struct Task {
     id: i32,
     priority: i32,
     name: String,
-    domain: String,
-    domain_counter: i32,
+    website: String,
+    website_counter: i32,
     pub(crate) state: TaskState,
     restart_count: i32,
     last_modified: DateTime<Utc>,
     pub(crate) associated_data: Option<String>,
     groupid: i32,
     groupsize: i32,
+    uri: String,
 }
 
 impl Task {
@@ -40,13 +41,13 @@ impl Task {
     }
 
     #[inline]
-    pub fn domain(&self) -> &str {
-        &*self.domain
+    pub fn website(&self) -> &str {
+        &self.website
     }
 
     #[inline]
-    pub fn domain_counter(&self) -> i32 {
-        self.domain_counter
+    pub fn website_counter(&self) -> i32 {
+        self.website_counter
     }
 
     #[inline]
@@ -90,6 +91,11 @@ impl Task {
     pub fn groupsize(&self) -> i32 {
         self.groupsize
     }
+
+    #[inline]
+    pub fn uri(&self) -> &str {
+        &self.uri
+    }
 }
 
 #[derive(Identifiable, AsChangeset, Debug, PartialEq, Eq)]
@@ -106,14 +112,15 @@ pub struct TaskAbort<'a> {
 pub struct TaskInsert<'a> {
     pub priority: i32,
     pub name: &'a str,
-    pub domain: &'a str,
-    pub domain_counter: i32,
+    pub website: &'a str,
+    pub website_counter: i32,
     pub state: TaskState,
     pub restart_count: i32,
     pub last_modified: DateTime<Utc>,
     pub associated_data: Option<&'a str>,
     pub groupid: i32,
     pub groupsize: i32,
+    pub uri: &'a str,
 }
 
 #[derive(Debug, PartialEq, Eq, Copy, Clone, DbEnum)]
@@ -170,20 +177,21 @@ pub struct InfoInsert<'a> {
 }
 
 #[table_name = "tasks"]
-#[derive(Debug, QueryableByName)]
-pub struct DomainCounters {
-    pub(crate) domain: String,
-    pub(crate) domain_counter: i32,
-    pub(crate) groupid: i32,
+#[derive(Clone, Debug, QueryableByName)]
+pub struct WebsiteCounters {
+    pub website: String,
+    pub website_counter: i32,
+    pub groupid: i32,
 }
 
-impl DomainCounters {
-    pub fn into_add_domain_config(self, groupsize: u8) -> AddDomainConfig {
-        AddDomainConfig {
-            domain: self.domain,
-            domain_counter: self.domain_counter,
+impl WebsiteCounters {
+    pub fn into_add_website_config(self, groupsize: u8, uri: String) -> AddWebsiteConfig {
+        AddWebsiteConfig {
+            website: self.website,
+            website_counter: self.website_counter,
             groupid: self.groupid,
             groupsize,
+            uri,
         }
     }
 }
