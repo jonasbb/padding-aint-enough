@@ -59,7 +59,7 @@
         {
             "type": "shell",
             "label": "Build `debian-rust-nightly` Docker Container",
-            "command": "docker build -t debian-rust-nightly --rm .",
+            "command": "./build.sh",
             "group": "build",
             "options": {
                 "cwd": "${workspaceFolder}/docker",
