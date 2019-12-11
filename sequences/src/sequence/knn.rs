@@ -334,7 +334,7 @@ fn memorize_distance(
 
     // Only fill these with temporary values. They will get overwritten by the lambda below, but
     // they need to be initialized before the lambda.
-    let distance = *PRECOMPUTED_DISTANCES.get_or_insert_with(&key, || {
+    let distance = *PRECOMPUTED_DISTANCES.entry(key).or_insert_with(|| {
         validation_sample
             .distance_with_limit::<()>(trainings_sample, true, use_cr_mode)
             .0
