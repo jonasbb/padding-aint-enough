@@ -19,34 +19,6 @@
             "problemMatcher": []
         },
         {
-            "type": "process",
-            "label": "cargo watch",
-            "command": "cargo",
-            "args": [
-                "watch",
-                "-x",
-                "check --all",
-                "-x",
-                "clippy --all"
-            ],
-            "problemMatcher": {
-                "base": "$rustc",
-                "background": {
-                    "beginsPattern": "^\\[Running",
-                    "endsPattern": "^\\[Finished running. Exit status"
-                }
-            },
-            "isBackground": true,
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": false,
-                "clear": true
-            }
-        },
-        {
             "type": "shell",
             "label": "Build `dnscapture` Docker Container",
             "command": "docker build -t projects.cispa.saarland:5005/bushart/encrypted-dns/dnscapture --rm . && docker push projects.cispa.saarland:5005/bushart/encrypted-dns/dnscapture",
@@ -64,6 +36,19 @@
             "options": {
                 "cwd": "${workspaceFolder}/docker",
             },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Build Debian binaries",
+            "command": "cross build --release --target-dir=./target/cross --target=x86_64-unknown-linux-gnu -p taskmanager",
+            "options": {
+                "env": {
+                    // Needed to overwrite the lld linker which doesn't work on Debian 9
+                    "RUSTFLAGS": "-C link-args=-fuse-ld=gold"
+                }
+            },
+            "group": "build",
             "problemMatcher": []
         }
     ]
