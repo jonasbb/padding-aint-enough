@@ -14,4 +14,4 @@ failure = "0.1.6"
 misc_utils = "2.5.1"
 pyo3 = "0.8.3"
 sequences = { path = "../sequences", features = [ "read_pcap" ] }
-serde_json = "1.0.42"
+serde_json = "1.0.44"

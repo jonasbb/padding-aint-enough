@@ -321,7 +321,7 @@ where
     while let Some(dns) = client.next().await {
         out.truncate(0);
         // write placeholder length, replaced later
-        out.write_u16::<BigEndian>(0)?;
+        WriteBytesExt::write_u16::<BigEndian>(&mut out, 0)?;
         match dns.transpose_error()? {
             Payload::Payload(p) => {
                 info!("Send payload");
@@ -335,7 +335,8 @@ where
             }
         };
         let len = (out.len() - 2) as u16;
-        BigEndian::write_u16(&mut out[..], len);
+        // Overwrite the placeholder bytes
+        BigEndian::write_u16(&mut out[..2], len);
 
         total_bytes += out.len() as u64;
         server.write_all(&out).await?;
@@ -369,7 +370,7 @@ where
         info!("Received payload");
 
         out.truncate(0);
-        out.write_u16::<BigEndian>(dns.len() as u16)?;
+        WriteBytesExt::write_u16::<BigEndian>(&mut out, dns.len() as u16)?;
         out.extend_from_slice(&*dns);
 
         // Add 2 for the length of the length header

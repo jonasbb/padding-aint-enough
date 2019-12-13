@@ -257,7 +257,7 @@ where
 
         out.truncate(0);
         // write placeholder length, replaced later
-        out.write_u16::<BigEndian>(0)?;
+        WriteBytesExt::write_u16::<BigEndian>(&mut out, 0)?;
         {
             let mut encoder = BinEncoder::new(&mut out);
             encoder.set_offset(2);
@@ -304,7 +304,7 @@ where
         };
 
         out.truncate(0);
-        out.write_u16::<BigEndian>(dns.len() as u16)?;
+        WriteBytesExt::write_u16::<BigEndian>(&mut out, dns.len() as u16)?;
         out.extend_from_slice(&*dns);
 
         // Add 2 for the length of the length header
