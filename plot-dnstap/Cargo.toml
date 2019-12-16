@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 env_logger = "0.7.1"
 failure = "0.1.6"
-log = "0.4.8"
+log = "0.4.10"
 pyo3 = "0.8.3"
 sequences = { path = "../sequences" }
 serde_json = "1.0.44"

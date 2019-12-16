@@ -8,7 +8,7 @@ edition = "2018"
 chrono = "0.4.10"
 failure = "0.1.6"
 framestream = { path = "../framestream" }
-log = "0.4.8"
+log = "0.4.10"
 misc_utils = "2.5.1"
 protobuf = "2.8.1"
 trust-dns-proto = { git = "https://github.com/jonasbb/trust-dns", branch = "fix-empty-option-at-end-of-edns", default-features = false }
