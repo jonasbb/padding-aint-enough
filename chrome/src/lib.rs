@@ -62,6 +62,13 @@ pub enum ChromeDebuggerMessage<S = String> {
         rename_all = "camelCase"
     )]
     NetworkEventSourceMessageReceived { request_id: S },
+    #[serde(
+        rename = "Network.requestWillBeSentExtraInfo",
+        rename_all = "camelCase"
+    )]
+    NetworkRequestWillBeSentExtraInfo { request_id: S },
+    #[serde(rename = "Network.responseReceivedExtraInfo", rename_all = "camelCase")]
+    NetworkResponseReceivedExtraInfo { request_id: S },
 
     // Everything Target
     #[serde(rename = "Target.targetCreated", rename_all = "camelCase")]
