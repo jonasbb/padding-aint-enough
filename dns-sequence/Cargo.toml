@@ -8,7 +8,7 @@ edition = "2018"
 csv = "1.1.1"
 env_logger = "0.7.1"
 failure = "0.1.6"
-log = "0.4.8"
+log = "0.4.10"
 misc_utils = "2.5.1"
 once_cell = "1.2.0"
 prettytable-rs = { version = "0.8.0", default-features = false }
