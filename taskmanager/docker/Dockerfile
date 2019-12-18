@@ -1,4 +1,4 @@
-FROM fedora:29
+FROM fedora:31
 
 # Copy modified unbound rpms
 COPY rpms /rpms
@@ -17,7 +17,7 @@ RUN dnf -y --setopt=tsflags=nodocs update \
     && dnf -y --setopt=tsflags=nodocs install \
         autoconf \
         bind-utils \
-        chromium-headless \
+        firefox \
         fish \
         fstrm-devel \
         git \
@@ -31,14 +31,22 @@ RUN dnf -y --setopt=tsflags=nodocs update \
         nmap-ncat \
         openssl-devel \
         psmisc \
-        python3-requests \
-        python3-websocket-client \
+        python3-selenium \
         sudo \
         tcpdump \
+        wget \
+        /rpms/python?-unbound-1*.rpm \
         /rpms/unbound-1*.rpm \
         /rpms/unbound-libs-1*.rpm \
-        /rpms/python?-unbound-1*.rpm \
-    && dnf clean all
+    && dnf clean all \
+    && cd /tmp \
+    # Replace the new tab and browser start page with about:blank
+    && sed -i s@https://start.fedoraproject.org/@about:blank@g /usr/lib64/firefox/browser/defaults/preferences/firefox-redhat-default-prefs.js \
+    && wget https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz \
+    && tar -xvf geckodriver-*.tar.gz \
+    && mv geckodriver /usr/local/bin/ \
+    && rm geckodriver-*.tar.gz \
+    && true
 
 # Install stubby
 RUN true \
@@ -55,6 +63,8 @@ RUN true \
     && make \
     && make install \
     && ldconfig \
+    && cd / \
+    && rm -rf /tmp/getdns \
     && true
 
 # Add a non-privileged user to run chrome with

@@ -36,78 +36,27 @@ function run
     set -g DOMAIN (cat domain)
 
     set -g DNSTAP_SOCK /var/run/unbound/dnstap.sock
-    set -g SPECIAL_URL "file:///"
-    set -g CHROME_DEBUG_PORT 9229
 
     # Start fstrm_capture
     start_fstrm
-    sudo tcpdump -i any -f "port 853" -w "/output/website-log.pcap" &
+    sudo tcpdump -i any -f "port 853 or port 80 or port 443" -w "/output/website-log.pcap" &
     # Start DNS services
     # echo "Starting client proxy"
     # env SSLKEYLOGFILE=/output/website-log.tlskeys.txt RUST_LOG=info /usr/bin/client -l127.0.0.1:8853 -s1.0.0.1:853 --tls pass &
-    echo "Starting stubby"
-    stubby -g -C /etc/stubby/stubby.yml &
-    echo "Starting unbound"
-    sudo unbound-control start
-
-    # Start chrome process already
-    set -l TMPDIR (mktemp --directory)
-    set -l CHROME_TMPDIR (mktemp --directory)
-    pushd $TMPDIR
-    echo "Using temporary directories '$TMPDIR' and '$CHROME_TMPDIR'"
-    # create an empty "First Run" file to prevent chrome from showing the frist run dialog
-    touch "$CHROME_TMPDIR/First Run"
-    echo "Starting Chrome..."
-    # Disable the NXDOMAIN hijacking checks (7-15 random TLD lookups)
-    # https://superuser.com/questions/1447761/google-chrome-headless-disable-gpu-gives-a-network-error-on-centos
-    # Chromium seems to require user namespaces which are not available in stretch
-    # https://github.com/brave/brave-browser/issues/1986
-    /usr/lib64/chromium-browser/headless_shell \
-        --no-sandbox \
-        --disable-features=NetworkService \
-        --disable-gpu \
-        --disable-background-networking \
-        --headless \
-        --user-data-dir="$CHROME_TMPDIR" \
-        --remote-debugging-port="$CHROME_DEBUG_PORT" \
-        "$SPECIAL_URL" \
-        >/dev/null 2>&1 &
-    set -l CHROME_PID %last
-    echo "Started Chrome with PID $CHROME_PID"
-    # wait for chrome to open the debug port
-    while not nc -z localhost "$CHROME_DEBUG_PORT"
-        sleep 0.2
-        echo "Waiting on Chrome to start"
-    end
-    echo "Chrome started"
 
     # run the experiment
     echo "Start Experiment"
-    echo python3 "$SCRIPT" "$SPECIAL_URL" "$CHROME_DEBUG_PORT" "$DOMAIN"
-    python3 "$SCRIPT" "$SPECIAL_URL" "$CHROME_DEBUG_PORT" "$DOMAIN"
+    echo python3 "$SCRIPT" "$DOMAIN"
+    python3 "$SCRIPT" "$DOMAIN"
     echo "Done Experiment"
     echo
-    # after experiment
-    echo "After Experiment"
-    date +%s.%N >>"/output/website-log.dnstimes.txt"
-    dig @127.0.0.1 +tries=1 A "end.example." >/dev/null 2>&1
-    dig @127.0.0.1 +tries=1 A "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz." >/dev/null 2>&1
     sleep 2
-    # Chrome should have exited by now
-    killall headless_shell stubby # client
+    killall stubby # client
     sudo killall fstrm_capture tcpdump
     echo "Kill: " $status
     wait
     sleep 1
     echo
-
-    # copy experiment results
-    popd
-    mv --force "$TMPDIR"/website-log.json ./website-log.json
-
-    # cleanup
-    echo "Cleanup"
-    rm -rf "$TMPDIR" "$CHROME_TMPDIR"
 
     echo "Successfully finished"
 end

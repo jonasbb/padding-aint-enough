@@ -19,14 +19,30 @@
             "problemMatcher": []
         },
         {
-            "type": "shell",
+            "type": "process",
             "label": "Build `dnscapture` Docker Container",
-            "command": "docker build -t projects.cispa.saarland:5005/bushart/encrypted-dns/dnscapture --rm . && docker push projects.cispa.saarland:5005/bushart/encrypted-dns/dnscapture",
+            "command": "docker",
+            "args": [
+                "build",
+                "--rm",
+                "-t",
+                "dnscapture",
+                "."
+            ],
             "group": "build",
             "options": {
                 "cwd": "${workspaceFolder}/taskmanager/docker",
             },
-            "problemMatcher": []
+            "problemMatcher": [],
+        },
+        {
+            "type": "shell",
+            "label": "Publish `dnscapture` Docker Container",
+            "command": "docker tag dnscapture projects.cispa.saarland:5005/bushart/encrypted-dns/dnscapture && docker push projects.cispa.saarland:5005/bushart/encrypted-dns/dnscapture",
+            "dependsOn": [
+                "Build `dnscapture` Docker Container"
+            ],
+            "problemMatcher": [],
         },
         {
             "type": "shell",
@@ -44,6 +60,18 @@
             "command": "cross build --release --target-dir=./target/cross --target=x86_64-unknown-linux-gnu -p taskmanager",
             "group": "build",
             "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Test single run on `dnscapture` container",
+            "command": "rm -rf out/website-log.*; podman run --privileged --cpus 4 -v (pwd)/out:/output --dns=127.0.0.1 --shm-size=2g --sysctl net.ipv6.conf.all.disable_ipv6=1 --rm --name dnscapture -it dnscapture",
+            "options": {
+                "cwd": "${workspaceFolder}/taskmanager/docker",
+            },
+            "dependsOn": [
+                "Build `dnscapture` Docker Container"
+            ],
+            "problemMatcher": [],
         }
     ]
 }

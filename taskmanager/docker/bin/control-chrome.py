@@ -1,162 +1,221 @@
 #!/usr/bin/env python3
+# pylint: disable=global-statement
+
 import argparse
 import json
-import os.path
-import signal
 import subprocess
 import time
 import typing as t
+from subprocess import DEVNULL, STDOUT
 
-# import IPython
-import requests
-from websocket import (
-    WebSocketConnectionClosedException,
-    WebSocketTimeoutException,
-    create_connection as create_ws_connection,
-)
+from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
+from selenium.webdriver.firefox.options import Options
 
 # Wait this many seconds after every browser event before a browser close can occur
-WAIT_SECONDS = 7
-WEBPAGE_TOTAL_TIME = 30.0
+WEBPAGE_TOTAL_TIME = 20.0
+
+DNSTAP_SOCKET = "/var/run/unbound/dnstap.sock"
+DNSTAP_FILE = "/output/website-log.dnstap"
+
+PROC_STUBBY = None
+
+PREFERENCES = {
+    # Log console.log to stdout
+    "devtools.console.stdout.content": True,
+    "general.useragent.override": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36",
+    # Disable Telemetry and background network
+    "browser.safebrowsing.downloads.remote.enabled": False,
+    "extensions.blocklist.enabled": False,
+    "network.dns.disablePrefetch": True,
+    "network.prefetch-next": False,
+    "toolkit.telemetry.coverage.opt-out": True,
+    "toolkit.telemetry.enabled": False,
+    "toolkit.telemetry.unified": False,
+    # Try to disable all captive portal detection stuff
+    "network.captive-portal-service.enabled": False,
+    "captivedetect.canonicalURL": "",
+    "captivedetect.canonicalContent": "",
+    # "captivedetect.maxRetryCount": 0,
+    # "captivedetect.maxWaitingTime": 0,
+    # "captivedetect.pollingTime": 0,
+    # Make sure the browser never automatically loads a URL
+    "browser.startup.homepage": "about:blank",
+    "browser.newtabpage.pinned": "about:blank",
+    "geo.enabled": False,
+    "privacy.trackingprotection.pbmode.enabled": False,
+    "network.connectivity-service.enabled": False,
+}
 
 
-def handle_url(url: str, special_url: str, chrome_debug_port: int) -> None:
-    wsurl = get_wsurl_for_url(special_url, chrome_debug_port)
-    ws = create_ws_connection(wsurl, timeout=2)
-    ws.settimeout(WAIT_SECONDS + 1)
-    # Enable Network module
-    ws.send(json.dumps({"id": 0, "method": "Debugger.enable"}))
-    ws.send(
-        json.dumps(
-            {
-                "id": 10,
-                "method": "Debugger.setAsyncCallStackDepth",
-                "params": {"maxDepth": 64},
-            }
-        )
+def start_webdriver(profile_directory: t.Optional[str] = None) -> t.Any:
+    d = DesiredCapabilities.FIREFOX
+    d["loggingPrefs"] = {"browser": "ALL"}
+
+    options = Options()
+    options.headless = True
+    options.add_argument("--safe-mode")
+
+    profile = FirefoxProfile(profile_directory=profile_directory)
+
+    for key, value in PREFERENCES.items():
+        profile.set_preference(key, value)
+
+    # Generate a preference file which can be placed into the global hierarchy
+    pref_file = ""
+    for key, value in PREFERENCES.items():
+        pref_file += f"""pref({json.dumps(key)}, {json.dumps(value)});\n"""
+    print(pref_file)
+    subprocess.run(
+        [
+            "sudo",
+            "tee",
+            "-a",
+            "/usr/lib64/firefox/browser/defaults/preferences/aa-dnscapture.js",
+        ],
+        input=pref_file.encode(),
+        stdout=DEVNULL,
+        check=True,
     )
-    ws.send(json.dumps({"id": 20, "method": "Network.enable"}))
-    ws.send(
-        json.dumps(
-            {
-                "id": 30,
-                "method": "Network.setCacheDisabled",
-                "params": {"cacheDisabled": True},
-            }
-        )
+    subprocess.run(
+        [
+            "sudo",
+            "tee",
+            "-a",
+            "/usr/lib64/firefox/browser/defaults/preferences/zz-dnscapture.js",
+        ],
+        input=pref_file.encode(),
+        stdout=DEVNULL,
+        check=True,
     )
-    ws.send(
-        json.dumps(
-            {
-                "id": 31,
-                "method": "Network.setUserAgentOverride",
-                "params": {
-                    "userAgent": "Mozilla/5.0 (X11; Fedora; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.100 Safari/537.36"
-                },
-            }
-        )
+
+    driver = webdriver.Firefox(
+        options=options,
+        firefox_profile=profile,
+        capabilities=d,
+        log_path="/output/website-log.geckodriver.log",
     )
-    ws.send(
-        json.dumps(
-            {
-                "id": 32,
-                "method": "Target.setAutoAttach",
-                "params": {"autoAttach": True, "waitForDebuggerOnStart": True},
-            }
-        )
-    )
-    ws.send(
-        json.dumps(
-            {
-                "id": 34,
-                "method": "Target.setDiscoverTargets",
-                "params": {"discover": True},
-            }
-        )
-    )
-    time.sleep(1)
+    driver.set_window_size(1920, 1080)
+    driver.set_page_load_timeout(WEBPAGE_TOTAL_TIME)
+
+    return driver
+
+
+def handle_url(url: str) -> None:
+    driver_tmp = start_webdriver()
+    driver = start_webdriver(driver_tmp.profile.path)
+    driver_tmp.close()
+    del driver_tmp
+    time.sleep(2)
 
     # Execute before experiment scripts
-    print("Start 'before-experiment.fish'")
-    subprocess.run("/usr/bin/before-experiment.fish", stdin=subprocess.DEVNULL)
-    print("Finished 'before-experiment.fish'")
+    before_experiment()
+    driver.get(url)
+    # Wait some time after the page load to make sure it is really loaded
+    time.sleep(5)
+    driver.save_screenshot("/output/website-log.screenshot.png")
+    after_experiment()
 
-    # Go to target url
-    ws.send(
-        json.dumps(
-            {
-                "id": 40,
-                "method": "Page.navigate",
-                "params": {"url": url, "transitionType": "typed"},
-            }
+    driver.close()
+
+
+def before_experiment() -> None:
+    print("Start before experiment")
+    start_dns_software()
+    print("Flush")
+    subprocess.run(
+        ["sudo", "unbound-control", "flush_zone", "."], stderr=STDOUT, check=True
+    )
+    subprocess.run(
+        ["sudo", "unbound-control", "flush_bogus"], stderr=STDOUT, check=True
+    )
+    subprocess.run(
+        ["sudo", "unbound-control", "flush_zone", "."], stderr=STDOUT, check=True
+    )
+    subprocess.run(
+        ["sudo", "unbound-control", "flush_negative"], stderr=STDOUT, check=True
+    )
+    subprocess.run(
+        ["sudo", "unbound-control", "flush_infra", "all"], stderr=STDOUT, check=True
+    )
+
+    print("Load cache file")
+    with open("/output/cache.dump", "rb") as fin:
+        subprocess.run(
+            ["sudo", "unbound-control", "load_cache"],
+            stdin=fin,
+            stderr=STDOUT,
+            check=True,
         )
+
+    print("start.example marker query")
+    subprocess.run(
+        [
+            "dig",
+            "@127.0.0.1",
+            "+tries=1",
+            "A",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.",
+        ],
+        stdout=DEVNULL,
+        stderr=DEVNULL,
+        check=True,
     )
-
-    # close browser if SIGALRM is received
-    def close_browser_timeout(signum: int, _frame: t.Any) -> None:
-        if signum == signal.SIGALRM:
-            print("Close Chrome due to extended inactivity")
-            ws.send(json.dumps({"id": 1000, "method": "Browser.close"}))
-
-    signal.signal(signal.SIGALRM, close_browser_timeout)
-
-    start = time.monotonic()
-    msglist: t.List[t.Any] = list()
-    try:
-        for msg in ws:
-            if time.monotonic() - start > WEBPAGE_TOTAL_TIME:
-                print("Close Chrome due to total wall time limit")
-                break
-            signal.alarm(WAIT_SECONDS)
-            data = json.loads(msg)
-            if "id" in data:
-                continue
-            msglist.append(data)
-        else:
-            print("No more websocket messages from Chrome")
-    except WebSocketTimeoutException:
-        print("WEBSOCKET TIMEOUT EXCEPTION")
-    except WebSocketConnectionClosedException:
-        pass
-    finally:
-        json.dump(msglist, open("website-log.json", "w"))
-
-
-def get_wsurl_for_url(url: str, port: int) -> str:
-    """
-    Return the corresponding websocket URL for the tab which currently has loaded the URL `url`.
-
-    Raises an exception if the URL is not found.
-    """
-    # load debugger manifest file
-    res = requests.get(f"http://localhost:{port}/json")
-    res.raise_for_status()
-    manifest = res.json()
-    for elem in manifest:
-        if elem["url"] == url:
-            return elem["webSocketDebuggerUrl"]
-    # nothing found
-    raise Exception(
-        f"The Chrome debugger does not have a tab instance for the URL '{url}'"
+    subprocess.run(
+        ["dig", "@127.0.0.1", "+tries=1", "A", "start.example."],
+        stdout=DEVNULL,
+        stderr=DEVNULL,
+        check=True,
     )
+    with open("/output/website-log.dnstimes.txt", "at") as fout:
+        subprocess.run(["date", "+%s.%N"], stdout=fout, check=True)
+    print("Finished before experiment")
+
+
+def after_experiment() -> None:
+    print("Start after experiment")
+
+    print("end.example marker query")
+    with open("/output/website-log.dnstimes.txt", "at") as fout:
+        subprocess.run(["date", "+%s.%N"], stdout=fout, check=True)
+    subprocess.run(
+        ["dig", "@127.0.0.1", "+tries=1", "A", "end.example."],
+        stdout=DEVNULL,
+        stderr=DEVNULL,
+        check=True,
+    )
+    subprocess.run(
+        [
+            "dig",
+            "@127.0.0.1",
+            "+tries=1",
+            "A",
+            "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.",
+        ],
+        stdout=DEVNULL,
+        stderr=DEVNULL,
+        check=True,
+    )
+    print("Finished after experiment")
+
+
+def start_dns_software() -> None:
+    global PROC_STUBBY
+
+    print("Starting Stubby and Unbound")
+    PROC_STUBBY = subprocess.Popen(["stubby", "-g", "-C", "/etc/stubby/stubby.yml"])
+    subprocess.run(["sudo", "unbound-control", "start"], stderr=STDOUT, check=True)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "marker_url",
-        metavar="marker",
-        help="Marker URL used internally. Chrome must have this URL open",
-    )
-    parser.add_argument(
-        "port", metavar="PORT", help="Port for Chrome's remote debugging"
-    )
-    parser.add_argument(
         "url", metavar="URL", help="URL for which network dependencies should be loaded"
     )
     args = parser.parse_args()
 
-    handle_url(args.url, args.marker_url, args.port)
+    handle_url(args.url)
 
 
 if __name__ == "__main__":

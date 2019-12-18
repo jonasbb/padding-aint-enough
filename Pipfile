@@ -2,10 +2,10 @@
 url = "https://pypi.org/simple"
 verify_ssl = true
 name = "pypi"
-
 # https://www.python.org/dev/peps/pep-0440/#version-specifiers
 # ~=X.Y ==> >=X.Y, ==X.*
 # ~=X.Y.Z => >=X.Y.Z, ==X.Y.*
+
 [packages]
 ipython = "~=7.8"
 keras = "~=2.2"
@@ -13,13 +13,12 @@ matplotlib = "~=3.1"
 natsort = "~=6.0"
 numpy = "~=1.14"
 python-dateutil = "~=2.7"
-requests = "~=2.18"
 scipy = "~=1.0"
+selenium = "~=3.141"
 talos = "~=0.6.3"
 tensorflow = "==1.14.0"
 tensorflow-gpu = "==1.14.0"
 tldextract = "~=2.2"
-websocket-client = "~=0.56.0"
 
 [dev-packages]
 black = "==19.10b0"
