@@ -79,7 +79,11 @@ enum SubCommand {
     },
     /// Start executing the tasks
     #[structopt(name = "run")]
-    Run,
+    Run {
+        /// Skip the creating step of a new DNS cache and use the old existing one
+        #[structopt(long)]
+        skip_dns_cache_prefetching: bool,
+    },
     /// Print the CLI arguments to stdout
     #[structopt(name = "debug")]
     Debug,
@@ -153,7 +157,7 @@ fn run() -> Result<(), Error> {
 
     match &cli_args.cmd {
         SubCommand::InitTaskSet { .. } => run_init(cli_args.cmd, config),
-        SubCommand::Run => run_exec(cli_args.cmd, config),
+        SubCommand::Run { .. } => run_exec(cli_args.cmd, config),
         SubCommand::Debug => run_debug(cli_args, config),
         SubCommand::AddRecurring { .. } => run_add_recurring(cli_args.cmd, config),
     }
@@ -220,7 +224,10 @@ fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
 
 #[allow(clippy::needless_pass_by_value)]
 fn run_exec(cmd: SubCommand, config: Config) -> Result<(), Error> {
-    if let SubCommand::Run = cmd {
+    if let SubCommand::Run {
+        skip_dns_cache_prefetching,
+    } = cmd
+    {
         let taskmgr = TaskManager::new(&*config.get_database_path().to_string_lossy())
             .context("Cannot create TaskManager")?;
         let config = Arc::new(config);
@@ -236,7 +243,8 @@ fn run_exec(cmd: SubCommand, config: Config) -> Result<(), Error> {
             ensure_docker_image_exists(&config.docker_image).context("Check for docker image")?;
         }
 
-        init_global_environment(&config).context("Could not setup the global environment")?;
+        init_global_environment(&config, skip_dns_cache_prefetching)
+            .context("Could not setup the global environment")?;
 
         let mut handles = Vec::new();
 
@@ -689,9 +697,13 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
 }
 
 /// Make sure all necessary files are copied to the VM
-fn init_global_environment(config: &Config) -> Result<(), Error> {
+fn init_global_environment(config: &Config, skip_dns_cache_prefetching: bool) -> Result<(), Error> {
     // Create global tmp directory
-    update_unbound_cache_dump(config)
+    if !skip_dns_cache_prefetching {
+        update_unbound_cache_dump(config)?;
+    }
+
+    Ok(())
 }
 
 fn execute_or_restart_task<F>(
