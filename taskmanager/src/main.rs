@@ -426,7 +426,7 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 for (fname, required) in &[
                     (&*DNSTAP_FILE_NAME, true),
                     (&*LOG_FILE, true),
-                    (&*CHROME_LOG_FILE_NAME, true),
+                    (&*CHROME_LOG_FILE_NAME, false),
                     (&*PCAP_FILE_NAME, true),
                     (&*TIMING_FILE_NAME, true),
                     (&*TLSKEYS_FILE_NAME, false),
@@ -576,7 +576,7 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                 for (fname, required) in &[
                     (&*DNSTAP_FILE_NAME, true),
                     (&*LOG_FILE, true),
-                    (&*CHROME_LOG_FILE_NAME, true),
+                    (&*CHROME_LOG_FILE_NAME, false),
                     (&*PCAP_FILE_NAME, true),
                     (&*TIMING_FILE_NAME, true),
                     (&*TLSKEYS_FILE_NAME, false),
@@ -645,29 +645,40 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 }
 
                 // if a file is loadable, it passes all easy sanity checks
-                Sequence::from_path(&local_path.join(task.name()).join(&*DNSTAP_FILE_NAME))
-                    .with_context(|_| {
-                        format!(
-                            "The task {} generated invalid data and gets restarted.",
-                            task.name()
-                        )
+                let dnstap_file = local_path.join(task.name()).join(&*DNSTAP_FILE_NAME);
+                if dnstap_file.exists() {
+                    Sequence::from_path(&dnstap_file).with_context(|_| {
+                        format!("DNSTAP file is not loadable for task {}.", task.name())
                     })?;
+                }
+
+                // if a file is loadable, it passes all easy sanity checks
+                let pcap_file = local_path.join(task.name()).join(&*PCAP_FILE_NAME);
+                if pcap_file.exists() {
+                    Sequence::from_path(&pcap_file).with_context(|_| {
+                        format!("PCAP file is not loadable for task {}.", task.name())
+                    })?;
+                }
 
                 let chrome_log = local_path.join(task.name()).join(&*CHROME_LOG_FILE_NAME);
-                // open Chrome file and parse it
-                let content = read_to_string(&chrome_log)
-                    .with_context(|_| format!("Error while reading '{}'", chrome_log.display()))?;
-                let msgs: Vec<ChromeDebuggerMessage> = serde_json::from_str(&content)
-                    .with_context(|_| {
-                        format!("Error while deserializing '{}'", chrome_log.display())
+                // The log does not exist with the selenium driver
+                if chrome_log.exists() {
+                    // open Chrome file and parse it
+                    let content = read_to_string(&chrome_log).with_context(|_| {
+                        format!("Error while reading '{}'", chrome_log.display())
                     })?;
-                if let Some(err_reason) = chrome_log_contains_errors(&msgs) {
-                    bail!(
-                        "Fail task {} ({}) due to chrome log: {}",
-                        task.name(),
-                        task.id(),
-                        err_reason
-                    );
+                    let msgs: Vec<ChromeDebuggerMessage> = serde_json::from_str(&content)
+                        .with_context(|_| {
+                            format!("Error while deserializing '{}'", chrome_log.display())
+                        })?;
+                    if let Some(err_reason) = chrome_log_contains_errors(&msgs) {
+                        bail!(
+                            "Fail task {} ({}) due to chrome log: {}",
+                            task.name(),
+                            task.id(),
+                            err_reason
+                        );
+                    }
                 }
 
                 taskmgr.mark_results_checked_single(&mut task)
@@ -739,7 +750,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                 for (filename, new_file_ext, required) in &[
                     (&*DNSTAP_FILE_NAME, "dnstap.xz", true),
                     (&*LOG_FILE, "log.xz", true),
-                    (&*CHROME_LOG_FILE_NAME, "json.xz", true),
+                    (&*CHROME_LOG_FILE_NAME, "json.xz", false),
                     (&*PCAP_FILE_NAME, "pcap.xz", true),
                     (&*TIMING_FILE_NAME, "dnstimes.txt.xz", true),
                     (&*TLSKEYS_FILE_NAME, "tlskeys.txt.xz", false),
