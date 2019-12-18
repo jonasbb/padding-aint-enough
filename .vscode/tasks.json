@@ -42,12 +42,6 @@
             "type": "shell",
             "label": "Build Debian binaries",
             "command": "cross build --release --target-dir=./target/cross --target=x86_64-unknown-linux-gnu -p taskmanager",
-            "options": {
-                "env": {
-                    // Needed to overwrite the lld linker which doesn't work on Debian 9
-                    "RUSTFLAGS": "-C link-args=-fuse-ld=gold"
-                }
-            },
             "group": "build",
             "problemMatcher": []
         }

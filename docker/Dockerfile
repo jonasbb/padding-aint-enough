@@ -1,4 +1,4 @@
-FROM debian:9
+FROM debian:10
 
 # The Rust toolchain to use when building our image.  Set by `hooks/build`.
 ARG TOOLCHAIN=nightly-2019-11-17
@@ -11,6 +11,7 @@ RUN true && \
         curl \
         liblzma-dev \
         libpq-dev \
+        lld \
         sudo \
     && \
     apt-get clean && \
