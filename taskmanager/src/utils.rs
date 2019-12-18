@@ -71,6 +71,7 @@ pub fn docker_run(
         "/tmp/.X11-unix:/tmp/.X11-unix:ro",
         "--dns=127.0.0.1",
         "--shm-size=2g",
+        "--sysctl=net.ipv6.conf.all.disable_ipv6=1",
         "--rm",
     ])
     .arg(image)
