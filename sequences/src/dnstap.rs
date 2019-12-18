@@ -19,7 +19,7 @@ use dnstap::{
     protos::{self, DnstapContent},
     sanity_check_dnstap,
 };
-use failure::{bail, format_err, Error};
+use failure::{bail, format_err, Error, ResultExt};
 use log::{debug, info};
 use serde::Serialize;
 use std::{collections::BTreeMap, path::Path};
@@ -113,8 +113,9 @@ pub fn build_precision_sequence(dnstap_file: &Path) -> Result<PrecisionSequence,
 /// The output needs to be filtered if only client or forwarder messages should be included
 pub fn load_matching_query_responses_from_dnstap(dnstap_file: &Path) -> Result<Vec<Query>, Error> {
     // process dnstap if available
-    let mut events: Vec<protos::Dnstap> =
-        process_dnstap(&*dnstap_file)?.collect::<Result<_, Error>>()?;
+    let mut events: Vec<protos::Dnstap> = process_dnstap(&*dnstap_file)?
+        .collect::<Result<_, Error>>()
+        .with_context(|_| "Failed to read the raw DNSTAP file")?;
 
     // the dnstap events can be out of order, so sort them by timestamp
     // always take the later timestamp if there are multiple
