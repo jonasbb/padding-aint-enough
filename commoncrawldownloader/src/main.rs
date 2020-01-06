@@ -105,13 +105,13 @@ fn run() -> Result<(), Error> {
     let mut index_map: BTreeMap<String, u16> = BTreeMap::default();
 
     for line in output.lines() {
-        let mut parts = line.split("\t");
+        let mut parts = line.split('\t');
         // Contains SURT and timestamp, e.g.: 0,0,1)/ 20191118114721
         // http://crawler.archive.org/articles/user_manual/glossary.html#surt
         let part1 = parts.next().expect("Failed getting SURT part in index");
         // Contains the data file, e.g.: cdx-00159.gz
         let data_file = parts.next().expect("Failed to get data file from index");
-        let domain = part1.split(")").next().expect("Failed to extract SURT");
+        let domain = part1.split(')').next().expect("Failed to extract SURT");
         let data_file_number: u16 = data_file[4..9]
             .parse()
             .expect("Failed to parse data file id");
@@ -161,8 +161,7 @@ fn run() -> Result<(), Error> {
         } {
             let json = line
                 .splitn(3, ' ')
-                .skip(2)
-                .next()
+                .nth(2)
                 .expect("Failed to extract the JSON part of the data file");
             let UrlContainer { url, status } =
                 serde_json::from_str(json).expect("Failed to parse the JSON");
@@ -228,7 +227,7 @@ fn domain_to_surt(domain: &str) -> String {
     domain
         .rsplit('.')
         .fold(String::with_capacity(domain.len()), |mut res, part| {
-            if res.len() > 0 {
+            if !res.is_empty() {
                 res.push(',');
             }
             res.push_str(part);
@@ -255,10 +254,11 @@ where
     for domain in domains {
         let domain = domain.as_ref();
         let host_str = url_parsed.host_str().expect("The URL has not host part");
+        // Offset directly before the host of the domain starts
+        let offset_before_host = host_str.len() - domain.len() - 1;
         if host_str == domain
             || (host_str.ends_with(domain)
-                && &host_str[host_str.len() - domain.len() - 1..=host_str.len() - domain.len() - 1]
-                    == ".")
+                && &host_str[offset_before_host..=offset_before_host] == ".")
         {
             return true;
         }

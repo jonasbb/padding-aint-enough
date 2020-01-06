@@ -343,7 +343,7 @@ fn run_add_recurring(cmd: SubCommand, config: Config) -> Result<(), Error> {
                     .into_iter()
                     .zip(uris_per_domain.values())
                     .flat_map(|(mut wc, uris)| {
-                        uris.into_iter().map(move |uri| {
+                        uris.iter().map(move |uri| {
                             let res = wc.clone().into_add_website_config(
                                 config.per_domain_datasets_repeated_measurements,
                                 uri.clone(),
