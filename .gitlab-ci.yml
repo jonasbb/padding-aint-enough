@@ -63,8 +63,8 @@ test:cargo:
     # Cleanup old leftover crate files
     - cargo cache --autoclean --keep-duplicate-crates 5
 
-shellcheck:
-  image: koalaman/shellcheck-alpine
-  cache: {}
-  script:
-    - shellcheck --color=always $(find . -name \*.sh)
+# shellcheck:
+#   image: koalaman/shellcheck-alpine
+#   cache: {}
+#   script:
+#     - shellcheck --color=always $(find . -name \*.sh)
