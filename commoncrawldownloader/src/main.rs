@@ -65,7 +65,7 @@ fn run() -> Result<(), Error> {
     env_logger::init();
     let cli_args = CliArgs::from_args();
 
-    let response = reqwest::get(
+    let response = reqwest::blocking::get(
         "https://commoncrawl.s3.amazonaws.com/crawl-data/CC-MAIN-2019-47/cc-index.paths.gz",
     )?;
     if !response.status().is_success() {
@@ -93,7 +93,7 @@ fn run() -> Result<(), Error> {
 
     let mut url = BASEURL.to_string();
     url += &index_file;
-    let mut response = reqwest::get(&url)?;
+    let mut response = reqwest::blocking::get(&url)?;
     if !response.status().is_success() {
         bail!("Error while fetching cluster.idx: {}", response.status());
     }
@@ -130,7 +130,8 @@ fn run() -> Result<(), Error> {
             accu.entry(index).or_default().push(domain.to_string());
             accu
         });
-    // println!("{:#?}", commoncrawl_file_to_domain);
+    dbg!(&commoncrawl_file_to_domain);
+    // panic!("REACHED END");
 
     for (idx, domains) in commoncrawl_file_to_domain.into_iter() {
         let mut url = BASEURL.to_string();
@@ -138,7 +139,7 @@ fn run() -> Result<(), Error> {
         let url = url.replace("cdx-00000", &format!("cdx-{:0>5}", idx));
         println!("Download {}\n  to search for domains: {:?}", url, domains);
 
-        let response = reqwest::get(&url)?;
+        let response = reqwest::blocking::get(&url)?;
         if !response.status().is_success() {
             bail!(
                 "Error while fetching cdx-{:0>5}.gz: {}",
