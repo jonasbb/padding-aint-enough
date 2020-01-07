@@ -204,13 +204,13 @@ where
     // Lookup the previous and next entry of needle and extract the index number.
     // The previous number is always bounded by 0.
     let prev = map
-        .range((Bound::Unbounded, Bound::Excluded(next_domain.as_ref())))
+        .range((Bound::Unbounded, Bound::Excluded(prev_domain.as_ref())))
         .map(|(_key, &index)| index)
         .next_back()
         .unwrap_or(0);
     // The next value is bounded by the largest index in the map
     let next = map
-        .range((Bound::Excluded(prev_domain.as_ref()), Bound::Unbounded))
+        .range((Bound::Excluded(next_domain.as_ref()), Bound::Unbounded))
         .map(|(_key, &index)| index)
         .next()
         .unwrap_or_else(|| {
