@@ -255,8 +255,11 @@ where
     for domain in domains {
         let domain = domain.as_ref();
         let host_str = url_parsed.host_str().expect("The URL has not host part");
-        // Offset directly before the host of the domain starts
-        let offset_before_host = host_str.len() - domain.len() - 1;
+        // Offset directly before the host of the domain starts or 0, if the other values are larger
+        let offset_before_host = host_str
+            .len()
+            .saturating_sub(domain.len())
+            .saturating_sub(1);
         if host_str == domain
             || (host_str.ends_with(domain)
                 && &host_str[offset_before_host..=offset_before_host] == ".")
@@ -295,5 +298,10 @@ fn test_url_has_domain_or_subdomain_of() {
     assert!(!url_has_domain_or_subdomain_of(
         "https://amazoncomamazon.com/?cat=1",
         &["amazon.com"]
+    ));
+
+    assert!(!url_has_domain_or_subdomain_of(
+        "https://short.com/",
+        &["something.very.very.long"]
     ));
 }
