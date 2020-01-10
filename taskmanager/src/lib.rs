@@ -13,6 +13,7 @@ use log::info;
 use misc_utils::fs::read_to_string;
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::HashMap,
     fmt::{self, Debug, Display},
     path::{Path, PathBuf},
     sync::{Arc, Mutex},
@@ -562,6 +563,8 @@ pub struct Config {
     pub refresh_cache_seconds: u32,
     pub docker_image: String,
     pub ssh: Option<SshConfig>,
+    #[serde(default)]
+    pub env: Environment,
 }
 
 impl Config {
@@ -595,4 +598,10 @@ impl Config {
 pub struct SshConfig {
     pub remote_name: String,
     pub docker_image: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Default)]
+pub struct Environment {
+    #[serde(flatten)]
+    pub env: HashMap<String, String>,
 }

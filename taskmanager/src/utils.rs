@@ -3,6 +3,7 @@
 use failure::{bail, Error, ResultExt};
 use log::trace;
 use std::{
+    collections::HashMap,
     ffi::OsStr,
     fs, io,
     os::unix::fs::PermissionsExt,
@@ -51,6 +52,7 @@ pub fn docker_run(
     host_dir: &Path,
     command: Option<&str>,
     timeout: Duration,
+    environment: &HashMap<String, String>,
 ) -> Result<ExitStatus, Error> {
     // Change permissions, such that if a different user than the docker user creates the
     // host_dir, the docker container can still write to it
@@ -77,6 +79,9 @@ pub fn docker_run(
     .arg(image)
     .stdout(Stdio::null())
     .stderr(Stdio::null());
+    for (var_name, var_value) in environment {
+        cmd.args(&["-e", &format!("{}={}", var_name, var_value)]);
+    }
     if let Some(command) = command {
         cmd.arg(command);
     }
@@ -116,6 +121,7 @@ pub fn docker_run_ssh(
     host_dir: &Path,
     command: Option<&str>,
     timeout: Duration,
+    environment: &HashMap<String, String>,
 ) -> Result<ExitStatus, Error> {
     // Change permissions, such that if a different user than the docker user creates the
     // host_dir, the docker container can still write to it
@@ -146,6 +152,9 @@ pub fn docker_run_ssh(
     ])
     .stdout(Stdio::null())
     .stderr(Stdio::null());
+    for (var_name, var_value) in environment {
+        cmd.args(&["-e", &format!("{}={}", var_name, var_value)]);
+    }
     if let Some(command) = command {
         cmd.arg(command);
     }

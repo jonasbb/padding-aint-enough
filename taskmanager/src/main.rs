@@ -425,6 +425,7 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                     tmp_dir.path(),
                     None,
                     Duration::new(60, 0),
+                    &config.env.env,
                 )
                 .with_context(|_| format!("{}: Failed to start the measurements", task.name()))?;
                 debug!("{}: Copy files from mount point to local back", task.name());
@@ -541,6 +542,7 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                     remote_tmp_dir.as_ref(),
                     None,
                     Duration::new(60, 0),
+                    &config.env.env,
                 )
                 .with_context(|_| format!("{}: Failed to start the measurements", task.name()))?;
                 debug!("{}: Copy files from mount point to local back", task.name());
@@ -890,6 +892,7 @@ fn update_unbound_cache_dump(config: &Config) -> Result<(), Error> {
         tmp_dir.path(),
         Some("/usr/bin/create-cache-dump.fish"),
         Duration::new(120, 0),
+        &config.env.env,
     )
     .context("Failed to run docker image to create a cache dump")?;
     if !status.success() {

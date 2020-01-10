@@ -11,6 +11,10 @@ refresh_cache_seconds = 3600
 # docker_image = "projects.cispa.saarland:5005/bushart/encrypted-dns/dnscapture"
 docker_image = "dnscapture"
 
+# # Pass these environment variables to the docker process
+# [env]
+# USE_TOR="1"
+
 # [ssh]
 # remote_name = "dnspi"
 # docker_image = "projects.cispa.saarland:5005/bushart/encrypted-dns/dnscapture-pi"
