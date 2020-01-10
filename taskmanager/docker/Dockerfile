@@ -83,7 +83,7 @@ RUN useradd --create-home docker \
 # Install Tor Browser Bundle
 RUN true \
     && cd /tmp \
-    && wget https://www.torproject.org/dist/torbrowser/9.0.2/tor-browser-linux64-9.0.2_en-US.tar.xz \
+    && wget https://www.torproject.org/dist/torbrowser/9.0.3/tor-browser-linux64-9.0.3_en-US.tar.xz \
     && tar -xvf tor-browser-linux64-*.tar.xz \
     && mv tor-browser_en-US /opt \
     && rm -rf tor-browser-linux64-*.tar.xz \
