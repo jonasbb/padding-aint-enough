@@ -43,7 +43,9 @@ function run
     # 80: HTTP
     # 443: HTTPs, Tor
     # 853: DoT
-    sudo tcpdump -i any -f "port 853 or port 80 or port 443" -w "/output/website-log.pcap" &
+    # --relinquish-privileges=root prevents tcpdump from dropping privileges to tcpdump, since this causes some unknown error chown-ing the pcap file
+    # This only happens in the docker environment of the dnscapture server, but not locally using podmanq
+    sudo tcpdump -i any -f "port 853 or port 80 or port 443" --relinquish-privileges=root -w "/output/website-log.pcap" &
     # Start DNS services
     # echo "Starting client proxy"
     # env SSLKEYLOGFILE=/output/website-log.tlskeys.txt RUST_LOG=info /usr/bin/client -l127.0.0.1:8853 -s1.0.0.1:853 --tls pass &
