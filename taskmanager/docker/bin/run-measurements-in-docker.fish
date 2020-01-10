@@ -39,6 +39,10 @@ function run
 
     # Start fstrm_capture
     start_fstrm
+    # Ports
+    # 80: HTTP
+    # 443: HTTPs, Tor
+    # 853: DoT
     sudo tcpdump -i any -f "port 853 or port 80 or port 443" -w "/output/website-log.pcap" &
     # Start DNS services
     # echo "Starting client proxy"

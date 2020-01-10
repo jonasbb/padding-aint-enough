@@ -6,7 +6,6 @@ COPY rpms /rpms
 # Update system to newest version
 #
 # Install all needed packages
-# `bind-utils` for `dig`
 # `iproute` for `ss`
 # `libglvnd-glx` to fix the missing libGL.so
 # `mesa-dri-drivers` to fix a missing DRI library
@@ -15,8 +14,9 @@ COPY rpms /rpms
 # `psmisc` for `killall`
 RUN dnf -y --setopt=tsflags=nodocs update \
     && dnf -y --setopt=tsflags=nodocs install \
+        /usr/bin/dig \
+        /usr/bin/xz \
         autoconf \
-        bind-utils \
         firefox \
         fish \
         fstrm-devel \
@@ -39,6 +39,9 @@ RUN dnf -y --setopt=tsflags=nodocs update \
         /rpms/unbound-1*.rpm \
         /rpms/unbound-libs-1*.rpm \
     && dnf clean all \
+    && pip install \
+        stem \
+        tbselenium \
     && cd /tmp \
     # Replace the new tab and browser start page with about:blank
     && sed -i s@https://start.fedoraproject.org/@about:blank@g /usr/lib64/firefox/browser/defaults/preferences/firefox-redhat-default-prefs.js \
@@ -75,6 +78,16 @@ RUN useradd --create-home docker \
     && mkdir /run/user/`id -u docker` \
     && chmod -R 700 /run/user/`id -u docker` \
     && chown -R docker:docker /run/user/`id -u docker` \
+    && true
+
+# Install Tor Browser Bundle
+RUN true \
+    && cd /tmp \
+    && wget https://www.torproject.org/dist/torbrowser/9.0.2/tor-browser-linux64-9.0.2_en-US.tar.xz \
+    && tar -xvf tor-browser-linux64-*.tar.xz \
+    && mv tor-browser_en-US /opt \
+    && rm -rf tor-browser-linux64-*.tar.xz \
+    && chown -R docker:docker /opt/tor-browser_en-US \
     && true
 
 COPY stubby.yml /etc/stubby/stubby.yml

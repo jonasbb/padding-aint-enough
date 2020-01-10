@@ -2,16 +2,22 @@
 # pylint: disable=global-statement
 
 import argparse
-import json
+import os
 import subprocess
 import time
 import typing as t
 from subprocess import DEVNULL, STDOUT
 
+import tbselenium.common as cm
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.firefox.firefox_profile import FirefoxProfile
 from selenium.webdriver.firefox.options import Options
+from tbselenium.tbdriver import TorBrowserDriver
+from tbselenium.utils import launch_tbb_tor_with_stem
+
+# Configuration for the Tor Browser Bundle
+TBB_DIR = "/opt/tor-browser_en-US"
 
 # Wait this many seconds after every browser event before a browser close can occur
 WEBPAGE_TOTAL_TIME = 20.0
@@ -20,6 +26,7 @@ DNSTAP_SOCKET = "/var/run/unbound/dnstap.sock"
 DNSTAP_FILE = "/output/website-log.dnstap"
 
 PROC_STUBBY = None
+PROC_TOR_PROCESS = None
 
 PREFERENCES = {
     # Log console.log to stdout
@@ -50,6 +57,8 @@ PREFERENCES = {
 
 
 def start_webdriver(profile_directory: t.Optional[str] = None) -> t.Any:
+    global PROC_TOR_PROCESS
+
     d = DesiredCapabilities.FIREFOX
     d["loggingPrefs"] = {"browser": "ALL"}
 
@@ -62,40 +71,26 @@ def start_webdriver(profile_directory: t.Optional[str] = None) -> t.Any:
     for key, value in PREFERENCES.items():
         profile.set_preference(key, value)
 
-    # Generate a preference file which can be placed into the global hierarchy
-    pref_file = ""
-    for key, value in PREFERENCES.items():
-        pref_file += f"""pref({json.dumps(key)}, {json.dumps(value)});\n"""
-    print(pref_file)
-    subprocess.run(
-        [
-            "sudo",
-            "tee",
-            "-a",
-            "/usr/lib64/firefox/browser/defaults/preferences/aa-dnscapture.js",
-        ],
-        input=pref_file.encode(),
-        stdout=DEVNULL,
-        check=True,
-    )
-    subprocess.run(
-        [
-            "sudo",
-            "tee",
-            "-a",
-            "/usr/lib64/firefox/browser/defaults/preferences/zz-dnscapture.js",
-        ],
-        input=pref_file.encode(),
-        stdout=DEVNULL,
-        check=True,
-    )
+    if os.getenv("USE_TOR", None) is not None:
+        if PROC_TOR_PROCESS:
+            PROC_TOR_PROCESS.kill()
+        PROC_TOR_PROCESS = launch_tbb_tor_with_stem(tbb_path=TBB_DIR)
+        driver = TorBrowserDriver(
+            TBB_DIR,
+            tor_cfg=cm.USE_STEM,
+            options=options,
+            tbb_profile_path=profile,
+            capabilities=d,
+            tbb_logfile_path="/output/website-log.geckodriver.log",
+        )
+    else:
+        driver = webdriver.Firefox(
+            options=options,
+            firefox_profile=profile,
+            capabilities=d,
+            log_path="/output/website-log.geckodriver.log",
+        )
 
-    driver = webdriver.Firefox(
-        options=options,
-        firefox_profile=profile,
-        capabilities=d,
-        log_path="/output/website-log.geckodriver.log",
-    )
     driver.set_window_size(1920, 1080)
     driver.set_page_load_timeout(WEBPAGE_TOTAL_TIME)
 
@@ -209,6 +204,9 @@ def start_dns_software() -> None:
 
 
 def main() -> None:
+    # Monkey patch the tbselenium dependency
+    TorBrowserDriver.__init__ = new_init
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "url", metavar="URL", help="URL for which network dependencies should be loaded"
@@ -216,6 +214,53 @@ def main() -> None:
     args = parser.parse_args()
 
     handle_url(args.url)
+
+
+# This is needed to add the options and capabilities to the constructor such that they can be passed
+# down to the real Firefox webdriver.
+#
+# pylint: disable=too-many-arguments
+def new_init(
+    self: t.Any,
+    tbb_path: str = "",
+    tor_cfg: int = cm.USE_RUNNING_TOR,
+    tbb_fx_binary_path: str = "",
+    tbb_profile_path: str = "",
+    tbb_logfile_path: str = "",
+    tor_data_dir: str = "",
+    pref_dict: t.Optional[t.Dict[str, t.Any]] = None,
+    socks_port: t.Optional[int] = None,
+    control_port: t.Optional[int] = None,
+    extensions: t.Optional[t.List[str]] = None,
+    default_bridge_type: str = "",
+    options: t.Optional[Options] = None,
+    capabilities: t.Optional[DesiredCapabilities] = None,
+) -> None:
+    if pref_dict is None:
+        pref_dict = {}
+    if extensions is None:
+        extensions = []
+
+    self.tor_cfg = tor_cfg
+    self.setup_tbb_paths(tbb_path, tbb_fx_binary_path, tbb_profile_path, tor_data_dir)
+    self.profile = webdriver.FirefoxProfile(self.tbb_profile_path)
+    self.install_extensions(extensions)
+    self.init_ports(tor_cfg, socks_port, control_port)
+    self.init_prefs(pref_dict, default_bridge_type)
+    self.setup_capabilities(capabilities)
+    self.export_env_vars()
+    self.binary = self.get_tb_binary(logfile=tbb_logfile_path)
+    self.binary.add_command_line_options("--class", '"Tor Browser"')
+    super(TorBrowserDriver, self).__init__(
+        firefox_profile=self.profile,
+        firefox_binary=self.binary,
+        capabilities=self.capabilities,
+        timeout=cm.TB_INIT_TIMEOUT,
+        options=options,
+        log_path=tbb_logfile_path,
+    )
+    self.is_running = True
+    time.sleep(1)
 
 
 if __name__ == "__main__":
