@@ -19,7 +19,7 @@ The order in which steps are executed often matters, therefore this shall includ
 1. First `fstrm_capture` needs to be started to provide the dnstap logging socket in the system.
     Likewise `tcpdump` should be started early to capture all outgoing DNS traffic.
 2. Proxies like `stubby` and our countermeasure proxies are started next, such that they are availble before `Unbound` is started.
-3. Now `Unbound can be started which can directly connect to the internet via the proxies and log via dnstap.
+3. Now `Unbound` can be started which can directly connect to the internet via the proxies and log via dnstap.
 4. Chrome(ium) needs to be started next.
     Chromes startup procedure triggers domain lookups to some Google domains.
     This is less of a problem with Chromium.
