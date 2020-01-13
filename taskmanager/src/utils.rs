@@ -76,12 +76,12 @@ pub fn docker_run(
         "--sysctl=net.ipv6.conf.all.disable_ipv6=1",
         "--rm",
     ])
-    .arg(image)
     .stdout(Stdio::null())
     .stderr(Stdio::null());
     for (var_name, var_value) in environment {
         cmd.args(&["-e", &format!("{}={}", var_name, var_value)]);
     }
+    cmd.arg(image);
     if let Some(command) = command {
         cmd.arg(command);
     }
@@ -148,13 +148,13 @@ pub fn docker_run_ssh(
         "--dns=127.0.0.1",
         "--shm-size=2g",
         "--rm",
-        image,
     ])
     .stdout(Stdio::null())
     .stderr(Stdio::null());
     for (var_name, var_value) in environment {
         cmd.args(&["-e", &format!("{}={}", var_name, var_value)]);
     }
+    cmd.arg(image);
     if let Some(command) = command {
         cmd.arg(command);
     }
