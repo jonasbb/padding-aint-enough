@@ -31,15 +31,15 @@ import dataclasses
 import enum
 import lzma
 import typing as t
-from collections import Counter
 from enum import Enum
 from glob import glob
+from multiprocessing import Pool
 from os import path
 
 import matplotlib.pyplot as plt
-
-import pylib
-from scapy.all import *
+import pylib  # pylint: disable=c-extension-no-member
+from dataclasses_json import dataclass_json
+from scapy.all import rdpcap
 
 # %%
 # %matplotlib inline
@@ -76,10 +76,6 @@ for data in [dnstap_domain_2_feature, pcap_domain_2_feature]:
 class Direction(Enum):
     UPLOAD = enum.auto()
     DOWNLOAD = enum.auto()
-
-
-# %%
-from dataclasses_json import dataclass_json
 
 
 # %%
@@ -132,6 +128,9 @@ class PcapFeatures:
             self.packets_down += 1
 
 
+# Supress pylint errors
+PcapFeatures.schema = PcapFeatures.schema  # type: ignore
+
 # %%
 def process_packet(pkt: t.Any, features: PcapFeatures) -> None:
     # get TCP/UDP layer
@@ -140,7 +139,7 @@ def process_packet(pkt: t.Any, features: PcapFeatures) -> None:
     # skip empty packets or packets only containing TCP Flags
     if len(transport.payload) == 0:
         return
-    
+
     # Skip DoT
     if transport.sport == 853 or transport.dport == 853:
         return
@@ -164,49 +163,58 @@ def process_pcap(file: str) -> PcapFeatures:
 
 
 # %%
-from multiprocessing import Pool
-
-# %%
 pool = Pool()
 
 for domain_folder in glob(path.join(basedir, "*")):
     domain = path.basename(domain_folder)
     print("Firefox", domain)
-    pcap_features = pool.map(process_pcap, list(glob(path.join(domain_folder, "*.pcap.xz"))))
-    json = PcapFeatures.schema().dumps(pcap_features, many=True)
+    pcap_features = pool.map(
+        process_pcap, list(glob(path.join(domain_folder, "*.pcap.xz")))
+    )
+    json = PcapFeatures.schema().dumps(pcap_features, many=True)  # type: ignore
     with open(f"pcap-{domain}-features.json", "wt") as f:
         f.write(json)
 
-        
+
 for domain_folder in glob(path.join(basedir_tor, "*")):
     domain = path.basename(domain_folder)
     print("Tor", domain)
-    pcap_features = pool.map(process_pcap, list(glob(path.join(domain_folder, "*.pcap.xz"))))
-    json = PcapFeatures.schema().dumps(pcap_features, many=True)
+    pcap_features = pool.map(
+        process_pcap, list(glob(path.join(domain_folder, "*.pcap.xz")))
+    )
+    json = PcapFeatures.schema().dumps(pcap_features, many=True)  # type: ignore
     with open(f"pcap-tor-{domain}-features.json", "wt") as f:
         f.write(json)
-        
-pool.join(10)
+
 
 # %%
 firefox_2_pcap_features = {}
 for file in glob("pcap-*-features.json"):
-    domain = file[len("pcap-"):-len("-features.json")]
+    if "pcap-tor-" in file:
+        continue
+    domain = file[len("pcap-") : -len("-features.json")]
     with open(file, "rt") as f:
-        firefox_2_pcap_features[domain] = PcapFeatures.schema().loads(f.read(), many=True)
+        firefox_2_pcap_features[domain] = PcapFeatures.schema().loads(  # type: ignore
+            f.read(), many=True
+        )
 
 tor_2_pcap_features = {}
 for file in glob("pcap-tor-*-features.json"):
-    domain = file[len("pcap-tor-"):-len("-features.json")]
+    domain = file[len("pcap-tor-") : -len("-features.json")]
     with open(file, "rt") as f:
-        tor_2_pcap_features[domain] = PcapFeatures.schema().loads(f.read(), many=True)
+        tor_2_pcap_features[domain] = PcapFeatures.schema().loads(f.read(), many=True)  # type: ignore
 
 # %%
 for field in dataclasses.fields(PcapFeatures):
-    for browser, data in [("Firefox", firefox_2_pcap_features), ("Tor", tor_2_pcap_features)]:
-        data = domain_2_pcap_features
+    for browser, data in [
+        ("Firefox", firefox_2_pcap_features),
+        ("Tor", tor_2_pcap_features),
+    ]:
         print(field.name)
-        values = [[v.__dict__[field.name] for v in domain_values] for domain_values in data.values()]
+        values = [
+            [v.__dict__[field.name] for v in domain_values]
+            for domain_values in data.values()
+        ]
 
         # Skip uninteresting cases
         if field.name in ["current_direction", "currenct_sequence_length"]:
@@ -215,12 +223,12 @@ for field in dataclasses.fields(PcapFeatures):
         if field.name == "sequence_lengths":
             new_values = list()
             for v1 in values:
-                tmp = list()
+                tmp: t.List[int] = list()
                 for v2 in v1:
                     tmp += v2
                 length = len(tmp)
-                tmp = filter(lambda x: x != 1, tmp)
-                tmp = list(sorted(tmp)[:-int(length/50)])
+                tmp = sorted(filter(lambda x: x != 1, tmp))
+                tmp = tmp[: -int(length / 50)]
                 new_values.append(tmp)
             values = new_values
 
