@@ -27,17 +27,19 @@
 # * Burst Sizes
 
 # %%
+# pylint: disable=c-extension-no-member
+# pylint: disable=redefined-outer-name
+# %%
 import dataclasses
 import enum
 import lzma
 import typing as t
-from enum import Enum
 from glob import glob
 from multiprocessing import Pool
 from os import path
 
 import matplotlib.pyplot as plt
-import pylib  # pylint: disable=c-extension-no-member
+import pylib
 from dataclasses_json import dataclass_json
 from scapy.all import rdpcap
 
@@ -46,8 +48,21 @@ from scapy.all import rdpcap
 plt.rcParams["figure.figsize"] = [15, 10]
 
 # %%
+# Initialize a process pool for later
+pool = Pool()
+
+# %%
 basedir = "/mnt/data/Downloads/dnscapture-ndss2016-firefox-commoncrawl/"
 basedir_tor = "/mnt/data/Downloads/dnscapture-ndss2016-tor-browser-commoncrawl/"
+
+
+@dataclasses.dataclass
+class Configuration:
+    browser: str
+    basedir: str
+    prefix: str
+    extractor: t.Callable[[str], "PcapFeatures"]
+
 
 # %%
 dnstap_seqs = pylib.load_folder(basedir, extension="dnstap")
@@ -72,13 +87,15 @@ for data in [dnstap_domain_2_feature, pcap_domain_2_feature]:
     plt.show()
 
 
+# %% [markdown]
+# #### Types and functions to process PCAPs and Packets
+
 # %%
-class Direction(Enum):
+class Direction(enum.Enum):
     UPLOAD = enum.auto()
     DOWNLOAD = enum.auto()
 
 
-# %%
 @dataclass_json
 @dataclasses.dataclass
 class PcapFeatures:
@@ -131,8 +148,11 @@ class PcapFeatures:
 # Supress pylint errors
 PcapFeatures.schema = PcapFeatures.schema  # type: ignore
 
+
 # %%
-def process_packet(pkt: t.Any, features: PcapFeatures) -> None:
+def process_packet(
+    pkt: t.Any, features: PcapFeatures, filter_ports: t.List[int]
+) -> None:
     # get TCP/UDP layer
     transport = pkt.payload.payload
 
@@ -140,75 +160,104 @@ def process_packet(pkt: t.Any, features: PcapFeatures) -> None:
     if len(transport.payload) == 0:
         return
 
-    # Skip DoT
-    if transport.sport == 853 or transport.dport == 853:
+    # Skip traffic we are not looking for
+    if transport.sport not in filter_ports and transport.dport not in filter_ports:
         return
 
     direction = (
-        Direction.UPLOAD if transport.dport in [80, 443, 853] else Direction.DOWNLOAD
+        Direction.UPLOAD if transport.dport in filter_ports else Direction.DOWNLOAD
     )
     features.new_packet(direction, len(transport.payload))
 
 
 # %%
-def process_pcap(file: str) -> PcapFeatures:
+def process_pcap(file: str, filter_ports: t.List[int]) -> PcapFeatures:
     pcap = rdpcap(lzma.open(file, "rb"))
     # Sort by time just in case they are unordered
     pcap = sorted(pcap, key=lambda pkt: pkt.time)
     features = PcapFeatures()
     for pkt in pcap:
-        process_packet(pkt, features)
+        process_packet(pkt, features, filter_ports)
     features.finish()
     return features
 
 
-# %%
-pool = Pool()
-
-for domain_folder in glob(path.join(basedir, "*")):
-    domain = path.basename(domain_folder)
-    print("Firefox", domain)
-    pcap_features = pool.map(
-        process_pcap, list(glob(path.join(domain_folder, "*.pcap.xz")))
-    )
-    json = PcapFeatures.schema().dumps(pcap_features, many=True)  # type: ignore
-    with open(f"pcap-{domain}-features.json", "wt") as f:
-        f.write(json)
+def process_pcap_dns(file: str) -> PcapFeatures:
+    return process_pcap(file, [53, 853])
 
 
-for domain_folder in glob(path.join(basedir_tor, "*")):
-    domain = path.basename(domain_folder)
-    print("Tor", domain)
-    pcap_features = pool.map(
-        process_pcap, list(glob(path.join(domain_folder, "*.pcap.xz")))
-    )
-    json = PcapFeatures.schema().dumps(pcap_features, many=True)  # type: ignore
-    with open(f"pcap-tor-{domain}-features.json", "wt") as f:
-        f.write(json)
+def process_pcap_http_tor(file: str) -> PcapFeatures:
+    return process_pcap(file, [80, 443])
 
 
 # %%
-firefox_2_pcap_features = {}
-for file in glob("pcap-*-features.json"):
-    if "pcap-tor-" in file:
-        continue
-    domain = file[len("pcap-") : -len("-features.json")]
-    with open(file, "rt") as f:
-        firefox_2_pcap_features[domain] = PcapFeatures.schema().loads(  # type: ignore
-            f.read(), many=True
+configurations = {
+    "dns": Configuration(
+        browser="Firefox DNS",
+        basedir=basedir,
+        prefix="pcap-dns-",
+        extractor=process_pcap_dns,
+    ),
+    "firefox": Configuration(
+        browser="Firefox",
+        basedir=basedir,
+        prefix="pcap-firefox-",
+        extractor=process_pcap_http_tor,
+    ),
+    "tor": Configuration(
+        browser="Tor Browser",
+        basedir=basedir_tor,
+        prefix="pcap-tor-",
+        extractor=process_pcap_http_tor,
+    ),
+}
+
+# %%
+# Process the PCAP files and save the extracted features as JSON
+
+for config in configurations.values():
+    for domain_folder in glob(path.join(config.basedir, "*")):
+        domain = path.basename(domain_folder)
+        print(config.browser, domain)
+        # mypy wrongly thinks that the function has a self argument
+        # https://github.com/python/mypy/issues/5485
+        extractor: t.Callable[[str], PcapFeatures] = config.extractor  # type: ignore
+        pcap_features = pool.map(
+            extractor, list(glob(path.join(domain_folder, "*.pcap.xz")))
         )
+        # mypy doesn't understand the schema()
+        json = PcapFeatures.schema().dumps(pcap_features, many=True)  # type: ignore
+        with open(f"{config.prefix}{domain}-features.json", "wt") as f:
+            f.write(json)
 
-tor_2_pcap_features = {}
-for file in glob("pcap-tor-*-features.json"):
-    domain = file[len("pcap-tor-") : -len("-features.json")]
-    with open(file, "rt") as f:
-        tor_2_pcap_features[domain] = PcapFeatures.schema().loads(f.read(), many=True)  # type: ignore
+
+# %%
+# Load above JSON and make it usable for the rest of the program
+
+
+def load_features_from_json(config: Configuration) -> t.Dict[str, t.List[PcapFeatures]]:
+    features = {}
+    for file in glob(f"{config.prefix}*-features.json"):
+        domain = file[len(config.prefix) : -len("-features.json")]
+        with open(file, "rt") as f:
+            # mypy doesn't understand the schema()
+            features[domain] = PcapFeatures.schema().loads(  # type: ignore
+                f.read(), many=True
+            )
+    return features
+
+
+dns_2_pcap_features = load_features_from_json(configurations["dns"])
+firefox_2_pcap_features = load_features_from_json(configurations["firefox"])
+tor_2_pcap_features = load_features_from_json(configurations["tor"])
+
 
 # %%
 for field in dataclasses.fields(PcapFeatures):
-    for browser, data in [
-        ("Firefox", firefox_2_pcap_features),
-        ("Tor", tor_2_pcap_features),
+    for config, data in [
+        (configurations["dns"], dns_2_pcap_features),
+        (configurations["firefox"], firefox_2_pcap_features),
+        (configurations["tor"], tor_2_pcap_features),
     ]:
         print(field.name)
         values = [
@@ -236,7 +285,7 @@ for field in dataclasses.fields(PcapFeatures):
             values, vert=False, showmedians=True, showmeans=True, showextrema=False
         )
         labels = list(data.keys())
-        plt.title(f"{browser} -- {field.name}")
+        plt.title(f"{config.browser} -- {field.name}")
         plt.yticks(range(1, len(labels) + 1), labels)
         plt.xlim(left=0)
         plt.show()
