@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -26,30 +27,62 @@
 # * #Burst *== direction changes*
 # * Burst Sizes
 
+# %% [markdown]
+# How to measure the variability?
+# The goal is to reduce the violin plot into a single number, which is small if the variability is low.
+#
+# * Entropy
+#     * What kind of entropy measure works well on a list of integers?
+# * Interquartile range or 5%/95% values
+#     * Needs some normalization to be comparable between different absolute values.
+#     * For a split distribution (2 heaps), this might be higher, but the distribution might only contain two distinct values.
+
+# %% [markdown]
+# ### Potential Data Problems
+#
+# * Firefox DNS Dataset
+#     * Extracting the bytes or packets from the pcap will yield wrong results.
+#         The results are worse for for bytes though.
+#         The main reason are the `start.example.`/`end.example.` and the two large `aa*`/`zz*` queries.
+#
+#         The overhead in bytes is roughly:
+#         * `aa*`/`zz*`
+#             415/415 up
+#             1295/1301 down
+#         * `start.example.`/`end.example.`
+#             159/159 up
+#             1068/1066 down
+
+# %% [markdown]
+# # FIXMEs
+#
+# * Fix typo in `currenct_sequence_length`
+
 # %%
 # pylint: disable=c-extension-no-member
 # pylint: disable=redefined-outer-name
 # %%
 import dataclasses
 import enum
-import lzma
+import os
 import typing as t
 from glob import glob
 from multiprocessing import Pool
 from os import path
 
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import numpy as np
 import pylib
+import scipy
+import tabulate
 from dataclasses_json import dataclass_json
+from IPython.display import HTML, display
 from scapy.all import rdpcap
 
 # %%
 # %matplotlib inline
 plt.rcParams["figure.figsize"] = [15, 10]
-
-# %%
-# Initialize a process pool for later
-pool = Pool()
 
 # %%
 basedir = "/mnt/data/Downloads/dnscapture-ndss2016-firefox-commoncrawl/"
@@ -172,7 +205,7 @@ def process_packet(
 
 # %%
 def process_pcap(file: str, filter_ports: t.List[int]) -> PcapFeatures:
-    pcap = rdpcap(lzma.open(file, "rb"))
+    pcap = rdpcap(open(file, "rb"))
     # Sort by time just in case they are unordered
     pcap = sorted(pcap, key=lambda pkt: pkt.time)
     features = PcapFeatures()
@@ -213,6 +246,10 @@ configurations = {
 }
 
 # %%
+# Pool initialization has to be deferred until all functions which are later used by the pool are defined
+pool = Pool()
+
+# %%
 # Process the PCAP files and save the extracted features as JSON
 
 for config in configurations.values():
@@ -223,7 +260,7 @@ for config in configurations.values():
         # https://github.com/python/mypy/issues/5485
         extractor: t.Callable[[str], PcapFeatures] = config.extractor  # type: ignore
         pcap_features = pool.map(
-            extractor, list(glob(path.join(domain_folder, "*.pcap.xz")))
+            extractor, list(glob(path.join(domain_folder, "*.pcap")))
         )
         # mypy doesn't understand the schema()
         json = PcapFeatures.schema().dumps(pcap_features, many=True)  # type: ignore
@@ -253,41 +290,181 @@ tor_2_pcap_features = load_features_from_json(configurations["tor"])
 
 
 # %%
-for field in dataclasses.fields(PcapFeatures):
-    for config, data in [
-        (configurations["dns"], dns_2_pcap_features),
-        (configurations["firefox"], firefox_2_pcap_features),
-        (configurations["tor"], tor_2_pcap_features),
-    ]:
-        print(field.name)
-        values = [
-            [v.__dict__[field.name] for v in domain_values]
-            for domain_values in data.values()
-        ]
+def measure_uniformity_5pc_norm(values: t.List[t.List[int]]) -> t.Tuple[float, float]:
+    """Normalized 95%-5% range"""
 
-        # Skip uninteresting cases
-        if field.name in ["current_direction", "currenct_sequence_length"]:
-            continue
-        # Sequence lengths is an array, so we need to flatten one layer here
-        if field.name == "sequence_lengths":
-            new_values = list()
-            for v1 in values:
-                tmp: t.List[int] = list()
-                for v2 in v1:
-                    tmp += v2
-                length = len(tmp)
-                tmp = sorted(filter(lambda x: x != 1, tmp))
-                tmp = tmp[: -int(length / 50)]
-                new_values.append(tmp)
-            values = new_values
+    def measure_domain_uniformity(domain_values: t.List[int]) -> float:
+        r = 5
+        med = np.median(domain_values)
+        lower = np.percentile(domain_values, r)
+        upper = np.percentile(domain_values, 100 - r)
+        return (upper - lower) / med
 
-        plt.violinplot(
-            values, vert=False, showmedians=True, showmeans=True, showextrema=False
+    tmp = [measure_domain_uniformity(dv) for dv in values]
+    return np.median(tmp), np.std(tmp)
+
+
+def measure_uniformity_20pc_norm(values: t.List[t.List[int]]) -> t.Tuple[float, float]:
+    """Normalized 80%-20% range"""
+
+    def measure_domain_uniformity(domain_values: t.List[int]) -> float:
+        r = 20
+        med = np.median(domain_values)
+        lower = np.percentile(domain_values, r)
+        upper = np.percentile(domain_values, 100 - r)
+        return (upper - lower) / med
+
+    tmp = [measure_domain_uniformity(dv) for dv in values]
+    return np.median(tmp), np.std(tmp)
+
+
+def measure_uniformity_5pc(values: t.List[t.List[int]]) -> t.Tuple[float, float]:
+    """95%-5% range"""
+
+    def measure_domain_uniformity(domain_values: t.List[int]) -> float:
+        r = 5
+        lower = np.percentile(domain_values, r)
+        upper = np.percentile(domain_values, 100 - r)
+        return upper - lower
+
+    tmp = [measure_domain_uniformity(dv) for dv in values]
+    return np.median(tmp), np.std(tmp)
+
+
+def measure_uniformity_20pc(values: t.List[t.List[int]]) -> t.Tuple[float, float]:
+    """80%-20% range"""
+
+    def measure_domain_uniformity(domain_values: t.List[int]) -> float:
+        r = 20
+        lower = np.percentile(domain_values, r)
+        upper = np.percentile(domain_values, 100 - r)
+        return upper - lower
+
+    tmp = [measure_domain_uniformity(dv) for dv in values]
+    return np.median(tmp), np.std(tmp)
+
+
+def entropy(labels: t.List[int], base: t.Optional[int] = None) -> float:
+    _value, counts = np.unique(labels, return_counts=True)
+    return scipy.stats.entropy(counts, base=base)
+
+
+def measure_uniformity_entropy(values: t.List[t.List[int]]) -> t.Tuple[float, float]:
+    """Entropy base-2"""
+
+    tmp = [entropy(dv, base=2) for dv in values]
+    return np.median(tmp), np.std(tmp)
+
+
+# %%
+# measure type -> feature -> browser -> t.Tuple[float, float]
+results: t.Dict[str, t.Dict[str, t.Dict[str, t.Tuple[float, float]]]] = {}
+
+for measure_uniformity in [
+    measure_uniformity_5pc_norm,
+    measure_uniformity_5pc,
+    measure_uniformity_20pc_norm,
+    measure_uniformity_20pc,
+    measure_uniformity_entropy,
+]:
+    measure = measure_uniformity.__doc__
+    if measure is None:
+        measure = ""
+    measure.strip()
+    display(HTML(f"<h1>{measure}</h1>"))
+    for field in dataclasses.fields(PcapFeatures):
+        # https://stackoverflow.com/a/58324984
+        legends = []
+
+        def add_legend(violin: t.Any, label: str) -> None:
+            color = violin["bodies"][0].get_facecolor().flatten()
+            # legends is defined outside of this function on purpose
+            legends.append(  # pylint: disable=cell-var-from-loop
+                (mpatches.Patch(color=color), label)
+            )
+
+        text = measure + "\n\n"
+
+        for config, data in [
+            (configurations["dns"], dns_2_pcap_features),
+            (configurations["firefox"], firefox_2_pcap_features),
+            (configurations["tor"], tor_2_pcap_features),
+        ]:
+            values = [
+                [v.__dict__[field.name] for v in domain_values]
+                for domain_values in data.values()
+            ]
+
+            # Skip uninteresting cases
+            if field.name in ["current_direction", "currenct_sequence_length"]:
+                continue
+            # Sequence lengths is an array, so we need to flatten one layer here
+            if field.name == "sequence_lengths":
+                new_values = list()
+                for v1 in values:
+                    tmp: t.List[int] = list()
+                    for v2 in v1:
+                        tmp += v2
+                    length = len(tmp)
+                    #                 tmp = list(filter(lambda x: x != 1, tmp))
+                    tmp = sorted(tmp)[: -int(length / 50)]
+                    new_values.append(tmp)
+                values = new_values
+
+            uniformity, std_dev = measure_uniformity(values)
+            text += f"{config.browser:>11}: {uniformity:3.02f} ± {std_dev:3.02f}\n"
+            results.setdefault(measure, {}).setdefault(field.name, {})[
+                config.browser
+            ] = (uniformity, std_dev)
+
+            add_legend(
+                plt.violinplot(
+                    values,
+                    vert=False,
+                    showmedians=True,
+                    showmeans=True,
+                    showextrema=False,
+                ),
+                config.browser,
+            )
+            labels = list(data.keys())
+            plt.yticks(range(1, len(labels) + 1), labels)
+        #         plt.xlim(left=0)
+        #         plt.title(f"{config.browser} -- {field.name}")
+        #         plt.show()
+
+        if len(legends) > 0:
+            trans = plt.axes().transAxes
+            plt.text(
+                0.95,
+                0.05,
+                text.strip(),
+                transform=trans,
+                fontsize=14,
+                horizontalalignment="right",
+                verticalalignment="bottom",
+            )
+            plt.xlim(left=0)
+            plt.legend(*zip(*legends), loc="upper right")
+            plt.title(f"Combined -- {field.name}")
+            plt.tight_layout()
+            filepath = f"figs/{measure}/{field.name}.svg"
+            os.makedirs(path.dirname(filepath), exist_ok=True)
+            plt.savefig(filepath)
+            plt.show()
+    display(HTML(f"<hr />"))
+
+for measure, measure_values in results.items():
+    # get table header
+    keys = list(next(iter(measure_values.values())).keys())
+    table = [[""] + keys]
+    for feature, feature_values in measure_values.items():
+        table.append(
+            [feature]
+            + [f"{a:2.2f} ± {b:2.2f}" for a, b in [feature_values[k] for k in keys]]
         )
-        labels = list(data.keys())
-        plt.title(f"{config.browser} -- {field.name}")
-        plt.yticks(range(1, len(labels) + 1), labels)
-        plt.xlim(left=0)
-        plt.show()
+    display(HTML(f"<h1>{measure}</h1>"))
+    display(HTML(tabulate.tabulate(table, tablefmt="html")))
+    display(HTML(f"<hr />"))
 
 # %%

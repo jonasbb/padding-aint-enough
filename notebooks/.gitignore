@@ -7,3 +7,4 @@ classification-results-*.png
 classification-results-*.svg
 simulated
 pcap-*-features.json
+figs
