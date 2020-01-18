@@ -379,13 +379,13 @@ dependencies = [
 
 [[package]]
 name = "dashmap"
-version = "3.1.2"
+version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "fxhash 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "num_cpus 1.11.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "spin 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "qadapt-spin 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1518,6 +1518,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "qadapt-spin"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "quick-error"
 version = "1.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1907,7 +1912,7 @@ version = "0.1.0"
 dependencies = [
  "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "criterion 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "dashmap 3.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "dashmap 3.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "dnstap 0.1.0",
  "etherparse 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2731,7 +2736,7 @@ dependencies = [
 "checksum csv 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "11f8cbd084b9a431d52dfac0b8428a26b68f1061138a7bea18aa56b9cdf55266"
 "checksum csv-core 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "9b5cadb6b25c77aeff80ba701712494213f4a8418fcda2ee11b6560c3ad0bf4c"
 "checksum ctor 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)" = "cd8ce37ad4184ab2ce004c33bf6379185d3b1c95801cab51026bd271bf68eedc"
-"checksum dashmap 3.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "77497ac590b30c75f17148b2925aca331f0ae1d881eef516a003859cde51737f"
+"checksum dashmap 3.2.1 (registry+https://github.com/rust-lang/crates.io-index)" = "aadbbb54b5515ffea870ba5c639fe38c0c654c8c7d6b68fdedea943cd5262007"
 "checksum diesel 1.4.3 (registry+https://github.com/rust-lang/crates.io-index)" = "9d7cc03b910de9935007861dce440881f69102aaaedfd4bc5a6f40340ca5840c"
 "checksum diesel-derive-enum 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)" = "adbaf5e1344edeedc4d1cead2dc3ce6fc4115bb26b3704c533b92717940f2fb5"
 "checksum diesel_derives 1.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "45f5098f628d02a7a0f68ddba586fb61e80edec3bdc1be3b921f4ceec60858d3"
@@ -2848,6 +2853,7 @@ dependencies = [
 "checksum pyo3 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)" = "e1bfe257586436fbe1296d917f14a167d4253d0873bf43e2c9b9bdd58a3f9f35"
 "checksum pyo3-derive-backend 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)" = "4882d8237fd8c7373cc25cb802fe0dab9ff70830fd56f47ef6c7f3f287fcc057"
 "checksum pyo3cls 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)" = "fdf321cfab555f7411298733c86d21e5136f5ded13f5872fabf9de3337beecda"
+"checksum qadapt-spin 1.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "9f611c8f8569fbe485c26a15f2fbcc4c1c95577081b361766fe97beece56b16f"
 "checksum quick-error 1.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "a1d01941d82fa2ab50be1e79e6714289dd7cde78eba4c074bc5a4374f650dfe0"
 "checksum quote 0.3.15 (registry+https://github.com/rust-lang/crates.io-index)" = "7a6e920b65c65f10b2ae65c831a81a073a89edd28c7cce89475bff467ab4167a"
 "checksum quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "053a8c8bcc71fcce321828dc897a98ab9760bef03a4fc36693c231e5b3216cfe"
