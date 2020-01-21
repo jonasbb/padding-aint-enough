@@ -64,6 +64,7 @@
 # %%
 import dataclasses
 import enum
+import json
 import os
 import typing as t
 from glob import glob
@@ -91,33 +92,16 @@ basedir_tor = "/mnt/data/Downloads/dnscapture-ndss2016-tor-browser-commoncrawl/"
 
 @dataclasses.dataclass
 class Configuration:
+    # Readable name describing the configuration
     browser: str
+    # Base directory containing all the files
     basedir: str
+    # A unique prefix between all configurations to save intermediate results
     prefix: str
-    extractor: t.Callable[[str], "PcapFeatures"]
-
-
-# %%
-dnstap_seqs = pylib.load_folder(basedir, extension="dnstap")
-dnstap_domain_2_feature = {
-    domain: [seq.len() for seq in sequences] for domain, sequences in dnstap_seqs
-}
-
-# %%
-pcap_seqs = pylib.load_folder(basedir, extension="pcap")
-pcap_domain_2_feature = {
-    domain: [seq.len() for seq in sequences] for domain, sequences in pcap_seqs
-}
-
-# %%
-for data in [dnstap_domain_2_feature, pcap_domain_2_feature]:
-    plt.violinplot(
-        data.values(), vert=False, showmedians=True, showmeans=True, showextrema=False
-    )
-    labels = list(data.keys())
-    plt.yticks(range(1, len(labels) + 1), labels)
-    plt.xlim(left=0)
-    plt.show()
+    # Function converting the file or Sequence into PcapFeatures
+    extractor: t.Callable[[t.Union[str, pylib.Sequence]], "PcapFeatures"]
+    # Which file extensions from the basedir should be loaded. Only applicable to Sequences.
+    file_extension: t.Optional[str]
 
 
 # %% [markdown]
@@ -183,6 +167,22 @@ PcapFeatures.schema = PcapFeatures.schema  # type: ignore
 
 
 # %%
+def sequence_to_feature(sequence: pylib.Sequence) -> PcapFeatures:
+    seq_elements = next(iter(json.loads(sequence.to_json()).values()))
+    features = PcapFeatures()
+
+    for elem in seq_elements:
+        if elem.startswith("S"):
+            features.new_packet(Direction.DOWNLOAD, int(elem[1:]) * 468)
+        else:
+            # Ensure the sequence length counter is reset
+            features.finish()
+
+    features.finish()
+    return features
+
+
+# %%
 def process_packet(
     pkt: t.Any, features: PcapFeatures, filter_ports: t.List[int]
 ) -> None:
@@ -203,7 +203,6 @@ def process_packet(
     features.new_packet(direction, len(transport.payload))
 
 
-# %%
 def process_pcap(file: str, filter_ports: t.List[int]) -> PcapFeatures:
     pcap = rdpcap(open(file, "rb"))
     # Sort by time just in case they are unordered
@@ -230,18 +229,38 @@ configurations = {
         basedir=basedir,
         prefix="pcap-dns-",
         extractor=process_pcap_dns,
+        file_extension=None,
     ),
     "firefox": Configuration(
         browser="Firefox",
         basedir=basedir,
         prefix="pcap-firefox-",
         extractor=process_pcap_http_tor,
+        file_extension=None,
     ),
     "tor": Configuration(
         browser="Tor Browser",
         basedir=basedir_tor,
         prefix="pcap-tor-",
         extractor=process_pcap_http_tor,
+        file_extension=None,
+    ),
+}
+
+sequence_configurations = {
+    "dns-dnstap": Configuration(
+        browser="DNS from DNSTAP",
+        basedir=basedir,
+        prefix="sequence-dnstap-",
+        extractor=sequence_to_feature,
+        file_extension="dnstap",
+    ),
+    "dns-pcap": Configuration(
+        browser="DNS from PCAP",
+        basedir=basedir,
+        prefix="sequence-pcap-",
+        extractor=sequence_to_feature,
+        file_extension="pcap",
     ),
 }
 
@@ -263,10 +282,24 @@ for config in configurations.values():
             extractor, list(glob(path.join(domain_folder, "*.pcap")))
         )
         # mypy doesn't understand the schema()
-        json = PcapFeatures.schema().dumps(pcap_features, many=True)  # type: ignore
-        with open(f"{config.prefix}{domain}-features.json", "wt") as f:
-            f.write(json)
+        jsonstr = PcapFeatures.schema().dumps(pcap_features, many=True)  # type: ignore
+        with open(f"features/{config.prefix}{domain}-features.json", "wt") as f:
+            f.write(jsonstr)
 
+# %%
+# Mix in the DNS data from dnstap/pcap files, but extracted through our DNS Sequence
+
+for config in sequence_configurations.values():
+    seqs = pylib.load_folder(config.basedir, extension=config.file_extension)
+    extractor: t.Callable[[pylib.Sequence], PcapFeatures] = config.extractor  # type: ignore
+    domain_2_features = {
+        domain: [extractor(seq) for seq in sequences] for domain, sequences in seqs
+    }
+    for domain, feat in domain_2_features.items():
+        # mypy doesn't understand the schema()
+        jsonstr = PcapFeatures.schema().dumps(feat, many=True)  # type: ignore
+        with open(f"features/{config.prefix}{domain}-features.json", "wt") as f:
+            f.write(jsonstr)
 
 # %%
 # Load above JSON and make it usable for the rest of the program
@@ -274,7 +307,7 @@ for config in configurations.values():
 
 def load_features_from_json(config: Configuration) -> t.Dict[str, t.List[PcapFeatures]]:
     features = {}
-    for file in glob(f"{config.prefix}*-features.json"):
+    for file in glob(f"features/{config.prefix}*-features.json"):
         domain = file[len(config.prefix) : -len("-features.json")]
         with open(file, "rt") as f:
             # mypy doesn't understand the schema()
@@ -284,63 +317,51 @@ def load_features_from_json(config: Configuration) -> t.Dict[str, t.List[PcapFea
     return features
 
 
+sequence_dnstap_2_pcap_features = load_features_from_json(
+    sequence_configurations["dns-dnstap"]
+)
+sequence_pcap_2_pcap_features = load_features_from_json(
+    sequence_configurations["dns-pcap"]
+)
 dns_2_pcap_features = load_features_from_json(configurations["dns"])
 firefox_2_pcap_features = load_features_from_json(configurations["firefox"])
 tor_2_pcap_features = load_features_from_json(configurations["tor"])
 
-
 # %%
+def percentile_domain_uniformity(
+    domain_values: t.List[int], percentile: int, normalize: bool
+) -> float:
+    # Protect against empty lists
+    if len(domain_values) == 0:
+        return 0.0
+
+    norm = np.median(domain_values) if normalize else 1
+    lower = np.percentile(domain_values, percentile)
+    upper = np.percentile(domain_values, 100 - percentile)
+    return (upper - lower) / norm
+
+
 def measure_uniformity_5pc_norm(values: t.List[t.List[int]]) -> t.Tuple[float, float]:
     """Normalized 95%-5% range"""
-
-    def measure_domain_uniformity(domain_values: t.List[int]) -> float:
-        r = 5
-        med = np.median(domain_values)
-        lower = np.percentile(domain_values, r)
-        upper = np.percentile(domain_values, 100 - r)
-        return (upper - lower) / med
-
-    tmp = [measure_domain_uniformity(dv) for dv in values]
+    tmp = [percentile_domain_uniformity(dv, 5, True) for dv in values]
     return np.median(tmp), np.std(tmp)
 
 
 def measure_uniformity_20pc_norm(values: t.List[t.List[int]]) -> t.Tuple[float, float]:
     """Normalized 80%-20% range"""
-
-    def measure_domain_uniformity(domain_values: t.List[int]) -> float:
-        r = 20
-        med = np.median(domain_values)
-        lower = np.percentile(domain_values, r)
-        upper = np.percentile(domain_values, 100 - r)
-        return (upper - lower) / med
-
-    tmp = [measure_domain_uniformity(dv) for dv in values]
+    tmp = [percentile_domain_uniformity(dv, 20, True) for dv in values]
     return np.median(tmp), np.std(tmp)
 
 
 def measure_uniformity_5pc(values: t.List[t.List[int]]) -> t.Tuple[float, float]:
     """95%-5% range"""
-
-    def measure_domain_uniformity(domain_values: t.List[int]) -> float:
-        r = 5
-        lower = np.percentile(domain_values, r)
-        upper = np.percentile(domain_values, 100 - r)
-        return upper - lower
-
-    tmp = [measure_domain_uniformity(dv) for dv in values]
+    tmp = [percentile_domain_uniformity(dv, 5, False) for dv in values]
     return np.median(tmp), np.std(tmp)
 
 
 def measure_uniformity_20pc(values: t.List[t.List[int]]) -> t.Tuple[float, float]:
     """80%-20% range"""
-
-    def measure_domain_uniformity(domain_values: t.List[int]) -> float:
-        r = 20
-        lower = np.percentile(domain_values, r)
-        upper = np.percentile(domain_values, 100 - r)
-        return upper - lower
-
-    tmp = [measure_domain_uniformity(dv) for dv in values]
+    tmp = [percentile_domain_uniformity(dv, 5, False) for dv in values]
     return np.median(tmp), np.std(tmp)
 
 
@@ -386,6 +407,8 @@ for measure_uniformity in [
         text = measure + "\n\n"
 
         for config, data in [
+            (sequence_configurations["dns-dnstap"], sequence_dnstap_2_pcap_features),
+            (sequence_configurations["dns-pcap"], sequence_pcap_2_pcap_features),
             (configurations["dns"], dns_2_pcap_features),
             (configurations["firefox"], firefox_2_pcap_features),
             (configurations["tor"], tor_2_pcap_features),
@@ -406,8 +429,9 @@ for measure_uniformity in [
                     for v2 in v1:
                         tmp += v2
                     length = len(tmp)
-                    #                 tmp = list(filter(lambda x: x != 1, tmp))
-                    tmp = sorted(tmp)[: -int(length / 50)]
+                    # tmp = list(filter(lambda x: x != 1, tmp))
+                    if length > 500:
+                        tmp = sorted(tmp)[: -int(length / 50)]
                     new_values.append(tmp)
                 values = new_values
 
@@ -429,9 +453,6 @@ for measure_uniformity in [
             )
             labels = list(data.keys())
             plt.yticks(range(1, len(labels) + 1), labels)
-        #         plt.xlim(left=0)
-        #         plt.title(f"{config.browser} -- {field.name}")
-        #         plt.show()
 
         if len(legends) > 0:
             trans = plt.axes().transAxes
@@ -454,6 +475,7 @@ for measure_uniformity in [
             plt.show()
     display(HTML(f"<hr />"))
 
+# %%
 for measure, measure_values in results.items():
     # get table header
     keys = list(next(iter(measure_values.values())).keys())
