@@ -67,6 +67,7 @@ import enum
 import json
 import os
 import typing as t
+from copy import deepcopy
 from glob import glob
 from multiprocessing import Pool
 from os import path
@@ -333,7 +334,7 @@ def percentile_domain_uniformity(
 ) -> float:
     # Protect against empty lists
     if len(domain_values) == 0:
-        return 0.0
+        return float("nan")
 
     norm = np.median(domain_values) if normalize else 1
     lower = np.percentile(domain_values, percentile)
@@ -361,7 +362,7 @@ def measure_uniformity_5pc(values: t.List[t.List[int]]) -> t.Tuple[float, float]
 
 def measure_uniformity_20pc(values: t.List[t.List[int]]) -> t.Tuple[float, float]:
     """80%-20% range"""
-    tmp = [percentile_domain_uniformity(dv, 5, False) for dv in values]
+    tmp = [percentile_domain_uniformity(dv, 20, False) for dv in values]
     return np.median(tmp), np.std(tmp)
 
 
@@ -375,6 +376,40 @@ def measure_uniformity_entropy(values: t.List[t.List[int]]) -> t.Tuple[float, fl
 
     tmp = [entropy(dv, base=2) for dv in values]
     return np.median(tmp), np.std(tmp)
+
+
+# %%
+def correct_feature(feature: PcapFeatures) -> PcapFeatures:
+    feature = deepcopy(feature)
+
+    feature.bytes_down -= 1295 + 1301 + 1068 + 1066
+    feature.bytes_up -= 415 + 415 + 159 + 159
+    feature.bytes_total -= 415 + 415 + 159 + 159 + 1295 + 1301 + 1068 + 1066
+
+    feature.packets_down -= 4
+    feature.packets_up -= 4
+    feature.packets_total -= 8
+
+    feature.direction_changes -= 8
+
+    for _ in range(8):
+        feature.sequence_lengths.remove(1)
+    return feature
+
+
+dns_2_pcap_features_corrected = {
+    domain: [correct_feature(f) for f in features]
+    for domain, features in dns_2_pcap_features.items()
+}
+dns_config_corrected = Configuration(
+    browser="Firefox DNS (corrected)",
+    basedir="<unknown>",
+    prefix="<unknown>",
+    extractor=lambda x: (_ for _ in ()).throw(
+        t.cast(t.Type[BaseException], Exception("Dummy config without extractor"))
+    ),
+    file_extension=None,
+)
 
 
 # %%
@@ -407,9 +442,10 @@ for measure_uniformity in [
         text = measure + "\n\n"
 
         for config, data in [
-            (sequence_configurations["dns-dnstap"], sequence_dnstap_2_pcap_features),
+            # (sequence_configurations["dns-dnstap"], sequence_dnstap_2_pcap_features),
             (sequence_configurations["dns-pcap"], sequence_pcap_2_pcap_features),
-            (configurations["dns"], dns_2_pcap_features),
+            # (configurations["dns"], dns_2_pcap_features),
+            (dns_config_corrected, dns_2_pcap_features_corrected),
             (configurations["firefox"], firefox_2_pcap_features),
             (configurations["tor"], tor_2_pcap_features),
         ]:
