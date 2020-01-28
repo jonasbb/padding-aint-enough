@@ -16,6 +16,8 @@
 # %%
 # %matplotlib inline
 
+# pylint: disable=redefined-outer-name
+
 # %%
 import json
 

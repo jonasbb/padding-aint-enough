@@ -19,7 +19,7 @@ RE_FILENAMES = re.compile(
 \.
 (?P<full_extension>
     (?P<extension>[^\.]+(?:\.txt)?)
-    \.xz # All files are always compressed
+    (\.xz)? # All files are always compressed
 )
 """
 )
@@ -91,9 +91,11 @@ def main() -> None:
     to_path = args[1]
 
     # Move pcap and dnstap files to new location
-    print("Copy *.pcap.xz files to new place")
+    print("Copy *.pcap and *.pcap.xz files to new place")
     new_file_names = copy_files_hierarchical(
-        glob(path.join(from_path, "*", "*.pcap.xz")), to_path
+        glob(path.join(from_path, "*", "*.pcap"))
+        + glob(path.join(from_path, "*", "*.pcap.xz")),
+        to_path,
     )
     print("Copy *.dnstap.xz files to new place")
     copy_files_hierarchical(glob(path.join(from_path, "*", "*.dnstap.xz")), to_path)
