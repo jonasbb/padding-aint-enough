@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -147,7 +146,6 @@ def open_file(path: str, mode: str = "rt") -> t.Any:
 
     Open compressed files like a normal file.
     """
-    file = None
     ext = os.path.splitext(path)[1]
     if ext == ".xz":
         return lzma.open(path, mode)

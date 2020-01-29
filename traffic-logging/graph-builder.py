@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 import networkx as nx
 
 
-class Resource(object):
+class Resource:
     def __init__(self, name: str, index: int, **kwargs: t.Dict[t.Any, t.Any]) -> None:
         self.name = name
         self.dnsname = Resource._sanitize_name(name)
@@ -39,7 +39,7 @@ class Resource(object):
         return frozenset(self._depends_on)
 
 
-class ResourceDependenciesFactory(object):
+class ResourceDependenciesFactory:
     def __init__(self, **kwargs: t.Dict[t.Any, t.Any]) -> None:
         self._resource_cache: t.Dict[str, Resource] = dict()
         self._idx = 0

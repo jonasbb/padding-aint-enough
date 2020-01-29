@@ -16,11 +16,11 @@ repos:
       - id: check-toml
       - id: trailing-whitespace
         exclude_types: ["diff", "markdown", "svg"]
-  - repo: https://github.com/python/black
-    rev: 19.10b0
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v1.26.2
     hooks:
-      - id: black
-        language_version: python3.7
+      - id: pyupgrade
+        args: ["--py3-plus", "--py36-plus"]
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v4.3.21
     # https://github.com/python/black#how-black-wraps-lines
@@ -34,3 +34,8 @@ repos:
             "--use-parentheses",
             "--line-width=88",
           ]
+  - repo: https://github.com/python/black
+    rev: 19.10b0
+    hooks:
+      - id: black
+        language_version: python3.7

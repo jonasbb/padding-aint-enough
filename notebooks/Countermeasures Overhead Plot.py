@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # ---
 # jupyter:
 #   jupytext:
@@ -67,22 +66,22 @@ def name2color(name: str) -> t.List[float]:
         return rgb_to_hsv([0, 1, 0])
 
 
-def adjust_hue_grey(name: str, hsv: t.List[float]) -> t.List[float]:
+def adjust_hue_grey(name: str, hsv: t.List[float]) -> t.Tuple[float, float, float]:
     """Takes a HSV value, returns an RGB"""
     prob = re.findall(r"([\d.]+p)", name)[0]
     # remove the trailing p
     prob = float(prob[:-1]) / 2 + 0.5 - 0.3
     hsv[-1] = prob
-    return tuple(hsv_to_rgb(hsv))
+    return t.cast(t.Tuple[float, float, float], tuple(hsv_to_rgb(hsv)))
 
 
-def adjust_hue(name: str, hsv: t.List[float]) -> t.List[float]:
+def adjust_hue(name: str, hsv: t.List[float]) -> t.Tuple[float, float, float]:
     """Takes a HSV value, returns an RGB"""
     prob = re.findall(r"([\d.]+p)", name)[0]
     # remove the trailing p
     prob = float(prob[:-1])
     hsv[-1] = prob
-    return tuple(hsv_to_rgb(hsv))
+    return t.cast(t.Tuple[float, float, float], tuple(hsv_to_rgb(hsv)))
 
 
 # %%

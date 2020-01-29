@@ -1,7 +1,6 @@
 import os
 
 from setuptools import setup
-
 from setuptools_rust import Binding, RustExtension
 
 pylib_force_debug = os.getenv("PYLIB_FORCE_DEBUG", "").lower()

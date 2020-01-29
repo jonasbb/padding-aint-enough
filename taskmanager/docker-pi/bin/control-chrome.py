@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import json
-import os.path
 import signal
 import subprocess
 import time
@@ -9,11 +8,8 @@ import typing as t
 
 # import IPython
 import requests
-from websocket import (
-    WebSocketConnectionClosedException,
-    WebSocketTimeoutException,
-    create_connection as create_ws_connection,
-)
+from websocket import WebSocketConnectionClosedException, WebSocketTimeoutException
+from websocket import create_connection as create_ws_connection
 
 # Wait this many seconds after every browser event before a browser close can occur
 WAIT_SECONDS = 7
