@@ -12,7 +12,7 @@ failure = "0.1.6"
 futures = { version = "0.3.1", default-features = false, features = [ "std" ] }
 log = "0.4.8"
 once_cell = "1.3.1"
-openssl = { version = "0.10.26", features = [ "vendored" ] }
+openssl = { version = "0.10.27", features = [ "vendored" ] }
 openssl-probe = "0.1.2"
 rand = "0.7.3"
 sequences = { path = "../sequences" }
