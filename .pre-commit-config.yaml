@@ -8,6 +8,11 @@ repos:
         entry: cargo fmt --all -- --check --color always
         language: system
         pass_filenames: false
+      - id: shellcheck
+        name: Run shellcheck on shell files
+        language: docker_image
+        entry: docker.io/koalaman/shellcheck-alpine shellcheck --color=always
+        types: ["shell"]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.4.0
     hooks:
