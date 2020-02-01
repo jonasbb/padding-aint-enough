@@ -1571,9 +1571,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-error"
-version = "0.4.6"
+version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a427176b1223957a219780f6bd014fad03f59543ff7feb3854a6fb8e9626ac2b"
+checksum = "7ad3248af98b5aa04e9c8290c405bf7a123a402b6d36e43b56af357d9783fd07"
 dependencies = [
  "proc-macro-error-attr",
  "proc-macro2",
@@ -1584,9 +1584,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-error-attr"
-version = "0.4.6"
+version = "0.4.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f3e4daa0eae3f30db348ecfa5f942281173d441588ebdac871d730acbfc7f16"
+checksum = "07366375963a133bed8a4987e3ed5786943380d07e8d6b2468d373c375f09c30"
 dependencies = [
  "proc-macro2",
  "quote 1.0.2",
