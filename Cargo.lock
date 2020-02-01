@@ -2865,9 +2865,9 @@ dependencies = [
 
 [[package]]
 name = "webpki"
-version = "0.21.0"
+version = "0.21.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7e664e770ac0110e2384769bcc59ed19e329d81f555916a6e072714957b81b4"
+checksum = "f1f50e1972865d6b1adb54167d1c8ed48606004c2c9d0ea5f1eeb34d95e863ef"
 dependencies = [
  "ring",
  "untrusted",
