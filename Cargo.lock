@@ -432,14 +432,13 @@ dependencies = [
 
 [[package]]
 name = "dashmap"
-version = "3.4.0"
+version = "3.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97fc2bebacc83d7ff26f697f347fa70d4973219f87a4ad2dd3690f4129b157b7"
+checksum = "6fd5e1a55bd5a83763864bd5a3dc1eec0a7ecca0719d142f5edcfc755a407bfe"
 dependencies = [
  "ahash",
  "cfg-if",
  "num_cpus",
- "qadapt-spin",
 ]
 
 [[package]]
@@ -1689,12 +1688,6 @@ dependencies = [
  "quote 1.0.2",
  "syn 1.0.14",
 ]
-
-[[package]]
-name = "qadapt-spin"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f611c8f8569fbe485c26a15f2fbcc4c1c95577081b361766fe97beece56b16f"
 
 [[package]]
 name = "quick-error"
