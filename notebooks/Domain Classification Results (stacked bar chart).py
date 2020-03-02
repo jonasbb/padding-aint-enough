@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.0
+#       jupytext_version: 1.3.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -145,9 +145,10 @@ pdatas = [
     )[0]
     for fpr in range(5, 91, 5)
 ]
+total_of_sequences = pdatas[0][0][1][0]
 
 # %%
-# Create a structure similar to pdata, but where the entries are organized by n/10
+# Create a structure similar to pdatas, but where the entries are organized by n/10
 data_per_n_ = []
 for i in range(len(pdatas[0][0][1])):
     tmp: t.Dict[str, t.List[int]] = {}
@@ -163,6 +164,38 @@ for i in range(len(pdatas[0][0][1])):
 # Convert the Dict into a tuple
 data_per_n = [[(q, v) for q, v in x.items()] for x in data_per_n_]
 del data_per_n_
+
+# %%
+# This is to make a plot with the number of traces per FPR instead of the number of domains with x/10
+# Simply hard code all values for now
+data_per_n = [
+    [
+        (
+            "Exact",
+            [
+                60286,
+                71798,
+                75027,
+                76318,
+                77037,
+                77489,
+                77923,
+                78204,
+                78416,
+                78603,
+                78776,
+                78906,
+                79033,
+                79116,
+                79180,
+                79271,
+                79372,
+                79487,
+            ],
+        )
+    ]
+]
+total_of_sequences = 92350
 
 # %%
 for i, pdata in enumerate(data_per_n):
@@ -181,8 +214,8 @@ for i, pdata in enumerate(data_per_n):
         if sum(heights) == 0:
             continue
         # Convert into percentages
-        h = [v * 100 / 9207 for v in heights]
-        ph = [v * 100 / 9207 for v in prev_values]
+        h = [v * 100 / total_of_sequences for v in heights]
+        ph = [v * 100 / total_of_sequences for v in prev_values]
         bars = plt.bar(
             range(1, 1 + len(values)),
             h,
@@ -203,15 +236,16 @@ for i, pdata in enumerate(data_per_n):
     xlabels = [f"{i*5}" for i in range(1, len(pdatas) + 1)]
     plt.xticks(range(1, 1 + len(xlabels)), xlabels)
     plt.xlabel("False Positive Rate in %")
-    plt.ylabel("Correctly classified websites in %")
-    plt.title(f"At least {i} / 10 traces correctly classified")
+    plt.ylabel("Correctly classi-\nfied websites in %")
+    plt.ylabel("True Positives in %")
+    # plt.title(f"At least {i} / 10 traces correctly classified")
 
-    plt.ylim(0, 100)
+    plt.ylim(50, 100)
     plt.xlim(0.5, len(xlabels) + 0.5)
 
     # plt.legend(loc="upper center", ncol=4, mode="expand")
     # plt.legend(loc="lower center", ncol=4, mode="expand")
-    plt.legend(loc="lower center", ncol=4)
+    # plt.legend(loc="lower center", ncol=4)
     plt.gcf().set_size_inches(7, 4)
     plt.tight_layout()
     plt.savefig(f"classification-results-per-domain-n{i}.svg")
