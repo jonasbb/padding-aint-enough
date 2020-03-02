@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.2
+#       jupytext_version: 1.3.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -51,18 +51,13 @@ def plot_confusion_matrix(
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
-    if not title:
-        if normalize:
-            title = "Normalized confusion matrix"
-        else:
-            title = "Confusion matrix, without normalization"
 
     # Compute confusion matrix
-    cm = confusion_matrix(y_true, y_pred)
+    cm = confusion_matrix(y_true, y_pred, normalize=None)
     # Only use the labels that appear in the data
     classes = classes[unique_labels(y_true, y_pred)]
     if normalize:
-        cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
+        # cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
         print("Normalized confusion matrix")
     else:
         print("Confusion matrix, without normalization")
@@ -80,8 +75,8 @@ def plot_confusion_matrix(
         xticklabels=classes,
         yticklabels=classes,
         title=title,
-        ylabel="True label",
-        xlabel="Predicted label",
+        # ylabel="True label",
+        # xlabel="Predicted label",
     )
 
     # Rotate the tick labels and set their alignment.
@@ -92,14 +87,16 @@ def plot_confusion_matrix(
     thresh = cm.max() / 2.0
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            ax.text(
-                j,
-                i,
-                format(cm[i, j], fmt),
-                ha="center",
-                va="center",
-                color="white" if cm[i, j] > thresh else "black",
-            )
+            if cm[i, j] != 0:
+                ax.text(
+                    j,
+                    i,
+                    format(cm[i, j], fmt),
+                    ha="center",
+                    va="center",
+                    # color="white" if cm[i, j] > thresh else "black",
+                    color="black" if 15 < cm[i, j] < 44 else "white",
+                )
     fig.tight_layout()
     return ax
 
@@ -187,19 +184,46 @@ domain2index = {
     # "www.twitter.com": 19,
 }
 
+domain2classlabel = {
+    "www.aljazeera.net": "ALJAZEERA",
+    "www.amazon.com": "AMAZON",
+    "www.bbc.co.uk": "BBC",
+    "www.cnn.com": "CNN",
+    "www.ebay.com": "EBAY",
+    "www.facebook.com": "FACEBOOK",
+    "www.imdb.com": "IMDB",
+    # Kickass
+    # "www.loveshack.org": 7,
+    "www.rakuten.co.jp": "RAKUTEN",
+    "www.reddit.com": "REDDIT",
+    "www.rt.com": "RT",
+    "www.spiegel.de": "SPIEGEL",
+    "stackoverflow.com": "STACKOVERFLOW",
+    "www.tmz.com": "TMZ",
+    "www.torproject.org": "TORPROJECT",
+    "twitter.com": "TWITTER",
+    "en.wikipedia.org": "WIKIPEDIA",
+    "xhamster.com": "XHAMSTER",
+    "www.xnxx.com": "XNXX",
+    # "www.twitter.com": 19,
+}
+
 # %%
 y_test = [domain2index[domain] for domain, _ in classifications]
 y_pred = [domain2index[domain] for _, domain in classifications]
 
 # %%
+classes = [domain2classlabel[d] for d in domain2index.keys()]
 plot_confusion_matrix(
     y_test,
     y_pred,
-    classes=np.array(list(domain2index.keys())),
-    title="Subpage Classification",
+    classes=np.array(classes),
+    # title="Subpage Classification",
+    normalize=False,
+    cmap=plt.cm.jet,
 )
 
-plt.gcf().set_size_inches(8.5, 8)
+plt.gcf().set_size_inches(6, 5.5)
 plt.tight_layout()
 plt.savefig("subpage-confusion-matrix.svg")
 plt.show()
