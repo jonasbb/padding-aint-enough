@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.3.2
+#       jupytext_version: 1.3.4
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -336,8 +336,8 @@ def percentile_domain_uniformity(
         return float("nan")
 
     norm = np.median(domain_values) if normalize else 1
-    lower = np.percentile(domain_values, percentile)
-    upper = np.percentile(domain_values, 100 - percentile)
+    lower = np.percentile(domain_values, percentile, interpolation="linear")
+    upper = np.percentile(domain_values, 100 - percentile, interpolation="linear")
     return (upper - lower) / norm
 
 
