@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 chrono = "0.4.10"
-failure = "0.1.6"
+failure = "0.1.7"
 framestream = { path = "../framestream" }
 log = "0.4.8"
 misc_utils = "2.5.1"
