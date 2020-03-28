@@ -1133,9 +1133,9 @@ dependencies = [
 
 [[package]]
 name = "migrations_internals"
-version = "1.4.0"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8089920229070f914b9ce9b07ef60e175b2b9bc2d35c3edd8bf4433604e863b9"
+checksum = "2b4fc84e4af020b837029e017966f86a1c2d5e83e64b589963d5047525995860"
 dependencies = [
  "diesel",
 ]
