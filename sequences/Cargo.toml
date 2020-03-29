@@ -29,7 +29,7 @@ misc_utils = "2.5.1"
 num-traits = "0.2.11"
 once_cell = "1.3.1"
 ordered-float = { version = "1.0.2", features = [ "serde" ] }
-pcap-parser = { version = "0.8.4", features = [ "data" ], optional = true }
+pcap-parser = { version = "0.9.0", features = [ "data" ], optional = true }
 rand = "0.7.3"
 rand_xorshift = "0.2.0"
 rayon = "1.3.0"

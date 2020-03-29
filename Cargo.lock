@@ -1432,9 +1432,9 @@ dependencies = [
 
 [[package]]
 name = "pcap-parser"
-version = "0.8.4"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60a4b83ca9b0a6f6c1e11821afdd24cccab9839cb778b2709bf0169b9af49418"
+checksum = "6e96341852e98bc3a5806889bc3cb373f182ddf19db2adc90545c1438064bdb0"
 dependencies = [
  "circular",
  "nom",
