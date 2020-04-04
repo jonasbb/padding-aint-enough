@@ -1142,9 +1142,9 @@ dependencies = [
 
 [[package]]
 name = "migrations_macros"
-version = "1.4.1"
+version = "1.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "719ef0bc7f531428764c9b70661c14abd50a7f3d21f355752d9985aa21251c9e"
+checksum = "9753f12909fd8d923f75ae5c3258cae1ed3c8ec052e1b38c93c21a6d157f789c"
 dependencies = [
  "migrations_internals",
  "proc-macro2",
