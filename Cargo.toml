@@ -57,7 +57,7 @@ failure = "0.1.7"
 glob = "0.3.0"
 log = "0.4.8"
 min-max-heap = "1.3.0"
-misc_utils = "2.5.1"
+misc_utils = "2.5.2"
 once_cell = "1.3.1"
 petgraph = { version = "0.5.0", features = [ "serde-1" ] }
 petgraph-graphml = "2.0.1"
@@ -76,5 +76,5 @@ features = [ "chrono" ]
 chrome = { path = "./chrome" }
 criterion = "0.3.1"
 failure = "0.1.7"
-misc_utils = "2.5.1"
+misc_utils = "2.5.2"
 serde_json = "1.0.50"
