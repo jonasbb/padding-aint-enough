@@ -27,15 +27,12 @@ fn compile() {
     let out_dir = out_dir();
     fs::create_dir(&out_dir).expect("create_dir");
 
-    protobuf_codegen_pure::run(protobuf_codegen_pure::Args {
-        out_dir: &out_dir.to_string_lossy(),
-        input: &slices,
-        includes: &[&proto_dir.to_string_lossy()],
-        customize: protobuf_codegen_pure::Customize {
-            ..Default::default()
-        },
-    })
-    .expect("protoc");
+    protobuf_codegen_pure::Codegen::new()
+        .out_dir(&out_dir)
+        .inputs(&slices)
+        .include(&proto_dir)
+        .run()
+        .expect("protoc");
 }
 
 fn generate_mod_rs() {
