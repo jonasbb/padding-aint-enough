@@ -12,5 +12,5 @@ failure = "0.1.7"
 log = "0.4.8"
 pyo3 = "0.9.2"
 sequences = { path = "../sequences" }
-serde_json = "1.0.51"
+serde_json = "1.0.52"
 structopt = "0.3.14"
