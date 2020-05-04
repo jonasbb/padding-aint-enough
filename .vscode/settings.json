@@ -3,4 +3,8 @@
     "python.autoComplete.extraPaths": [
         "./keras"
     ],
+    "cSpell.words": [
+        "dnscaptures",
+        "pylib"
+    ],
 }
