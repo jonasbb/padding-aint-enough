@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/jbushart/.virtualenvs/encrypted-dns-B3eMcoNz/bin/python",
+    "python.pythonPath": "/home/jbushart/.local/share/virtualenvs/encrypted-dns-B3eMcoNz/bin/python",
     "python.autoComplete.extraPaths": [
         "./keras"
     ],
