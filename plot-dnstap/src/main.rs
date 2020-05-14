@@ -1,5 +1,5 @@
 use failure::{format_err, Error, ResultExt};
-use pyo3::{types::PyDict, ObjectProtocol, PyErr, PyResult, Python};
+use pyo3::{types::PyDict, PyErr, PyResult, Python};
 use sequences::dnstap::Query;
 use std::path::{Path, PathBuf};
 use structopt::StructOpt;
