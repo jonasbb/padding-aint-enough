@@ -10,7 +10,7 @@ edition = "2018"
 env_logger = "0.7.1"
 failure = "0.1.8"
 log = "0.4.8"
-pyo3 = "0.9.2"
+pyo3 = "0.10.0"
 sequences = { path = "../sequences" }
 serde_json = "1.0.52"
 structopt = "0.3.14"
