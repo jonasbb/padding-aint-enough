@@ -74,7 +74,7 @@ features = [ "chrono" ]
 
 [dev-dependencies]
 chrome = { path = "./chrome" }
-criterion = "0.3.2"
+criterion = "0.3.3"
 failure = "0.1.8"
 misc_utils = "2.5.2"
 serde_json = "1.0.56"
