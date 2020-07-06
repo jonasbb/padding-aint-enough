@@ -16,7 +16,7 @@ name = "u8_abs"
 harness = false
 
 [dependencies]
-chrono = { version = "0.4.11", features = [ "serde" ] }
+chrono = { version = "0.4.13", features = [ "serde" ] }
 dashmap = "3.11.4"
 dnstap = { path = "../dnstap" }
 etherparse = { version = "0.9.0", optional = true }
