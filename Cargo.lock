@@ -314,7 +314,7 @@ dependencies = [
  "clap",
  "criterion-plot",
  "csv",
- "itertools 0.9.0",
+ "itertools",
  "lazy_static",
  "num-traits",
  "oorandom",
@@ -335,7 +335,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ddeaf7989f00f2e1d871a26a110f3ed713632feac17f65f03ca938c542618b60"
 dependencies = [
  "cast",
- "itertools 0.9.0",
+ "itertools",
 ]
 
 [[package]]
@@ -1008,15 +1008,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2b3ea6ff95e175473f8ffe6a7eb7c00d054240321b84c57051175fe3c1e075e"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "itertools"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f56a2d0bc861f9165be4eb3442afd3c236d8a98afd426f65d92324ae1091a484"
-dependencies = [
- "either",
 ]
 
 [[package]]
@@ -2054,7 +2045,7 @@ dependencies = [
  "failure",
  "fnv",
  "internment",
- "itertools 0.9.0",
+ "itertools",
  "log",
  "min-max-heap",
  "misc_utils",
@@ -2416,11 +2407,11 @@ dependencies = [
 
 [[package]]
 name = "tinyset"
-version = "0.4.3"
+version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bac0bf3948997bdc80f4c01587c7aae16ee1e51a2171d9b30de029b40733ce33"
+checksum = "784f540960a63144d63992caf430ed87e39d920f2c474cb8ac586ff31fb861fc"
 dependencies = [
- "itertools 0.8.2",
+ "itertools",
  "rand",
 ]
 
