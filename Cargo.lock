@@ -330,9 +330,9 @@ dependencies = [
 
 [[package]]
 name = "criterion-plot"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddeaf7989f00f2e1d871a26a110f3ed713632feac17f65f03ca938c542618b60"
+checksum = "e022feadec601fba1649cfa83586381a4ad31c6bf3a9ab7d408118b05dd9889d"
 dependencies = [
  "cast",
  "itertools 0.9.0",
