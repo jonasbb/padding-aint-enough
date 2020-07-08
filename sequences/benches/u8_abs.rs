@@ -35,7 +35,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         ParameterizedBenchmark::new(
             "abs_isize",
             |b, i| b.iter(|| abs_isize(*i, black_box(12))),
-            vec![0, 6, 20, 128, 255],
+            vec![0, 6, 20, 64, 127],
         )
         .with_function("abs_i8", |b, i| b.iter(|| abs_i8(*i, black_box(12))))
         .with_function("abs_i16", |b, i| b.iter(|| abs_i16(*i, black_box(12))))
