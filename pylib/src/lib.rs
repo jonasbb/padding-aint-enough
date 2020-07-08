@@ -1,4 +1,3 @@
-#![feature(specialization)]
 #![allow(clippy::all)]
 
 use encrypted_dns::ErrorExt;
