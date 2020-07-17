@@ -11,7 +11,7 @@ aho-corasick = "0.7.13"
 env_logger = "0.7.1"
 failure = "0.1.8"
 flate2 = "1.0.16"
-log = "0.4.8"
+log = "0.4.11"
 misc_utils = "2.5.2"
 reqwest = { version = "0.10.6", features = [ "blocking" ] }
 serde = { version = "1.0.114", features = [ "derive" ] }
