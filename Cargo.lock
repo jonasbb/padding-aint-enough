@@ -1000,13 +1000,12 @@ checksum = "5b141fdc7836c525d4d594027d318c84161ca17aaf8113ab1f81ab93ae897485"
 
 [[package]]
 name = "internment"
-version = "0.3.13"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e5cba670f596a69e619cb796bcf609cb32c0ba4415d1e809104b8b832130d79"
+checksum = "4e674c13abf4b23da884931b189fa03f4df086f024e7360b2109a2ec84cbb3cf"
 dependencies = [
  "hashbrown",
  "lazy_static",
- "serde",
  "state",
  "tinyset",
 ]
