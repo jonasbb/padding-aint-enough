@@ -1006,6 +1006,7 @@ checksum = "4e674c13abf4b23da884931b189fa03f4df086f024e7360b2109a2ec84cbb3cf"
 dependencies = [
  "hashbrown",
  "lazy_static",
+ "serde",
  "state",
  "tinyset",
 ]
