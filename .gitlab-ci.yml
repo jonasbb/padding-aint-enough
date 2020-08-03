@@ -60,8 +60,10 @@ test:cargo:
   after_script:
     # For some reason this cannot be in the variables section
     - export PATH="$CARGO_HOME/bin:$PATH"
-    # Cleanup old leftover crate files
-    - cargo cache --autoclean --keep-duplicate-crates 5
+    # Cleanup old leftover crate files, print before/after stats
+    - cargo cache
+    - cargo cache clean-unref
+    - cargo cache
 
 shellcheck:
   image: koalaman/shellcheck-alpine
