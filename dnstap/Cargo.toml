@@ -15,4 +15,4 @@ trust-dns-proto = { git = "https://github.com/jonasbb/trust-dns", branch = "fix-
 
 [build-dependencies]
 glob = "0.3.0"
-protobuf-codegen-pure = "2.16.2"
+protobuf-codegen-pure = "2.17.0"
