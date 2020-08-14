@@ -8,6 +8,7 @@ use once_cell::sync::Lazy;
 use ordered_float::NotNan;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 use std::{
     cmp::{Eq, Ord, Ordering, PartialEq, PartialOrd},
     fmt::{self, Display},
@@ -99,23 +100,18 @@ pub struct ClassificationResult {
     options: Vec<LabelOption>,
 }
 
+#[serde_as]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 struct LabelOption {
     name: String,
     count: u8,
-    #[serde(with = "::serde_with::rust::display_fromstr")]
+    #[serde_as(as = "DisplayFromStr")]
     distance_min: Min<usize>,
-    #[serde(with = "::serde_with::rust::display_fromstr")]
+    #[serde_as(as = "DisplayFromStr")]
     distance_max: Max<usize>,
-    #[serde(
-        serialize_with = "::serde_with::rust::display_fromstr::serialize",
-        deserialize_with = "crate::serialization::deserialize_min_notnan"
-    )]
+    #[serde_as(as = "DisplayFromStr")]
     distance_min_norm: Min<NotNan<f64>>,
-    #[serde(
-        serialize_with = "::serde_with::rust::display_fromstr::serialize",
-        deserialize_with = "crate::serialization::deserialize_max_notnan"
-    )]
+    #[serde_as(as = "DisplayFromStr")]
     distance_max_norm: Max<NotNan<f64>>,
 }
 

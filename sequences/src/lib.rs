@@ -5,7 +5,6 @@ pub mod load_sequence;
 pub mod pcap;
 pub mod precision_sequence;
 mod sequence;
-mod serialization;
 mod utils;
 
 pub use crate::{

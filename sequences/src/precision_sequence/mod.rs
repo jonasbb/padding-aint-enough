@@ -1,10 +1,7 @@
 mod adaptive_padding;
 
 use self::adaptive_padding::AdaptivePadding;
-use crate::{
-    serialization::serde_duration, utils::Probability, AbstractQueryResponse, LoadSequenceConfig,
-    Sequence,
-};
+use crate::{utils::Probability, AbstractQueryResponse, LoadSequenceConfig, Sequence};
 use chrono::{Duration, NaiveDateTime};
 use failure::{bail, Error};
 #[cfg(feature = "read_pcap")]
@@ -14,6 +11,7 @@ use misc_utils::{fs, path::PathExt};
 use rand::{distributions::Open01, Rng, SeedableRng};
 use rand_xorshift::XorShiftRng;
 use serde::{Deserialize, Serialize};
+use serde_with::{formats::Flexible, serde_as, DurationSecondsWithFrac};
 use std::{
     cmp::{max, min},
     fmt,
@@ -283,13 +281,14 @@ impl Into<AbstractQueryResponse> for &PrecisionSequenceEvent {
     }
 }
 
+#[serde_as]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
 pub struct Overhead {
     pub queries_baseline: isize,
     pub queries: isize,
-    #[serde(with = "serde_duration")]
+    #[serde_as(as = "DurationSecondsWithFrac<String, Flexible>")]
     pub time_baseline: Duration,
-    #[serde(with = "serde_duration")]
+    #[serde_as(as = "DurationSecondsWithFrac<String, Flexible>")]
     pub time: Duration,
 }
 

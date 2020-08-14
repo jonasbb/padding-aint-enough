@@ -12,6 +12,7 @@ use once_cell::sync::Lazy;
 use petgraph::prelude::*;
 use petgraph_graphml::GraphMl;
 use serde::{Deserialize, Serialize};
+use serde_with::{serde_as, DisplayFromStr};
 use std::{
     borrow::Cow,
     convert::TryFrom,
@@ -134,10 +135,11 @@ fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     Ok(())
 }
 
+#[serde_as]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize)]
 pub struct RequestInfo {
     normalized_domain_name: String,
-    #[serde(with = "serde_with::rust::display_fromstr")]
+    #[serde_as(as = "DisplayFromStr")]
     earliest_wall_time: Min<DateTime<Utc>>,
     requests: Vec<IndividualRequest>,
 }
