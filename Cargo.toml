@@ -49,7 +49,7 @@ name = "parse_chrome_json"
 
 [dependencies]
 chrome = {path = "./chrome"}
-chrono = "0.4.13"
+chrono = "0.4.15"
 csv = "1.1.3"
 dnstap = {path = "./dnstap"}
 env_logger = "0.7.1"
