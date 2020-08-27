@@ -2605,14 +2605,18 @@ dependencies = [
 
 [[package]]
 name = "trust-dns-proto"
-version = "0.19.2"
-source = "git+https://github.com/jonasbb/trust-dns?branch=fix-empty-option-at-end-of-edns#02f5755308a43bc5fe1e6c17dce213ca582539bf"
+version = "0.20.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e541e8a0b8151496cd0625f4a2c023c98854c7904bf92121baab8445733bb19a"
 dependencies = [
  "async-trait",
  "backtrace",
  "enum-as-inner",
- "futures",
+ "futures-channel",
+ "futures-io",
+ "futures-util",
  "idna",
+ "ipnet",
  "lazy_static",
  "log",
  "rand",
