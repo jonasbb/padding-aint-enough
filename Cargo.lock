@@ -642,7 +642,6 @@ dependencies = [
  "env_logger",
  "failure",
  "misc_utils",
- "pretty_assertions",
  "sequences",
  "structopt",
 ]
@@ -1951,17 +1950,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ron"
-version = "0.6.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8a58080b7bb83b2ea28c3b7a9a994fd5e310330b7c8ca5258d99b98128ecfe4"
-dependencies = [
- "base64",
- "bitflags",
- "serde",
-]
-
-[[package]]
 name = "rust-argon2"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2113,7 +2101,6 @@ dependencies = [
  "rand",
  "rand_xorshift",
  "rayon",
- "ron",
  "rustls",
  "serde",
  "serde_json",
@@ -2507,7 +2494,6 @@ dependencies = [
  "once_cell",
  "openssl",
  "openssl-probe",
- "pretty_assertions",
  "rand",
  "sequences",
  "serde_json",
