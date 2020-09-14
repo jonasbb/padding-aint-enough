@@ -2,7 +2,9 @@
 
 use encrypted_dns::ErrorExt;
 use failure::{format_err, Error, ResultExt};
-use pyo3::{basic::CompareOp, exceptions::Exception, prelude::*, types::PyType, PyObjectProtocol};
+use pyo3::{
+    basic::CompareOp, exceptions::PyException, prelude::*, types::PyType, PyObjectProtocol,
+};
 use sequences::{
     distance_cost_info::CostTracker, knn::LabelledSequences,
     load_all_files_with_extension_from_dir_with_config, GapMode, LoadSequenceConfig,
@@ -11,7 +13,7 @@ use sequences::{
 use std::{collections::BTreeMap, ffi::OsStr, path::Path};
 
 fn error2py(err: Error) -> PyErr {
-    PyErr::new::<Exception, _>(format!("{}", err.display_causes()))
+    PyErr::new::<PyException, _>(format!("{}", err.display_causes()))
 }
 
 // Function name is module name
