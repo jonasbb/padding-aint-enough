@@ -20,4 +20,4 @@ serde_json = "1.0.57"
 structopt = "0.3.17"
 tokio = { version = "0.2.22", features = [ "fs", "io-util", "stream", "tcp", "time" ] }
 tokio-openssl = "0.4.0"
-trust-dns-proto = { version = "0.20.0-alpha.1", default-features = false }
+trust-dns-proto = { version = "0.20.0-alpha.2", default-features = false }

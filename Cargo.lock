@@ -2593,9 +2593,9 @@ dependencies = [
 
 [[package]]
 name = "trust-dns-proto"
-version = "0.20.0-alpha.1"
+version = "0.20.0-alpha.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e541e8a0b8151496cd0625f4a2c023c98854c7904bf92121baab8445733bb19a"
+checksum = "d6788c8cf25775c9095c373ee828438d76dcbd646878c35985eb9a35aa03b64f"
 dependencies = [
  "async-trait",
  "backtrace",
