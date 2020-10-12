@@ -49,6 +49,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.33"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1fd36ffbb1fb7c834eac128ea8d0e310c5aeb635548f9d58861e1308d46e71c"
+
+[[package]]
 name = "arrayref"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -234,8 +240,8 @@ name = "commoncrawldownloader"
 version = "0.1.0"
 dependencies = [
  "aho-corasick",
+ "anyhow",
  "env_logger",
- "failure",
  "flate2",
  "log",
  "misc_utils",
@@ -525,9 +531,9 @@ dependencies = [
 name = "dns-sequence"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "csv",
  "env_logger",
- "failure",
  "log",
  "misc_utils",
  "once_cell",
@@ -544,8 +550,8 @@ dependencies = [
 name = "dnstap"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
- "failure",
  "framestream",
  "glob",
  "log",
@@ -586,13 +592,13 @@ dependencies = [
 name = "encrypted-dns"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrome",
  "chrono",
  "criterion",
  "csv",
  "dnstap",
  "env_logger",
- "failure",
  "glob",
  "log",
  "min-max-heap",
@@ -647,33 +653,11 @@ dependencies = [
 name = "extract_sequence"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "env_logger",
- "failure",
  "misc_utils",
  "sequences",
  "structopt",
-]
-
-[[package]]
-name = "failure"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d32e9bd16cc02eae7db7ef620b392808b89f6a5e16bb3497d159c6b92a0f4f86"
-dependencies = [
- "backtrace",
- "failure_derive",
-]
-
-[[package]]
-name = "failure_derive"
-version = "0.1.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa4da3c766cd7a0db8242e326e9e4e081edd567072893ed320008189715366a4"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
- "synstructure",
 ]
 
 [[package]]
@@ -719,9 +703,10 @@ checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
 name = "framestream"
 version = "0.1.2"
 dependencies = [
+ "anyhow",
  "byteorder",
- "failure",
  "log",
+ "thiserror",
 ]
 
 [[package]]
@@ -1296,16 +1281,17 @@ dependencies = [
 
 [[package]]
 name = "misc_utils"
-version = "2.5.2"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80d6b55d0794eefa1c5a2bf8bcf08a12be06281e07fd3cfbe55868f8b006fee3"
+checksum = "ad1b5b3901bcf9121baae55ce3e6153d7dc4f9732f36f674f76b7371ad8de5fa"
 dependencies = [
- "failure",
+ "anyhow",
  "flate2",
  "log",
  "num-traits",
  "serde",
  "serde_json",
+ "thiserror",
  "xz2",
 ]
 
@@ -1599,8 +1585,8 @@ checksum = "d36492546b6af1463394d46f0c834346f31548646f6ba10849802c9c9a27ac33"
 name = "plot-dnstap"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "env_logger",
- "failure",
  "log",
  "pyo3",
  "sequences",
@@ -1734,8 +1720,8 @@ dependencies = [
 name = "pylib"
 version = "0.3.0"
 dependencies = [
+ "anyhow",
  "encrypted-dns",
- "failure",
  "misc_utils",
  "pyo3",
  "sequences",
@@ -2105,12 +2091,12 @@ checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 name = "sequences"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "criterion",
  "dashmap",
  "dnstap",
  "etherparse",
- "failure",
  "fnv",
  "internment",
  "itertools",
@@ -2320,21 +2306,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "synstructure"
-version = "0.12.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b834f2d66f734cb897113e34aaff2f1ab4719ca946f9a7358dba8f8064148701"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
- "unicode-xid",
-]
-
-[[package]]
 name = "taskmanager"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrome",
  "chrono",
  "diesel",
@@ -2342,7 +2317,6 @@ dependencies = [
  "diesel_migrations",
  "encrypted-dns",
  "env_logger",
- "failure",
  "log",
  "misc_utils",
  "once_cell",
@@ -2405,10 +2379,10 @@ dependencies = [
 name = "third-party-resources"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "csv",
  "dnstap",
  "env_logger",
- "failure",
  "log",
  "misc_utils",
  "once_cell",
@@ -2509,10 +2483,10 @@ checksum = "238ce071d267c5710f9d31451efec16c5ee22de34df17cc05e56cbc92e967117"
 name = "tlsproxy"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "byteorder",
  "chrono",
  "env_logger",
- "failure",
  "futures",
  "log",
  "once_cell",
@@ -2522,6 +2496,7 @@ dependencies = [
  "sequences",
  "serde_json",
  "structopt",
+ "thiserror",
  "tokio",
  "tokio-openssl",
  "trust-dns-proto",

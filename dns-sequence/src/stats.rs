@@ -1,7 +1,7 @@
 use crate::reverse_cum_sum;
+use anyhow::{anyhow, Context as _, Error};
 use csv::WriterBuilder;
-use failure::{format_err, Error, ResultExt};
-use misc_utils::fs::{file_open_write, WriteOptions};
+use misc_utils::fs::file_write;
 use once_cell::sync::Lazy;
 use prettytable::{
     cell,
@@ -13,7 +13,6 @@ use serde::Serialize;
 use std::{
     collections::HashMap,
     fmt::{self, Display},
-    fs::OpenOptions,
     hash::Hash,
     path::Path,
 };
@@ -100,11 +99,10 @@ impl<S: Eq + Hash> StatsCollector<S> {
     where
         S: Serialize,
     {
-        let wtr = file_open_write(
-            path.as_ref(),
-            WriteOptions::new().set_open_options(OpenOptions::new().create(true).truncate(true)),
-        )
-        .context("Cannot open writer for statistics.")?;
+        let wtr = file_write(path.as_ref())
+            .create(true)
+            .truncate()
+            .context("Cannot open writer for statistics.")?;
         let mut writer = WriterBuilder::new().has_headers(true).from_writer(wtr);
 
         #[derive(Serialize)]
@@ -208,9 +206,7 @@ impl<S: Eq + Hash> StatsCollector<S> {
                     reasons: stats.reasons.iter().map(|(_reason, count)| count).sum(),
                 };
 
-                writer
-                    .serialize(&out)
-                    .map_err(|err| format_err!("{}", err))?;
+                writer.serialize(&out).map_err(|err| anyhow!("{}", err))?;
             }
         }
 
@@ -439,10 +435,10 @@ impl<S: Eq + Hash> StatsCounter<S> {
 ///
 /// Instead of plotting this simply dumps the plotting data as JSON
 mod plot {
-    use failure::Error;
+    use anyhow::Error;
     use log::info;
-    use misc_utils::fs::{file_open_write, WriteOptions};
-    use std::{collections::HashMap, fs::OpenOptions, path::Path};
+    use misc_utils::fs::file_write;
+    use std::{collections::HashMap, path::Path};
 
     pub fn percentage_stacked_area_chart<S: ::std::hash::BuildHasher>(
         data: &[(impl AsRef<str>, impl AsRef<[f64]>)],
@@ -466,10 +462,7 @@ mod plot {
         info!("Dump json of plotting data");
         let path = output.as_ref().with_extension("json");
 
-        let mut wtr = file_open_write(
-            &path,
-            WriteOptions::new().set_open_options(OpenOptions::new().create(true).truncate(true)),
-        )?;
+        let mut wtr = file_write(&path).create(true).truncate()?;
         let data: Vec<(&str, &[f64])> = data
             .iter()
             .map(|(label, value)| (label.as_ref(), value.as_ref()))

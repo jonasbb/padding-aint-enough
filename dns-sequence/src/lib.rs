@@ -1,5 +1,5 @@
+use anyhow::{anyhow, Context as _, Error};
 use csv::ReaderBuilder;
-use failure::{format_err, Error, ResultExt};
 use log::{error, info, warn};
 use misc_utils::fs::file_open_read;
 use once_cell::sync::Lazy;
@@ -52,7 +52,7 @@ where
         let path = path.as_ref();
         let mut reader = ReaderBuilder::new().has_headers(false).from_reader(
             file_open_read(path)
-                .with_context(|_| format!("Opening confusion file '{}' failed", path.display()))?,
+                .with_context(|| format!("Opening confusion file '{}' failed", path.display()))?,
         );
         for record in reader.deserialize() {
             let record: Record = record?;
@@ -83,11 +83,10 @@ pub fn load_all_files(
     // Support to read a pre-processed JSON file instead of reading many directories from disk
     // Implementing this here means this works in all cases
     if base_dir.is_file() {
-        let s = misc_utils::fs::read_to_string(base_dir).with_context(|_| {
-            format_err!("Could not open {} to read from it.", base_dir.display())
-        })?;
-        return Ok(serde_json::from_str(&s).with_context(|_| {
-            format_err!(
+        let s = misc_utils::fs::read_to_string(base_dir)
+            .with_context(|| anyhow!("Could not open {} to read from it.", base_dir.display()))?;
+        return Ok(serde_json::from_str(&s).with_context(|| {
+            anyhow!(
                 "The file {} could not be deserialized into LabelledSequences",
                 base_dir.display()
             )
@@ -106,7 +105,7 @@ pub fn load_all_files(
         file_extension,
         sequence_config,
     )
-    .with_context(|_| {
+    .with_context(|| {
         format!(
             "Could not load some sequence files from dir: {}",
             base_dir.display()

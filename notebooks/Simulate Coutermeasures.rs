@@ -23,7 +23,7 @@
 // %%
 extern crate sequences;
 extern crate glob;
-extern crate failure;
+extern crate anyhow;
 extern crate rayon;
 extern crate chrono;
 extern crate serde;
@@ -113,7 +113,7 @@ for &prob in &[0.4, 0.3, 0.2, 0.1] {
 }
 
 // %%
-let mut writer = misc_utils::fs::file_open_write("./precision-sequences10.json.xz", misc_utils::fs::WriteOptions::default().set_filetype(misc_utils::fs::FileType::Xz)).unwrap();
+let mut writer = misc_utils::fs::file_write("./precision-sequences10.json.xz").create(true).truncate().unwrap();
 serde_json::to_writer(writer, &converted_sequences).unwrap();
 
 // %%

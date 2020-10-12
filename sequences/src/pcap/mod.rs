@@ -21,9 +21,9 @@ mod tcp_buffer;
 
 use self::{bounded_buffer::BoundedBuffer, tcp_buffer::TcpBuffer};
 use crate::{AbstractQueryResponse, LoadSequenceConfig, PrecisionSequence, Sequence};
+use anyhow::{anyhow, bail, Context as _, Error};
 use chrono::NaiveDateTime;
 use etherparse::{InternetSlice, Ipv4HeaderSlice, SlicedPacket, TcpHeaderSlice, TransportSlice};
-use failure::{bail, format_err, Error, ResultExt};
 use itertools::Itertools;
 use log::{debug, trace};
 use misc_utils::fs;
@@ -209,11 +209,11 @@ fn extract_tls_records(
 ) -> Result<HashMap<TwoWayFlowIdentifier, Vec<TlsRecord>>, Error> {
     let file_content = fs::read(file)?;
     let capture = PcapCapture::from_file(&file_content).map_err(|err| match err {
-        PcapError::Eof => format_err!("Failed reading pcap: EOF"),
-        PcapError::ReadError => format_err!("Failed reading pcap: Read error"),
-        PcapError::Incomplete => format_err!("Failed reading pcap: Incomplete"),
-        PcapError::HeaderNotRecognized => format_err!("Failed reading pcap: Header not recognized"),
-        PcapError::NomError(nom_error) => format_err!(
+        PcapError::Eof => anyhow!("Failed reading pcap: EOF"),
+        PcapError::ReadError => anyhow!("Failed reading pcap: Read error"),
+        PcapError::Incomplete => anyhow!("Failed reading pcap: Incomplete"),
+        PcapError::HeaderNotRecognized => anyhow!("Failed reading pcap: Header not recognized"),
+        PcapError::NomError(nom_error) => anyhow!(
             "Failed reading pcap: Nom Error: {}",
             nom_error.description()
         ),
@@ -262,14 +262,14 @@ fn extract_tls_records(
                 }
                 Some(PacketData::L2(data)) => {
                     // Normal Ethernet captures
-                    parsed_packet = SlicedPacket::from_ethernet(data)
-                        .map_err(|err| format_err!("{:?}", err))?;
+                    parsed_packet =
+                        SlicedPacket::from_ethernet(data).map_err(|err| anyhow!("{:?}", err))?;
                 }
                 Some(PacketData::L3(_, data)) => {
                     // Linux cooked capture
                     // Used for capturing the `any` device
                     parsed_packet =
-                        SlicedPacket::from_ip(data).map_err(|err| format_err!("{:?}", err))?;
+                        SlicedPacket::from_ip(data).map_err(|err| anyhow!("{:?}", err))?;
                 }
             };
             if let Some(InternetSlice::Ipv4(inner)) = parsed_packet.ip {
@@ -378,7 +378,7 @@ fn extract_tls_records(
         }
         Ok(())
     })()
-    .with_context(|_| format!("Packet ID: {}", packet_id))?;
+    .with_context(|| format!("Packet ID: {}", packet_id))?;
 
     Ok(tls_records)
 }
@@ -513,7 +513,7 @@ pub fn build_sequence(
         .collect();
     crate::convert_to_sequence(&records, file.to_string_lossy().to_string(), config).ok_or_else(
         || {
-            format_err!(
+            anyhow!(
                 "Could not build Sequence from extracted TLS records for file {}",
                 file.display()
             )
@@ -538,7 +538,7 @@ pub fn build_precision_sequence(
         file.to_string_lossy().to_string(),
     )
     .ok_or_else(|| {
-        format_err!(
+        anyhow!(
             "Could not build PrecisionSequence from extracted TLS records for file {}",
             file.display()
         )

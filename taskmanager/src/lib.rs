@@ -6,9 +6,9 @@ extern crate diesel;
 #[macro_use]
 extern crate diesel_migrations;
 
+use anyhow::{bail, Context as _, Error};
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
-use failure::{bail, Error, ResultExt};
 use log::info;
 use misc_utils::fs::read_to_string;
 use serde::{Deserialize, Serialize};
@@ -525,7 +525,7 @@ impl TaskManager {
                         )
                         .bind::<Text, _>(website)
                         .load::<models::WebsiteCounters>(&*conn)
-                        .with_context(|_| {
+                        .with_context(|| {
                             format!(
                                 "Cannot retrieve website counters from database for website '{}'",
                                 website,

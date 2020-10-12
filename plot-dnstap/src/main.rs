@@ -1,4 +1,4 @@
-use failure::{format_err, Error, ResultExt};
+use anyhow::{anyhow, Context as _, Error};
 use pyo3::{types::PyDict, PyErr, PyResult, Python};
 use sequences::dnstap::Query;
 use std::path::{Path, PathBuf};
@@ -26,23 +26,8 @@ struct CliArgs {
     #[structopt(value_name = "DNSTAP FILES")]
     dnstap_files: Vec<PathBuf>,
 }
-fn main() {
-    use std::io::{self, Write};
 
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in err.iter_chain() {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        let _ = writeln!(out, "{}", err.backtrace());
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let cli_args = CliArgs::from_args();
@@ -60,7 +45,7 @@ fn run() -> Result<(), Error> {
         .into_iter()
         .map(|file| {
             let queries = sequences::dnstap::load_matching_query_responses_from_dnstap(&file)
-                .with_context(|_| format_err!("Cannot process file {}", file.display()))?;
+                .with_context(|| anyhow!("Cannot process file {}", file.display()))?;
             let outfile = if let Some(outdir) = outdir {
                 outdir.join(file.file_name().unwrap()).with_extension("svg")
             } else {
@@ -128,7 +113,7 @@ fn pyerr2error(err: PyErr) -> Error {
         .unwrap()
         .extract()
         .unwrap();
-    format_err!("{}", err_msg)
+    anyhow!("{}", err_msg)
 }
 
 /// Return the filename without the extension

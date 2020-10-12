@@ -3,8 +3,8 @@
 
 include!(env!("PROTO_MOD_RS"));
 
+use anyhow::{anyhow, bail, Error};
 use chrono::{DateTime, NaiveDateTime, Utc};
-use failure::{bail, format_err, Error};
 use std::{
     convert::TryFrom,
     net::{IpAddr, Ipv4Addr, Ipv6Addr},
@@ -148,7 +148,7 @@ impl DnstapContent {
         let query_zone = if from.has_query_zone() {
             Some(
                 DnsName::from_bytes(&*from.take_query_zone())
-                    .map_err(|err| format_err!("Processing the query zone failed: {}", err))?,
+                    .map_err(|err| anyhow!("Processing the query zone failed: {}", err))?,
             )
         } else {
             None
@@ -157,7 +157,7 @@ impl DnstapContent {
             let buf = from.take_query_message();
             Some((
                 DnsMessage::from_vec(&*buf)
-                    .map_err(|err| format_err!("Processing the query message failed: {}", err))?,
+                    .map_err(|err| anyhow!("Processing the query message failed: {}", err))?,
                 buf.len(),
             ))
         } else {
@@ -166,9 +166,8 @@ impl DnstapContent {
         let response_message = if from.has_response_message() {
             let buf = from.take_response_message();
             Some((
-                DnsMessage::from_vec(&*buf).map_err(|err| {
-                    format_err!("Processing the response message failed: {}", err)
-                })?,
+                DnsMessage::from_vec(&*buf)
+                    .map_err(|err| anyhow!("Processing the response message failed: {}", err))?,
                 buf.len(),
             ))
         } else {

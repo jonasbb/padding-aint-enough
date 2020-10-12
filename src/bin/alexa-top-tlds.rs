@@ -1,5 +1,5 @@
+use anyhow::{Context as _, Error};
 use csv::ReaderBuilder;
-use failure::{Error, ResultExt};
 use log::info;
 use misc_utils::fs::file_open_read;
 use serde::Deserialize;
@@ -22,27 +22,13 @@ struct CliArgs {
     limit: u32,
 }
 
-fn main() {
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in err.iter_chain() {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        let _ = writeln!(out, "{}", err.backtrace());
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let cli_args = CliArgs::from_args();
     info!("Process file '{}'", cli_args.alexa_top_file.display());
 
-    let file = file_open_read(&cli_args.alexa_top_file).with_context(|_| {
+    let file = file_open_read(&cli_args.alexa_top_file).with_context(|| {
         format!(
             "Opening alexa top file at '{}' failed",
             cli_args.alexa_top_file.display()

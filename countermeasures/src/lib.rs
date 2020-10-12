@@ -20,7 +20,6 @@ pub use crate::{
     pass_through::PassThrough,
     streams::{MyStream, MyTcpStream, TokioOpensslStream},
 };
-use failure::Fail;
 use futures::Stream;
 use log::{error, warn};
 use std::{
@@ -334,18 +333,18 @@ fn test_function_has_correct_type() {
 pub async fn print_error<F, T, E>(future: F)
 where
     F: std::future::Future<Output = Result<T, E>>,
-    E: Fail,
+    E: std::error::Error,
 {
     use std::fmt::Write;
 
     if let Err(err) = future.await {
+        let mut err: &dyn std::error::Error = &err;
         let mut msg = String::new();
-        for fail in Fail::iter_chain(&err) {
-            let _ = writeln!(&mut msg, "{}", fail);
+        while let Some(new_err) = err.source() {
+            // for fail in Fail::iter_chain(&err) {
+            let _ = writeln!(&mut msg, "{}", new_err);
+            err = new_err;
         }
-        if let Some(backtrace) = err.backtrace() {
-            let _ = writeln!(&mut msg, "{}", backtrace);
-        };
         error!("{}", msg);
     }
 }

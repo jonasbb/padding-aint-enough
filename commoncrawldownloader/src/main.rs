@@ -7,7 +7,7 @@
 //! [Common Crawl]: https://commoncrawl.org/
 
 use aho_corasick::AhoCorasick;
-use failure::{bail, Error};
+use anyhow::{bail, Error};
 use flate2::read::MultiGzDecoder;
 use misc_utils::fs;
 use serde::Deserialize;
@@ -44,23 +44,8 @@ struct CliArgs {
     #[structopt(value_name = "DOMAIN")]
     domains: Vec<String>,
 }
-fn main() {
-    use std::io::{self, Write};
 
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in err.iter_chain() {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        let _ = writeln!(out, "{}", err.backtrace());
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let cli_args = CliArgs::from_args();

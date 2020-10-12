@@ -1,8 +1,6 @@
 use chrome::ChromeDebuggerMessage;
-use failure::{Error, Fail};
 use min_max_heap::MinMaxHeap;
 use sequences::common_sequence_classifications::{R008, R009};
-use std::fmt::{self, Display};
 
 pub fn take_largest<I, T>(iter: I, n: usize) -> Vec<T>
 where
@@ -35,46 +33,6 @@ where
         "Output vector only contains more than n elements."
     );
     res
-}
-
-/// A short-lived wrapper for some `Fail` type that displays it and all its
-/// causes delimited by the string ": ".
-pub struct DisplayCauses<'a>(&'a dyn Fail);
-
-impl<'a> Display for DisplayCauses<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Display::fmt(&self.0, f)?;
-        let mut x: &dyn Fail = self.0;
-        while let Some(cause) = x.cause() {
-            f.write_str(": ")?;
-            Display::fmt(&cause, f)?;
-            x = cause;
-        }
-        Ok(())
-    }
-}
-
-pub trait FailExt {
-    fn display_causes(&self) -> DisplayCauses<'_>;
-}
-
-impl<T> FailExt for T
-where
-    T: Fail,
-{
-    fn display_causes(&self) -> DisplayCauses<'_> {
-        DisplayCauses(self)
-    }
-}
-
-pub trait ErrorExt {
-    fn display_causes(&self) -> DisplayCauses<'_>;
-}
-
-impl ErrorExt for Error {
-    fn display_causes(&self) -> DisplayCauses<'_> {
-        DisplayCauses(self.as_fail())
-    }
 }
 
 pub fn chrome_log_contains_errors<S>(msgs: &[ChromeDebuggerMessage<S>]) -> Option<&'static str>

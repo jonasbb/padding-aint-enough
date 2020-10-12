@@ -1,4 +1,4 @@
-use failure::Error;
+use anyhow::Error;
 use misc_utils::fs;
 use sequences::{pcap::build_sequence, LoadSequenceConfig};
 use std::{
@@ -51,23 +51,7 @@ struct CliArgs {
     gap_mode: Option<GapMode>,
 }
 
-fn main() {
-    use std::io::{self, Write};
-
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in err.iter_chain() {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        let _ = writeln!(out, "{}", err.backtrace());
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let cli_args = CliArgs::from_args();

@@ -1,17 +1,17 @@
 [package]
-name = "dnstap"
-version = "0.1.0"
 authors = ["Jonas Bushart <jonas@bushart.org>"]
 edition = "2018"
+name = "dnstap"
+version = "0.1.0"
 
 [dependencies]
+anyhow = "1.0.33"
 chrono = "0.4.19"
-failure = "0.1.8"
-framestream = { path = "../framestream" }
+framestream = {path = "../framestream"}
 log = "0.4.11"
-misc_utils = "2.5.2"
+misc_utils = "3.0.0"
 protobuf = "2.8.1"
-trust-dns-proto = { version = "0.20.0-alpha.2", default-features = false }
+trust-dns-proto = {version = "0.20.0-alpha.2", default-features = false}
 
 [build-dependencies]
 glob = "0.3.0"

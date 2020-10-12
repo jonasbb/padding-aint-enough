@@ -2,10 +2,10 @@ mod jsonl;
 mod stats;
 
 use crate::{jsonl::JsonlFormatter, stats::StatsCollector};
+use anyhow::{anyhow, Context as _, Error};
 use dns_sequence::{load_all_files, prepare_confusion_domains, SimulateOption};
-use failure::{format_err, Error, ResultExt};
 use log::{error, info};
-use misc_utils::fs::{file_open_write, WriteOptions};
+use misc_utils::fs::file_write;
 use sequences::{
     knn::{self, ClassificationResult, LabelledSequences},
     Sequence,
@@ -105,23 +105,7 @@ enum SubCommand {
     },
 }
 
-fn main() {
-    use std::io;
-
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in err.iter_chain() {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        let _ = writeln!(out, "{}", err.backtrace());
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let mut cli_args = CliArgs::from_args();
@@ -129,13 +113,7 @@ fn run() -> Result<(), Error> {
     let writer: Box<dyn Write> = cli_args
         .misclassifications
         .as_ref()
-        .map(|path| {
-            file_open_write(
-                path,
-                WriteOptions::new()
-                    .set_open_options(OpenOptions::new().create(true).truncate(true)),
-            )
-        })
+        .map(|path| file_write(path).create(true).truncate())
         .unwrap_or_else(|| {
             Ok(Box::new(
                 OpenOptions::new().write(true).open("/dev/null").unwrap(),
@@ -403,7 +381,7 @@ where
         reason,
     };
 
-    out.serialize(writer).map_err(|err| format_err!("{}", err))
+    out.serialize(writer).map_err(|err| anyhow!("{}", err))
 }
 
 /// Calculate the reverse cumulitive sum

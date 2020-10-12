@@ -1,6 +1,6 @@
 //! This module contains different utility functions, such as command invocations
 
-use failure::{bail, Error, ResultExt};
+use anyhow::{bail, Context as _, Error};
 use log::trace;
 use std::{
     collections::HashMap,

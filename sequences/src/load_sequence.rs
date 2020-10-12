@@ -1,8 +1,8 @@
 use crate::{
     precision_sequence::PrecisionSequence, AbstractQueryResponse, Sequence, SequenceElement,
 };
+use anyhow::{bail, Error};
 use chrono::Duration;
-use failure::{bail, Error};
 use std::str::FromStr;
 
 /// Specifies how to load data into a [`Sequence`] and which processing steps to perform

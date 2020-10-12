@@ -1,6 +1,6 @@
+use anyhow::{Context as _, Error};
 use chrome::ChromeDebuggerMessage;
 use criterion::{criterion_group, criterion_main, Criterion};
-use failure::{Error, ResultExt};
 use misc_utils::fs::file_open_read;
 use std::{
     io::Read,
@@ -10,7 +10,7 @@ use std::{
 
 fn parse_file_old((rdr, path): (Box<dyn Read>, PathBuf)) -> Result<usize, Error> {
     let msgs: Vec<ChromeDebuggerMessage> = serde_json::from_reader(rdr)
-        .with_context(|_| format!("Error while deserializing '{}'", path.display()))?;
+        .with_context(|| format!("Error while deserializing '{}'", path.display()))?;
     Ok(msgs.len())
 }
 
@@ -18,9 +18,9 @@ fn parse_file_new((mut rdr, path): (Box<dyn Read>, PathBuf)) -> Result<usize, Er
     // open file and parse it
     let mut content = String::with_capacity(1024 * 1024 * 25);
     rdr.read_to_string(&mut content)
-        .with_context(|_| format!("Error while reading '{}'", path.display()))?;
+        .with_context(|| format!("Error while reading '{}'", path.display()))?;
     let msgs: Vec<ChromeDebuggerMessage<&str>> = serde_json::from_str(&content)
-        .with_context(|_| format!("Error while deserializing '{}'", path.display()))?;
+        .with_context(|| format!("Error while deserializing '{}'", path.display()))?;
     Ok(msgs.len())
 }
 
@@ -37,7 +37,7 @@ fn mkreader() -> (Box<dyn Read>, PathBuf) {
     let path = Path::new("./benches/yy.com-7.json.xz").to_path_buf();
     (
         file_open_read(&path)
-            .with_context(|_| format!("Failed to read {}", path.display()))
+            .with_context(|| format!("Failed to read {}", path.display()))
             .unwrap(),
         path,
     )

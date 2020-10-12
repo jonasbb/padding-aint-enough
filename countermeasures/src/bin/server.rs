@@ -2,7 +2,6 @@
 #![warn(rust_2018_idioms)]
 
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
-use failure::Fail;
 use futures::{future, Stream, StreamExt};
 use log::info;
 use openssl::{
@@ -11,7 +10,6 @@ use openssl::{
     x509::X509,
 };
 use std::{
-    io::Write,
     net::SocketAddr,
     path::PathBuf,
     sync::{Arc, Mutex},
@@ -113,25 +111,7 @@ struct CliArgs {
     strategy: Strategy,
 }
 
-fn main() {
-    use std::io;
-
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in Fail::iter_chain(&err) {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        if let Some(backtrace) = err.backtrace() {
-            let _ = writeln!(out, "{}", backtrace);
-        }
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     let log_settings = "server=debug,tlsproxy=debug";
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_settings))
@@ -151,7 +131,7 @@ fn run() -> Result<(), Error> {
         (false, true, _) => config.transport = Transport::Tls,
         (false, false, 53) => config.transport = Transport::Tcp,
         (false, false, 853) => config.transport = Transport::Tls,
-        (false, false, port) => return Err(Error::TransportNotInferable(port, Default::default())),
+        (false, false, port) => return Err(Error::TransportNotInferable(port)),
 
         (true, true, _) => unreachable!(
             "This case is already checked in Clap by having those flags be mutually exclusive."

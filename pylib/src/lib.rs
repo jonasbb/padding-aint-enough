@@ -1,7 +1,6 @@
 #![allow(clippy::all)]
 
-use encrypted_dns::ErrorExt;
-use failure::{format_err, Error, ResultExt};
+use anyhow::{anyhow, Context as _, Error};
 use pyo3::{
     basic::CompareOp, exceptions::PyException, prelude::*, types::PyType, PyObjectProtocol,
 };
@@ -13,7 +12,7 @@ use sequences::{
 use std::{collections::BTreeMap, ffi::OsStr, path::Path};
 
 fn error2py(err: Error) -> PyErr {
-    PyErr::new::<PyException, _>(format!("{}", err.display_causes()))
+    PyErr::new::<PyException, _>(err.to_string())
 }
 
 // Function name is module name
@@ -98,11 +97,11 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
         path: String,
     ) -> PyResult<Vec<(String, Vec<PySequence>)>> {
         let s = misc_utils::fs::read_to_string(&path)
-            .with_context(|_| format_err!("Could not open {} to read from it.", path))
+            .with_context(|| anyhow!("Could not open {} to read from it.", path))
             .map_err(|err| error2py(err.into()))?;
         let seqs: Vec<LabelledSequences<String>> = serde_json::from_str(&s)
-            .with_context(|_| {
-                format_err!(
+            .with_context(|| {
+                anyhow!(
                     "The file {} could not be deserialized into LabelledSequences",
                     path
                 )

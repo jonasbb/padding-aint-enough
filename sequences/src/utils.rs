@@ -1,5 +1,5 @@
 use crate::{knn::ClassifierData, LoadSequenceConfig, Sequence};
-use failure::{bail, Error, ResultExt};
+use anyhow::{bail, Context as _, Error};
 use log::{debug, warn};
 use misc_utils::path::PathExt;
 use rayon::prelude::*;
@@ -73,7 +73,7 @@ pub fn load_all_files_with_extension_from_dir_with_config(
                 .into_iter()
                 .filter_map(|file| {
                     debug!("Processing {:?} file '{}'", file_extension, file.display());
-                    match Sequence::from_path_with_config(&file, config).with_context(|_| {
+                    match Sequence::from_path_with_config(&file, config).with_context(|| {
                         format!("Processing {:?} file '{}'", file_extension, file.display())
                     }) {
                         Ok(seq) => Some(seq),

@@ -1,20 +1,20 @@
 [package]
-name = "commoncrawldownloader"
-version = "0.1.0"
 authors = ["Jonas Bushart <jonas@bushart.org>"]
 edition = "2018"
+name = "commoncrawldownloader"
+version = "0.1.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 aho-corasick = "0.7.13"
+anyhow = "1.0.33"
 env_logger = "0.7.1"
-failure = "0.1.8"
 flate2 = "1.0.18"
 log = "0.4.11"
-misc_utils = "2.5.2"
-reqwest = { version = "0.10.8", features = [ "blocking" ] }
-serde = { version = "1.0.116", features = [ "derive" ] }
+misc_utils = "3.0.0"
+reqwest = {version = "0.10.8", features = ["blocking"]}
+serde = {version = "1.0.116", features = ["derive"]}
 serde_json = "1.0.58"
 structopt = "0.3.19"
 url = "2.1.1"

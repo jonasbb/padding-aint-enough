@@ -12,6 +12,7 @@ use crate::{
     precision_sequence::PrecisionSequence,
     AbstractQueryResponse, Sequence,
 };
+use anyhow::{anyhow, bail, Context as _, Error};
 use chrono::{DateTime, Utc};
 use dnstap::{
     dnstap::Message_Type,
@@ -19,7 +20,6 @@ use dnstap::{
     protos::{self, DnstapContent},
     sanity_check_dnstap,
 };
-use failure::{bail, format_err, Error, ResultExt};
 use log::{debug, info};
 use serde::Serialize;
 use std::{collections::BTreeMap, path::Path};
@@ -94,7 +94,7 @@ pub fn build_sequence(dnstap_file: &Path, config: LoadSequenceConfig) -> Result<
         dnstap_file.to_string_lossy().to_string(),
         config,
     );
-    Ok(seq.ok_or_else(|| format_err!("Sequence is empty"))?)
+    Ok(seq.ok_or_else(|| anyhow!("Sequence is empty"))?)
 }
 
 /// Load a dnstap file and generate a [`PrecisionSequence`] from it
@@ -105,7 +105,7 @@ pub fn build_precision_sequence(dnstap_file: &Path) -> Result<PrecisionSequence,
         .filter(|q| q.source == QuerySource::Forwarder);
     let seq =
         convert_to_precision_sequence(forwarder_queries, dnstap_file.to_string_lossy().to_string());
-    Ok(seq.ok_or_else(|| format_err!("PrecisionSequence is empty"))?)
+    Ok(seq.ok_or_else(|| anyhow!("PrecisionSequence is empty"))?)
 }
 
 /// Load all pairs of client Query/Responses and forwarder Query/Responses
@@ -115,7 +115,7 @@ pub fn load_matching_query_responses_from_dnstap(dnstap_file: &Path) -> Result<V
     // process dnstap if available
     let mut events: Vec<protos::Dnstap> = process_dnstap(&*dnstap_file)?
         .collect::<Result<_, Error>>()
-        .with_context(|_| "Failed to read the raw DNSTAP file")?;
+        .with_context(|| "Failed to read the raw DNSTAP file")?;
 
     // the dnstap events can be out of order, so sort them by timestamp
     // always take the later timestamp if there are multiple

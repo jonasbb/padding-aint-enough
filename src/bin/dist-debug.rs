@@ -1,5 +1,4 @@
-use encrypted_dns::FailExt;
-use failure::{Error, ResultExt};
+use anyhow::{Context as _, Error};
 use glob::glob;
 use log::{debug, info, warn};
 use rayon::prelude::*;
@@ -16,23 +15,7 @@ struct CliArgs {
     dnstap_group: Vec<String>,
 }
 
-fn main() {
-    use std::io::{self, Write};
-
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in err.iter_chain() {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        let _ = writeln!(out, "{}", err.backtrace());
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let cli_args = CliArgs::from_args();
@@ -129,12 +112,12 @@ where
                 .into_par_iter()
                 .filter_map(|dnstap_file| {
                     debug!("Processing dnstap file '{}'", dnstap_file.display());
-                    match Sequence::from_path(&*dnstap_file).with_context(|_| {
+                    match Sequence::from_path(&*dnstap_file).with_context(|| {
                         format!("Processing dnstap file '{}'", dnstap_file.display())
                     }) {
                         Ok(seq) => Some(seq),
                         Err(err) => {
-                            warn!("{}", err.display_causes());
+                            warn!("{}", err);
                             None
                         }
                     }

@@ -1,7 +1,7 @@
+use anyhow::Error;
 use dns_sequence::{load_all_files, prepare_confusion_domains, SimulateOption};
-use failure::Error;
 use log::info;
-use std::{ffi::OsString, io::Write, path::PathBuf};
+use std::{ffi::OsString, path::PathBuf};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -38,23 +38,7 @@ struct CliArgs {
     outfile: PathBuf,
 }
 
-fn main() {
-    use std::io;
-
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in err.iter_chain() {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        let _ = writeln!(out, "{}", err.backtrace());
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let cli_args = CliArgs::from_args();
@@ -74,7 +58,9 @@ fn run() -> Result<(), Error> {
         training_data.len()
     );
 
-    let writer = misc_utils::fs::file_open_write(cli_args.outfile, Default::default())?;
+    let writer = misc_utils::fs::file_write(cli_args.outfile)
+        .create(true)
+        .truncate()?;
     serde_json::to_writer(writer, &training_data)?;
 
     Ok(())

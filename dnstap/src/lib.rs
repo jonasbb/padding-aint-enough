@@ -4,7 +4,7 @@ pub mod protos;
 
 pub use crate::protos::dnstap;
 use crate::{dnstap::Message_Type, protos::DnstapContent};
-use failure::{bail, Error, ResultExt};
+use anyhow::{bail, Context as _, Error};
 use framestream::DecoderReader;
 use log::warn;
 use misc_utils::fs::file_open_read;
@@ -17,7 +17,7 @@ pub fn process_dnstap<P: AsRef<Path>>(
     let path_str = path.to_string_lossy().to_string();
 
     let rdr = file_open_read(path)
-        .with_context(|_| format!("Opening input file '{}' failed", path.display()))?;
+        .with_context(|| format!("Opening input file '{}' failed", path.display()))?;
     let fstrm = DecoderReader::with_content_type(rdr, "protobuf:dnstap.Dnstap".into());
 
     Ok(fstrm

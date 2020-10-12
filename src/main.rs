@@ -1,11 +1,11 @@
 mod depgraph;
 
 use crate::depgraph::DepGraph;
+use anyhow::{anyhow, bail, Context as _, Error};
 use chrome::{ChromeDebuggerMessage, Request, TargetInfo};
 use chrono::{DateTime, Utc};
-use failure::{bail, format_err, Error, ResultExt};
 use misc_utils::{
-    fs::{file_open_write, read_to_string, WriteOptions},
+    fs::{file_write, read_to_string},
     Min,
 };
 use once_cell::sync::Lazy;
@@ -16,7 +16,7 @@ use serde_with::{serde_as, DisplayFromStr};
 use std::{
     borrow::Cow,
     convert::TryFrom,
-    fs::{create_dir_all, remove_dir_all, OpenOptions},
+    fs::{create_dir_all, remove_dir_all},
     path::PathBuf,
     sync::RwLock,
 };
@@ -38,23 +38,7 @@ struct CliArgs {
     webpage_log: PathBuf,
 }
 
-fn main() {
-    use std::io::{self, Write};
-
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in err.iter_chain() {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        let _ = writeln!(out, "{}", err.backtrace());
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let cli_args = CliArgs::from_args();
@@ -69,20 +53,20 @@ fn run() -> Result<(), Error> {
         *lock = outdir;
     }
 
-    let content = read_to_string(&cli_args.webpage_log).with_context(|_| {
+    let content = read_to_string(&cli_args.webpage_log).with_context(|| {
         format!(
             "Reading input file '{}' failed",
             cli_args.webpage_log.display(),
         )
     })?;
     let messages: Vec<ChromeDebuggerMessage> =
-        serde_json::from_str(&content).with_context(|_| {
+        serde_json::from_str(&content).with_context(|| {
             format!(
                 "Error while deserializing '{}'",
                 cli_args.webpage_log.display()
             )
         })?;
-    process_messages(&messages).with_context(|_| {
+    process_messages(&messages).with_context(|| {
         format!(
             "Processing chrome debugger log '{}'",
             cli_args.webpage_log.display()
@@ -105,7 +89,7 @@ fn url_to_domain(url: &str) -> Result<String, Error> {
         .host_str()
         .map(ToString::to_string)
         .ok_or_else(|| {
-            format_err!(
+            anyhow!(
                 "The URL must have a domain part, but does not. URL: '{}'",
                 parsed_url
             )
@@ -113,7 +97,7 @@ fn url_to_domain(url: &str) -> Result<String, Error> {
 }
 
 fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
-    let mut depgraph = DepGraph::new(messages).context("Failure to build the graph.")?;
+    let mut depgraph = DepGraph::new(messages).context("anyhow to build the graph.")?;
     depgraph.simplify_graph();
     depgraph.duplicate_domains();
     let graph = depgraph.as_graph();
@@ -125,11 +109,10 @@ fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {
 fn export_as_graphml(graph: &Graph<RequestInfo, ()>) -> Result<(), Error> {
     let graphml = GraphMl::new(&graph).export_node_weights(Box::new(RequestInfo::graphml_support));
     let fname = get_output_dir().join(DEP_GRAPH);
-    let wtr = file_open_write(
-        &fname,
-        WriteOptions::default().set_open_options(OpenOptions::new().create(true).truncate(true)),
-    )
-    .with_context(|_| format!("Opening output file '{}' failed", &fname.display(),))?;
+    let wtr = file_write(&fname)
+        .create(true)
+        .truncate()
+        .with_context(|| format!("Opening output file '{}' failed", &fname.display(),))?;
     graphml.to_writer(wtr)?;
 
     Ok(())

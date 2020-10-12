@@ -1,7 +1,7 @@
 //! Types for TCP stream reassembly
 
 use super::BoundedBuffer;
-use failure::{bail, Error};
+use anyhow::{bail, Error};
 use std::collections::BTreeMap;
 
 /// Type for TCP stream reassembly

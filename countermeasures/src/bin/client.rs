@@ -3,7 +3,6 @@
 
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
 use chrono::{SecondsFormat, Utc};
-use failure::Fail;
 use futures::{future, Stream, StreamExt};
 use log::{info, trace, warn};
 use openssl::{
@@ -13,7 +12,6 @@ use openssl::{
 };
 use sequences::{load_sequence::convert_to_sequence, AbstractQueryResponse, LoadSequenceConfig};
 use std::{
-    io::Write,
     mem,
     net::SocketAddr,
     path::PathBuf,
@@ -115,25 +113,7 @@ struct Config {
     acceptor: Option<SslAcceptor>,
 }
 
-fn main() {
-    use std::io;
-
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in Fail::iter_chain(&err) {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        if let Some(backtrace) = err.backtrace() {
-            let _ = writeln!(out, "{}", backtrace);
-        }
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     let log_settings = "client=debug,tlsproxy=debug";
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_settings))

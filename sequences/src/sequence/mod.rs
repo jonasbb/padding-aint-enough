@@ -11,7 +11,7 @@ mod sequence_element;
 
 pub use self::sequence_element::{OneHotEncoding, SequenceElement};
 use crate::{common_sequence_classifications::*, dnstap, load_sequence::*};
-use failure::{bail, Error, ResultExt};
+use anyhow::{bail, Context as _, Error};
 use internment::Intern;
 use misc_utils::{fs, path::PathExt, Min};
 use serde::{
@@ -63,7 +63,7 @@ impl Sequence {
                         bail!("Trying to load a Sequence from JSON with a custom LoadSequenceConfig: LoadSequenceConfig is not supported for JSON format.")
                     }
                     let seq_json = fs::read_to_string(path)
-                        .with_context(|_| format!("Cannot read file `{}`", path.display()))?;
+                        .with_context(|| format!("Cannot read file `{}`", path.display()))?;
                     return Ok(serde_json::from_str(&seq_json)?);
                 }
                 #[cfg(feature = "read_pcap")]

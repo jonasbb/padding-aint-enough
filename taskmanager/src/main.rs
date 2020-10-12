@@ -1,9 +1,9 @@
 mod utils;
 
 use crate::utils::*;
+use anyhow::{anyhow, bail, Context as _, Error};
 use chrome::ChromeDebuggerMessage;
-use encrypted_dns::{chrome_log_contains_errors, ErrorExt};
-use failure::{bail, format_err, Error, ResultExt};
+use encrypted_dns::chrome_log_contains_errors;
 use log::{debug, error, info, warn};
 use misc_utils::fs::{file_open_read, read_to_string};
 use once_cell::sync::Lazy;
@@ -131,23 +131,7 @@ fn path_file_exists_and_readable_open(path: &OsStr) -> Result<(Box<dyn Read>, Pa
         .map_err(|err| err.to_string().into())
 }
 
-fn main() {
-    use std::io::{self, Write};
-
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in err.iter_chain() {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        let _ = writeln!(out, "{}", err.backtrace());
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let cli_args = CliArgs::from_args();
@@ -185,7 +169,7 @@ fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
         let domains_or_uris = BufReader::new(&mut domain_list_reader)
             .lines()
             .collect::<Result<Vec<String>, std::io::Error>>()
-            .with_context(|_| format!("Failed to read line in {}", domain_list_path.display()))?;
+            .with_context(|| format!("Failed to read line in {}", domain_list_path.display()))?;
         info!("Empty old database entries");
         taskmgr
             .delete_all()
@@ -198,7 +182,7 @@ fn run_init(cmd: SubCommand, config: Config) -> Result<(), Error> {
                 let DomainAndUri { domain, uri } =
                     get_domain_and_uri(domain_or_uri.clone(), domains_are_uris).ok_or_else(
                         || {
-                            format_err!(
+                            anyhow!(
                                 "Cannot get domain and URI for input value: {}",
                                 domain_or_uri
                             )
@@ -313,7 +297,7 @@ fn run_add_recurring(cmd: SubCommand, config: Config) -> Result<(), Error> {
         let domains_or_uris = BufReader::new(&mut domain_list_reader)
             .lines()
             .collect::<Result<Vec<String>, std::io::Error>>()
-            .with_context(|_| format!("Failed to read line in {}", domain_list_path.display()))?;
+            .with_context(|| format!("Failed to read line in {}", domain_list_path.display()))?;
 
         let uris_per_domain = domains_or_uris.into_iter().try_fold(
             HashMap::new(),
@@ -323,7 +307,7 @@ fn run_add_recurring(cmd: SubCommand, config: Config) -> Result<(), Error> {
                 let DomainAndUri { domain, uri } =
                     get_domain_and_uri(domain_or_uri.clone(), domains_are_uris).ok_or_else(
                         || {
-                            format_err!(
+                            anyhow!(
                                 "Cannot get domain and URI for input value: {}",
                                 domain_or_uri
                             )
@@ -380,11 +364,11 @@ where
         .spawn(move || loop {
             let res = panic::catch_unwind(&function);
             if let Ok(Err(err)) = res {
-                error!("{}", err.display_causes());
+                error!("{}", err);
             }
             error!(
                 "Thread {} stopped, restart",
-                name.as_ref().map(|s| &**s).unwrap_or("<unknown>")
+                name.as_deref().unwrap_or("<unknown>")
             );
             thread::sleep(Duration::new(10, 0));
         })
@@ -415,9 +399,9 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 debug!("{}: Copy initial files to mount point", task.name());
                 // Write all the required files to the mount point
                 fs::copy(config.get_cache_file(), tmp_dir.path().join("cache.dump"))
-                    .with_context(|_| format!("{}: Failed to copy cache.dump", task.name()))?;
+                    .with_context(|| format!("{}: Failed to copy cache.dump", task.name()))?;
                 fs::write(tmp_dir.path().join("domain"), &task.uri())
-                    .with_context(|_| format!("{}: Failed to create file `domain`", task.name()))?;
+                    .with_context(|| format!("{}: Failed to create file `domain`", task.name()))?;
 
                 debug!("{}: Run docker container", task.name());
                 let _status = docker_run(
@@ -427,7 +411,7 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                     Duration::new(60, 0),
                     &config.env.env,
                 )
-                .with_context(|_| format!("{}: Failed to start the measurements", task.name()))?;
+                .with_context(|| format!("{}: Failed to start the measurements", task.name()))?;
                 debug!("{}: Copy files from mount point to local back", task.name());
                 let local_path: PathBuf = config.get_collected_results_path().join(task.name());
                 ensure_path_exists(&local_path)?;
@@ -443,7 +427,7 @@ fn process_tasks_docker(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                     // strip the .xz extension
                     let fname = fname.with_extension("");
                     let status = fs::copy(tmp_dir.path().join(&fname), local_path.join(&fname))
-                        .with_context(|_| {
+                        .with_context(|| {
                             format!(
                                 "{}: Failed to copy back file {}",
                                 task.name(),
@@ -492,13 +476,13 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                         "docker-remote-XXXXXX",
                     ])
                     .output()
-                    .with_context(|_| {
+                    .with_context(|| {
                         format!("{}: Cannot create remote temporary directory", task.name())
                     })?;
                 if !output2.status.success() {
                     bail!("{}: Cannot create remote temporary directory: ssh has exited with error {}", task.name(), output2.status.code().unwrap_or(-1))
                 };
-                let remote_tmp_dir = String::from_utf8(output2.stdout).with_context(|_| {
+                let remote_tmp_dir = String::from_utf8(output2.stdout).with_context(|| {
                     format!(
                         "{}: The remote temporary directory is not UTF-8",
                         task.name()
@@ -511,9 +495,9 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                 debug!("{}: Copy initial files to mount point", task.name());
                 // Write all the required files to the mount point
                 fs::copy(config.get_cache_file(), tmp_dir.path().join("cache.dump"))
-                    .with_context(|_| format!("{}: Failed to copy cache.dump", task.name()))?;
+                    .with_context(|| format!("{}: Failed to copy cache.dump", task.name()))?;
                 fs::write(tmp_dir.path().join("domain"), &task.uri())
-                    .with_context(|_| format!("{}: Failed to create file `domain`", task.name()))?;
+                    .with_context(|| format!("{}: Failed to create file `domain`", task.name()))?;
                 // Copy files from local temp dir to remote temp dir
                 // Call scp -pr <local_tmp>/cache.dump <local_tmp>/domain <host>:<remote_tmp>
                 // Unfortunatly scp does not support globbing on the local site
@@ -525,7 +509,7 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())
                     .status()
-                    .with_context(|_| {
+                    .with_context(|| {
                         format!(
                             "{}: Could not copy the local tmp folder to remote location",
                             task.name()
@@ -544,7 +528,7 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                     Duration::new(60, 0),
                     &config.env.env,
                 )
-                .with_context(|_| format!("{}: Failed to start the measurements", task.name()))?;
+                .with_context(|| format!("{}: Failed to start the measurements", task.name()))?;
                 debug!("{}: Copy files from mount point to local back", task.name());
                 let local_path: PathBuf = config.get_collected_results_path().join(task.name());
                 ensure_path_exists(&local_path)?;
@@ -560,7 +544,7 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                     .stdout(Stdio::null())
                     .stderr(Stdio::null())
                     .status()
-                    .with_context(|_| {
+                    .with_context(|| {
                         format!(
                             "{}: Could not copy the remote tmp folder to local",
                             task.name()
@@ -576,7 +560,7 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                     .arg("--recursive")
                     .arg(remote_tmp_dir)
                     .status()
-                    .with_context(|_| {
+                    .with_context(|| {
                         format!("{}: Cannot delete remote temporary directory", task.name())
                     })?;
                 if !status.success() {
@@ -594,7 +578,7 @@ fn process_tasks_docker_ssh(taskmgr: &TaskManager, config: &Config) -> Result<()
                     // strip the .xz extension
                     let fname = fname.with_extension("");
                     let status = fs::copy(tmp_dir.path().join(&fname), local_path.join(&fname))
-                        .with_context(|_| {
+                        .with_context(|| {
                             format!(
                                 "{}: Failed to copy back file {}",
                                 task.name(),
@@ -647,7 +631,7 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                     if let Ok(file_type) = entry.file_type() {
                         if file_type.is_file() {
                             let path = entry.path();
-                            xz(&*path).with_context(|_| {
+                            xz(&*path).with_context(|| {
                                 format!("Failed to compress {}", path.display())
                             })?;
                         }
@@ -657,7 +641,7 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 // if a file is loadable, it passes all easy sanity checks
                 let dnstap_file = local_path.join(task.name()).join(&*DNSTAP_FILE_NAME);
                 if dnstap_file.exists() {
-                    Sequence::from_path(&dnstap_file).with_context(|_| {
+                    Sequence::from_path(&dnstap_file).with_context(|| {
                         format!("DNSTAP file is not loadable for task {}.", task.name())
                     })?;
                 }
@@ -665,7 +649,7 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 // if a file is loadable, it passes all easy sanity checks
                 let pcap_file = local_path.join(task.name()).join(&*PCAP_FILE_NAME);
                 if pcap_file.exists() {
-                    Sequence::from_path(&pcap_file).with_context(|_| {
+                    Sequence::from_path(&pcap_file).with_context(|| {
                         format!("PCAP file is not loadable for task {}.", task.name())
                     })?;
                 }
@@ -674,11 +658,11 @@ fn result_sanity_checks(taskmgr: &TaskManager, config: &Config) -> Result<(), Er
                 // The log does not exist with the selenium driver
                 if chrome_log.exists() {
                     // open Chrome file and parse it
-                    let content = read_to_string(&chrome_log).with_context(|_| {
+                    let content = read_to_string(&chrome_log).with_context(|| {
                         format!("Error while reading '{}'", chrome_log.display())
                     })?;
                     let msgs: Vec<ChromeDebuggerMessage> = serde_json::from_str(&content)
-                        .with_context(|_| {
+                        .with_context(|| {
                             format!("Error while deserializing '{}'", chrome_log.display())
                         })?;
                     if let Some(err_reason) = chrome_log_contains_errors(&msgs) {
@@ -718,8 +702,8 @@ where
 {
     let res = func(task);
     if let Err(err) = res {
-        warn!("{}", err.display_causes());
-        taskmgr.restart_task(task, &err.display_causes())?;
+        warn!("{}", err);
+        taskmgr.restart_task(task, &err)?;
         Ok(TaskStatus::Restarted)
     } else {
         Ok(TaskStatus::Completed)
@@ -775,7 +759,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                         task.name(),
                         new_file_ext
                     ));
-                    let status = fs::rename(&src, &dst).with_context(|_| {
+                    let status = fs::rename(&src, &dst).with_context(|| {
                         format!("Failed to move {} to {}", src.display(), dst.display())
                     });
                     // Throw error if file is required but copy failed
@@ -783,7 +767,7 @@ fn result_sanity_checks_domain(taskmgr: &TaskManager, config: &Config) -> Result
                         status?;
                     }
                 }
-                fs::remove_dir(&old_task_dir).with_context(|_| {
+                fs::remove_dir(&old_task_dir).with_context(|| {
                     format!(
                         "Could not remove old task directory {}",
                         old_task_dir.display()

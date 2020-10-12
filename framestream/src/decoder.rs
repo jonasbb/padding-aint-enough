@@ -1,8 +1,8 @@
 use crate::constants::{CONTROL_ESCAPE, CONTROL_FIELD_CONTENT_TYPE, CONTROL_START, CONTROL_STOP};
 use byteorder::{BigEndian, ReadBytesExt};
-use failure::{Backtrace, Fail};
 use log::trace;
 use std::io::{self, Cursor, Read};
+use thiserror::Error;
 
 #[derive(Clone, Debug)]
 pub struct DecoderReader<R: Read> {
@@ -11,39 +11,20 @@ pub struct DecoderReader<R: Read> {
     saw_start: bool,
 }
 
-#[derive(Debug, Fail)]
+#[derive(Debug, Error)]
 pub enum DecodeError {
-    #[fail(display = "Error while reading data {}.", _0)]
-    Io(#[cause] io::Error, Backtrace),
-    #[fail(display = "Found unexpected magic bytes '{:x}'.", magic_bytes)]
-    InvalidMagicBytes {
-        magic_bytes: u32,
-        backtrace: Backtrace,
-    },
-    #[fail(display = "Unknown field in header with '{:x}'.", magic_bytes)]
-    UnknownFieldsInHeader {
-        magic_bytes: u32,
-        backtrace: Backtrace,
-    },
-    #[fail(
-        display = "Unwanted Content Type: found '{}' but wants '{}'.",
-        got, expected
-    )]
-    UnwantedContentType {
-        got: String,
-        expected: String,
-        backtrace: Backtrace,
-    },
-    #[fail(display = "Received multiple start frames in same stream.")]
-    DuplicateStartFrame(Backtrace),
-    #[fail(display = "Received frame has an invalid length")]
-    InvalidLength(Backtrace),
-}
-
-impl From<io::Error> for DecodeError {
-    fn from(error: io::Error) -> DecodeError {
-        DecodeError::Io(error, Backtrace::new())
-    }
+    #[error("Error while reading data {}.", _0)]
+    Io(#[from] io::Error),
+    #[error("Found unexpected magic bytes '{:x}'.", magic_bytes)]
+    InvalidMagicBytes { magic_bytes: u32 },
+    #[error("Unknown field in header with '{:x}'.", magic_bytes)]
+    UnknownFieldsInHeader { magic_bytes: u32 },
+    #[error("Unwanted Content Type: found '{}' but wants '{}'.", got, expected)]
+    UnwantedContentType { got: String, expected: String },
+    #[error("Received multiple start frames in same stream.")]
+    DuplicateStartFrame,
+    #[error("Received frame has an invalid length")]
+    InvalidLength,
 }
 
 pub enum Frame {
@@ -79,16 +60,13 @@ impl<R: Read> DecoderReader<R> {
         trace!("Escape Frame");
         let frame_length = self.reader.read_u32::<BigEndian>()? as usize;
         if frame_length < 4 {
-            return Err(DecodeError::InvalidLength(Backtrace::new()));
+            return Err(DecodeError::InvalidLength);
         }
         trace!("Frame Length: {}", frame_length);
         match self.reader.read_u32::<BigEndian>()? {
             CONTROL_START => self.read_start_frame(frame_length),
             CONTROL_STOP => self.read_stop_frame(frame_length),
-            unkwn => Err(DecodeError::InvalidMagicBytes {
-                magic_bytes: unkwn,
-                backtrace: Backtrace::new(),
-            }),
+            unkwn => Err(DecodeError::InvalidMagicBytes { magic_bytes: unkwn }),
         }
     }
 
@@ -113,17 +91,11 @@ impl<R: Read> DecoderReader<R> {
                             return Err(DecodeError::UnwantedContentType {
                                 got: String::from_utf8_lossy(&*content_type).to_string(),
                                 expected: expected_content_type.clone(),
-                                backtrace: Backtrace::new(),
                             });
                         }
                     }
                 }
-                magic_bytes => {
-                    return Err(DecodeError::UnknownFieldsInHeader {
-                        magic_bytes,
-                        backtrace: Backtrace::new(),
-                    })
-                }
+                magic_bytes => return Err(DecodeError::UnknownFieldsInHeader { magic_bytes }),
             }
         }
 
@@ -132,7 +104,7 @@ impl<R: Read> DecoderReader<R> {
 
     fn read_stop_frame(&mut self, frame_length: usize) -> Result<Frame, DecodeError> {
         if frame_length != 4 {
-            Err(DecodeError::InvalidLength(Backtrace::new()))
+            Err(DecodeError::InvalidLength)
         } else {
             Ok(Frame::Stop)
         }
@@ -153,7 +125,7 @@ impl<R: Read> Iterator for DecoderReader<R> {
         match self.read_frame() {
             Ok(Frame::Start) => {
                 if self.saw_start {
-                    Some(Err(DecodeError::DuplicateStartFrame(Backtrace::new())))
+                    Some(Err(DecodeError::DuplicateStartFrame))
                 } else {
                     self.saw_start = true;
                     self.next()

@@ -1,12 +1,12 @@
+use anyhow::{Context as _, Error};
 use csv::ReaderBuilder;
 use dnstap::{
     dnstap::Message_Type,
     process_dnstap,
     protos::{self, DnstapContent},
 };
-use failure::{Error, ResultExt};
 use log::{error, info};
-use misc_utils::fs::{file_open_read, file_open_write};
+use misc_utils::fs::{file_open_read, file_write};
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use serde::Deserialize;
@@ -35,23 +35,7 @@ struct CliArgs {
     confusion_domains: Vec<PathBuf>,
 }
 
-fn main() {
-    use std::io::{self, Write};
-
-    if let Err(err) = run() {
-        let stderr = io::stderr();
-        let mut out = stderr.lock();
-        // cannot handle a write error here, we are already in the outermost layer
-        let _ = writeln!(out, "An error occured:");
-        for fail in err.iter_chain() {
-            let _ = writeln!(out, "  {}", fail);
-        }
-        let _ = writeln!(out, "{}", err.backtrace());
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     // generic setup
     env_logger::init();
     let cli_args = CliArgs::from_args();
@@ -202,13 +186,19 @@ fn run() -> Result<(), Error> {
         })
         .unzip();
 
-    let mut wtr = file_open_write("./traces_labelcount.json", Default::default())?;
+    let mut wtr = file_write("./traces_labelcount.json")
+        .create(true)
+        .truncate()?;
     serde_json::to_writer(&mut wtr, &traces_labelcount)?;
     drop(wtr);
-    let mut wtr = file_open_write("./traces_tracecount.json", Default::default())?;
+    let mut wtr = file_write("./traces_tracecount.json")
+        .create(true)
+        .truncate()?;
     serde_json::to_writer(&mut wtr, &traces_tracecount)?;
     drop(wtr);
-    let mut wtr = file_open_write("./counts_per_domain.json", Default::default())?;
+    let mut wtr = file_write("./counts_per_domain.json")
+        .create(true)
+        .truncate()?;
     serde_json::to_writer(&mut wtr, &counts_per_domain)?;
     drop(wtr);
 
@@ -232,7 +222,7 @@ where
         let path = path.as_ref();
         let mut reader = ReaderBuilder::new().has_headers(false).from_reader(
             file_open_read(path)
-                .with_context(|_| format!("Opening confusion file '{}' failed", path.display()))?,
+                .with_context(|| format!("Opening confusion file '{}' failed", path.display()))?,
         );
         for record in reader.deserialize() {
             let record: Record = record?;

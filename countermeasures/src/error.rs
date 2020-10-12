@@ -1,72 +1,65 @@
-use failure::{Backtrace, Fail};
 use std::fmt::Debug;
 
-#[derive(Debug, Fail)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// Unknown error condition
-    #[fail(display = "An unknown error occured.")]
-    Unknown(Backtrace),
+    #[error("An unknown error occured.")]
+    Unknown,
     /// Errors related to [`tokio::time`]
-    #[fail(display = "Tokio Timer Error: {}", _0)]
-    Timer(#[fail(cause)] tokio::time::Error, Backtrace),
+    #[error("Tokio Timer Error: {}", _0)]
+    Timer(#[source] tokio::time::Error),
     /// Errors based on [`std::io`]
-    #[fail(display = "{}: Kind: {:?}", _0, _1)]
-    Io(#[fail(cause)] std::io::Error, std::io::ErrorKind, Backtrace),
+    #[error("{}: Kind: {:?}", _0, _1)]
+    Io(#[source] std::io::Error, std::io::ErrorKind),
     /// Errors for parsing `ip:port` strings
-    #[fail(display = "{}", _0)]
-    AddrParseError(#[fail(cause)] std::net::AddrParseError, Backtrace),
+    #[error("{}", _0)]
+    AddrParseError(#[source] std::net::AddrParseError),
     /// Errors from parsing malformed DNS messages
-    #[fail(display = "Invalid DNS message: {}", _0)]
-    DnsParseError(#[fail(cause)] trust_dns_proto::error::ProtoError, Backtrace),
+    #[error("Invalid DNS message: {}", _0)]
+    DnsParseError(#[source] trust_dns_proto::error::ProtoError),
     /// General [OpenSSL](openssl) errors
-    #[fail(display = "OpenSSL error: {}", _0)]
-    OpensslError(#[fail(cause)] openssl::error::ErrorStack, Backtrace),
+    #[error("OpenSSL error: {}", _0)]
+    OpensslError(#[source] openssl::error::ErrorStack),
     /// Error specific to the `server` binary in how the remote endpoint is choosen.
-    #[fail(
-        display = r#"No transport protocol can be inferred for port {}. The only recognized options are TCP on port 53 and TLS on port 853.
+    #[error(
+         r#"No transport protocol can be inferred for port {}. The only recognized options are TCP on port 53 and TLS on port 853.
 
 Please, specify the choice explicitly by using either --tcp or --tls."#,
         _0
     )]
-    TransportNotInferable(u16, Backtrace),
-    #[fail(display = "Tokio OpenSSL Handshake error: {}", _0)]
-    TokioOpensslHandshakeError(String, Backtrace),
+    TransportNotInferable(u16),
+    #[error("Tokio OpenSSL Handshake error: {}", _0)]
+    TokioOpensslHandshakeError(String),
 }
 
 impl From<()> for Error {
     fn from(_error: ()) -> Self {
-        Error::Unknown(Backtrace::default())
-    }
-}
-
-impl From<tokio::time::Error> for Error {
-    fn from(error: tokio::time::Error) -> Self {
-        Error::Timer(error, Backtrace::default())
+        Error::Unknown
     }
 }
 
 impl From<std::io::Error> for Error {
     fn from(error: std::io::Error) -> Self {
         let kind = error.kind();
-        Error::Io(error, kind, Backtrace::default())
+        Error::Io(error, kind)
     }
 }
 
 impl From<std::net::AddrParseError> for Error {
     fn from(error: std::net::AddrParseError) -> Self {
-        Error::AddrParseError(error, Backtrace::default())
+        Error::AddrParseError(error)
     }
 }
 
 impl From<trust_dns_proto::error::ProtoError> for Error {
     fn from(error: trust_dns_proto::error::ProtoError) -> Self {
-        Error::DnsParseError(error, Backtrace::default())
+        Error::DnsParseError(error)
     }
 }
 
 impl From<openssl::error::ErrorStack> for Error {
     fn from(error: openssl::error::ErrorStack) -> Self {
-        Error::OpensslError(error, Backtrace::default())
+        Error::OpensslError(error)
     }
 }
 
@@ -75,6 +68,6 @@ where
     S: Debug,
 {
     fn from(error: tokio_openssl::HandshakeError<S>) -> Self {
-        Error::TokioOpensslHandshakeError(error.to_string(), Backtrace::default())
+        Error::TokioOpensslHandshakeError(error.to_string())
     }
 }
