@@ -8,7 +8,7 @@ version = "0.1.0"
 anyhow = "1.0.33"
 byteorder = "1.3.4"
 chrono = "0.4.19"
-env_logger = "0.7.1"
+env_logger = "0.8.1"
 futures = {version = "0.3.6", default-features = false, features = ["std"]}
 log = "0.4.11"
 once_cell = "1.4.1"
