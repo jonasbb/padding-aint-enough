@@ -9,4 +9,4 @@ anyhow = "1.0.33"
 env_logger = "0.8.1"
 misc_utils = "3.0.0"
 sequences = {path = "../sequences", features = ["read_pcap"]}
-structopt = "0.3.19"
+structopt = "0.3.20"
