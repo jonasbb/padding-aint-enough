@@ -10,7 +10,7 @@ version = "0.1.0"
 aho-corasick = "0.7.14"
 anyhow = "1.0.34"
 env_logger = "0.8.1"
-flate2 = "1.0.18"
+flate2 = "1.0.19"
 log = "0.4.11"
 misc_utils = "3.0.0"
 reqwest = {version = "0.10.8", features = ["blocking"]}
