@@ -6,7 +6,7 @@ version = "0.1.0"
 
 [dependencies]
 anyhow = "1.0.34"
-csv = "1.1.3"
+csv = "1.1.4"
 env_logger = "0.8.1"
 log = "0.4.11"
 misc_utils = "3.0.0"
