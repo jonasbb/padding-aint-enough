@@ -67,7 +67,7 @@ serde = {version = "1.0.117", features = ["derive"]}
 serde_json = "1.0.59"
 serde_with = {version = "1.5.1", features = ["chrono"]}
 structopt = "0.3.20"
-url = "2.1.1"
+url = "2.2.0"
 
 [dev-dependencies]
 anyhow = "1.0.34"
