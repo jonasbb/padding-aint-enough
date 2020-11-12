@@ -11,7 +11,7 @@ chrono = "0.4.19"
 env_logger = "0.8.1"
 futures = {version = "0.3.8", default-features = false, features = ["std"]}
 log = "0.4.11"
-once_cell = "1.4.1"
+once_cell = "1.5.1"
 openssl = {version = "0.10.30", features = ["vendored"]}
 openssl-probe = "0.1.2"
 rand = "0.7.3"
