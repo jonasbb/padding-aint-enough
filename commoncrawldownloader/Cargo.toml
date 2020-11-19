@@ -9,7 +9,7 @@ version = "0.1.0"
 [dependencies]
 aho-corasick = "0.7.15"
 anyhow = "1.0.34"
-env_logger = "0.8.1"
+env_logger = "0.8.2"
 flate2 = "1.0.19"
 log = "0.4.11"
 misc_utils = "4.0.0"
