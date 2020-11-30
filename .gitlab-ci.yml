@@ -25,13 +25,17 @@ test:cargo:
 
   # Install rust tools
   - which cargo-install-update || cargo install cargo-update
-  - cargo install-update --allow-no-update sccache
+  # sccache is currently broken and has no new release
+  #   https://github.com/mozilla/sccache/issues/876
+  #   https://github.com/mozilla/sccache/issues/887
+  # - cargo install-update --allow-no-update sccache
+  - cargo install --git https://github.com/paritytech/sccache.git
   # This may only be set AFTER installing sccache
   - export RUSTC_WRAPPER="sccache"
   - export CC="sccache gcc"
   - export CXX="sccache g++"
   # Update all tools and install new ones
-  - cargo install-update --all --allow-no-update cargo-cache
+  - cargo install-update --all --git --allow-no-update cargo-cache cargo2junit
 
   script:
   # Print version info for debugging
