@@ -19,6 +19,6 @@ sequences = {path = "../sequences"}
 serde_json = "1.0.60"
 structopt = "0.3.21"
 thiserror = "1.0.22"
-tokio = {version = "0.2.23", features = ["fs", "io-util", "stream", "tcp", "time"]}
+tokio = {version = "0.2.24", features = ["fs", "io-util", "stream", "tcp", "time"]}
 tokio-openssl = "0.4.0"
 trust-dns-proto = {version = "0.20.0-alpha.3", default-features = false}
