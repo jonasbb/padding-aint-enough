@@ -16,7 +16,7 @@ harness = false
 name = "u8_abs"
 
 [dependencies]
-anyhow = "1.0.35"
+anyhow = "1.0.36"
 chrono = "0.4.19"
 dashmap = "3.11.10"
 dnstap = {path = "../dnstap"}
