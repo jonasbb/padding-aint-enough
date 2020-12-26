@@ -452,6 +452,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "dashmap"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f71114c59eb4f52969c1b53526d6e6f0ca89f19775e3ffd6cbabb4f0acc9426a"
+dependencies = [
+ "cfg-if 1.0.0",
+ "num_cpus",
+]
+
+[[package]]
 name = "data-encoding"
 version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1023,7 +1033,7 @@ version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37bab9a6bbb557e5d3b1764438a72432e9c2457f598f3e721e6c4007ede2d22a"
 dependencies = [
- "dashmap",
+ "dashmap 3.11.10",
  "hashbrown",
  "lazy_static",
  "once_cell",
@@ -2083,7 +2093,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "criterion",
- "dashmap",
+ "dashmap 4.0.0",
  "dnstap",
  "etherparse",
  "fnv",
