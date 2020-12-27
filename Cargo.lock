@@ -453,9 +453,9 @@ dependencies = [
 
 [[package]]
 name = "dashmap"
-version = "4.0.0"
+version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f71114c59eb4f52969c1b53526d6e6f0ca89f19775e3ffd6cbabb4f0acc9426a"
+checksum = "4b937cd1fbd1f194ac842196bd2529f21618088ee6d8bff6a46ece611451c96b"
 dependencies = [
  "cfg-if 1.0.0",
  "num_cpus",
@@ -2093,7 +2093,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "criterion",
- "dashmap 4.0.0",
+ "dashmap 4.0.1",
  "dnstap",
  "etherparse",
  "fnv",
