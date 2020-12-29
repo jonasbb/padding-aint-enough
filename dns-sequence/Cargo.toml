@@ -5,7 +5,7 @@ name = "dns-sequence"
 version = "0.1.0"
 
 [dependencies]
-anyhow = "1.0.36"
+anyhow = "1.0.37"
 csv = "1.1.5"
 env_logger = "0.8.2"
 log = "0.4.11"

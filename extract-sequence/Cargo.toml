@@ -5,7 +5,7 @@ name = "extract_sequence"
 version = "0.1.0"
 
 [dependencies]
-anyhow = "1.0.36"
+anyhow = "1.0.37"
 env_logger = "0.8.2"
 misc_utils = "4.0.0"
 sequences = {path = "../sequences", features = ["read_pcap"]}
