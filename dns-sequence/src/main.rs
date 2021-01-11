@@ -371,7 +371,7 @@ where
         label: &'a str,
         class_result: &'a ClassificationResult,
         reason: Option<&'a str>,
-    };
+    }
 
     let out = Out {
         id: sequence.id(),

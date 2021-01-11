@@ -15,9 +15,9 @@ arg_enum! {
     }
 }
 
-impl Into<sequences::GapMode> for GapMode {
-    fn into(self) -> sequences::GapMode {
-        match self {
+impl From<GapMode> for sequences::GapMode {
+    fn from(gm: GapMode) -> Self {
+        match gm {
             GapMode::Log2 => sequences::GapMode::Log2,
             GapMode::Ident => sequences::GapMode::Ident,
         }

@@ -25,9 +25,9 @@ arg_enum! {
     }
 }
 
-impl Into<SimulatedCountermeasure> for SimulateOption {
-    fn into(self) -> SimulatedCountermeasure {
-        match self {
+impl From<SimulateOption> for SimulatedCountermeasure {
+    fn from(so: SimulateOption) -> Self {
+        match so {
             SimulateOption::Normal => SimulatedCountermeasure::None,
             SimulateOption::PerfectPadding => SimulatedCountermeasure::PerfectPadding,
             SimulateOption::PerfectTiming => SimulatedCountermeasure::PerfectTiming,
@@ -44,7 +44,7 @@ where
     struct Record {
         domain: Atom,
         is_similar_to: Atom,
-    };
+    }
 
     let mut conf_domains = HashMap::default();
 

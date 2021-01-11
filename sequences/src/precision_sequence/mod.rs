@@ -261,20 +261,20 @@ impl From<&AbstractQueryResponse> for PrecisionSequenceEvent {
     }
 }
 
-impl Into<AbstractQueryResponse> for PrecisionSequenceEvent {
-    fn into(self) -> AbstractQueryResponse {
-        AbstractQueryResponse {
-            time: self.time,
-            size: self.size,
+impl From<PrecisionSequenceEvent> for AbstractQueryResponse {
+    fn from(pse: PrecisionSequenceEvent) -> Self {
+        Self {
+            time: pse.time,
+            size: pse.size,
         }
     }
 }
 
-impl Into<AbstractQueryResponse> for &PrecisionSequenceEvent {
-    fn into(self) -> AbstractQueryResponse {
-        AbstractQueryResponse {
-            time: self.time,
-            size: self.size,
+impl From<&PrecisionSequenceEvent> for AbstractQueryResponse {
+    fn from(pse: &PrecisionSequenceEvent) -> Self {
+        Self {
+            time: pse.time,
+            size: pse.size,
         }
     }
 }

@@ -214,7 +214,7 @@ where
     struct Record {
         domain: String,
         is_similar_to: String,
-    };
+    }
 
     let mut conf_domains = HashMap::default();
 

@@ -1,3 +1,6 @@
+// Enabled for usage with nightly clippy
+#![allow(clippy::unknown_clippy_lints)]
+
 mod utils;
 
 use crate::utils::*;
@@ -274,7 +277,8 @@ fn run_exec(cmd: SubCommand, config: Config) -> Result<(), Error> {
     Ok(())
 }
 
-#[allow(clippy::needless_pass_by_value)]
+// The function signature is required to be compatible with the other run_* functions
+#[allow(clippy::needless_pass_by_value, clippy::unnecessary_wraps)]
 fn run_debug(args: CliArgs, config: Config) -> Result<(), Error> {
     println!("{:#?}", args);
     println!("{:#?}", config);

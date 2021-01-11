@@ -179,12 +179,12 @@ pub struct TlsRecord {
     pub tls_version: Option<TlsVersion>,
 }
 
-impl Into<AbstractQueryResponse> for &TlsRecord {
-    fn into(self) -> AbstractQueryResponse {
-        AbstractQueryResponse {
-            time: self.time,
+impl From<&TlsRecord> for AbstractQueryResponse {
+    fn from(tls: &TlsRecord) -> Self {
+        Self {
+            time: tls.time,
             // Substract some overhead from the TLS encryption
-            size: self.message_length - 40,
+            size: tls.message_length - 40,
         }
     }
 }
@@ -337,25 +337,23 @@ fn extract_tls_records(
                 let mut tls_version = None;
 
                 // See if this is a server send ServerHello with a version
-                if let Some(inner) = tls
+                if let Some(TlsMessagePayload::Handshake(handshake_payload)) = tls
                     .payload
                     .decode_given_type(TlsContentType::Handshake, ProtocolVersion::TLSv1_2)
                 {
-                    if let TlsMessagePayload::Handshake(handshake_payload) = inner {
-                        if let TlsHandshakePayload::ServerHello(server_hello) =
-                            handshake_payload.payload
-                        {
-                            let mut min_version = server_hello.legacy_version.into();
-                            for ext in &server_hello.extensions {
-                                if let TlsServerExtensions::SupportedVersions(vers) = ext {
-                                    let vers = vers.into();
-                                    if vers > min_version {
-                                        min_version = vers;
-                                    }
+                    if let TlsHandshakePayload::ServerHello(server_hello) =
+                        handshake_payload.payload
+                    {
+                        let mut min_version = server_hello.legacy_version.into();
+                        for ext in &server_hello.extensions {
+                            if let TlsServerExtensions::SupportedVersions(vers) = ext {
+                                let vers = vers.into();
+                                if vers > min_version {
+                                    min_version = vers;
                                 }
                             }
-                            tls_version = Some(min_version);
                         }
+                        tls_version = Some(min_version);
                     }
                 };
                 let record = TlsRecord {
@@ -605,7 +603,7 @@ fn guess_dns_flow_identifier(
             error += &format!("\n  {}", cand);
         }
         error
-    };
+    }
 
     // Try to guess what the sever might have been
     let endpoints: HashSet<_> = records

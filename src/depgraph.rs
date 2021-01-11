@@ -116,7 +116,7 @@ impl DepGraph {
                             }
 
                             Ok(url_deps_accu)
-                        };
+                        }
 
                         // some scripts do not have a stacktrace, skip them
                         if let Some(stack_trace) = stack_trace {
@@ -312,7 +312,7 @@ impl DepGraph {
                 }
 
                 Ok(())
-            };
+            }
 
             for message in messages {
                 match message {

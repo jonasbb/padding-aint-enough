@@ -124,7 +124,7 @@ impl<S: Eq + Hash> StatsCollector<S> {
             exact: usize,
             exact_w_reason: usize,
             reasons: usize,
-        };
+        }
 
         let mut ks: Vec<_> = self.data.keys().collect();
         ks.sort();

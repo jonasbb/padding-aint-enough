@@ -323,7 +323,7 @@ where
 
 #[test]
 fn test_function_has_correct_type() {
-    fn require_type<T: ?Sized>(_: &T) {};
+    fn require_type<T: ?Sized>(_: &T) {}
 
     require_type::<OpensslKeylogCallback>(&keylog_to_stderr);
     require_type::<OpensslKeylogCallback>(&keylog_to_file("/dev/null"));
