@@ -123,7 +123,7 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
 }
 
 /// Represents a sequence of DNS packets as measured on the wire
-#[pyclass(name=Sequence)]
+#[pyclass(name = "Sequence")]
 pub struct PySequence {
     sequence: Sequence,
 }

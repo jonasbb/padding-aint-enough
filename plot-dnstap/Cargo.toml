@@ -10,7 +10,7 @@ version = "0.1.0"
 anyhow = "1.0.37"
 env_logger = "0.8.2"
 log = "0.4.11"
-pyo3 = "0.12.4"
+pyo3 = "0.13.1"
 sequences = {path = "../sequences"}
 serde_json = "1.0.61"
 structopt = "0.3.21"
