@@ -183,7 +183,7 @@ fn take_smallest_empty() {
 }
 
 /// Represents an arbitraty propability value
-#[derive(Copy, Clone, PartialEq, PartialOrd, Debug, Default, Serialize)]
+#[derive(Copy, Clone, PartialEq, Debug, Default, Serialize)]
 pub struct Probability(f32);
 
 impl Probability {
@@ -212,6 +212,12 @@ impl Eq for Probability {}
 impl Ord for Probability {
     fn cmp(&self, other: &Self) -> cmp::Ordering {
         self.partial_cmp(other).unwrap_or(cmp::Ordering::Equal)
+    }
+}
+
+impl PartialOrd for Probability {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        Some(self.cmp(other))
     }
 }
 
