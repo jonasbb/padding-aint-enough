@@ -52,20 +52,12 @@ where
     }
 
     // Ensure at least one network request has succeeded.
-    let contains_response_received = msgs.iter().any(|msg| {
-        if let ChromeDebuggerMessage::NetworkResponseReceived { .. } = msg {
-            true
-        } else {
-            false
-        }
-    });
-    let contains_data_received = msgs.iter().any(|msg| {
-        if let ChromeDebuggerMessage::NetworkDataReceived { .. } = msg {
-            true
-        } else {
-            false
-        }
-    });
+    let contains_response_received = msgs
+        .iter()
+        .any(|msg| matches!(msg, ChromeDebuggerMessage::NetworkResponseReceived { .. }));
+    let contains_data_received = msgs
+        .iter()
+        .any(|msg| matches!(msg, ChromeDebuggerMessage::NetworkDataReceived { .. }));
     if !(contains_response_received && contains_data_received) {
         return Some(R009);
     }

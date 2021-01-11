@@ -64,18 +64,15 @@ fn main() -> Result<(), Error> {
             .collect();
         plot_queries(querysets, &outfile, width, height).map_err(pyerr2error)?;
     } else {
-        querysets
-            .into_iter()
-            .map(|(queries, outfile)| {
-                plot_queries(
-                    vec![(queries, stem_file(&outfile))],
-                    &outfile,
-                    width,
-                    height,
-                )
-                .map_err(pyerr2error)
-            })
-            .collect::<Result<(), Error>>()?;
+        querysets.into_iter().try_for_each(|(queries, outfile)| {
+            plot_queries(
+                vec![(queries, stem_file(&outfile))],
+                &outfile,
+                width,
+                height,
+            )
+            .map_err(pyerr2error)
+        })?;
     }
 
     Ok(())

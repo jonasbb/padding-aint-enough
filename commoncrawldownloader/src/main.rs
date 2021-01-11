@@ -171,7 +171,7 @@ fn main() -> Result<(), Error> {
     Ok(())
 }
 
-fn find_prev_and_next_elements<'a, K>(map: &'a BTreeMap<K, u16>, domain: &str) -> (u16, u16)
+fn find_prev_and_next_elements<K>(map: &BTreeMap<K, u16>, domain: &str) -> (u16, u16)
 where
     K: Ord + Borrow<str>,
     K: std::fmt::Debug,

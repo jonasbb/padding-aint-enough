@@ -60,7 +60,7 @@ pub fn sequence_stats(
         .into_iter()
         .map(|mut dists2| {
             if !dists2.is_empty() {
-                dists2.sort();
+                dists2.sort_unstable();
                 dists2[dists2.len() / 2]
             } else {
                 0

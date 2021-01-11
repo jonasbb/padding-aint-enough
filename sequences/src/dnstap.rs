@@ -314,7 +314,7 @@ pub fn load_matching_query_responses_from_dnstap(dnstap_file: &Path) -> Result<V
     // filter out all the queries which are just noise
     matched.retain(|query| {
         // _ta queries are queries sent to the root servers to indicate which root DNSSEC key is trusted.
-        !(query.qtype == "NULL" && query.qname.starts_with("_ta")) || query.qname == ""
+        !(query.qtype == "NULL" && query.qname.starts_with("_ta")) || query.qname.is_empty()
     });
     for msg in unanswered_client_queries {
         debug!("Unanswered client query: {:?}", msg);

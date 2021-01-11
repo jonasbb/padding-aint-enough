@@ -145,7 +145,7 @@ impl ClassificationResult {
         result
     }
 
-    #[allow(clippy::block_in_if_condition_stmt)]
+    #[allow(clippy::blocks_in_if_conditions)]
     pub fn determine_quality(&self, real_label: &str) -> ClassificationResultQuality {
         if self.options.is_empty() {
             return ClassificationResultQuality::NoResult;

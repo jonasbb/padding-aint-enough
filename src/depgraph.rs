@@ -133,7 +133,7 @@ impl DepGraph {
                                     })?;
                                 script_id_cache.borrow_mut().insert(script_id.clone(), deps);
                             }
-                        } else if url == "" {
+                        } else if url.is_empty() {
                             warn!("Script without URL nor backtrace, Script ID {}", script_id);
                             script_id_cache
                                 .borrow_mut()

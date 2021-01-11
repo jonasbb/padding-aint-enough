@@ -339,7 +339,7 @@ fn classify_and_evaluate(
                 &sequence,
                 &mapped_domain,
                 &class_result,
-                known_problems.as_ref().map(|x| &**x),
+                known_problems.as_deref(),
             ) {
                 error!(
                     "Cannot log misclassification for sequence `{}`: {}",

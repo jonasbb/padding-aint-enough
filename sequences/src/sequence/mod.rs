@@ -116,10 +116,7 @@ impl Sequence {
     pub fn message_count(&self) -> usize {
         self.as_elements()
             .iter()
-            .filter(|x| match x {
-                SequenceElement::Size(_) => true,
-                _ => false,
-            })
+            .filter(|x| matches!(x, SequenceElement::Size(_)))
             .count()
     }
 
