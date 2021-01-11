@@ -8,6 +8,7 @@ use anyhow::{bail, Context as _, Error};
 use framestream::DecoderReader;
 use log::warn;
 use misc_utils::fs::file_open_read;
+use protobuf::Message;
 use std::{convert::TryFrom, path::Path};
 
 pub fn process_dnstap<P: AsRef<Path>>(
@@ -22,8 +23,8 @@ pub fn process_dnstap<P: AsRef<Path>>(
 
     Ok(fstrm
         .map(move |msg| -> Result<Option<protos::Dnstap>, Error> {
-            let raw_dnstap = protobuf::parse_from_bytes::<dnstap::Dnstap>(&msg?)
-                .context("Parsing protobuf failed.")?;
+            let raw_dnstap =
+                dnstap::Dnstap::parse_from_bytes(&msg?).context("Parsing protobuf failed.")?;
             match protos::Dnstap::try_from(raw_dnstap) {
                 Ok(dnstap) => Ok(Some(dnstap)),
                 Err(err) => {
