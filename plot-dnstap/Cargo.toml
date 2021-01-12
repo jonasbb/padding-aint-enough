@@ -9,7 +9,7 @@ version = "0.1.0"
 [dependencies]
 anyhow = "1.0.37"
 env_logger = "0.8.2"
-log = "0.4.11"
+log = "0.4.13"
 pyo3 = "0.13.1"
 sequences = {path = "../sequences"}
 serde_json = "1.0.61"
