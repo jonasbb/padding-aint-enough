@@ -6,7 +6,7 @@ version = "0.1.0"
 
 [dependencies]
 anyhow = "1.0.38"
-env_logger = "0.8.2"
+env_logger = "0.8.3"
 misc_utils = "4.0.1"
 sequences = {path = "../sequences", features = ["read_pcap"]}
 structopt = "0.3.21"
