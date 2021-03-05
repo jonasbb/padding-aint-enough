@@ -1042,9 +1042,9 @@ dependencies = [
 
 [[package]]
 name = "internment"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37bab9a6bbb557e5d3b1764438a72432e9c2457f598f3e721e6c4007ede2d22a"
+checksum = "b9fe0d2c70050300dff145e8a25017c7fd09fdfcc21a69016489c3a41bb7dce1"
 dependencies = [
  "dashmap 3.11.10",
  "hashbrown",
