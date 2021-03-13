@@ -6,7 +6,7 @@ version = "0.1.0"
 
 [dependencies]
 anyhow = "1.0.38"
-byteorder = "1.4.2"
+byteorder = "1.4.3"
 chrono = "0.4.19"
 env_logger = "0.8.3"
 futures = {version = "0.3.13", default-features = false, features = ["std"]}
