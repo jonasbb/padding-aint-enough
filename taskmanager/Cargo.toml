@@ -9,7 +9,7 @@ anyhow = "1.0.40"
 chrome = {path = "../chrome"}
 chrono = "0.4.19"
 diesel = {version = "1.4.6", features = ["chrono", "postgres"]}
-diesel-derive-enum = {version = "1.1.0", features = ["postgres"]}
+diesel-derive-enum = {version = "1.1.1", features = ["postgres"]}
 diesel_migrations = "1.4.0"
 encrypted-dns = {path = ".."}
 env_logger = "0.8.3"
