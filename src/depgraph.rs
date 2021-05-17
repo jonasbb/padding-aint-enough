@@ -718,7 +718,7 @@ mod test {
         let path = path.as_ref();
         let rdr = file_open_read(path)
             .with_context(|| format!("Opening input file '{}' failed", path.display()))?;
-        Ok(serde_json::from_reader(rdr).context("Failed to parse JSON")?)
+        serde_json::from_reader(rdr).context("Failed to parse JSON")
     }
 
     fn test_graphs_are_isomorph<N1, N2, E1, E2, Ty, Ix>(

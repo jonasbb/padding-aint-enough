@@ -45,10 +45,9 @@ impl PrecisionSequence {
                 Some("dnstap") => return crate::dnstap::build_precision_sequence(path),
                 #[cfg(feature = "read_pcap")]
                 Some("pcap") => {
-                    return Ok(crate::pcap::build_precision_sequence(path, None, false)
-                        .with_context(|| {
-                            anyhow!("Could not build a sequence from the list of filtered records.")
-                        })?);
+                    return crate::pcap::build_precision_sequence(path, None, false).with_context(
+                        || anyhow!("Could not build a sequence from the list of filtered records."),
+                    );
                 }
                 Some("json") => {
                     let s = fs::read_to_string(path)?;
@@ -187,7 +186,7 @@ impl PrecisionSequence {
     }
 
     pub fn count_queries(&self) -> usize {
-        self.0.iter().count()
+        self.0.len()
     }
 
     pub fn duration(&self) -> Duration {

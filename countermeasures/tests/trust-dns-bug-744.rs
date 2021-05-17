@@ -16,7 +16,8 @@ fn trust_dns_bug_744_empty_option_at_end_of_opt() {
         trust_dns_proto::rr::rdata::opt::read(&mut decoder, Restrict::new(bytes.len() as u16));
     assert!(
         read_rdata.is_ok(),
-        format!("error decoding: {:?}", read_rdata.unwrap_err())
+        "error decoding: {:?}",
+        read_rdata.unwrap_err()
     );
 
     let opt = read_rdata.unwrap();

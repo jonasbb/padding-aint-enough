@@ -1,3 +1,6 @@
+// Some benchmark functionsd are deprecated but still usable
+#![allow(deprecated)]
+
 use criterion::{black_box, criterion_group, criterion_main, Criterion, ParameterizedBenchmark};
 
 #[allow(clippy::cast_lossless)]

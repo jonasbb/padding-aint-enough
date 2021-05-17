@@ -1,5 +1,5 @@
 // Enabled for usage with nightly clippy
-#![allow(clippy::unknown_clippy_lints)]
+// #![allow(clippy::unknown_clippy_lints)]
 
 mod utils;
 

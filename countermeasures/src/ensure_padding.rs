@@ -74,7 +74,7 @@ where
                 }
 
                 // Set the missing padding option
-                msg.edns_mut().set_option(EdnsOption::from((
+                msg.edns_mut().options_mut().insert(EdnsOption::from((
                     EdnsCode::Padding,
                     &PADDING_BYTES[0..missing_padding],
                 )));

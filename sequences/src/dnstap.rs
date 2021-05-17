@@ -89,12 +89,12 @@ pub fn build_sequence(dnstap_file: &Path, config: LoadSequenceConfig) -> Result<
     let forwarder_queries = matched
         .into_iter()
         .filter(|q| q.source == QuerySource::Forwarder);
-    let seq = convert_to_sequence(
+    convert_to_sequence(
         forwarder_queries,
         dnstap_file.to_string_lossy().to_string(),
         config,
-    );
-    Ok(seq.ok_or_else(|| anyhow!("Sequence is empty"))?)
+    )
+    .ok_or_else(|| anyhow!("Sequence is empty"))
 }
 
 /// Load a dnstap file and generate a [`PrecisionSequence`] from it
@@ -103,9 +103,8 @@ pub fn build_precision_sequence(dnstap_file: &Path) -> Result<PrecisionSequence,
     let forwarder_queries = matched
         .into_iter()
         .filter(|q| q.source == QuerySource::Forwarder);
-    let seq =
-        convert_to_precision_sequence(forwarder_queries, dnstap_file.to_string_lossy().to_string());
-    Ok(seq.ok_or_else(|| anyhow!("PrecisionSequence is empty"))?)
+    convert_to_precision_sequence(forwarder_queries, dnstap_file.to_string_lossy().to_string())
+        .ok_or_else(|| anyhow!("PrecisionSequence is empty"))
 }
 
 /// Load all pairs of client Query/Responses and forwarder Query/Responses

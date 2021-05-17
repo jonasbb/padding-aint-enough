@@ -3,8 +3,8 @@ use serde::{Deserialize, Serialize};
 use serde_with::chrono::datetime_utc_ts_seconds_from_any;
 
 #[allow(clippy::large_enum_variant)]
-#[serde(tag = "method", content = "params")]
 #[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
+#[serde(tag = "method", content = "params")]
 pub enum ChromeDebuggerMessage<S = String> {
     // Everything Network
     #[serde(rename = "Network.requestWillBeSent", rename_all = "camelCase")]
@@ -164,44 +164,44 @@ pub struct RedirectResponse<S> {
 ///     "lineNumber": 2
 /// }
 
-#[serde(tag = "type", rename_all = "lowercase")]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
 pub enum Initiator<S> {
     Other {},
     Parser { url: S },
     Script(InitiatorScript<S>),
 }
 
-#[serde(untagged)]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[serde(untagged)]
 pub enum InitiatorScript<S> {
     Stack { stack: StackTrace<S> },
     JsModule { url: S },
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct StackTrace<S> {
     pub call_frames: Vec<CallFrame<S>>,
     pub parent: Option<Box<StackTrace<S>>>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CallFrame<S> {
     pub url: S,
     pub script_id: S,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Clone, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Response<S> {
     pub url: S,
     pub timing: Option<Timing>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Clone, Copy, PartialEq, PartialOrd, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Timing {
     /// Start time of the request in seconds. All other times are relative to this one.
     #[serde(
@@ -223,16 +223,16 @@ pub struct Timing {
     pub dns_end: Option<Duration>,
 }
 
-#[serde(rename_all = "camelCase")]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct TargetInfo<S> {
     pub url: S,
     #[serde(rename = "type")]
     pub target_type: TargetType,
 }
 
-#[serde(rename_all = "snake_case")]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TargetType {
     Page,
     BackgroundPage,

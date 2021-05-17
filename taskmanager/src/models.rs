@@ -176,8 +176,8 @@ pub struct InfoInsert<'a> {
     pub message: &'a str,
 }
 
-#[table_name = "tasks"]
 #[derive(Clone, Debug, QueryableByName)]
+#[table_name = "tasks"]
 pub struct WebsiteCounters {
     pub website: String,
     pub website_counter: i32,

@@ -247,13 +247,13 @@ impl TaskManager {
 
         let conn = self.db_connection.lock().unwrap();
         conn.transaction(|| {
-            Ok(tasks
+            tasks
                 .filter(state.eq(models::TaskState::CheckQualitySingle))
                 .filter(aborted.eq(false))
                 .order_by(priority.asc())
                 .select(TASKS_COLUMNS)
                 .load::<models::Task>(&*conn)
-                .context("Cannot retrieve tasks from database")?)
+                .context("Cannot retrieve tasks from database")
         })
     }
 
@@ -275,7 +275,7 @@ impl TaskManager {
 
         let conn = self.db_connection.lock().unwrap();
         let tasks = conn.transaction::<Vec<models::Task>, Error, _>(|| {
-            Ok(sql_query(
+            sql_query(
                 r#"SELECT
                 t.id,
                 t.priority,
@@ -308,7 +308,7 @@ impl TaskManager {
             ;"#,
             )
             .load::<models::Task>(&*conn)
-            .context("Cannot retrieve tasks from database")?)
+            .context("Cannot retrieve tasks from database")
         })?;
 
         if tasks.is_empty() {

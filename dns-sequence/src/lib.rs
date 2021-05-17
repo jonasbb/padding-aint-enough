@@ -85,12 +85,12 @@ pub fn load_all_files(
     if base_dir.is_file() {
         let s = misc_utils::fs::read_to_string(base_dir)
             .with_context(|| anyhow!("Could not open {} to read from it.", base_dir.display()))?;
-        return Ok(serde_json::from_str(&s).with_context(|| {
+        return serde_json::from_str(&s).with_context(|| {
             anyhow!(
                 "The file {} could not be deserialized into LabelledSequences",
                 base_dir.display()
             )
-        })?);
+        });
     }
 
     let check_confusion_domains = make_check_confusion_domains();

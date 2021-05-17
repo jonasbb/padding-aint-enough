@@ -225,8 +225,7 @@ impl FromStr for Probability {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Error> {
-        let pb = f32::from_str(s)?;
-        Ok(Self::new(pb)?)
+        Self::new(f32::from_str(s)?)
     }
 }
 

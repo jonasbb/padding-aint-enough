@@ -60,31 +60,31 @@ mod test {
     #[test]
     fn test_add() {
         let mut buffer = BoundedBuffer::new(3);
-        assert_eq!(buffer.add(1), true);
-        assert_eq!(buffer.add(2), true);
+        assert!(buffer.add(1));
+        assert!(buffer.add(2));
 
         // Duplicate adds
-        assert_eq!(buffer.add(2), false);
-        assert_eq!(buffer.add(1), false);
+        assert!(!buffer.add(2));
+        assert!(!buffer.add(1));
 
-        assert_eq!(buffer.add(3), true);
+        assert!(buffer.add(3));
         // This kicks out element `1`
-        assert_eq!(buffer.add(4), true);
-        assert_eq!(buffer.add(1), true);
+        assert!(buffer.add(4));
+        assert!(buffer.add(1));
     }
 
     #[test]
     fn test_add_contains() {
         let mut buffer = BoundedBuffer::new(3);
-        assert_eq!(buffer.add(1), true);
-        assert_eq!(buffer.add(2), true);
-        assert_eq!(buffer.add(3), true);
+        assert!(buffer.add(1));
+        assert!(buffer.add(2));
+        assert!(buffer.add(3));
 
-        assert_eq!(buffer.contains(&1), true);
-        assert_eq!(buffer.contains(&2), true);
-        assert_eq!(buffer.contains(&3), true);
+        assert!(buffer.contains(&1));
+        assert!(buffer.contains(&2));
+        assert!(buffer.contains(&3));
 
-        assert_eq!(buffer.add(4), true);
-        assert_eq!(buffer.contains(&1), false);
+        assert!(buffer.add(4));
+        assert!(!buffer.contains(&1));
     }
 }

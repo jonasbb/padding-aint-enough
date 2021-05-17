@@ -99,9 +99,9 @@ mod test {
         buffer.add_data(4, &[3, 4, 5]);
         buffer.add_data(7, &[6, 7, 8]);
         assert_eq!(&[0, 1, 2, 3, 4, 5, 6, 7, 8], buffer.view_data());
-        assert_eq!(false, buffer.is_empty(), "Buffer must contain data");
+        assert!(!buffer.is_empty(), "Buffer must contain data");
         assert!(buffer.consume(9).is_ok());
-        assert_eq!(true, buffer.is_empty(), "Buffer is not empty");
+        assert!(buffer.is_empty(), "Buffer is not empty");
     }
 
     #[test]
@@ -120,9 +120,9 @@ mod test {
         buffer.add_data(4, &[3, 4, 5]);
         buffer.add_data(4, &[3, 4, 5]);
         assert_eq!(&[0, 1, 2, 3, 4, 5, 6, 7, 8], buffer.view_data());
-        assert_eq!(false, buffer.is_empty(), "Buffer must contain data");
+        assert!(!buffer.is_empty(), "Buffer must contain data");
         assert!(buffer.consume(9).is_ok());
-        assert_eq!(true, buffer.is_empty(), "Buffer is not empty");
+        assert!(buffer.is_empty(), "Buffer is not empty");
     }
 
     #[test]
@@ -135,9 +135,9 @@ mod test {
         buffer.add_data(7, &[6, 7, 8]);
         buffer.add_data(4, &[3, 4, 5]);
         assert_eq!(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], buffer.view_data());
-        assert_eq!(false, buffer.is_empty(), "Buffer must contain data");
+        assert!(!buffer.is_empty(), "Buffer must contain data");
         assert!(buffer.consume(12).is_ok());
-        assert_eq!(true, buffer.is_empty(), "Buffer is not empty");
+        assert!(buffer.is_empty(), "Buffer is not empty");
     }
 
     #[test]

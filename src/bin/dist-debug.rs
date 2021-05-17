@@ -89,7 +89,7 @@ where
         .iter()
         .map(|pattern| -> Result<Vec<PathBuf>, Error> {
             let pattern = pattern.as_ref();
-            Ok(glob(pattern)
+            glob(pattern)
                 .context("Invalid pattern")?
                 .map(|path| -> Result<_, Error> {
                     let path = path?;
@@ -100,7 +100,7 @@ where
                     }
                 })
                 .filter_map(Result::transpose)
-                .collect::<Result<_, _>>()?)
+                .collect::<Result<_, _>>()
         })
         .collect::<Result<_, Error>>()?;
 

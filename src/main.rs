@@ -85,7 +85,7 @@ fn get_output_dir() -> PathBuf {
 fn url_to_domain(url: &str) -> Result<String, Error> {
     let parsed_url =
         Url::parse(&url).context("RequestInfo needs a domain name, but URL is not a valid URL.")?;
-    Ok(parsed_url
+    parsed_url
         .host_str()
         .map(ToString::to_string)
         .ok_or_else(|| {
@@ -93,7 +93,7 @@ fn url_to_domain(url: &str) -> Result<String, Error> {
                 "The URL must have a domain part, but does not. URL: '{}'",
                 parsed_url
             )
-        })?)
+        })
 }
 
 fn process_messages(messages: &[ChromeDebuggerMessage]) -> Result<(), Error> {

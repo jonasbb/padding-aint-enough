@@ -1,3 +1,6 @@
+// Some benchmark functionsd are deprecated but still usable
+#![allow(deprecated)]
+
 use criterion::{criterion_group, criterion_main, Criterion, Fun};
 use min_max_heap::MinMaxHeap;
 use std::cmp::Ordering;
