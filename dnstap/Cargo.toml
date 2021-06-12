@@ -5,7 +5,7 @@ name = "dnstap"
 version = "0.1.0"
 
 [dependencies]
-anyhow = "1.0.40"
+anyhow = "1.0.41"
 chrono = "0.4.19"
 framestream = {path = "../framestream"}
 log = "0.4.14"

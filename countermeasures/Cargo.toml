@@ -5,7 +5,7 @@ name = "tlsproxy"
 version = "0.1.0"
 
 [dependencies]
-anyhow = "1.0.40"
+anyhow = "1.0.41"
 byteorder = "1.4.3"
 chrono = "0.4.19"
 env_logger = "0.8.3"
