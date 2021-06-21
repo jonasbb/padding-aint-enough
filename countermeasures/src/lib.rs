@@ -199,18 +199,8 @@ mod test_hostname_socket_add {
         let addr1 = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080);
         let addr1_hostname = "127.0.0.1";
         let addr1_str_clean = "127.0.0.1:8080";
-        let addr1_str_1 = "127.000.000.001:8080";
-        let addr1_str_2 = "127.000.0.01:08080";
 
         let hsa: HostnameSocketAddr = addr1_str_clean.parse().unwrap();
-        assert_eq!(addr1_hostname, hsa.hostname());
-        assert_eq!(addr1, hsa.socket_addr());
-        assert_eq!(&[addr1], hsa.socket_addrs());
-        let hsa: HostnameSocketAddr = addr1_str_1.parse().unwrap();
-        assert_eq!(addr1_hostname, hsa.hostname());
-        assert_eq!(addr1, hsa.socket_addr());
-        assert_eq!(&[addr1], hsa.socket_addrs());
-        let hsa: HostnameSocketAddr = addr1_str_2.parse().unwrap();
         assert_eq!(addr1_hostname, hsa.hostname());
         assert_eq!(addr1, hsa.socket_addr());
         assert_eq!(&[addr1], hsa.socket_addrs());
