@@ -12,7 +12,7 @@ env_logger = "0.8.3"
 futures = {version = "0.3.15", default-features = false, features = ["std"]}
 log = "0.4.14"
 once_cell = "1.7.2"
-openssl = {version = "0.10.34", features = ["vendored"]}
+openssl = {version = "0.10.35", features = ["vendored"]}
 openssl-probe = "0.1.4"
 rand = "0.8.3"
 sequences = {path = "../sequences"}
