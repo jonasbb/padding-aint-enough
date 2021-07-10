@@ -9,7 +9,7 @@ repository = "https://github.com/jedisct1/rust-framestream"
 version = "0.1.2"
 
 [dependencies]
-anyhow = "1.0.41"
+anyhow = "1.0.42"
 byteorder = "1.4.3"
 log = "0.4.14"
 thiserror = "1.0.26"

@@ -48,7 +48,7 @@ harness = false
 name = "parse_chrome_json"
 
 [dependencies]
-anyhow = "1.0.41"
+anyhow = "1.0.42"
 chrome = {path = "./chrome"}
 chrono = "0.4.19"
 csv = "1.1.6"
@@ -70,7 +70,7 @@ structopt = "0.3.21"
 url = "2.2.2"
 
 [dev-dependencies]
-anyhow = "1.0.41"
+anyhow = "1.0.42"
 chrome = {path = "./chrome"}
 criterion = "0.3.4"
 misc_utils = "4.0.1"
