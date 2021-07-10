@@ -13,4 +13,4 @@ log = "0.4.14"
 pyo3 = "0.13.2"
 sequences = {path = "../sequences"}
 serde_json = "1.0.64"
-structopt = "0.3.21"
+structopt = "0.3.22"
