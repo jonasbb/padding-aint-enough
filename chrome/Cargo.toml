@@ -7,4 +7,4 @@ version = "0.1.0"
 [dependencies]
 chrono = "0.4.19"
 serde = {version = "1.0.126", features = ["derive"]}
-serde_with = {version = "1.9.2", features = ["chrono"]}
+serde_with = {version = "1.9.4", features = ["chrono"]}
