@@ -34,7 +34,7 @@ CONFUSION_DOMAINS_LISTS = [
 
 def load_files_to_ignore() -> t.Set[str]:
     res = set()
-    rdr = csv.reader(open(FAILED_DOMAINS_LIST, "r"))
+    rdr = csv.reader(open(FAILED_DOMAINS_LIST))
     # skip header
     next(rdr)
     for file, _reason in rdr:

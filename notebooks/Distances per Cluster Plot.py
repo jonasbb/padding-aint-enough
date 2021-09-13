@@ -84,7 +84,7 @@ clusterdistances = [
 
 # %%
 sortedclusterdistances = sorted(
-    [sorted(distances) for distances in clusterdistances if len(distances) > 0],
+    (sorted(distances) for distances in clusterdistances if len(distances) > 0),
     key=lambda x: list(reversed(x)),
 )
 plt.plot(list(x[-1] for x in sortedclusterdistances), label="Max. Distance per Domain")
@@ -105,7 +105,7 @@ len([1 for x in sortedclusterdistances2 if x[0] == 0])
 
 # %%
 sortedclusterdistances2 = sorted(
-    [sorted(distances) for distances in clusterdistances if len(distances) > 0],
+    (sorted(distances) for distances in clusterdistances if len(distances) > 0),
     key=list,
 )
 plt.plot(list(x[-1] for x in sortedclusterdistances2), label="Max. Distance per Domain")
@@ -126,7 +126,7 @@ plt.savefig(f"distance-per-cluster-normalized.svg")
 
 # %%
 sortedclusterdistances2 = sorted(
-    [sorted(distances) for distances in clusterdistances if len(distances) > 0],
+    (sorted(distances) for distances in clusterdistances if len(distances) > 0),
     key=list,
 )
 plt.plot(list(x[0] for x in sortedclusterdistances2))

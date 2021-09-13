@@ -205,13 +205,13 @@ plt.savefig(f"classification-results-{path.basename(fname)}.svg")
 
 # %%
 res_label_, total_traces_ = zip(
-    *[
+    *(
         # load_stats_file(f"../results/2019-02-11-ow-from-cw/statistics-fpr-{fpr}.csv")
         load_stats_file(
             f"../results/2019-11-18-full-rescan/fpr/stats-fpr-{fpr}pc.csv.xz"
         )
         for fpr in range(5, 91, 5)
-    ]
+    )
 )
 
 # assert the number of traces is constant

@@ -146,11 +146,11 @@ for entry in content:
 
 # %%
 min_dists_norm = {
-    key: sorted([float(stat.min_dist) for stat in stats_.values()])
+    key: sorted(float(stat.min_dist) for stat in stats_.values())
     for key, stats_ in distances_per_k.items()
 }
 max_dists_norm = {
-    key: sorted([float(stat.max_dist) for stat in stats_.values()])
+    key: sorted(float(stat.max_dist) for stat in stats_.values())
     for key, stats_ in distances_per_k.items()
 }
 
@@ -200,7 +200,7 @@ for i in range(0, 101, 5):
 # %%
 # Count how many traces will not match due to the distance threshold
 for k, values in max_dists_norm.items():
-    print(k, sum([1 for v in values if v <= 2.16]))
+    print(k, sum(1 for v in values if v <= 2.16))
 
 # %%
 # Values which are too extreme

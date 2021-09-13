@@ -24,7 +24,7 @@ class Canonicalize:
         self.cache = dict()
         # read all files and add them to the cache
         for file in CONFUSION_DOMAINS_LISTS:
-            rdr = csv.reader(open(file, "r"))
+            rdr = csv.reader(open(file))
             for dom, canon in rdr:
                 dom = sys.intern(dom)
                 canon = sys.intern(canon)
@@ -60,7 +60,7 @@ def sanitize_file_name(filename: str) -> str:
 
 def load_files_to_ignore() -> t.Set[str]:
     res = set()
-    rdr = csv.reader(open(FAILED_DOMAINS_LIST, "r"))
+    rdr = csv.reader(open(FAILED_DOMAINS_LIST))
     # skip header
     next(rdr)
     for file, _reason in rdr:

@@ -82,7 +82,7 @@ class Canonicalize:
         self.cache = dict()
         # read all files and add them to the cache
         for file in confusion_domains:
-            rdr = csv.reader(open(file, "r"))
+            rdr = csv.reader(open(file))
             for dom, canon in rdr:
                 dom = sys.intern(dom)
                 canon = sys.intern(canon)

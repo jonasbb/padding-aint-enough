@@ -26,8 +26,8 @@ if False:  # pylint: disable=W0125
 
 if "__file__" in globals():
     # being run as freestanding script
-    import sys
     import pickle
+    import sys
 
     rawdata, config = pickle.load(open(sys.argv[1], "rb"))
     rawimgpath = sys.argv[1] + ".svg"

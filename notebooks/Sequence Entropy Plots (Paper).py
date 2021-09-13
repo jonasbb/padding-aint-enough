@@ -33,7 +33,7 @@ hatches = [c for _, c in zip(range(5), HATCHES)]
 # %%
 # Map from filename to tuple of entropy and result quality
 # data = json.load(lzma.open("./sequences-stats-cw.json.xz", "rt"))
-data = json.load(open("./sequences-stats.json", "rt"))
+data = json.load(open("./sequences-stats.json"))
 
 # %% [markdown]
 # # First count how many files there are in each category of entropy
