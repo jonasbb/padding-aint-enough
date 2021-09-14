@@ -43,11 +43,16 @@ test:cargo:
   - git clone https://github.com/pyenv/pyenv.git ~/.pyenv
   - export PYENV_ROOT="$HOME/.pyenv"
   - export PATH="$PYENV_ROOT/bin:$PATH"
+  # Need to enable shared libraries manually
+  # https://github.com/PyO3/pyo3/issues/1800#issuecomment-900837307
   - export PYTHON_CONFIGURE_OPTS="--enable-shared"
   - eval "$(pyenv init --path)"
   - eval "$(pyenv init -)"
   - pyenv install 3.7.12
   - pyenv local 3.7.12
+  # Need so set the path where libpython3.7m.so.1.0 is located
+  # https://github.com/PyO3/pyo3/issues/1576#issuecomment-827171538
+  - export LD_LIBRARY_PATH="~/.pyenv/versions/3.7.12/lib:$LD_LIBRARY_PATH"
 
   - pipenv sync --dev
 
