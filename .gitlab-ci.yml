@@ -52,7 +52,7 @@ test:cargo:
   - pyenv local 3.7.12
   # Need so set the path where libpython3.7m.so.1.0 is located
   # https://github.com/PyO3/pyo3/issues/1576#issuecomment-827171538
-  - export LD_LIBRARY_PATH="~/.pyenv/versions/3.7.12/lib:$LD_LIBRARY_PATH"
+  - export LD_LIBRARY_PATH="$HOME/.pyenv/versions/3.7.12/lib:$LD_LIBRARY_PATH"
 
   - pipenv sync --dev
 
