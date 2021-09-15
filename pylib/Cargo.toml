@@ -12,6 +12,6 @@ name = "pylib"
 anyhow = "1.0.43"
 encrypted-dns = {path = ".."}
 misc_utils = "4.0.1"
-pyo3 = "0.14.4"
+pyo3 = "0.14.5"
 sequences = {path = "../sequences", features = ["read_pcap"]}
 serde_json = "1.0.66"
