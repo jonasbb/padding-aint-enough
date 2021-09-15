@@ -138,6 +138,7 @@ fn main() -> Result<(), Error> {
         let mut matching_urls = String::new();
 
         let mut line = String::new();
+        #[allow(clippy::blocks_in_if_conditions)]
         while {
             line.clear();
             content
@@ -236,7 +237,7 @@ fn url_has_domain_or_subdomain_of<S>(url: &str, domains: &[S]) -> bool
 where
     S: AsRef<str>,
 {
-    let url_parsed = Url::parse(&url).expect("Could not parse the URL");
+    let url_parsed = Url::parse(url).expect("Could not parse the URL");
     for domain in domains {
         let domain = domain.as_ref();
         let host_str = url_parsed.host_str().expect("The URL has not host part");

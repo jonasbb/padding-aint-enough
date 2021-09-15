@@ -25,7 +25,7 @@ fn main() -> Result<(), Error> {
     // Remove empty groups as otherwise we get a divide by 0
     data.retain(|group| !group.is_empty());
     data.iter_mut()
-        .for_each(|group| group.sort_by(|a, b| a.id().cmp(&b.id())));
+        .for_each(|group| group.sort_by(|a, b| a.id().cmp(b.id())));
     info!("Done loading dnstap files.");
 
     println!("Loaded {} elements.", data.iter().flatten().count());

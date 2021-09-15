@@ -130,7 +130,7 @@ impl HostnameSocketAddr {
     pub fn socket_addrs(&self) -> &[SocketAddr] {
         use HostnameSocketAddr::*;
         match self {
-            Hostname { socket_addrs, .. } => &socket_addrs,
+            Hostname { socket_addrs, .. } => socket_addrs,
             Ip(ip) => ip,
         }
     }

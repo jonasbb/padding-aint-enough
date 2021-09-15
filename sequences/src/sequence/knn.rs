@@ -415,7 +415,7 @@ impl<'a, S: ?Sized> Eq for ClassifierData<'a, S> {}
 
 impl<'a, S: ?Sized> PartialOrd for ClassifierData<'a, S> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
 

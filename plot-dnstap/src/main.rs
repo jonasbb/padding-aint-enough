@@ -106,7 +106,7 @@ fn pyerr2error(err: PyErr) -> Error {
     let locals = PyDict::new(py);
     let _ = locals.set_item("err", err);
     let err_msg: String = py
-        .eval("repr(err)", None, Some(&locals))
+        .eval("repr(err)", None, Some(locals))
         .unwrap()
         .extract()
         .unwrap();

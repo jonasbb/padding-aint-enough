@@ -122,7 +122,7 @@ impl DepGraph {
                         if let Some(stack_trace) = stack_trace {
                             // Chrome contains special case URLs like "extensions::event_bindings"
                             // They all start with "extensions::", so skip them
-                            if !should_ignore_url(&url) {
+                            if !should_ignore_url(url) {
                                 let deps =
                                     traverse_stack(stack_trace, find_script_deps, HashSet::new())
                                         .with_context(|| {
@@ -320,7 +320,7 @@ impl DepGraph {
                         target_info: TargetInfo { target_type, .. },
                     } => {
                         if *target_type == TargetType::Page {
-                            let node = match create_node(&message)? {
+                            let node = match create_node(message)? {
                                 Some(node) => node,
                                 // skip creation of data URIs
                                 None => continue,
@@ -337,7 +337,7 @@ impl DepGraph {
                         request,
                         ..
                     } => {
-                        let node = match create_node(&message)? {
+                        let node = match create_node(message)? {
                             Some(node) => node,
                             // skip creation of data URIs
                             None => continue,
@@ -397,7 +397,7 @@ impl DepGraph {
                         initiator,
                         ..
                     } => {
-                        let node = match create_node(&message)? {
+                        let node = match create_node(message)? {
                             Some(node) => node,
                             // skip creation of data URIs
                             None => continue,

@@ -29,14 +29,14 @@ use taskmanager::{models::Task, AddWebsiteConfig, Config, TaskManager};
 use tempfile::{Builder as TempDirBuilder, TempDir};
 use url::Url;
 
-static DNSTAP_FILE_NAME: Lazy<&'static Path> = Lazy::new(|| &Path::new("website-log.dnstap.xz"));
-static LOG_FILE: Lazy<&'static Path> = Lazy::new(|| &Path::new("website-log.log.xz"));
-static CHROME_LOG_FILE_NAME: Lazy<&'static Path> = Lazy::new(|| &Path::new("website-log.json.xz"));
-static PCAP_FILE_NAME: Lazy<&'static Path> = Lazy::new(|| &Path::new("website-log.pcap.xz"));
+static DNSTAP_FILE_NAME: Lazy<&'static Path> = Lazy::new(|| Path::new("website-log.dnstap.xz"));
+static LOG_FILE: Lazy<&'static Path> = Lazy::new(|| Path::new("website-log.log.xz"));
+static CHROME_LOG_FILE_NAME: Lazy<&'static Path> = Lazy::new(|| Path::new("website-log.json.xz"));
+static PCAP_FILE_NAME: Lazy<&'static Path> = Lazy::new(|| Path::new("website-log.pcap.xz"));
 static TIMING_FILE_NAME: Lazy<&'static Path> =
-    Lazy::new(|| &Path::new("website-log.dnstimes.txt.xz"));
+    Lazy::new(|| Path::new("website-log.dnstimes.txt.xz"));
 static TLSKEYS_FILE_NAME: Lazy<&'static Path> =
-    Lazy::new(|| &Path::new("website-log.tlskeys.txt.xz"));
+    Lazy::new(|| Path::new("website-log.tlskeys.txt.xz"));
 
 #[derive(StructOpt)]
 #[structopt(global_settings(&[

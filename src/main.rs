@@ -84,7 +84,7 @@ fn get_output_dir() -> PathBuf {
 
 fn url_to_domain(url: &str) -> Result<String, Error> {
     let parsed_url =
-        Url::parse(&url).context("RequestInfo needs a domain name, but URL is not a valid URL.")?;
+        Url::parse(url).context("RequestInfo needs a domain name, but URL is not a valid URL.")?;
     parsed_url
         .host_str()
         .map(ToString::to_string)
@@ -194,7 +194,7 @@ impl<'a> TryFrom<&'a ChromeDebuggerMessage> for RequestInfo {
                 target_info: TargetInfo{ref url, ..}
             } => {
                 Ok(RequestInfo {
-                    normalized_domain_name: url_to_domain(&url)?,
+                    normalized_domain_name: url_to_domain(url)?,
                     earliest_wall_time: Min::default(),
                     requests: vec![],
                 })

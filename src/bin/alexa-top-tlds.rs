@@ -46,14 +46,7 @@ fn main() -> Result<(), Error> {
             record.map(|r| {
                 // Get everything after the last dot (the TLD)
                 // Append a trailing dot to make sure it is interpreted as TLD
-                [
-                    r.domain
-                        .rsplitn(2, '.')
-                        .next()
-                        .expect("The domain is never empty, thus one substring always exists."),
-                    ".",
-                ]
-                .join("")
+                [r.domain.rsplit_once('.').map_or(&*r.domain, |x| x.1), "."].join("")
             })
         })
         .collect::<Result<BTreeSet<String>, _>>()

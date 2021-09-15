@@ -255,7 +255,7 @@ impl<S: Eq + Hash> StatsCollector<S> {
                 .collect();
 
             let mut config = HashMap::new();
-            config.insert("colors", &COLORS as &_);
+            config.insert("colors", COLORS as &_);
             plot::percentage_stacked_area_chart(
                 &tmp,
                 output.as_ref().with_extension(format!("k{}.svg", k)),

@@ -41,7 +41,7 @@ pub fn sequence_stats(
             sequences_b
                 .iter()
                 .filter(|other_seq| seq != *other_seq)
-                .map(|other_seq| seq.distance(&other_seq))
+                .map(|other_seq| seq.distance(other_seq))
                 .collect()
         })
         .collect();

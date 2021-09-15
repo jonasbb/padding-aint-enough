@@ -336,9 +336,9 @@ fn classify_and_evaluate(
             if let Err(err) = log_misclassification(
                 mis_writer,
                 k,
-                &sequence,
-                &mapped_domain,
-                &class_result,
+                sequence,
+                mapped_domain,
+                class_result,
                 known_problems.as_deref(),
             ) {
                 error!(
