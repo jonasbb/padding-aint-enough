@@ -59,7 +59,7 @@ log = "0.4.14"
 min-max-heap = "1.3.0"
 misc_utils = "4.0.1"
 once_cell = "1.8.0"
-petgraph = {version = "0.5.1", features = ["serde-1"]}
+petgraph = {version = "0.6.0", features = ["serde-1"]}
 petgraph-graphml = "2.0.1"
 rayon = "1.5.1"
 sequences = {path = "./sequences"}
