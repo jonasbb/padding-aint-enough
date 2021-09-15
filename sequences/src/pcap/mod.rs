@@ -213,10 +213,9 @@ fn extract_tls_records(
         PcapError::ReadError => anyhow!("Failed reading pcap: Read error"),
         PcapError::Incomplete => anyhow!("Failed reading pcap: Incomplete"),
         PcapError::HeaderNotRecognized => anyhow!("Failed reading pcap: Header not recognized"),
-        PcapError::NomError(nom_error) => anyhow!(
-            "Failed reading pcap: Nom Error: {}",
-            nom_error.description()
-        ),
+        PcapError::NomError(_, kind) | PcapError::OwnedNomError(_, kind) => {
+            anyhow!("Failed reading pcap: Nom Error: {:?}", kind)
+        }
     })?;
     let datalink_type = capture.header.network;
     // ID of the packet with in the pcap file.
