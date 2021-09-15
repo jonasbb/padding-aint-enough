@@ -25,7 +25,8 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     /// --
     ///
     /// Load a dnstap file from disk and create a `Sequence` object
-    #[pyfn(m, "load_file")]
+    #[pyfn(m)]
+    #[pyo3(name = "load_file")]
     fn load_file(
         path: String,
         gap_mode: Option<String>,
@@ -48,7 +49,8 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     ///
     /// Load a whole folder of files with given `extension`.
     /// `extension` defaults to the value "dnstap".
-    #[pyfn(m, "load_folder")]
+    #[pyfn(m)]
+    #[pyo3(name = "load_folder")]
     fn load_folder(
         py: Python<'_>,
         path: String,
@@ -91,7 +93,8 @@ fn pylib(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     /// --
     ///
     /// Load a file with preprocessed sequences.
-    #[pyfn(m, "load_preprocessed")]
+    #[pyfn(m)]
+    #[pyo3(name = "load_preprocessed")]
     fn load_preprocessed(
         _py: Python<'_>,
         path: String,
