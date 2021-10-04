@@ -30,12 +30,12 @@ use misc_utils::fs;
 use pcap_parser::{data::PacketData, PcapCapture, PcapError};
 use rustls::{
     internal::msgs::{
-        codec::Codec,
+        codec::Reader,
         enums::ContentType as TlsContentType,
         handshake::{
             HandshakePayload as TlsHandshakePayload, ServerExtension as TlsServerExtensions,
         },
-        message::{Message as TlsMessage, MessagePayload as TlsMessagePayload},
+        message::{MessagePayload as TlsMessagePayload, OpaqueMessage as OpaqueTlsMessage},
     },
     ProtocolVersion,
 };
@@ -318,27 +318,26 @@ fn extract_tls_records(
             debug!("({:>2}) Processing TCP segment", packet_id);
 
             while !buffer.is_empty() {
-                let tls = match TlsMessage::read_bytes(buffer.view_data()) {
-                    Some(tls) => tls,
+                let tls = match OpaqueTlsMessage::read(&mut Reader::init(buffer.view_data())) {
+                    Ok(tls) => tls,
                     // We cannot parse the packet yet, so just skip the processing
-                    None => continue 'packet,
+                    Err(_) => continue 'packet,
                 };
                 // Remove the bytes we already processed
                 // The TLS header is 5 byte long and not included in the payload
-                buffer.consume(5 + tls.payload.length())?;
+                buffer.consume(5 + tls.payload.0.len())?;
                 debug!(
                     "{:?} {} - {}B",
                     tls.typ,
                     ipv4.source_addr(),
-                    tls.payload.length()
+                    tls.payload.0.len()
                 );
 
                 let mut tls_version = None;
 
                 // See if this is a server send ServerHello with a version
-                if let Some(TlsMessagePayload::Handshake(handshake_payload)) = tls
-                    .payload
-                    .decode_given_type(TlsContentType::Handshake, ProtocolVersion::TLSv1_2)
+                if let Ok(TlsMessagePayload::Handshake(handshake_payload)) =
+                    TlsMessagePayload::new(tls.typ, tls.version, tls.payload.clone())
                 {
                     if let TlsHandshakePayload::ServerHello(server_hello) =
                         handshake_payload.payload
@@ -364,7 +363,7 @@ fn extract_tls_records(
                     // next_time is never None here
                     time: next_time[&flowid].unwrap(),
                     message_type: tls.typ.into(),
-                    message_length: tls.payload.length() as u32,
+                    message_length: tls.payload.0.len() as u32,
                     tls_version,
                 };
                 tls_records.entry(flowid.into()).or_default().push(record);
