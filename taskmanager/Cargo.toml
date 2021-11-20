@@ -5,7 +5,7 @@ name = "taskmanager"
 version = "0.1.0"
 
 [dependencies]
-anyhow = "1.0.45"
+anyhow = "1.0.47"
 chrome = {path = "../chrome"}
 chrono = "0.4.19"
 diesel = {version = "1.4.8", features = ["chrono", "postgres"]}
