@@ -7,4 +7,7 @@
         "dnscaptures",
         "pylib"
     ],
+    "python.analysis.extraPaths": [
+        "./keras"
+    ],
 }
