@@ -271,7 +271,7 @@ fn extract_tls_records(
                         SlicedPacket::from_ip(data).map_err(|err| anyhow!("{:?}", err))?;
                 }
             };
-            if let Some(InternetSlice::Ipv4(inner)) = parsed_packet.ip {
+            if let Some(InternetSlice::Ipv4(inner, _)) = parsed_packet.ip {
                 ipv4 = inner;
             } else {
                 bail!("Could not find an IPv4 packet for packet_id: {}", packet_id);
