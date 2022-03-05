@@ -21,4 +21,4 @@ structopt = "0.3.26"
 thiserror = "1.0.30"
 tokio = {version = "0.2.24", features = ["fs", "io-util", "stream", "tcp", "time"]}
 tokio-openssl = "0.4.0"
-trust-dns-proto = {version = "0.20.4", default-features = false}
+trust-dns-proto = {version = "0.21.1", default-features = false}
