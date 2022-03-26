@@ -8,7 +8,7 @@ version = "0.1.0"
 anyhow = "1.0.56"
 chrono = "0.4.19"
 framestream = {path = "../framestream"}
-log = "0.4.14"
+log = "0.4.16"
 misc_utils = "4.0.1"
 protobuf = "2.8.1"
 trust-dns-proto = {version = "0.21.1", default-features = false}
