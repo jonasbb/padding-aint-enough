@@ -978,9 +978,9 @@ dependencies = [
 
 [[package]]
 name = "internment"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73bd1419c48e9f496d5830cc2f7fff35cab112193f289fd7266ab0679bb97237"
+checksum = "2a798d7677f07d6f1e77be484ea8626ddb1566194de399f1206306820c406371"
 dependencies = [
  "hashbrown 0.12.0",
  "parking_lot 0.12.0",
