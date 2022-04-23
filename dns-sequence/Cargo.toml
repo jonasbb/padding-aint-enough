@@ -9,7 +9,7 @@ anyhow = "1.0.56"
 csv = "1.1.6"
 env_logger = "0.9.0"
 log = "0.4.16"
-misc_utils = "4.0.1"
+misc_utils = "4.1.0"
 once_cell = "1.10.0"
 prettytable-rs = {version = "0.8.0", default-features = false}
 sequences = {path = "../sequences/", features = ["read_pcap"]}
