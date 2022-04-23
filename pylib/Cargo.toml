@@ -9,7 +9,7 @@ crate-type = ["cdylib"]
 name = "pylib"
 
 [dependencies]
-anyhow = "1.0.56"
+anyhow = "1.0.57"
 encrypted-dns = {path = ".."}
 misc_utils = "4.0.1"
 pyo3 = "0.16.4"
