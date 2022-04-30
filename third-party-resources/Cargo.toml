@@ -10,7 +10,7 @@ csv = "1.1.6"
 dnstap = {path = "../dnstap"}
 env_logger = "0.9.0"
 log = "0.4.16"
-misc_utils = "4.1.0"
+misc_utils = "4.2.1"
 once_cell = "1.10.0"
 rayon = "1.5.2"
 serde = {version = "1.0.136", features = ["derive"]}
