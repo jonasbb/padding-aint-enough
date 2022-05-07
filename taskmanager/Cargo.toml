@@ -13,7 +13,7 @@ diesel-derive-enum = {version = "1.1.2", features = ["postgres"]}
 diesel_migrations = "1.4.0"
 encrypted-dns = {path = ".."}
 env_logger = "0.9.0"
-log = "0.4.16"
+log = "0.4.17"
 misc_utils = "4.2.1"
 once_cell = "1.10.0"
 # Needed for Postgres. https://github.com/emk/rust-musl-builder#making-diesel-work
