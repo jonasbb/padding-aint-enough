@@ -17,7 +17,7 @@ name = "u8_abs"
 
 [dependencies]
 anyhow = "1.0.57"
-chrono = "0.4.19"
+chrono = "0.4.20"
 dashmap = "5.3.3"
 dnstap = {path = "../dnstap"}
 etherparse = {version = "0.10.1", optional = true}

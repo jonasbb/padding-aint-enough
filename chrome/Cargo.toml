@@ -5,6 +5,6 @@ name = "chrome"
 version = "0.1.0"
 
 [dependencies]
-chrono = "0.4.19"
+chrono = "0.4.20"
 serde = {version = "1.0.137", features = ["derive"]}
 serde_with = {version = "1.13.0", features = ["chrono"]}
