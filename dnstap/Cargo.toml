@@ -6,7 +6,7 @@ version = "0.1.0"
 
 [dependencies]
 anyhow = "1.0.57"
-chrono = "0.4.19"
+chrono = "0.4.20"
 framestream = {path = "../framestream"}
 log = "0.4.17"
 misc_utils = "4.2.3"

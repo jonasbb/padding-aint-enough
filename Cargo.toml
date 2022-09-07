@@ -50,7 +50,7 @@ name = "parse_chrome_json"
 [dependencies]
 anyhow = "1.0.57"
 chrome = {path = "./chrome"}
-chrono = "0.4.19"
+chrono = "0.4.20"
 csv = "1.1.6"
 dnstap = {path = "./dnstap"}
 env_logger = "0.9.0"
