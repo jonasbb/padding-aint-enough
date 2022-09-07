@@ -17,7 +17,7 @@ log = "0.4.17"
 misc_utils = "4.2.3"
 once_cell = "1.10.0"
 # Needed for Postgres. https://github.com/emk/rust-musl-builder#making-diesel-work
-openssl = {version = "0.10.40", features = ["vendored"]}
+openssl = {version = "0.10.41", features = ["vendored"]}
 rayon = "1.5.3"
 sequences = {path = "../sequences", features = ["read_pcap"]}
 serde = {version = "1.0.137", features = ["derive"]}
