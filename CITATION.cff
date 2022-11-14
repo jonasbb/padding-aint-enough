@@ -1,0 +1,123 @@
+# Schema and list of valid keys
+# https://github.com/citation-file-format/citation-file-format/blob/main/schema-guide.md
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+
+authors:
+  - given-names: "Jonas"
+    family-names: "Bushart"
+    affiliation: "CISPA Helmholtz Center for Information Security"
+    website: "https://bushart.org"
+  - given-names: "Christian"
+    family-names: "Rossow"
+    affiliation: "CISPA Helmholtz Center for Information Security"
+    website: "https://christian-rossow.de/"
+
+title: "Padding Ain’t Enough: Assessing the Privacy Guarantees of Encrypted DNS"
+date-released: 2022-11-14
+url: "https://github.com/jonasbb/padding-aint-enough"
+repository-code: "https://github.com/jonasbb/padding-aint-enough"
+keywords:
+  - "dns over https (DoH)"
+  - "dns over tls (DoT)"
+  - "dns padding"
+  - "dns"
+  - "encrypted dns"
+  - "mitigations"
+  - "privacy"
+  - "website fingerprinting"
+type: "software"
+
+preferred-citation:
+  authors:
+    - given-names: "Jonas"
+      family-names: "Bushart"
+      affiliation: "CISPA Helmholtz Center for Information Security"
+      website: "https://bushart.org"
+    - given-names: "Christian"
+      family-names: "Rossow"
+      affiliation: "CISPA Helmholtz Center for Information Security"
+      website: "https://christian-rossow.de/"
+  title: "Padding Ain’t Enough: Assessing the Privacy Guarantees of Encrypted DNS"
+  url: "https://www.usenix.org/conference/foci20/presentation/bushart"
+  type: "conference-paper"
+  month: 8
+  year: 2020
+  conference:
+    name: "10th USENIX Workshop on Free and Open Communications on the Internet (FOCI 20)"
+    date-start: 2020-08-11
+    date-end: 2020-08-11
+    website: "https://www.usenix.org/conference/foci20"
+  publisher:
+    name: "USENIX Association"
+  institution:
+    name: "CISPA Helmholtz Center for Information Security"
+    alias: "CISPA"
+    country: "DE"
+    website: "https://cispa.de"
+  abstract: >-
+    DNS over TLS (DoT) and DNS over HTTPS (DoH) encrypt DNS to guard user privacy by hiding DNS resolutions from passive adversaries.
+    Yet, past attacks have shown that encrypted DNS is still sensitive to traffic analysis.
+    As a consequence, RFC 8467 proposes to pad messages prior to encryption, which heavily reduces the characteristics of encrypted traffic.
+    In this paper, we show that padding alone is insufficient to counter DNS traffic analysis.
+    We propose a novel traffic analysis method that combines size and timing information to infer the websites a user visits purely based on encrypted and padded DNS traces.
+    To this end, we model DNS Sequences that capture the complexity of websites that usually trigger dozens of DNS resolutions instead of just a single DNS transaction.
+    A closed world evaluation based on the Tranco top-10k websites reveals that attackers can deanonymize test traces for 86.1 % of all websites, and even correctly label all traces for 65.9 % of the websites.
+    Our findings undermine the privacy goals of state-of-the-art message padding strategies in DoT/DoH.
+    We conclude by showing that successful mitigations to such attacks have to remove the entropy of inter-arrival timings between query responses.
+
+references:
+  - authors:
+    - given-names: "Jonas"
+      family-names: "Bushart"
+      affiliation: "CISPA Helmholtz Center for Information Security"
+      website: "https://bushart.org"
+    - given-names: "Christian"
+      family-names: "Rossow"
+      affiliation: "CISPA Helmholtz Center for Information Security"
+      website: "https://christian-rossow.de/"
+    title: "Padding Ain’t Enough: Assessing the Privacy Guarantees of Encrypted DNS"
+    type: "generic"
+    url: "https://arxiv.org/abs/1907.01317"
+    doi: "10.48550/arXiv.1907.01317"
+    month: 7
+    year: 2019
+  - authors:
+    - given-names: "Jonas"
+      family-names: "Bushart"
+      affiliation: "CISPA Helmholtz Center for Information Security"
+      website: "https://bushart.org"
+    - given-names: "Christian"
+      family-names: "Rossow"
+      affiliation: "CISPA Helmholtz Center for Information Security"
+      website: "https://christian-rossow.de/"
+    title: "Padding Ain’t Enough: Assessing the Privacy Guarantees of Encrypted DNS – Web Scans"
+    type: data
+    url: "https://zenodo.org/record/7319358"
+    doi: "10.5281/zenodo.7319358"
+  - authors:
+    - given-names: "Jonas"
+      family-names: "Bushart"
+      affiliation: "CISPA Helmholtz Center for Information Security"
+      website: "https://bushart.org"
+    - given-names: "Christian"
+      family-names: "Rossow"
+      affiliation: "CISPA Helmholtz Center for Information Security"
+      website: "https://christian-rossow.de/"
+    title: "Padding Ain’t Enough: Assessing the Privacy Guarantees of Encrypted DNS – Subpage-Agnostic Domain Classification Firefox"
+    type: data
+    url: "https://zenodo.org/record/7319364"
+    doi: "10.5281/zenodo.7319364"
+  - authors:
+    - given-names: "Jonas"
+      family-names: "Bushart"
+      affiliation: "CISPA Helmholtz Center for Information Security"
+      website: "https://bushart.org"
+    - given-names: "Christian"
+      family-names: "Rossow"
+      affiliation: "CISPA Helmholtz Center for Information Security"
+      website: "https://christian-rossow.de/"
+    title: "Padding Ain’t Enough: Assessing the Privacy Guarantees of Encrypted DNS – Subpage-Agnostic Domain Classification Tor Browser"
+    type: data
+    url: "https://zenodo.org/record/7319380"
+    doi: "10.5281/zenodo.7319380"
